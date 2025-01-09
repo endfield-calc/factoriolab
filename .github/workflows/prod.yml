@@ -31,6 +31,6 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         if: env.DEPLOY == 'true'
         with:
-          branch: ark-endfield
+          branch: gh-pages
           folder: dist/browser
           clean: true

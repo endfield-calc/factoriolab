@@ -1,21 +1,24 @@
-import { effect, inject, Injectable } from "@angular/core";
+import { effect, inject, Injectable } from '@angular/core';
 
-import { spread } from "~/helpers";
-import { FlowDiagram } from "~/models/enum/flow-diagram";
-import { Language } from "~/models/enum/language";
-import { LinkValue } from "~/models/enum/link-value";
-import { PowerUnit } from "~/models/enum/power-unit";
-import { SankeyAlign } from "~/models/enum/sankey-align";
-import { Theme } from "~/models/enum/theme";
-import { ColumnsState, initialColumnsState } from "~/models/settings/column-settings";
-import { FlowSettings } from "~/models/settings/flow-settings";
-import { storedSignal, storeValue } from "~/models/stored-signal";
-import { Entities } from "~/models/utils";
+import { spread } from '~/helpers';
+import { FlowDiagram } from '~/models/enum/flow-diagram';
+import { Language } from '~/models/enum/language';
+import { LinkValue } from '~/models/enum/link-value';
+import { PowerUnit } from '~/models/enum/power-unit';
+import { SankeyAlign } from '~/models/enum/sankey-align';
+import { Theme } from '~/models/enum/theme';
+import {
+  ColumnsState,
+  initialColumnsState,
+} from '~/models/settings/column-settings';
+import { FlowSettings } from '~/models/settings/flow-settings';
+import { storedSignal, storeValue } from '~/models/stored-signal';
+import { Entities } from '~/models/utils';
+import { AnalyticsService } from '~/services/analytics.service';
+import { TranslateService } from '~/services/translate.service';
 
-import { AnalyticsService } from "../services/analytics.service";
-import { TranslateService } from "../services/translate.service";
-import { Store } from "./store";
-import { environment } from "../../environments";
+import { environment } from '../../environments';
+import { Store } from './store';
 
 export interface PreferencesState {
   states: Record<string, Entities>;

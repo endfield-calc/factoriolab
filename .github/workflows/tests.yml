@@ -1,9 +1,11 @@
 name: tests
 on:
   push:
-    branches: [main]
+    branches: [ark-endfield]
+    paths: ['src/**']
   pull_request:
-    branches: [main]
+    branches: [ark-endfield]
+    paths: ['src/**']
 jobs:
   tests:
     runs-on: ubuntu-latest

@@ -8,9 +8,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/factoriolab/factoriolab.git"
+    "url": "https://github.com/Yun-Shan/factoriolab.git"
   },
-  "homepage": "https://factoriolab.github.io",
+  "homepage": "https://yun-shan.github.io/factoriolab",
   "license": "MIT",
   "scripts": {
     "ng": "ng",

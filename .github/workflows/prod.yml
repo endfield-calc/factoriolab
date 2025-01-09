@@ -1,7 +1,7 @@
 name: prod
 on:
   push:
-    branches: [main]
+    branches: [ark-endfield]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,14 +26,11 @@ jobs:
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         if: env.DEPLOY == 'true'
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
-          repository-name: factoriolab/factoriolab.github.io
-          branch: main
+          branch: ark-endfield
           folder: dist/browser
           clean: true

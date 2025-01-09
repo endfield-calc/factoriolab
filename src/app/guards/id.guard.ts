@@ -12,7 +12,7 @@ import { DEFAULT_MOD } from '~/models/constants';
 import { MigrationService } from '~/services/migration.service';
 import { RouterService } from '~/services/router.service';
 
-import { environment } from "../../environments";
+import { environment } from '../../environments';
 
 export const canActivateId: CanActivateFn = (
   route: ActivatedRouteSnapshot,

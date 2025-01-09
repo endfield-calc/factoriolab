@@ -2,21 +2,21 @@
  * @type {import('semantic-release').GlobalConfig}
  */
 module.exports = {
-  branches: ['main'],
+  branches: [{ name: 'ark-endfield', prerelease: 'endfield' }],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
     '@semantic-release/github',
-    [
-      'semantic-release-discord-bot',
-      {
-        notifications: [
-          {
-            branch: 'main',
-          },
-        ],
-      },
-    ],
+    // [
+    //   'semantic-release-discord-bot',
+    //   {
+    //     notifications: [
+    //       {
+    //         branch: 'main',
+    //       },
+    //     ],
+    //   },
+    // ],
     [
       '@semantic-release/exec',
       {

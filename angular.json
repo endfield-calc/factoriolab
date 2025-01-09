@@ -80,7 +80,7 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "baseHref": "/",
+              "baseHref": "/factoriolab/",
               "outputHashing": "all",
               "budgets": [
                 {

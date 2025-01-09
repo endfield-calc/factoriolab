@@ -22,7 +22,7 @@ module.exports = {
       '@semantic-release/exec',
       {
         successCmd:
-          './scripts/write-release-info.sh ${nextRelease.version} ${branch.name} ${(new Date()).toISOString()}',
+          './scripts/write-release-info.sh ${nextRelease.version} ${branch.name} ${(new Date()).toISOString()} ${nextRelease.gitTag}',
       },
     ],
   ],

@@ -211,6 +211,16 @@ describe('SettingsService', () => {
       expect(result.moduleRankIds).toEqual(Mocks.mod.defaults!.moduleRank!);
     });
 
+    // TODO 这个单元测试是复制的DSP的，需要改为符合终末地的情况
+    it('should handle ArknightsEndField module rank', () => {
+      spyOn(service, 'mod').and.returnValue(
+        spread(Mocks.mod, { game: Game.ArknightsEndfield }),
+      );
+      const result = service.defaults();
+      assert(result != null);
+      expect(result.moduleRankIds).toEqual(Mocks.mod.defaults!.moduleRank!);
+    });
+
     it('should handle Satisfactory module rank', () => {
       spyOn(service, 'mod').and.returnValue(
         spread(Mocks.mod, { game: Game.Satisfactory }),

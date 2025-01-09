@@ -10,6 +10,12 @@ export interface GameInfo {
 
 /** Game information data, nonconfigurable */
 export const gameInfo: Record<Game, GameInfo> = {
+  [Game.ArknightsEndfield]: {
+    icon: 'ark-endfield',
+    route: '/aef',
+    label: 'options.game.arknightsEndfield',
+    modId: 'aef',
+  },
   [Game.Factorio]: {
     icon: 'factorio',
     route: '/spa',

@@ -37,6 +37,7 @@
       "perHourSuffix": "/h"
     },
     "game": {
+      "arknightsEndfield": "Arknights: Endfield",
       "factorio": "Factorio",
       "factorio2": "Factorio 2.0",
       "dysonSphereProgram": "Dyson Sphere Program",
@@ -108,7 +109,7 @@
       "machine": "Machine",
       "recipes": "Recipes"
     },
-    "theme": { "light": "Light", "dark": "Dark (Default)", "black": "Black" },
+    "theme": { "light": "Light (Default)", "dark": "Dark", "black": "Black" },
     "flowDiagram": { "sankey": "Sankey", "boxLine": "Box-line" },
     "linkValue": {
       "none": "None",

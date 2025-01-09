@@ -370,6 +370,7 @@ export class SettingsService extends Store<SettingsState> {
         }
         break;
       }
+      case Game.ArknightsEndfield: // TODO 这个预设处理是复制的dsp的，需要改为符合终末地的情况
       case Game.DysonSphereProgram: {
         moduleRank = preset === Preset.Beacon8 ? m.moduleRank : undefined;
         break;

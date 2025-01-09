@@ -1,23 +1,21 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { effect, inject, Injectable } from "@angular/core";
 
-import { spread } from '~/helpers';
-import { FlowDiagram } from '~/models/enum/flow-diagram';
-import { Language } from '~/models/enum/language';
-import { LinkValue } from '~/models/enum/link-value';
-import { PowerUnit } from '~/models/enum/power-unit';
-import { SankeyAlign } from '~/models/enum/sankey-align';
-import { Theme } from '~/models/enum/theme';
-import {
-  ColumnsState,
-  initialColumnsState,
-} from '~/models/settings/column-settings';
-import { FlowSettings } from '~/models/settings/flow-settings';
-import { storedSignal, storeValue } from '~/models/stored-signal';
-import { Entities } from '~/models/utils';
+import { spread } from "~/helpers";
+import { FlowDiagram } from "~/models/enum/flow-diagram";
+import { Language } from "~/models/enum/language";
+import { LinkValue } from "~/models/enum/link-value";
+import { PowerUnit } from "~/models/enum/power-unit";
+import { SankeyAlign } from "~/models/enum/sankey-align";
+import { Theme } from "~/models/enum/theme";
+import { ColumnsState, initialColumnsState } from "~/models/settings/column-settings";
+import { FlowSettings } from "~/models/settings/flow-settings";
+import { storedSignal, storeValue } from "~/models/stored-signal";
+import { Entities } from "~/models/utils";
 
-import { AnalyticsService } from '../services/analytics.service';
-import { TranslateService } from '../services/translate.service';
-import { Store } from './store';
+import { AnalyticsService } from "../services/analytics.service";
+import { TranslateService } from "../services/translate.service";
+import { Store } from "./store";
+import { environment } from "../../environments";
 
 export interface PreferencesState {
   states: Record<string, Entities>;
@@ -40,7 +38,7 @@ export const initialPreferencesState: PreferencesState = {
   columns: initialColumnsState,
   language: Language.English,
   powerUnit: PowerUnit.Auto,
-  theme: Theme.Dark,
+  theme: Theme.Light,
   bypassLanding: false,
   showTechLabels: false,
   hideDuplicateIcons: false,
@@ -56,6 +54,10 @@ export const initialPreferencesState: PreferencesState = {
     hideExcluded: false,
   },
 };
+// istanbul ignore if: Don't test use Chinese as default language
+if (environment.production) {
+  initialPreferencesState.language = Language.Chinese;
+}
 
 @Injectable({
   providedIn: 'root',

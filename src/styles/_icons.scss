@@ -90,6 +90,10 @@
   }
 }
 
+.ark-endfield::before {
+  background-position: 0 -256px;
+}
+
 .captain-of-industry::before {
   background-position: -64px 0;
 }

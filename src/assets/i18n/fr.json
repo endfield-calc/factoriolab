@@ -46,6 +46,7 @@
       }
     },
     "game": {
+      "arknightsEndfield": "Arknights: Endfield",
       "factorio": "Factorio",
       "factorio2": "Factorio 2.0",
       "dysonSphereProgram": "Dyson Sphere Program",
@@ -89,9 +90,9 @@
       "recipes": "Recettes"
     },
     "theme": {
-      "system": "Système",
       "light": "Clair",
-      "dark": "Sombre"
+      "dark": "Sombre",
+      "black": "Noir"
     },
     "maximizeType": {
       "weight": "Poid",

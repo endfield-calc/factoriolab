@@ -38,6 +38,7 @@
       "perHourSuffix": "/h"
     },
     "game": {
+      "arknightsEndfield": "Arknights: Endfield",
       "factorio": "Factorio",
       "dysonSphereProgram": "Dyson Sphere Program",
       "satisfactory": "Satisfactory",
@@ -99,8 +100,8 @@
       "recipes": "Rezepte"
     },
     "theme": {
-      "light": "Hell",
-      "dark": "Dunkel (Standard)",
+      "light": "Hell (Standard)",
+      "dark": "Dunkel",
       "black": "Schwarz"
     }
   },

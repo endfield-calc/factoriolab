@@ -21,6 +21,7 @@
     }
   ],
   "shortcuts": [
+    { "name": "ArknightsEndfield", "url": "aef" },
     { "name": "Factorio", "url": "1.1" },
     { "name": "Dyson Sphere Program", "url": "dsp" },
     { "name": "Satisfactory", "url": "sfy" },

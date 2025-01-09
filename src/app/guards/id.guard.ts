@@ -12,6 +12,8 @@ import { DEFAULT_MOD } from '~/models/constants';
 import { MigrationService } from '~/services/migration.service';
 import { RouterService } from '~/services/router.service';
 
+import { environment } from "../../environments";
+
 export const canActivateId: CanActivateFn = (
   route: ActivatedRouteSnapshot,
   _: RouterStateSnapshot,
@@ -20,6 +22,12 @@ export const canActivateId: CanActivateFn = (
   const migrationSvc = inject(MigrationService);
   const routerSvc = inject(RouterService);
   const id = route.params['id'] as string | undefined;
+
+  // istanbul ignore if: Don't test only allow aef
+  if (environment.production) {
+    if (id === 'aef') return true;
+    return router.createUrlTree(['aef']);
+  }
 
   // Migrate old states
   switch (id) {

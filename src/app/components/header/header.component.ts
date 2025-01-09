@@ -84,18 +84,18 @@ export class HeaderComponent {
     {
       label: 'header.source',
       icon: 'fa-brands fa-github',
-      href: 'https://github.com/factoriolab/factoriolab',
+      href: 'https://github.com/Yun-Shan/factoriolab',
     },
-    {
-      label: 'header.discord',
-      icon: 'fa-brands fa-discord',
-      href: 'https://discord.gg/N4FKV687x2',
-    },
-    {
-      label: 'header.support',
-      icon: 'fa-solid fa-mug-hot',
-      href: 'https://ko-fi.com/dcbroad3',
-    },
+    // {
+    //   label: 'header.discord',
+    //   icon: 'fa-brands fa-discord',
+    //   href: 'https://discord.gg/N4FKV687x2',
+    // },
+    // {
+    //   label: 'header.support',
+    //   icon: 'fa-solid fa-mug-hot',
+    //   href: 'https://ko-fi.com/dcbroad3',
+    // },
   ];
 
   constructor() {

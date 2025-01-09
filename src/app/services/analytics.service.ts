@@ -15,7 +15,7 @@ declare const gtag: (type: string, name: string, data: EventData) => void;
 export class AnalyticsService {
   event(name: string, category: string): void {
     // istanbul ignore if: Don't test calling google analytics function
-    if (environment.production)
+    if (environment.gtag)
       gtag('event', name, { event_category: category });
   }
 }

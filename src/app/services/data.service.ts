@@ -51,7 +51,7 @@ export class DataService {
     effect(() => {
       const modId = this.settingsSvc.modId();
       const lang = this.preferencesSvc.language();
-      if (modId == null || lang === Language.English) return;
+      if (modId == null) return;
       this.requestI18n(modId, lang).subscribe();
     });
   }

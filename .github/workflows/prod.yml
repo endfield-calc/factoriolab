@@ -31,6 +31,8 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         if: env.DEPLOY == 'true'
         with:
-          branch: gh-pages
+          token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
+          repository-name: endfield-calc/endfield-calc.github.io
+          branch: master
           folder: dist/browser
           clean: true

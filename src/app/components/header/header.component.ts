@@ -84,7 +84,7 @@ export class HeaderComponent {
     {
       label: 'header.source',
       icon: 'fa-brands fa-github',
-      href: 'https://github.com/Yun-Shan/factoriolab/tree/ark-endfield',
+      href: 'https://github.com/endfield-calc/factoriolab/tree/ark-endfield',
     },
     // {
     //   label: 'header.discord',

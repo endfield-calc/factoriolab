@@ -8,9 +8,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Yun-Shan/factoriolab.git"
+    "url": "https://github.com/endfield-calc/factoriolab.git"
   },
-  "homepage": "https://yun-shan.github.io/factoriolab",
+  "homepage": "https://endfield-calc.github.io/factoriolab",
   "license": "MIT",
   "scripts": {
     "ng": "ng",

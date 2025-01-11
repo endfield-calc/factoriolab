@@ -5,10 +5,10 @@
 - [分类](#分类)
 - [图标](#图标)
 - [物品信息](#物品信息)
-    - [machine参数](#machine参数)
-    - [module参数](#module参数)
-    - [fuel参数](#fuel参数)
-    - [technology参数](#technology参数)
+  - [machine参数](#machine参数)
+  - [module参数](#module参数)
+  - [fuel参数](#fuel参数)
+  - [technology参数](#technology参数)
 - [配方信息](#配方信息)
 - [地点](#地点)
 - [限制](#限制)
@@ -44,24 +44,24 @@
 
 ## 物品信息
 
-| 字段         | 类型                  | 描述                                                 |
-|------------|---------------------|----------------------------------------------------|
-| id         | string              |                                                    |
-| name       | string              | 支持i18n                                             |
-| category   | string              | 物品分类                                               |
-| row        | number              | 在同一个分类中显示在第几行，通过良好的定义可以让用户选择物品时更方便快捷               |
-| stack      | number \| undefined | 该物品的最大堆叠数量，不填则视为流体，并且会影响货车运输的计算                    |
-| beacon     | object              | 目前是只有Factorio(异星工厂)存在的一个设定，该物品为插件分享塔，可以为范围内的机器提供加成 |
-| belt       | {speed: number}     | 该物品为传送带，speed为每秒运输多少个物品                            |
-| pipe       | {speed: number}     | 该物品为流体管道，speed为每秒运输多少单位流体                          |
-| machine    | object              | 该物品为机器，拥有机器相关参数                                    |
-| module     | object              | 该物品为插件，可以对机器产生特殊效果(例如增减效率、增减耗能等)                   |
-| fuel       | object              | 该物品为燃料，拥有燃料相关参数                                    |
-| cargoWagon | {size: number}      | 该物品为物品专用货车(厢)，size为车厢大小                            |
-| fluidWagon | {capacity: number}  | 该物品为流体专用货车(厢)，capacity为车厢容量                        |
-| technology | object              | 该物品为研究科技(而非真正意义上的物品)，拥有科技相关参数                      |
-| icon       | string \| undefined | 图标，大小固定为64x64                                      |
-| iconText   | string \| undefined | 图标说明，用于在图标无法显示时显示文字代替，一般不需要提供                      |
+| 字段         | 类型                              | 描述                                                 |
+|------------|---------------------------------|----------------------------------------------------|
+| id         | string                          |                                                    |
+| name       | string                          | 支持i18n                                             |
+| category   | string                          | 物品分类                                               |
+| row        | number                          | 在同一个分类中显示在第几行，通过良好的定义可以让用户选择物品时更方便快捷               |
+| stack      | number \| undefined             | 该物品的最大堆叠数量，不填则视为流体，并且会影响货车运输的计算                    |
+| beacon     | object \| undefined             | 目前是只有Factorio(异星工厂)存在的一个设定，该物品为插件分享塔，可以为范围内的机器提供加成 |
+| belt       | {speed: number} \| undefined    | 该物品为传送带，speed为每秒运输多少个物品                            |
+| pipe       | {speed: number} \| undefined    | 该物品为流体管道，speed为每秒运输多少单位流体                          |
+| machine    | object \| undefined             | 该物品为机器，拥有机器相关参数                                    |
+| module     | object \| undefined             | 该物品为插件，可以对机器产生特殊效果(例如增减效率、增减耗能等)                   |
+| fuel       | object \| undefined             | 该物品为燃料，拥有燃料相关参数                                    |
+| cargoWagon | {size: number} \| undefined     | 该物品为物品专用货车(厢)，size为车厢大小                            |
+| fluidWagon | {capacity: number} \| undefined | 该物品为流体专用货车(厢)，capacity为车厢容量                        |
+| technology | object \| undefined             | 该物品为研究科技(而非真正意义上的物品)，拥有科技相关参数                      |
+| icon       | string \| undefined             | 图标，大小固定为64x64                                      |
+| iconText   | string \| undefined             | 图标说明，用于在图标无法显示时显示文字代替，一般不需要提供                      |
 
 ### machine参数
 

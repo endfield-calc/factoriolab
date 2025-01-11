@@ -69,6 +69,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideServiceWorker('ngsw-worker.js', {
       enabled: environment.production,
+      scope: environment.baseHref,
       // Register the ServiceWorker as soon as the application is stable
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000',

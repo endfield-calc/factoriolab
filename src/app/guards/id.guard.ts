@@ -14,6 +14,8 @@ import { RouterService } from '~/services/router.service';
 
 import { environment } from '../../environments';
 
+const baseHref = environment.baseHref.replace('/', '');
+
 export const canActivateId: CanActivateFn = (
   route: ActivatedRouteSnapshot,
   _: RouterStateSnapshot,
@@ -25,7 +27,7 @@ export const canActivateId: CanActivateFn = (
 
   // istanbul ignore if: Don't test only allow aef
   if (environment.production) {
-    if (id === 'aef') return true;
+    if (id === 'aef' || id === baseHref) return true;
     return router.createUrlTree(['aef']);
   }
 

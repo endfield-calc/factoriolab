@@ -5,18 +5,25 @@
 - [分类](#分类)
 - [图标](#图标)
 - [物品信息](#物品信息)
-  - [machine参数](#machine参数)
-  - [module参数](#module参数)
-  - [fuel参数](#fuel参数)
-  - [technology参数](#technology参数)
+    - [machine参数](#machine参数)
+    - [module参数](#module参数)
+    - [fuel参数](#fuel参数)
+    - [technology参数](#technology参数)
 - [配方信息](#配方信息)
 - [地点](#地点)
 - [限制](#限制)
 
-
 ## 分类
 
-分类本质上是为了方便组织不同类型的物品，在该计算器中万物皆物品，但可以通过分类方便用户识别，分类的id和名称是可以任意指定的(例如：item、machine、tech、upgrade、order等)
+分类本质上是为了方便组织不同类型的物品，在该计算器中万物皆物品，但可以通过分类方便用户识别，分类的id和名称是可以任意指定的(
+例如：item、machine、tech、upgrade、order等)
+
+| 字段       | 类型                  | 描述                            |
+|----------|---------------------|-------------------------------|
+| id       | string              |                               |
+| name     | string              | 支持i18n                        |
+| icon     | string \| undefined | 图标，大小固定为64x64                 |
+| iconText | string \| undefined | 图标说明，用于在图标无法显示时显示文字代替，一般不需要提供 |
 
 ---
 
@@ -24,12 +31,14 @@
 
 各种物品、配方、地点都需要有对应的图标，图标大小固定为64x64
 
-| 字段          | 类型                   | 描述                                                        |
-|-------------|----------------------|-----------------------------------------------------------|
-| id          | string               | 图标id，用于其它项目引用(其它项目的id与图标id相同时可以自动匹配，需要使用不同id的图标才需要指定图标id) |
-| position    | string               | 图标坐标，满足正则/-?(\d+)px -?(\d+)px/                            |
-| color       | string               | 图标颜色，这一项可以使用`srcipts/calculate-color.ts`自动计算              |
-| invertLight | boolean \| undefined | 设为true可在浅色主题下自动反色，可用于主要由浅色构成的图标                           |
+其它项目的id与图标id相同时可以自动匹配，需要使用不同id的图标才需要指定图标id
+
+| 字段          | 类型                   | 描述                                           |
+|-------------|----------------------|----------------------------------------------|
+| id          | string               |                                              |
+| position    | string               | 图标坐标，满足正则/-?(\d+)px -?(\d+)px/               |
+| color       | string               | 图标颜色，这一项可以使用`srcipts/calculate-color.ts`自动计算 |
+| invertLight | boolean \| undefined | 设为true可在浅色主题下自动反色，可用于主要由浅色构成的图标              |
 
 ---
 

@@ -34,7 +34,9 @@
       "perMinute": "每分钟",
       "perMinuteSuffix": "/分",
       "perHour": "每小时",
-      "perHourSuffix": "/时"
+      "perHourSuffix": "/时",
+      "perDay": "每天",
+      "perDaySuffix": "/天"
     },
     "game": {
       "arknightsEndfield": "明日方舟：终末地",
@@ -79,14 +81,17 @@
       "itemsPerSecond": "物品/秒",
       "itemsPerMinute": "物品/分",
       "itemsPerHour": "物品/时",
+      "itemsPerDay": "物品/天",
       "belts": "传送带",
       "wagonsPerSecond": "车厢/秒",
       "wagonsPerMinute": "车厢/分",
       "wagonsPerHour": "车厢/时",
+      "wagonsPerDay": "车厢/天",
       "machines": "设备",
       "pollutionPerSecond": "污染/秒",
       "pollutionPerMinute": "污染/分",
-      "pollutionPerHour": "污染/时"
+      "pollutionPerHour": "污染/时",
+      "pollutionPerDay": "污染/天"
     },
     "researchBonus": {
       "speed0": "无科技研究速度加成",

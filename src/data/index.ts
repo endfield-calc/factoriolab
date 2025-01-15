@@ -1,13 +1,14 @@
 import { AppData } from '~/models/app-data';
+import { ARKNIGHTS_ENDFIELD_ID } from '~/models/constants';
 import { Game } from '~/models/enum/game';
 
 export const data: AppData = {
   mods: [
     {
-      id: 'aef',
+      id: ARKNIGHTS_ENDFIELD_ID,
       name: '明日方舟：终末地',
       game: Game.ArknightsEndfield,
-      flags: 'aef',
+      flags: ARKNIGHTS_ENDFIELD_ID,
     },
     { id: '1.1', name: '1.1', game: Game.Factorio, flags: '1.1' },
     { id: '1.0', name: '1.0', game: Game.Factorio, flags: '1.1' },
@@ -31,7 +32,7 @@ export const data: AppData = {
     'seablock',
     'space-exploration',
     'xander',
-    'aef',
+    ARKNIGHTS_ENDFIELD_ID,
   ],
   modHash: [
     '1.1',
@@ -85,6 +86,6 @@ export const data: AppData = {
     'ps2',
     '2.0',
     '2.0q',
-    'aef',
+    ARKNIGHTS_ENDFIELD_ID,
   ],
 };

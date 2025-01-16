@@ -2,4 +2,3 @@ version: '1'
 rules:
   - base: main
     upstream: factoriolab:main
-    mergeMethod: rebase

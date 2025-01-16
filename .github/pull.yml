@@ -1,4 +1,6 @@
 version: '1'
 rules:
-  - base: main
+  - base: upstream
     upstream: factoriolab:main
+    mergeMethod: rebase
+    reviewers: [Yun-Shan]

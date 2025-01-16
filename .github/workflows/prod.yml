@@ -25,6 +25,7 @@ jobs:
       - name: Semantic release
         run: npx semantic-release
         env:
+          CI_EVENT: ${{ github.event_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to GitHub Pages

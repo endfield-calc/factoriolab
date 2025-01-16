@@ -8,7 +8,7 @@ import {
 import { from, map, switchMap } from 'rxjs';
 
 import { coalesce } from '~/helpers';
-import { DEFAULT_MOD } from '~/models/constants';
+import { ARKNIGHTS_ENDFIELD_ID, DEFAULT_MOD } from '~/models/constants';
 import { MigrationService } from '~/services/migration.service';
 import { RouterService } from '~/services/router.service';
 
@@ -25,10 +25,10 @@ export const canActivateId: CanActivateFn = (
   const routerSvc = inject(RouterService);
   const id = route.params['id'] as string | undefined;
 
-  // istanbul ignore if: Don't test only allow aef
+  // istanbul ignore if: Don't test only allow Arknights: Endfield
   if (environment.production) {
-    if (id === 'aef' || id === baseHref) return true;
-    return router.createUrlTree(['aef']);
+    if (id === ARKNIGHTS_ENDFIELD_ID || id === baseHref) return true;
+    return router.createUrlTree([ARKNIGHTS_ENDFIELD_ID]);
   }
 
   // Migrate old states

@@ -1,7 +1,7 @@
 {
   "name": "FactorioLab",
   "short_name": "FactorioLab",
-  "description": "A feature-rich factory production calculator for Factorio and other factory games. Determine resource and machine requirements for your desired objectives.",
+  "description": "A feature-rich factory production calculator for ArknightsEndfield. Determine resource and machine requirements for your desired objectives.",
   "id": "/",
   "start_url": "/",
   "theme_color": "#009fce",
@@ -20,13 +20,5 @@
       "type": "image/png"
     }
   ],
-  "shortcuts": [
-    { "name": "ArknightsEndfield", "url": "aef" },
-    { "name": "Factorio", "url": "1.1" },
-    { "name": "Dyson Sphere Program", "url": "dsp" },
-    { "name": "Satisfactory", "url": "sfy" },
-    { "name": "Captain of Industry", "url": "coi" },
-    { "name": "Techtonica", "url": "tta" },
-    { "name": "Final Factory", "url": "ffy" }
-  ]
+  "shortcuts": []
 }

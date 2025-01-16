@@ -1,3 +1,5 @@
+> 温馨提示：想要clone项目的请使用git的浅克隆功能，因为该项目的完整历史超过2G，且下载历史提交意义不大。现代IDE一般都提供了相关的勾选框可以直接设为浅克隆，如果使用命令行的话只需增加`--depth n`参数(n为想要下载的commit数量，一般用1就行)。
+
 # FactorioLab
 
 [![prod](https://github.com/factoriolab/factoriolab/actions/workflows/prod.yml/badge.svg)](https://github.com/factoriolab/factoriolab/actions/workflows/prod.yml) [![tests](https://github.com/factoriolab/factoriolab/actions/workflows/tests.yml/badge.svg)](https://github.com/factoriolab/factoriolab/actions/workflows/tests.yml)

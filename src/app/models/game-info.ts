@@ -1,3 +1,5 @@
+import { ARKNIGHTS_ENDFIELD_ID } from '~/models/constants';
+
 import { Game } from './enum/game';
 
 /** Game information, nonconfigurable */
@@ -12,9 +14,9 @@ export interface GameInfo {
 export const gameInfo: Record<Game, GameInfo> = {
   [Game.ArknightsEndfield]: {
     icon: 'ark-endfield',
-    route: '/aef',
+    route: `/${ARKNIGHTS_ENDFIELD_ID}`,
     label: 'options.game.arknightsEndfield',
-    modId: 'aef',
+    modId: ARKNIGHTS_ENDFIELD_ID,
   },
   [Game.Factorio]: {
     icon: 'factorio',

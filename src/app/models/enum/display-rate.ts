@@ -6,12 +6,14 @@ export enum DisplayRate {
   PerSecond = 0,
   PerMinute = 1,
   PerHour = 2,
+  PerDay = 3,
 }
 
 export const displayRateOptions: SelectItem<DisplayRate>[] = [
   { value: DisplayRate.PerSecond, label: 'options.displayRate.perSecond' },
   { value: DisplayRate.PerMinute, label: 'options.displayRate.perMinute' },
   { value: DisplayRate.PerHour, label: 'options.displayRate.perHour' },
+  { value: DisplayRate.PerDay, label: 'options.displayRate.perDay' },
 ];
 
 export interface DisplayRateInfo {
@@ -47,5 +49,13 @@ export const displayRateInfo: Record<DisplayRate, DisplayRateInfo> = {
     wagonsLabel: 'options.objectiveUnit.wagonsPerHour',
     pollutionLabel: 'options.objectiveUnit.pollutionPerHour',
     value: rational(3600n),
+  },
+  [DisplayRate.PerDay]: {
+    option: DisplayRate.PerDay,
+    suffix: 'options.displayRate.perDaySuffix',
+    itemsLabel: 'options.objectiveUnit.itemsPerDay',
+    wagonsLabel: 'options.objectiveUnit.wagonsPerDay',
+    pollutionLabel: 'options.objectiveUnit.pollutionPerDay',
+    value: rational(86400n),
   },
 };

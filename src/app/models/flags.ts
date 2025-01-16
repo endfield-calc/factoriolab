@@ -1,3 +1,5 @@
+import { ARKNIGHTS_ENDFIELD_ID } from '~/models/constants';
+
 export type Flag =
   | 'beacons'
   | 'beltStack'
@@ -30,7 +32,7 @@ export type Flag =
   | 'wagons';
 
 export type FlagSet =
-  | 'aef'
+  | typeof ARKNIGHTS_ENDFIELD_ID
   | 'spa'
   | '2.0'
   | '2.0q'
@@ -137,11 +139,10 @@ export const flags: Record<FlagSet, Set<Flag>> = {
     'power',
     'proliferator',
   ]),
-  aef: new Set([
+  [ARKNIGHTS_ENDFIELD_ID]: new Set([
     // TODO 这个flags集是复制的dsp的，需要改为符合终末地的情况
     'beltStack',
     'fuels',
-    'inactiveDrain',
     'miningSpeed',
     'power',
     'proliferator',

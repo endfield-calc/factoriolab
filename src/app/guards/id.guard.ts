@@ -14,6 +14,8 @@ import { RouterService } from '~/services/router.service';
 
 import { environment } from '../../environments';
 
+const baseHref = environment.baseHref.replace('/', '');
+
 export const canActivateId: CanActivateFn = (
   route: ActivatedRouteSnapshot,
   _: RouterStateSnapshot,
@@ -25,7 +27,7 @@ export const canActivateId: CanActivateFn = (
 
   // istanbul ignore if: Don't test only allow Arknights: Endfield
   if (environment.production) {
-    if (id === ARKNIGHTS_ENDFIELD_ID) return true;
+    if (id === ARKNIGHTS_ENDFIELD_ID || id === baseHref) return true;
     return router.createUrlTree([ARKNIGHTS_ENDFIELD_ID]);
   }
 

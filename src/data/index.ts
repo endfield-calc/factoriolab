@@ -81,6 +81,7 @@ export const data: AppData = {
     'tta',
     'utc',
     'ffy',
+    'fay',
     'lls',
     'ulc',
     'ps2',

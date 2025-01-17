@@ -141,12 +141,9 @@ export const flags: Record<FlagSet, Set<Flag>> = {
     'proliferator',
   ]),
   [ARKNIGHTS_ENDFIELD_ID]: new Set([
-    // TODO 这个flags集是复制的dsp的，需要改为符合终末地的情况
-    'beltStack',
-    'fuels',
-    'miningSpeed',
+    'consumptionAsDrain',
     'power',
-    'proliferator',
+    'resourcePurity',
   ]),
   sfy: new Set([
     'consumptionAsDrain',

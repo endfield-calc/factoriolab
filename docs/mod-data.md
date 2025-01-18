@@ -132,7 +132,7 @@
 | part              | string \| undefined                  | 指定火箭部件的配方ID，目前只在异星工厂用到                                                                              |
 | usage             | number \| undefined                  | 配方专属能量需求，会覆盖机器的能量需求                                                                                 |
 | disallowedEffects | string[] \| undefined                | 禁止影响的属性，可指定部分属性不会被插件影响(例如固定产量)                                                                      |
-| locations         | string[] \| undefined                | 限制该机器可用区域，不提供则无限制                                                                                   |
+| locations         | string[] \| undefined                | 限制该配方可用区域，不提供则无限制                                                                                   |
 | flags             | string[] \| undefined                | 配方flag，参考[recipe-flags.md](recipe-flags.md)                                                         |
 | icon              | string \| undefined                  | 图标，大小固定为64x64                                                                                       |
 | iconText          | string \| undefined                  | 图标说明，用于在图标无法显示时显示文字代替，一般不需要提供                                                                       |

@@ -370,7 +370,10 @@ export class SettingsService extends Store<SettingsState> {
         }
         break;
       }
-      case Game.ArknightsEndfield: // TODO 这个预设处理是复制的dsp的，需要改为符合终末地的情况
+      case Game.ArknightsEndfield: {
+        moduleRank = m.moduleRank;
+        break;
+      }
       case Game.DysonSphereProgram: {
         moduleRank = preset === Preset.Beacon8 ? m.moduleRank : undefined;
         break;
@@ -399,6 +402,7 @@ export class SettingsService extends Store<SettingsState> {
       moduleRankIds: coalesce(moduleRank, []),
       beacons,
       overclock,
+      locations: m.locations,
     };
   }
 
@@ -797,7 +801,9 @@ export class SettingsService extends Store<SettingsState> {
 
     const locIds = state.locationIds;
     const allLocationIds = Object.keys(data.locationEntities);
-    let locationIds = new Set(allLocationIds);
+    const defaultLocationIds = coalesce(defaults?.locations, allLocationIds);
+    let locationIds = new Set(defaultLocationIds);
+    console.log(locIds);
     if (locIds != null && allLocationIds.length > 0) locationIds = locIds;
 
     let quality = Quality.Normal;
@@ -939,7 +945,7 @@ export class SettingsService extends Store<SettingsState> {
       overclock: state.overclock ?? defaults?.overclock,
       researchedTechnologyIds,
       locationIds,
-      defaultLocationIds: new Set(data.locationIds),
+      defaultLocationIds: new Set(defaultLocationIds),
       availableRecipeIds,
       availableItemIds,
       quality,

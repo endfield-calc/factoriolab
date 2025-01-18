@@ -12,4 +12,5 @@ export interface DefaultsJson {
   maxMachineRank?: string[];
   moduleRank?: string[];
   beaconModule?: string;
+  locations?: string[];
 }

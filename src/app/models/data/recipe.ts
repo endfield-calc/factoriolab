@@ -13,7 +13,8 @@ export type RecipeFlag =
   | 'recycling'
   | 'locked'
   | 'hideProducer'
-  | 'canProdUpgrade';
+  | 'canProdUpgrade'
+  | 'forceShowLabel';
 
 export interface RecipeJson {
   id: string;

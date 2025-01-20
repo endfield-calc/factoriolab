@@ -6,6 +6,7 @@ import {
   inject,
   input,
   Output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -85,6 +86,8 @@ export class PickerComponent extends DialogComponent {
   allCategoryRows: Entities<string[][]> = {};
   activeIndex = 0;
   qualityOptions = qualityFilterOptions;
+
+  showLabels = signal(false);
 
   clickOpen(
     type: 'item' | 'recipe',
@@ -268,5 +271,25 @@ export class PickerComponent extends DialogComponent {
     setTimeout(() => {
       this.ref.markForCheck();
     });
+  }
+
+  getLabel(id: string, type: string): string {
+    switch (type) {
+      case 'item': {
+        if (!this.showLabels()) return '';
+        return coalesce(this.data().itemEntities[id]?.name, '');
+      }
+      case 'recipe': {
+        const recipe = this.data().recipeEntities[id];
+        if (
+          !recipe ||
+          !(this.showLabels() || recipe.flags.has('forceShowLabel'))
+        )
+          return '';
+        return recipe.name;
+      }
+      default:
+        return '';
+    }
   }
 }

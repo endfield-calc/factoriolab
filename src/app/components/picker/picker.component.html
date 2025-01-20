@@ -50,6 +50,15 @@
         </ng-template>
       </p-dropdown>
     }
+    <span class="p-inputgroup-addon flex-shrink-0">
+      <p-checkbox
+        [binary]="true"
+        [label]="'techPicker.showLabels' | translate"
+        [ngModel]="showLabels()"
+        (onChange)="showLabels.set($event.checked)"
+        labelStyleClass="text-nowrap"
+      ></p-checkbox>
+    </span>
     @if (isMultiselect) {
       <span class="p-inputgroup-addon flex-shrink-0">
         <p-checkbox
@@ -110,6 +119,7 @@
                       [class.p-button-text]="id !== selection"
                       [class.hover-action]="isMultiselect"
                       [class.hover-active]="selection?.includes(id)"
+                      [label]="getLabel(id, type)"
                       [icon]="id | iconSmClass: type"
                       [pTooltip]="tooltip"
                       tooltipPosition="bottom"

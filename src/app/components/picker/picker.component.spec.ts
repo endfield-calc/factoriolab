@@ -167,4 +167,50 @@ describe('PickerComponent', () => {
       expect(component.categoryIds.length).toEqual(0);
     });
   });
+
+  describe('getLabel', () => {
+    beforeEach(() => {
+      component.clickOpen('item', Mocks.adjustedDataset.itemIds);
+    });
+
+    it('should not show label for item', () => {
+      const ret = component.getLabel(ItemId.IronPlate, 'item');
+      expect(ret).toEqual('');
+    });
+
+    it('should show label for item if set showLabels', () => {
+      component.showLabels.set(true);
+      const ret = component.getLabel(ItemId.IronPlate, 'item');
+      expect(ret).toEqual(Mocks.dataset.itemEntities[ItemId.IronPlate].name);
+    });
+
+    it('should not show label for recipe', () => {
+      const ret = component.getLabel(RecipeId.IronPlate, 'recipe');
+      expect(ret).toEqual('');
+    });
+
+    it('should show label for recipe if set showLabels', () => {
+      component.showLabels.set(true);
+      const ret = component.getLabel(RecipeId.IronPlate, 'recipe');
+      expect(ret).toEqual(
+        Mocks.dataset.recipeEntities[RecipeId.IronPlate].name,
+      );
+    });
+
+    it('should show label for recipe forceShowLabel', () => {
+      const recipe = component.data().recipeEntities[RecipeId.IronPlate];
+      recipe.flags.add('forceShowLabel');
+      const ret = component.getLabel(RecipeId.IronPlate, 'recipe');
+      expect(ret).toEqual(
+        Mocks.dataset.recipeEntities[RecipeId.IronPlate].name,
+      );
+      recipe.flags.delete('forceShowLabel');
+    });
+
+    it('should not show label for unknown type', () => {
+      component.showLabels.set(true);
+      const ret = component.getLabel(RecipeId.IronPlate, 'unknown');
+      expect(ret).toEqual('');
+    });
+  });
 });

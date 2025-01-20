@@ -57,9 +57,9 @@ import { CostSettings } from '~/models/settings/cost-settings';
 import { ModuleSettings } from '~/models/settings/module-settings';
 import { Settings } from '~/models/settings/settings';
 import { Entities, Optional } from '~/models/utils';
+import { AnalyticsService } from '~/services/analytics.service';
 import { RecipeService } from '~/services/recipe.service';
 
-import { AnalyticsService } from '../services/analytics.service';
 import { DatasetsService } from './datasets.service';
 import { PreferencesService } from './preferences.service';
 import { Store } from './store';
@@ -124,7 +124,7 @@ export const initialSettingsState: SettingsState = {
     footprint: rational.one,
     unproduceable: rational(1000000n),
     excluded: rational.zero,
-    surplus: rational.zero,
+    surplus: rational.one,
     maximize: rational(-1000000n),
     recycling: rational(1000n),
   },
@@ -170,7 +170,7 @@ export class SettingsService extends Store<SettingsState> {
   });
   game = computed(() => {
     const mod = this.mod();
-    return coalesce(mod?.game, Game.Factorio);
+    return coalesce(mod?.game, Game.ArknightsEndfield);
   });
 
   modStates = computed(() => {

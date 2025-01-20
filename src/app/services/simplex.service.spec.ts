@@ -194,7 +194,7 @@ describe('SimplexService', () => {
         maximizeType: MaximizeType.Ratio,
         requireMachinesOutput: false,
         costs: Mocks.costs,
-        hasSurplusCost: false,
+        hasSurplusCost: true,
       });
     });
   });

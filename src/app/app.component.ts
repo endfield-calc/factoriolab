@@ -46,7 +46,7 @@ export class AppComponent {
       console.log(versionStr(c.version));
       if (c.version) this.analyticsSvc.event('version', c.version);
     });
-    // istanbul ignore next: don't test swUpdate event emit
+    // istanbul ignore next: Don't test swUpdate event emit
     this.swUpdate.versionUpdates.subscribe((event) => {
       this.handleSwUpdateEvent(event);
     });

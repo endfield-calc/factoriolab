@@ -28,7 +28,8 @@
             [label]="'steps.columnSettings' | translate"
             (click)="columnsDlg.open(columnsState())"
           ></button>
-          @if (steps().length) {
+          <!--TODO 暂时禁用CSV导出，如果要启用的话需要适配成中文导出-->
+          @if (false && steps().length) {
             <button
               pButton
               pRipple

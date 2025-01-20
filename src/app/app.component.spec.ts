@@ -1,5 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ServiceWorkerModule } from '@angular/service-worker';
 
 import { AppComponent } from './app.component';
 import { TestModule } from './tests';
@@ -11,7 +12,11 @@ describe('AppComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestModule, AppComponent],
+      imports: [
+        TestModule,
+        AppComponent,
+        ServiceWorkerModule.register('ngsw-worker.js', { enabled: false }),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
@@ -43,6 +48,29 @@ describe('AppComponent', () => {
       expect(component.dataSvc.error$.next).toHaveBeenCalledWith(undefined);
       expect(component.router.navigate).toHaveBeenCalledWith(['/']);
       expect(component.reload).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleSwUpdateEvent', () => {
+    it('should show version toast', () => {
+      spyOn(component.contentSvc.showToast$, 'next');
+      component.handleSwUpdateEvent({
+        type: 'VERSION_DETECTED',
+        version: { hash: '' },
+      });
+      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(1);
+      component.handleSwUpdateEvent({
+        type: 'VERSION_READY',
+        currentVersion: { hash: '' },
+        latestVersion: { hash: '' },
+      });
+      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(2);
+      component.handleSwUpdateEvent({
+        type: 'VERSION_INSTALLATION_FAILED',
+        version: { hash: '' },
+        error: '',
+      });
+      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(3);
     });
   });
 });

@@ -803,7 +803,6 @@ export class SettingsService extends Store<SettingsState> {
     const allLocationIds = Object.keys(data.locationEntities);
     const defaultLocationIds = coalesce(defaults?.locations, allLocationIds);
     let locationIds = new Set(defaultLocationIds);
-    console.log(locIds);
     if (locIds != null && allLocationIds.length > 0) locationIds = locIds;
 
     let quality = Quality.Normal;

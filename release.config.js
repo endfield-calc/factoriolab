@@ -7,15 +7,7 @@ module.exports = {
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
-    [
-      '@semantic-release/github',
-      process.env.CI_EVENT === 'pull_request'
-        ? {}
-        : {
-            successCommentCondition: false,
-            failCommentCondition: false,
-          },
-    ],
+    '@semantic-release/github',
     // [
     //   'semantic-release-discord-bot',
     //   {

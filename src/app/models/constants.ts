@@ -1,9 +1,13 @@
+import { environment } from '../../environments';
 import { Entities } from './utils';
 
 export const APP = 'FactorioLab';
-export const DEFAULT_MOD = 'spa';
 
 export const ARKNIGHTS_ENDFIELD_ID = 'aef';
+export const DEFAULT_MOD = environment.production
+  ? // istanbul ignore next: Don't test default mod set to endfield for production
+    ARKNIGHTS_ENDFIELD_ID
+  : 'spa';
 
 export const MIN_LINK_VALUE = 1e-10;
 export const MIN_ZIP = 200;

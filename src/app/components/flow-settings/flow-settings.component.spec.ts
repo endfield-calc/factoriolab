@@ -28,7 +28,7 @@ describe('FlowSettingsComponent', () => {
     it('should determine whether the value matches the initial state', () => {
       component.reset();
       expect(component.modified).toBeFalse();
-      component.editValue.diagram = FlowDiagram.BoxLine;
+      component.editValue.diagram = FlowDiagram.Sankey;
       expect(component.modified).toBeTrue();
     });
   });

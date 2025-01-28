@@ -13,7 +13,15 @@
     "errorDetail": "The application has encountered an error:",
     "resetTooltip": "Click to reset",
     "simplexSolved": "Solved, {{ time }}ms, cost: {{ cost }}",
-    "migrationWarning": "Migration warning"
+    "migrationWarning": "Migration warning",
+    "swUpdate": {
+      "detectSummary": "New Version Detected",
+      "detectDetail": "Downloading new version, please wait...",
+      "readySummary": "Version Ready",
+      "readyDetail": "Please refresh page to use new version",
+      "installationFailSummary": "Version Installation Failed",
+      "installationFailDetail": "Reason: {{ error }}"
+    }
   },
   "options": {
     "column": {

@@ -50,7 +50,7 @@ export const initialPreferencesState: PreferencesState = {
   paused: false,
   convertObjectiveValues: false,
   flowSettings: {
-    diagram: FlowDiagram.Sankey,
+    diagram: FlowDiagram.BoxLine,
     linkSize: LinkValue.Items,
     linkText: LinkValue.Items,
     sankeyAlign: SankeyAlign.Justify,

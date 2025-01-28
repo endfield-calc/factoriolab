@@ -280,7 +280,13 @@ describe('RouterService', () => {
         items: mockItemsState,
         recipes: mockRecipesState,
         machines: {},
-        settings: mockSettingsState,
+        settings: {
+          ...mockSettingsState,
+          costs: {
+            ...mockSettingsState.costs,
+            surplus: rational.one,
+          },
+        },
         data: Mocks.dataset,
         hash: Mocks.modHash,
       });

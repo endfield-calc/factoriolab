@@ -13,7 +13,15 @@
     "errorDetail": "此应用遇到了一个错误：",
     "resetTooltip": "点击重置",
     "simplexSolved": "计算完成, {{ time }}毫秒, 耗费: {{ cost }}",
-    "migrationWarning": "迁移警告"
+    "migrationWarning": "迁移警告",
+    "swUpdate": {
+      "detectSummary": "检测到新版本",
+      "detectDetail": "正在下载新版本，请稍候...",
+      "readySummary": "新版本已就绪",
+      "readyDetail": "请刷新网页来切换到新版本",
+      "installationFailSummary": "新版本安装失败",
+      "installationFailDetail": "失败原因：{{ error }}"
+    }
   },
   "options": {
     "column": {
@@ -490,7 +498,7 @@
     "technology": "科技",
     "prerequisites": "前置需求",
     "recipeSettings": "配方设置",
-    "cost": "消耗",
+    "cost": "成本",
     "locations": "地点"
   },
   "beaconsOverlay": {

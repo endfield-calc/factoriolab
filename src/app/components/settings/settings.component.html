@@ -975,52 +975,59 @@
               </div>
             </div>
           }
-          <div class="mt-3 pb-3">
-            <div class="p-float-label">
-              <p-dropdown
-                labDropdownBase
-                inputId="default-transport-belt"
-                [pTooltip]="'settings.defaultTransportBeltTooltip' | translate"
-                [ngModel]="settings().beltId"
-                [options]="options().belts"
-                (onChange)="
-                  settingsSvc.updateField(
-                    'beltId',
-                    $event.value,
-                    settings().defaultBeltId
-                  )
-                "
-              >
-                <ng-template pTemplate="selectedItem" let-item>
-                  @if (item) {
-                    <div class="d-flex align-items-center h-100">
+          @if (options().belts.length > 1) {
+            <div class="mt-3 pb-3">
+              <div class="p-float-label">
+                <p-dropdown
+                  labDropdownBase
+                  inputId="default-transport-belt"
+                  [pTooltip]="
+                    'settings.defaultTransportBeltTooltip' | translate
+                  "
+                  [ngModel]="settings().beltId"
+                  [options]="options().belts"
+                  (onChange)="
+                    settingsSvc.updateField(
+                      'beltId',
+                      $event.value,
+                      settings().defaultBeltId
+                    )
+                  "
+                >
+                  <ng-template pTemplate="selectedItem" let-item>
+                    @if (item) {
+                      <div class="d-flex align-items-center h-100">
+                        <i [class]="item.value | iconSmClass"></i>
+                        <div class="ms-3 text-truncate">
+                          {{ item.label }}
+                        </div>
+                      </div>
+                    }
+                  </ng-template>
+                  <ng-template pTemplate="item" let-item>
+                    <div
+                      class="d-flex align-items-center py-2 w-100 h-100"
+                      [pTooltip]="tooltip"
+                    >
                       <i [class]="item.value | iconSmClass"></i>
                       <div class="ms-3 text-truncate">
                         {{ item.label }}
                       </div>
+                      <ng-template #tooltip>
+                        <lab-tooltip
+                          [id]="item.value"
+                          type="belt"
+                        ></lab-tooltip>
+                      </ng-template>
                     </div>
-                  }
-                </ng-template>
-                <ng-template pTemplate="item" let-item>
-                  <div
-                    class="d-flex align-items-center py-2 w-100 h-100"
-                    [pTooltip]="tooltip"
-                  >
-                    <i [class]="item.value | iconSmClass"></i>
-                    <div class="ms-3 text-truncate">
-                      {{ item.label }}
-                    </div>
-                    <ng-template #tooltip>
-                      <lab-tooltip [id]="item.value" type="belt"></lab-tooltip>
-                    </ng-template>
-                  </div>
-                </ng-template>
-              </p-dropdown>
-              <label for="default-transport-belt">{{
-                'settings.defaultTransportBelt' | translate
-              }}</label>
+                  </ng-template>
+                </p-dropdown>
+                <label for="default-transport-belt">{{
+                  'settings.defaultTransportBelt' | translate
+                }}</label>
+              </div>
             </div>
-          </div>
+          }
           @if (data().flags.has('beltStack')) {
             <div class="pb-3">
               <label class="p-static-label" for="stack">{{

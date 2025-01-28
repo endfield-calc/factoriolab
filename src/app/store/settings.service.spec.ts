@@ -215,9 +215,20 @@ describe('SettingsService', () => {
       spyOn(service, 'mod').and.returnValue(
         spread(Mocks.mod, { game: Game.ArknightsEndfield }),
       );
+      spyOn(service, 'preset').and.returnValue(Preset.Minimum);
       const result = service.defaults();
       assert(result != null);
-      expect(result.moduleRankIds).toEqual(Mocks.defaults.moduleRankIds);
+      expect(result.moduleRankIds).toEqual([Mocks.defaults.moduleRankIds[0]]);
+    });
+
+    it('should handle ArknightsEndField module rank', () => {
+      spyOn(service, 'mod').and.returnValue(
+        spread(Mocks.mod, { game: Game.ArknightsEndfield }),
+      );
+      spyOn(service, 'preset').and.returnValue(Preset.Modules);
+      const result = service.defaults();
+      assert(result != null);
+      expect(result.moduleRankIds).toEqual([Mocks.defaults.moduleRankIds[1]]);
     });
 
     it('should handle Satisfactory module rank', () => {

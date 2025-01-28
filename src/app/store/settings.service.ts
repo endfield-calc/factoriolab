@@ -371,7 +371,11 @@ export class SettingsService extends Store<SettingsState> {
         break;
       }
       case Game.ArknightsEndfield: {
-        moduleRank = m.moduleRank;
+        // TODO defaults改成可以按preset定义所有值的吧
+        if (m.moduleRank) {
+          moduleRank =
+            preset === Preset.Modules ? [m.moduleRank[1]] : [m.moduleRank[0]];
+        }
         break;
       }
       case Game.DysonSphereProgram: {

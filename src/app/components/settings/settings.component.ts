@@ -221,9 +221,10 @@ export class SettingsComponent {
           message,
           acceptLabel,
           rejectLabel,
-          accept: () => {
+          accept: async () => {
             localStorage.clear();
-            void this.router.navigate([this.modId()]);
+            await this.router.navigate([this.modId()]);
+            this.contentSvc.reload();
           },
         });
       });

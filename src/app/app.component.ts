@@ -1,12 +1,11 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, inject, NgZone } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterOutlet } from '@angular/router';
-import { SwUpdate, VersionEvent } from '@angular/service-worker';
+import { SwUpdate } from '@angular/service-worker';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { first } from 'rxjs';
-
-import { TranslateService } from '~/services/translate.service';
+import { filter, first, switchMap } from 'rxjs';
 
 import { ContentComponent } from './components/content/content.component';
 import { versionStr } from './helpers';
@@ -15,6 +14,7 @@ import { AnalyticsService } from './services/analytics.service';
 import { ContentService } from './services/content.service';
 import { DataService } from './services/data.service';
 import { ThemeService } from './services/theme.service';
+import { TranslateService } from './services/translate.service';
 import { SettingsService } from './store/settings.service';
 
 @Component({
@@ -31,73 +31,81 @@ import { SettingsService } from './store/settings.service';
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  ngZone = inject(NgZone);
   router = inject(Router);
+  swUpdate = inject(SwUpdate);
   analyticsSvc = inject(AnalyticsService);
   contentSvc = inject(ContentService);
   dataSvc = inject(DataService);
   settingsSvc = inject(SettingsService);
   themeSvc = inject(ThemeService);
   translateSvc = inject(TranslateService);
-  swUpdate = inject(SwUpdate);
+
+  versionUpdateVisible = false;
 
   constructor() {
     this.dataSvc.config$.pipe(first()).subscribe((c) => {
       console.log(versionStr(c.version));
       if (c.version) this.analyticsSvc.event('version', c.version);
     });
-    // istanbul ignore next: Don't test swUpdate event emit
-    this.swUpdate.versionUpdates.subscribe((event) => {
-      this.handleSwUpdateEvent(event);
-    });
-  }
 
-  reset(): void {
-    this.dataSvc.error$.next(undefined);
-    void this.router.navigate(['/']);
-    this.reload();
-  }
-
-  // istanbul ignore next: Helper to call browser location function
-  reload(): void {
-    setTimeout(() => {
-      location.reload();
-    });
-  }
-
-  handleSwUpdateEvent(event: VersionEvent): void {
-    switch (event.type) {
-      case 'VERSION_DETECTED':
-        this.showSwUpdateToast('info', 'detect', 5000);
-        break;
-      case 'VERSION_READY':
-        this.showSwUpdateToast('success', 'ready');
-        break;
-      case 'VERSION_INSTALLATION_FAILED':
-        this.showSwUpdateToast('error', 'installationFail');
-        break;
-    }
-  }
-
-  showSwUpdateToast(
-    severity: string,
-    langKey: string,
-    lifeTime?: number,
-  ): void {
-    this.translateSvc
-      .multi([
-        `app.swUpdate.${langKey}Summary`,
-        `app.swUpdate.${langKey}Detail`,
-      ])
-      .pipe(first())
-      .subscribe(([summary, detail]) => {
-        this.contentSvc.showToast$.next({
-          severity: severity,
-          summary: summary,
-          detail: detail,
-          life: lifeTime,
-          sticky: !lifeTime,
+    this.swUpdate.unrecoverable
+      .pipe(
+        switchMap(() =>
+          this.translateSvc
+            .multi(['app.updateRequired', 'app.updateRequiredMessage', 'ok'])
+            .pipe(first()),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(([header, message, acceptLabel]) => {
+        this.contentSvc.confirm({
+          icon: 'fa-solid fa-arrows-rotate',
+          header,
+          message,
+          acceptLabel,
+          rejectVisible: false,
+          accept: () => {
+            this.contentSvc.reload();
+          },
+          reject: () => {
+            this.contentSvc.reload();
+          },
         });
       });
+
+    this.swUpdate.versionUpdates
+      .pipe(
+        filter((event) => event.type === 'VERSION_READY'),
+        switchMap(() =>
+          this.translateSvc
+            .multi([
+              'app.updateAvailable',
+              'app.updateAvailableMessage',
+              'yes',
+              'cancel',
+            ])
+            .pipe(first()),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(([header, message, acceptLabel, rejectLabel]) => {
+        this.contentSvc.confirm({
+          icon: 'fa-solid fa-arrows-rotate',
+          header,
+          message,
+          acceptLabel,
+          rejectLabel,
+          rejectButtonStyleClass: 'p-button-outlined',
+          accept: () => {
+            this.contentSvc.reload();
+          },
+        });
+      });
+  }
+
+  async reset(): Promise<void> {
+    this.dataSvc.error$.next(undefined);
+    await this.router.navigate(['/']);
+    this.contentSvc.reload();
   }
 }

@@ -19,6 +19,9 @@
 >
   <main class="px-sm-4 py-4">
     @if (mod()) {
+      <p-card styleClass="mb-4 bg-warning">
+        当前网站数据为二测数据，我们正在尽快更新三测数据，请耐心等待~
+      </p-card>
       <lab-objectives></lab-objectives>
       <p-card styleClass="mt-4" [header]="'app.factory' | translate">
         @if (tabItems$ | async; as model) {

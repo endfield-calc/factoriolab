@@ -19,9 +19,18 @@
 >
   <main class="px-sm-4 py-4">
     @if (mod()) {
-      <p-card styleClass="mb-4 bg-warning">
-        当前网站数据为二测数据，我们正在尽快更新三测数据，请耐心等待~
-      </p-card>
+      <p-accordion styleClass="mb-4">
+        <p-accordionTab header="温馨提示(点击展开)">
+          <p>1. 当前数据仅包括四号谷地，作者还没跑到武陵~</p>
+          <p>2. [添加设备]按钮可以选择发电计算</p>
+          <br>
+          <p>问题反馈：
+            <a target="_blank" href="https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr" class="p-button p-button-outlined">QQ群：1071155059</a>
+            <a target="_blank" href="https://space.bilibili.com/4105743" class="p-button p-button-outlined ms-2">B站私信</a>
+            <a target="_blank" href="https://github.com/endfield-calc/endfield-calc.github.io/issues" class="p-button p-button-outlined ms-2">Github Issue</a>
+          </p>
+        </p-accordionTab>
+      </p-accordion>
       <lab-objectives></lab-objectives>
       <p-card styleClass="mt-4" [header]="'app.factory' | translate">
         @if (tabItems$ | async; as model) {

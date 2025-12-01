@@ -1,6 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { AccordionModule } from 'primeng/accordion';
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabMenuModule } from 'primeng/tabmenu';
@@ -21,6 +23,8 @@ import { SettingsService } from '~/store/settings.service';
   standalone: true,
   imports: [
     AsyncPipe,
+    AccordionModule,
+    ButtonModule,
     CardModule,
     ProgressSpinnerModule,
     TabMenuModule,

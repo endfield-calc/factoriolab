@@ -373,27 +373,27 @@
             class="d-flex align-items-center justify-content-between flex-grow-1"
           >
             <div>{{ 'settings.factory' | translate }}</div>
-            @if (presetDropdown.label(); as label) {
-              <div>{{ label | translate }}</div>
-            }
+<!--            @if (presetDropdown.label(); as label) {-->
+<!--              <div>{{ label | translate }}</div>-->
+<!--            }-->
           </div>
         </ng-template>
         <div class="p-fluid">
-          <div class="mt-3 pb-3">
-            <span class="p-float-label">
-              <p-dropdown
-                #presetDropdown
-                labDropdownTranslate
-                inputId="preset"
-                [pTooltip]="'settings.presetTooltip' | translate"
-                [ngModel]="settings().preset"
-                [options]="presetOptions()"
-                (onChange)="settingsSvc.apply({ preset: $event.value })"
-              >
-              </p-dropdown>
-              <label for="preset">{{ 'settings.preset' | translate }}</label>
-            </span>
-          </div>
+<!--          <div class="mt-3 pb-3">-->
+<!--            <span class="p-float-label">-->
+<!--              <p-dropdown-->
+<!--                #presetDropdown-->
+<!--                labDropdownTranslate-->
+<!--                inputId="preset"-->
+<!--                [pTooltip]="'settings.presetTooltip' | translate"-->
+<!--                [ngModel]="settings().preset"-->
+<!--                [options]="presetOptions()"-->
+<!--                (onChange)="settingsSvc.apply({ preset: $event.value })"-->
+<!--              >-->
+<!--              </p-dropdown>-->
+<!--              <label for="preset">{{ 'settings.preset' | translate }}</label>-->
+<!--            </span>-->
+<!--          </div>-->
           @if (options().locations.length) {
             <div class="pb-3">
               <label class="p-static-label" for="locations">{{

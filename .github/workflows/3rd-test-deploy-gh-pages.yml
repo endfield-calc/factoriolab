@@ -1,8 +1,11 @@
 name: 3rd-test-deploy-gh-pages
 
 on:
+  workflow_dispatch:
   push:
     branches: [ark-endfield-3rd-test]
+    paths:
+      - "src/**"
 
 jobs:
   build:

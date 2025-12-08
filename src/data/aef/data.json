@@ -569,73 +569,88 @@
       "color": "#9ba289"
     },
     {
-      "id": "tundra_coupon-bottled_food_1",
+      "id": "jinlong_coupon-bottled_rec_hp_4",
       "position": "-320px -576px",
+      "color": "#96a09f"
+    },
+    {
+      "id": "jinlong_coupon-proc_battery_4",
+      "position": "-384px -576px",
+      "color": "#8d9f9c"
+    },
+    {
+      "id": "jinlong_coupon-xiranite_powder",
+      "position": "-448px -576px",
+      "color": "#869897"
+    },
+    {
+      "id": "tundra_coupon-bottled_food_1",
+      "position": "-512px -576px",
       "color": "#bcbfac"
     },
     {
       "id": "tundra_coupon-bottled_food_2",
-      "position": "-384px -576px",
+      "position": "-576px -576px",
       "color": "#bcbfa7"
     },
     {
       "id": "tundra_coupon-bottled_food_3",
-      "position": "-448px -576px",
+      "position": "-640px -576px",
       "color": "#b6b9a9"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_1",
-      "position": "-512px -576px",
+      "position": "-704px -576px",
       "color": "#c5c1b2"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_2",
-      "position": "-576px -576px",
+      "position": "0px -640px",
       "color": "#c8c3b4"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_3",
-      "position": "-640px -576px",
+      "position": "-64px -640px",
       "color": "#c3bbaf"
     },
     {
       "id": "tundra_coupon-crystal_shell",
-      "position": "-704px -576px",
+      "position": "-128px -640px",
       "color": "#bdb9a2"
     },
     {
       "id": "tundra_coupon-glass_bottle",
-      "position": "0px -640px",
+      "position": "-192px -640px",
       "color": "#b7b8aa"
     },
     {
       "id": "tundra_coupon-glass_cmpt",
-      "position": "-64px -640px",
+      "position": "-256px -640px",
       "color": "#bec1b5"
     },
     {
       "id": "tundra_coupon-iron_cmpt",
-      "position": "-128px -640px",
+      "position": "-320px -640px",
       "color": "#b8bdb7"
     },
     {
       "id": "tundra_coupon-iron_enr_cmpt",
-      "position": "-192px -640px",
+      "position": "-384px -640px",
       "color": "#b6bbb0"
     },
     {
       "id": "tundra_coupon-proc_battery_1",
-      "position": "-256px -640px",
+      "position": "-448px -640px",
       "color": "#bfc1af"
     },
     {
       "id": "tundra_coupon-proc_battery_2",
-      "position": "-320px -640px",
+      "position": "-512px -640px",
       "color": "#bec0b0"
     },
     {
       "id": "tundra_coupon-proc_battery_3",
-      "position": "-384px -640px",
+      "position": "-576px -640px",
       "color": "#bfc0af"
     }
   ],
@@ -1667,7 +1682,7 @@
         "plant_moss_1": 1
       },
       "out": {
-        "plant_moss_powder_1": 1
+        "plant_moss_powder_1": 2
       },
       "producers": [
         "grinder_1"
@@ -1753,7 +1768,7 @@
         "plant_grass_1": 1
       },
       "out": {
-        "plant_grass_seed_1": 2
+        "plant_grass_seed_1": 1
       },
       "producers": [
         "seedcol_1"
@@ -1791,7 +1806,7 @@
         "plant_grass_1": 1
       },
       "out": {
-        "plant_grass_powder_1": 1
+        "plant_grass_powder_1": 2
       },
       "producers": [
         "grinder_1"
@@ -1826,7 +1841,7 @@
         "carbon_mtl": 1
       },
       "out": {
-        "carbon_powder": 1
+        "carbon_powder": 2
       },
       "producers": [
         "grinder_1"
@@ -1900,7 +1915,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_grass_1",
-      "name": "碳块(芽针)",
+      "name": "碳块(锦草)",
       "category": "material",
       "row": 0,
       "icon": "carbon_mtl-plant_grass_1"
@@ -1917,7 +1932,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_grass_2",
-      "name": "碳块(锦草)",
+      "name": "碳块(芽针)",
       "category": "material",
       "row": 0,
       "icon": "carbon_mtl-plant_grass_2"
@@ -1962,7 +1977,7 @@
         "plant_moss_2": 1
       },
       "out": {
-        "plant_moss_powder_2": 1
+        "plant_moss_powder_2": 2
       },
       "producers": [
         "grinder_1"
@@ -2048,7 +2063,7 @@
         "plant_grass_2": 1
       },
       "out": {
-        "plant_grass_seed_2": 2
+        "plant_grass_seed_2": 1
       },
       "producers": [
         "seedcol_1"
@@ -2086,7 +2101,7 @@
         "plant_grass_2": 1
       },
       "out": {
-        "plant_grass_powder_2": 1
+        "plant_grass_powder_2": 2
       },
       "producers": [
         "grinder_1"
@@ -2647,10 +2662,10 @@
       "time": 2,
       "in": {
         "iron_bottle": 1,
-        "liquid_plant_grass_1": 1
+        "liquid_plant_grass_2": 1
       },
       "out": {
-        "iron_bottle-liquid_plant_grass_1": 1
+        "iron_bottle-liquid_plant_grass_2": 1
       },
       "producers": [
         "filling_pd_mc_1"
@@ -2662,7 +2677,7 @@
       "name": "蓝铁瓶(芽针溶液)",
       "category": "material",
       "row": 4,
-      "icon": "iron_bottle-liquid_plant_grass_1"
+      "icon": "iron_bottle-liquid_plant_grass_2"
     },
     {
       "time": 2,
@@ -2721,7 +2736,25 @@
     {
       "time": 2,
       "in": {
-        "carbon_enr": 10,
+        "xiranite_powder": 1,
+        "liquid_water": 1
+      },
+      "out": {
+        "liquid_xiranite": 1
+      },
+      "producers": [
+        "mix_pool_1"
+      ],
+      "id": "liquid_xiranite",
+      "name": "液化息壤",
+      "category": "material",
+      "row": 5,
+      "icon": "liquid_xiranite"
+    },
+    {
+      "time": 2,
+      "in": {
+        "carbon_enr": 2,
         "liquid_water": 1
       },
       "out": {
@@ -3407,6 +3440,66 @@
       "category": "settlement",
       "row": 3,
       "icon": "tundra_coupon-proc_battery_3"
+    },
+    {
+      "time": 2,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "jinlong_coupon": 1
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "id": "jinlong_coupon-xiranite_powder",
+      "name": "武陵调度券(息壤)",
+      "category": "settlement",
+      "row": 4,
+      "icon": "jinlong_coupon-xiranite_powder"
+    },
+    {
+      "time": 10,
+      "in": {
+        "bottled_rec_hp_4": 1
+      },
+      "out": {
+        "jinlong_coupon": 16
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "id": "jinlong_coupon-bottled_rec_hp_4",
+      "name": "武陵调度券(芽针针剂)",
+      "category": "settlement",
+      "row": 4,
+      "icon": "jinlong_coupon-bottled_rec_hp_4"
+    },
+    {
+      "time": 10,
+      "in": {
+        "proc_battery_4": 1
+      },
+      "out": {
+        "jinlong_coupon": 25
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "id": "jinlong_coupon-proc_battery_4",
+      "name": "武陵调度券(低容武陵电池)",
+      "category": "settlement",
+      "row": 4,
+      "icon": "jinlong_coupon-proc_battery_4"
     }
   ],
   "locations": [
@@ -3423,7 +3516,8 @@
   ],
   "defaults": {
     "locations": [
-      "tundra"
+      "tundra",
+      "jinlong"
     ],
     "minBelt": "belt",
     "maxBelt": "belt",

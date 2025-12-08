@@ -19,25 +19,7 @@
 >
   <main class="px-sm-4 py-4">
     @if (mod()) {
-      <p-accordion styleClass="mb-4">
-        <p-accordionTab header="温馨提示(点击展开)">
-          <p>小技巧：</p>
-          <p>1. 默认只启用了四号谷地，武陵专属的液体配方将不可用，如果需要计算武陵产线，请在左边[工厂]->[地点]选中武陵</p>
-          <p>2. [添加设备]按钮可以选择发电计算，计算器中的发电量用负数表示</p>
-          <p>3. 可以使用[添加物品]按钮选择需求的调度券，也可以使用[添加设备]按钮选择指定产品兑换调度券，设备数量就是产线数量</p>
-          <p>4. 在流程图页面中可以查看产线工序，可以在流程图设置中选择连线文字按物品速率或传送带数量显示</p>
-          <p>5. 可以通过[添加物品]选择矿物并把"输出"改为"限制"来避免产线不小心超过矿物产量</p>
-          <p>6. 可以在左边[已保存的状态]保存当前状态或读取之前保存的状态，可以点击上方的游戏图标重置当前状态</p>
-          <p>已知问题：</p>
-          <p>1. 当前数据还缺少武陵调度券的数据，其它数据基本完整，如有数据问题欢迎反馈~</p>
-          <p>2. 由于项目设计原因，兑换调度券会显示需要传送带，无视即可。</p>
-          <br>
-          <p>问题反馈：
-            <a target="_blank" style="text-decoration: none" href="https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr" class="p-button p-button-outlined">QQ群：1071155059</a>
-            <a target="_blank" style="text-decoration: none" href="https://github.com/endfield-calc/endfield-calc.github.io/issues" class="p-button p-button-outlined ms-2">Github Issue</a>
-          </p>
-        </p-accordionTab>
-      </p-accordion>
+      <lab-user-tips></lab-user-tips>
       <lab-objectives></lab-objectives>
       <p-card styleClass="mt-4" [header]="'app.factory' | translate">
         @if (tabItems$ | async; as model) {

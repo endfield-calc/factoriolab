@@ -1,0 +1,130 @@
+<p-accordion styleClass="mb-4">
+  <p-accordionTab>
+    <ng-template pTemplate="header">
+      <div class="d-flex align-items-center">
+        <i class="pi pi-compass text-primary me-2" style="font-size: 1.2rem"></i>
+        <span>温馨提示 & 操作指南</span>
+        <span class="ms-2">(点击展开)</span>
+      </div>
+    </ng-template>
+
+    <div class="d-flex flex-column gap-3">
+      <div>
+        <h3 class="fw-bold mb-2"><i class="pi pi-wrench text-warning me-2"></i>示例模板</h3>
+        <div class="d-flex flex-wrap gap-2">
+          <a [href]="environment.baseHref + 'aef/list?v=11'"
+             target="_self"
+             class="p-button p-button-outlined p-button-info text-decoration-none">
+            <i class="pi pi-comments me-2"></i>四号谷地毕业
+          </a>
+
+          <a [href]="environment.baseHref + 'aef/list?v=11'"
+             target="_self"
+             class="p-button p-button-outlined p-button-info text-decoration-none ms-2">
+            <i class="pi pi-github me-2"></i>武陵毕业
+          </a>
+        </div>
+      </div>
+      <div>
+        <h3 class="fw-bold mb-3"><i class="pi pi-lightbulb text-warning me-2"></i>使用小技巧</h3>
+
+        <div class="d-flex flex-column gap-2">
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-map-marker text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">区域计算限制：</span>默认启用全区域。若只需计算特定区域，请在左侧
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'settings.factory' | translate }}
+                -&gt; {{ 'settings.locations' | translate }}</span>
+              调整勾选。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-bolt text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">发电量计算：</span>点击按钮
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+                class="fa-solid fa-industry"></i> {{ 'objectives.addMachines' | translate }}</span>
+              选择发电设施（计算器中的发电量是用负数表示的）。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-ticket text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">调度券计算：</span>
+              可通过 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+              class="fa-solid fa-box"></i> {{ 'objectives.addItems' | translate }}</span> 直接选择券；
+              或在 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+              class="fa-solid fa-industry"></i> {{ 'objectives.addMachines' | translate }}</span>
+              中选择产品兑换（设备数=产线数）。由于项目设计原因，最终产物兑换调度券也会显示需要传送带，无视即可。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-sitemap text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">流程图显示：</span>计算结果支持
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.list' | translate }}</span> 展示统计数据 或
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.flow' | translate }}</span> 展示工序。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-exclamation-circle text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">避免超产：</span>例如限制矿物产量，可通过
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+                class="fa-solid fa-box"></i> {{ 'objectives.addItems' | translate }}</span>
+              选择矿物，并将
+              <span class="badge bg-light text-dark border">{{ 'options.objectiveType.output' | translate }}</span>
+              更改为
+              <span class="badge bg-light text-dark border">{{ 'options.objectiveType.limit' | translate }}</span>。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-box text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">产线选择：</span>使用
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+                class="fa-solid fa-box"></i> {{ 'objectives.addItems' | translate }}</span>
+              添加的是<span class="fw-bold">输出目标产物</span>，使用
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
+                class="fa-solid fa-industry"></i> {{ 'objectives.addMachines' | translate }}</span>
+              添加的是要求指定数量的<span class="fw-bold">产线保持运行</span>(会优先复用输出目标产物的必备产线)，
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-save text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">存档与重置：</span>在左侧
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'settings.savedStates' | translate }}</span>
+              进行存取档。点击上方 <span class="fw-bold">游戏图标</span> 可重置状态。
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div>
+        <h3 class="fw-bold mb-2"><i class="pi pi-headphones text-warning me-2"></i>问题反馈</h3>
+        <div class="d-flex flex-wrap gap-2">
+          <a
+            href="https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr"
+            target="_blank"
+            class="p-button p-button-outlined p-button-help text-decoration-none">
+            <i class="pi pi-comments me-2"></i>QQ群：1071155059
+          </a>
+
+          <a href="https://github.com/endfield-calc/endfield-calc.github.io/issues"
+             target="_blank"
+             class="p-button p-button-outlined p-button-help text-decoration-none ms-2">
+            <i class="pi pi-github me-2"></i>Github Issue
+          </a>
+        </div>
+      </div>
+    </div>
+  </p-accordionTab>
+</p-accordion>

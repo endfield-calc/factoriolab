@@ -1,8 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AccordionModule } from 'primeng/accordion';
 import { MenuItem } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabMenuModule } from 'primeng/tabmenu';
@@ -11,6 +9,7 @@ import { map } from 'rxjs';
 import { HeaderComponent } from '~/components/header/header.component';
 import { ObjectivesComponent } from '~/components/objectives/objectives.component';
 import { SettingsComponent } from '~/components/settings/settings.component';
+import { UserTipsComponent } from '~/components/user-tips/user-tips.component';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
@@ -23,14 +22,13 @@ import { SettingsService } from '~/store/settings.service';
   standalone: true,
   imports: [
     AsyncPipe,
-    AccordionModule,
-    ButtonModule,
     CardModule,
     ProgressSpinnerModule,
     TabMenuModule,
     HeaderComponent,
     ObjectivesComponent,
     SettingsComponent,
+    UserTipsComponent,
     TranslatePipe,
   ],
   templateUrl: './main.component.html',

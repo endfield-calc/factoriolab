@@ -1,7 +1,7 @@
 import { environment } from '../../environments';
 import { Entities } from './utils';
 
-export const APP = 'FactorioLab';
+export const APP = '终末地量化计算器';
 
 export const ARKNIGHTS_ENDFIELD_ID = 'aef';
 export const DEFAULT_MOD = environment.production

@@ -1,6 +1,6 @@
 {
-  "name": "FactorioLab",
-  "short_name": "FactorioLab",
+  "name": "终末地量化计算器",
+  "short_name": "终末地量化计算器",
   "description": "A feature-rich factory production calculator for ArknightsEndfield. Determine resource and machine requirements for your desired objectives.",
   "id": "/",
   "start_url": "/",

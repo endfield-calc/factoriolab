@@ -40,7 +40,7 @@ export const initialPreferencesState: PreferencesState = {
   states: {},
   columns: initialColumnsState,
   language: Language.English,
-  powerUnit: PowerUnit.Auto,
+  powerUnit: PowerUnit.kW,
   theme: Theme.Light,
   bypassLanding: false,
   showTechLabels: false,

@@ -34,7 +34,7 @@ describe('AppComponent', () => {
       spyOn(console, 'log');
       spyOn(component.analyticsSvc, 'event');
       http.expectOne('assets/release.json').flush({ version: 'version' });
-      expect(console.log).toHaveBeenCalledWith('FactorioLab version (test)');
+      expect(console.log).toHaveBeenCalledWith('终末地量化计算器 version (test)');
       expect(component.analyticsSvc.event).toHaveBeenCalled();
     });
   });

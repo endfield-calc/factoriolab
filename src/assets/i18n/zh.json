@@ -210,7 +210,7 @@
     "support": "支持"
   },
   "landing": {
-    "welcome": "欢迎来到 <b>FactorioLab</b>! 让我们开始吧。",
+    "welcome": "欢迎来到 <b>终末地量化计算器</b>! 让我们开始吧。",
     "addItems": "添加物品",
     "addMachines": "添加设备",
     "selectAnItem": "选择一个物品",
@@ -234,7 +234,7 @@
   "settings": {
     "header": "设置",
     "reset": "重置所有设置",
-    "resetWarning": "这将删除浏览器中保存的所有 FactorioLab 设置，您确定要继续吗？",
+    "resetWarning": "这将删除浏览器中保存的所有 终末地量化计算器 设置，您确定要继续吗？",
     "savedStates": "已保存的状态",
     "createSavedState": "新建状态",
     "editSavedState": "重命名",

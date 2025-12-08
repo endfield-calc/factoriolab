@@ -169,11 +169,11 @@
             class="d-flex align-items-center justify-content-between flex-grow-1"
           >
             <div>{{ 'settings.game' | translate }}</div>
-            <div>
-              @if (modId(); as modId) {
-                {{ modId }}
-              }
-            </div>
+<!--            <div>-->
+<!--              @if (modId(); as modId) {-->
+<!--                {{ modId }}-->
+<!--              }-->
+<!--            </div>-->
           </div>
         </ng-template>
         <div class="p-fluid">
@@ -1392,24 +1392,24 @@
               }}</label>
             </span>
           </div>
-          @if (columnsState().power.show) {
-            <div class="mt-3 pb-3">
-              <span class="p-float-label">
-                <p-dropdown
-                  labDropdownTranslate
-                  inputId="power-unit"
-                  [pTooltip]="'settings.powerUnitTooltip' | translate"
-                  [ngModel]="preferences().powerUnit"
-                  [options]="powerUnitOptions"
-                  (onChange)="preferencesSvc.apply({ powerUnit: $event.value })"
-                >
-                </p-dropdown>
-                <label for="power-unit">{{
-                  'settings.powerUnit' | translate
-                }}</label>
-              </span>
-            </div>
-          }
+<!--          @if (columnsState().power.show) {-->
+<!--            <div class="mt-3 pb-3">-->
+<!--              <span class="p-float-label">-->
+<!--                <p-dropdown-->
+<!--                  labDropdownTranslate-->
+<!--                  inputId="power-unit"-->
+<!--                  [pTooltip]="'settings.powerUnitTooltip' | translate"-->
+<!--                  [ngModel]="preferences().powerUnit"-->
+<!--                  [options]="powerUnitOptions"-->
+<!--                  (onChange)="preferencesSvc.apply({ powerUnit: $event.value })"-->
+<!--                >-->
+<!--                </p-dropdown>-->
+<!--                <label for="power-unit">{{-->
+<!--                  'settings.powerUnit' | translate-->
+<!--                }}</label>-->
+<!--              </span>-->
+<!--            </div>-->
+<!--          }-->
           <div class="mt-3 pb-3">
             <div class="text-end"></div>
             <div class="p-float-label">

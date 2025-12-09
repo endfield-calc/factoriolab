@@ -66,7 +66,7 @@ jobs:
 
   deploy-gh-pages:
     needs: build
-    if: github.event_name == 'push' || inputs.should_deploy_to_gh_pages == 'true'
+    if: github.event_name == 'push' || inputs.should_deploy_to_gh_pages == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -92,7 +92,7 @@ jobs:
 
   deploy-yituliu:
     needs: build
-    if: github.event_name == 'push' || inputs.should_deploy_to_yituliu == 'true'
+    if: github.event_name == 'push' || inputs.should_deploy_to_yituliu == true
     runs-on: ubuntu-latest
     environment: yituliu
     steps:

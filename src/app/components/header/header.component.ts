@@ -86,6 +86,11 @@ export class HeaderComponent {
       icon: 'fa-brands fa-github',
       href: 'https://github.com/endfield-calc/factoriolab/tree/ark-endfield',
     },
+    {
+      label: 'header.yituliu',
+      icon: 'fa-solid fa-home',
+      href: 'https://ef.yituliu.cn/',
+    },
     // {
     //   label: 'header.discord',
     //   icon: 'fa-brands fa-discord',

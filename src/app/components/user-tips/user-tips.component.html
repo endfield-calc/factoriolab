@@ -12,17 +12,13 @@
       <div>
         <h3 class="fw-bold mb-2"><i class="pi pi-wrench text-warning me-2"></i>示例模板</h3>
         <div class="d-flex flex-wrap gap-2">
-          <a [href]="environment.baseHref + 'aef/list?v=11'"
-             target="_self"
-             class="p-button p-button-outlined p-button-info text-decoration-none">
-            <i class="pi pi-comments me-2"></i>四号谷地毕业
-          </a>
-
-          <a [href]="environment.baseHref + 'aef/list?v=11'"
-             target="_self"
-             class="p-button p-button-outlined p-button-info text-decoration-none ms-2">
-            <i class="pi pi-github me-2"></i>武陵毕业
-          </a>
+          @for (example of examples; track example;) {
+            <a [href]="environment.baseHref + example.url"
+               target="_self"
+               class="p-button p-button-outlined p-button-info text-decoration-none">
+              <i class="pi pi-comments me-2"></i>{{example.name}}
+            </a>
+          }
         </div>
       </div>
       <div>
@@ -37,6 +33,15 @@
               <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'settings.factory' | translate }}
                 -&gt; {{ 'settings.locations' | translate }}</span>
               调整勾选。
+            </div>
+          </div>
+
+          <div class="d-flex align-items-start">
+            <i class="pi pi-sitemap text-primary mt-1 me-2"></i>
+            <div>
+              <span class="fw-bold">流程图显示：</span>计算结果支持
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.list' | translate }}</span> 展示统计数据 或
+              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.flow' | translate }}</span> 展示工序。
             </div>
           </div>
 
@@ -59,15 +64,6 @@
               或在 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i
               class="fa-solid fa-industry"></i> {{ 'objectives.addMachines' | translate }}</span>
               中选择产品兑换（设备数=产线数）。由于项目设计原因，最终产物兑换调度券也会显示需要传送带，无视即可。
-            </div>
-          </div>
-
-          <div class="d-flex align-items-start">
-            <i class="pi pi-sitemap text-primary mt-1 me-2"></i>
-            <div>
-              <span class="fw-bold">流程图显示：</span>计算结果支持
-              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.list' | translate }}</span> 展示统计数据 或
-              <span class="fw-bold" style="text-decoration: underline dotted;">{{ 'app.flow' | translate }}</span> 展示工序。
             </div>
           </div>
 

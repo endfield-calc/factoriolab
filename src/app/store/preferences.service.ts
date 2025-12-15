@@ -44,7 +44,7 @@ export const initialPreferencesState: PreferencesState = {
   theme: Theme.Light,
   bypassLanding: false,
   showTechLabels: false,
-  hideDuplicateIcons: false,
+  hideDuplicateIcons: true,
   rows: 50,
   disablePaginator: false,
   paused: false,

@@ -216,3 +216,12 @@ table p-dropdown {
 .p-multiselect-label-empty {
   visibility: visible;
 }
+
+@layer primeng {
+  .p-button, .p-button:not(:disabled):hover {
+    color: var(--primary-color-text);
+  }
+  .p-checkbox .p-checkbox-box .p-checkbox-icon {
+    color: var(--primary-color-text);
+  }
+}

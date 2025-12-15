@@ -330,7 +330,6 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
 
       if (s.itemId != null) {
         recipeIds = data.itemRecipeIds[s.itemId];
-        if (recipeIds.length) tabs.push(StepDetailTab.Recipes);
         recipesEnabled = recipeIds.filter(
           (r) => !settings.excludedRecipeIds.has(r),
         );

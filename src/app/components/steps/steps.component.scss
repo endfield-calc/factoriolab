@@ -103,3 +103,23 @@ tr.detail {
 .column-header-row > th {
   height: 48px;
 }
+
+.step-name {
+  margin-left: 8px;
+
+  @media screen and (max-width: 960px) {
+    display: none;
+  }
+}
+
+.total-machine-name {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  > span {
+    @media screen and (max-width: 960px) {
+      display: none;
+    }
+  }
+}

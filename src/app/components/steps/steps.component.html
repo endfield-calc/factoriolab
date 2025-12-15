@@ -307,6 +307,7 @@
                   </i>
                 }
               </div>
+              <div class="step-name">{{ step.itemId ? data().itemEntities[step.itemId].name : data().recipeEntities[step.recipeId!].name }}</div>
             </div>
           </td>
         }
@@ -629,6 +630,7 @@
                       ></lab-tooltip>
                     </ng-template>
                   </p-dropdown>
+                  <span class="step-name">{{ data().itemEntities[machineId].name }}</span>
                 }
                 @if (data().flags.has('overclock')) {
                   <p-inputNumber
@@ -1818,15 +1820,30 @@
                 track tot.key
               ) {
                 @if (data().itemEntities[tot.key]) {
-                  <i
-                    class="d-block"
-                    [class]="tot.key | iconClass"
-                    [pTooltip]="tooltip"
-                  >
-                    <ng-template #tooltip>
-                      <lab-tooltip [id]="tot.key" [type]="type"></lab-tooltip>
-                    </ng-template>
-                  </i>
+                  @if (type === 'machine') {
+                    <span class="total-machine-name">
+                      <i
+                        class="d-block"
+                        [class]="tot.key | iconClass"
+                        [pTooltip]="tooltip"
+                      >
+                        <ng-template #tooltip>
+                          <lab-tooltip [id]="tot.key" [type]="type"></lab-tooltip>
+                        </ng-template>
+                      </i>
+                      <span class="step-name">{{ data().itemEntities[tot.key].name }}</span>
+                    </span>
+                  } @else {
+                    <i
+                      class="d-block"
+                      [class]="tot.key | iconClass"
+                      [pTooltip]="tooltip"
+                    >
+                      <ng-template #tooltip>
+                        <lab-tooltip [id]="tot.key" [type]="type"></lab-tooltip>
+                      </ng-template>
+                    </i>
+                  }
                 } @else {
                   <i
                     class="d-block"

@@ -318,6 +318,11 @@ export class FlowComponent implements AfterViewInit {
         'spacing.nodeNodeBetweenLayers': 100,
       },
     } as unknown as cytoscape.LayoutOptions; // Elk layout unrecognized
+    const textOutline = {
+      'text-outline-color': 'white',
+      'text-outline-opacity': 0.6,
+      'text-outline-width': '0.75px',
+    };
     this.cy = cytoscape({
       container: this.svgElement().nativeElement,
       elements: [...nodes, ...links],
@@ -329,19 +334,21 @@ export class FlowComponent implements AfterViewInit {
             shape: 'round-rectangle',
             height: '64px',
             width: '64px',
-            'outline-color': 'data(color)', // Missing types
-            'outline-width': '4px', // Missing types
+            // @ts-expect-error Missing type
+            'outline-color': 'data(color)',
+            'outline-width': '4px',
             'background-color': 'data(color)',
             'background-image': 'data(href)',
             'background-position-x': 'data(posX)',
             'background-position-y': 'data(posY)',
             label: 'data(text)',
             color,
-            'font-size': '12px',
+            'font-size': '17px',
+            ...textOutline,
             'text-valign': 'bottom',
             'text-margin-y': 6,
           },
-        } as unknown as cytoscape.Stylesheet,
+        },
         {
           selector: 'edge',
           style: {
@@ -349,7 +356,8 @@ export class FlowComponent implements AfterViewInit {
             label: 'data(label)',
             'text-rotation': 'autorotate',
             color,
-            'font-size': '12px',
+            'font-size': '15px',
+            ...textOutline,
             'text-wrap': 'wrap',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',

@@ -5,6 +5,7 @@
   "reset": "Zurücksetzen",
   "none": "Keine Resultate",
   "app": {
+    "name": "Endfield-Rechner",
     "factory": "Fabrik",
     "list": "Listenansicht",
     "flow": "Flow-Ansicht",

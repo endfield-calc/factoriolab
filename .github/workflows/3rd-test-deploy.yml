@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
+      artifact-id-zh: ${{ steps.upload-artifact-zh.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v6
 
@@ -64,6 +65,47 @@ jobs:
           path: dist/browser
           retention-days: 1
 
+      - name: Update Chinese index and manifest
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const basePath = './dist/browser/';
+
+            // 定义文件路径和新内容
+            const [I, I2, M, T, S] = [`${basePath}/index.html`, `${basePath}/404.html`, `${basePath}/site.webmanifest`, '终末地量化计算器', '终末地计算器'];
+
+            // 1. 更新 index.html 和 404.html (替换 <title>...</title> 标签内的内容)
+            // 使用 [\s\S]*? 匹配任何内容（包括换行），实现非贪婪替换
+            fs.writeFileSync(I, fs.readFileSync(I, 'utf8')
+              .replace(/<title>[\s\S]*?<\/title>/, `<title>${T}</title>`), 'utf8');
+            fs.writeFileSync(I2, fs.readFileSync(I2, 'utf8')
+              .replace(/<title>[\s\S]*?<\/title>/, `<title>${T}</title>`), 'utf8');
+
+            // 2. 更新 manifest.json (替换 "name" 和 "short_name" 的值)
+            let manifestContent = fs.readFileSync(M, 'utf8');
+
+            // 使用 [^"]* 匹配双引号内的所有非引号字符，直到下一个双引号
+            manifestContent = manifestContent
+              .replace(/"name":\s*"[^"]*"/, `"name": "${T}"`) // 匹配 "name": "..."
+              .replace(/"short_name":\s*"[^"]*"/, `"short_name": "${S}"`); // 匹配 "short_name": "..."
+
+            fs.writeFileSync(M, manifestContent, 'utf8');
+
+            // 重新计算文件hash
+            const exitCode = await exec.exec('num run ngsw-config');
+            if (exitCode) {
+              core.setFailed('Write release info exit code: ' + exitCode);
+            }
+
+      - id: upload-artifact-zh
+        name: Upload Internal Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-result-zh
+          path: dist/browser
+          retention-days: 1
+
   deploy-gh-pages:
     needs: build
     if: github.event_name == 'push' || inputs.should_deploy_to_gh_pages == true
@@ -99,7 +141,7 @@ jobs:
       - name: Download Build Artifact
         uses: actions/download-artifact@v6
         with:
-          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          artifact-ids: ${{ needs.build.outputs.artifact-id-zh }}
           path: dist/browser
 
       - name: Cache coscli
@@ -138,7 +180,7 @@ jobs:
       - name: Refresh CDN
         run: tccli cdn PurgePathCache --secretId ${{ secrets.COS_SECRET_ID }} --secretKey ${{ secrets.COS_SECRET_KEY }} --FlushType 'flush' --Paths '["https://factory.ef.yituliu.cn/"]'
 
-  delete-artifact:
+  clean-artifact:
     needs: [build, deploy-gh-pages, deploy-yituliu]
     if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
@@ -149,11 +191,17 @@ jobs:
         uses: actions/github-script@v8
         env:
           ARTIFACT_ID: ${{ needs.build.outputs.artifact-id }}
+          ARTIFACT_ID_ZH: ${{ needs.build.outputs.artifact-id-zh }}
         with:
           script: |
             github.rest.actions.deleteArtifact({
               owner: context.repo.owner,
               repo: context.repo.repo,
               artifact_id: process.env.ARTIFACT_ID
+            });
+            github.rest.actions.deleteArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: process.env.ARTIFACT_ID_ZH
             });
 

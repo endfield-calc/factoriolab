@@ -80,6 +80,8 @@ export class HeaderComponent {
     ),
   );
 
+  appName = toSignal(this.translateSvc.get('app.name'));
+
   links: MenuLink[] = [
     {
       label: 'header.source',
@@ -115,7 +117,8 @@ export class HeaderComponent {
             : data.itemEntities[o.targetId]?.name,
         )
         .find((n) => n != null);
-      this.title.setTitle(name != null ? `${name} | ${APP}` : APP);
+      const appNameVal = this.appName() ?? APP;
+      this.title.setTitle(name != null ? `${name} | ${appNameVal}` : appNameVal);
     });
   }
 

@@ -57,11 +57,22 @@ export const initialPreferencesState: PreferencesState = {
     hideExcluded: false,
   },
 };
-// istanbul ignore if: Don't test use Chinese as default language
+// istanbul ignore if: Don't test auto change default language
 if (environment.production) {
-  if (navigator.language.toLowerCase().startsWith('zh')) {
-    initialPreferencesState.language = Language.Chinese;
+  const supportedLangs = Object.values(Language) as string[];
+  function isSupportedLanguage(value: string): value is Language {
+    return supportedLangs.includes(value);
   }
+  const userLang = navigator.language.toLowerCase();
+  const langPrefix = userLang.split('-')[0];
+  if (isSupportedLanguage(userLang)) {
+    // 1. 精确匹配（如 'en' 或 'zh'）
+    initialPreferencesState.language = userLang;
+  } else if (isSupportedLanguage(langPrefix)) {
+    // 2. 前缀匹配（如 'zh-CN' 匹配 'zh'）
+    initialPreferencesState.language = langPrefix;
+  }
+  // 都不匹配时保持默认English
 }
 
 @Injectable({

@@ -5,6 +5,7 @@
   "reset": "Reset",
   "none": "None",
   "app": {
+    "name": "EndField Calculator",
     "factory": "Factory",
     "list": "List",
     "flow": "Flow",

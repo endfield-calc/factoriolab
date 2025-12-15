@@ -3,6 +3,7 @@
   "ok": "OK",
   "yes": "Oui",
   "app": {
+    "name": "Calculateur Endfield",
     "factory": "Usine",
     "list": "Liste",
     "flow": "Flux",

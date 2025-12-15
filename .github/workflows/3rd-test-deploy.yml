@@ -93,7 +93,7 @@ jobs:
             fs.writeFileSync(M, manifestContent, 'utf8');
 
             // 重新计算文件hash
-            const exitCode = await exec.exec('num run ngsw-config');
+            const exitCode = await exec.exec('npm run ngsw-config');
             if (exitCode) {
               core.setFailed('Write release info exit code: ' + exitCode);
             }

@@ -59,7 +59,9 @@ export const initialPreferencesState: PreferencesState = {
 };
 // istanbul ignore if: Don't test use Chinese as default language
 if (environment.production) {
-  initialPreferencesState.language = Language.Chinese;
+  if (navigator.language.toLowerCase().startsWith('zh')) {
+    initialPreferencesState.language = Language.Chinese;
+  }
 }
 
 @Injectable({

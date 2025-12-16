@@ -1,4 +1,4 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { effect, inject, Injectable, untracked } from '@angular/core';
 
 import { spread } from '~/helpers';
 import { FlowDiagram } from '~/models/enum/flow-diagram';
@@ -113,7 +113,9 @@ export class PreferencesService extends Store<PreferencesState> {
 
     effect(() => {
       const lang = this.language();
-      this.translateSvc.use(lang);
+      untracked(() => {
+        this.translateSvc.use(lang);
+      });
       this.analyticsSvc.event('set_lang', lang);
     });
   }

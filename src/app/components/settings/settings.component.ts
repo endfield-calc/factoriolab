@@ -47,7 +47,7 @@ import { BeaconSettings } from '~/models/settings/beacon-settings';
 import { ModuleSettings } from '~/models/settings/module-settings';
 import { Entities } from '~/models/utils';
 import { FilterOptionsPipe } from '~/pipes/filter-options.pipe';
-import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
+import { IconClassPipe, IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { ToArrayPipe } from '~/pipes/to-array.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
@@ -103,6 +103,7 @@ import { TooltipComponent } from '../tooltip/tooltip.component';
     ToArrayPipe,
     TooltipComponent,
     TranslatePipe,
+    IconClassPipe,
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
@@ -123,6 +124,7 @@ export class SettingsComponent {
   @HostBinding('class.hidden') @Input() hidden = false;
 
   modId = this.settingsSvc.modId;
+  gameInfo = this.settingsSvc.gameInfo;
   data = this.settingsSvc.dataset;
   savedStates = this.settingsSvc.stateOptions;
   gameStates = this.settingsSvc.modStates;

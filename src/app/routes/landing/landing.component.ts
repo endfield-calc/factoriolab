@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, KeyValuePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -15,7 +15,7 @@ import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { gameInfo } from '~/models/game-info';
 import { rational } from '~/models/rational';
-import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
+import { IconClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
 import { RouterService } from '~/services/router.service';
@@ -36,9 +36,10 @@ import { SettingsService } from '~/store/settings.service';
     DividerModule,
     DropdownModule,
     ProgressSpinnerModule,
-    IconSmClassPipe,
     PickerComponent,
     TranslatePipe,
+    IconClassPipe,
+    KeyValuePipe,
   ],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],

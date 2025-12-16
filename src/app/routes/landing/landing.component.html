@@ -9,39 +9,19 @@
           width="128"
         />
       </div>
-      <div class="mt-2" [innerHTML]="'landing.welcome' | translate"></div>
-      <p-dropdown
-        styleClass="my-2 w-100"
-        scrollHeight="260px"
-        [ngModel]="data().game"
-        [options]="gameOptions"
-        (onChange)="setGame($event.value)"
-      >
-        <ng-template pTemplate="selectedItem">
-          <div class="d-flex align-items-center">
-            <i class="mx-1" [class]="data().info.icon | iconSmClass"></i>
-            <span class="ms-3">{{ data().info.label | translate }}</span>
-          </div>
-        </ng-template>
-        <ng-template pTemplate="item" let-item>
-          @if ($any(gameInfo)[item.value]; as info) {
-            <div class="d-flex align-items-center">
-              <i [class]="info.icon | iconSmClass"></i>
-              <span class="ms-3">{{ info.label | translate }}</span>
-            </div>
-          }
-        </ng-template>
-      </p-dropdown>
-      @if (data().flags.has('mods')) {
-        <p-dropdown
-          styleClass="mb-2 w-100"
-          [filter]="true"
-          [autofocusFilter]="!contentSvc.isMobile()"
-          [ngModel]="modId()"
-          [options]="modOptions()"
-          (onChange)="setMod($event.value)"
-        ></p-dropdown>
-      }
+      <div class="game-info">
+        <i [class]="gameInfo[data().game].icon | iconClass"></i>
+        <span class="game-name">
+              {{ gameInfo[data().game].label | translate }}
+            </span>
+        @for (mod of data().version | keyvalue; track mod.key) {
+          <small>
+            {{ mod.value }}
+          </small>
+        }
+      </div>
+      <p-divider></p-divider>
+      <div class="mb-2" [innerHTML]="'landing.welcome' | translate"></div>
       <button
         pButton
         pRipple

@@ -49,3 +49,17 @@
 .icon-width {
   width: 36px;
 }
+
+.game-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  .game-name {
+    font-size: 18px;
+    flex-grow: 1;
+  }
+  small {
+    font-size: 14px;
+  }
+}

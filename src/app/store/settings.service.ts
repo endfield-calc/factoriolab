@@ -316,12 +316,13 @@ export class SettingsService extends Store<SettingsState> {
 
   modMenuItem = computed((): MenuItem => {
     const mod = this.mod();
+    const i18n = this.i18n();
 
     return {
       icon: 'fa-solid fa-database',
       routerLink: `/${coalesce(mod?.id, DEFAULT_MOD)}/data`,
       queryParamsHandling: 'preserve',
-      label: mod?.name,
+      label: i18n?.name ?? mod?.name,
     };
   });
 

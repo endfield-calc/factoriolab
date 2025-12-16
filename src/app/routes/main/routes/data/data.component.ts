@@ -27,6 +27,7 @@ export class DataComponent {
 
   home = this.settingsSvc.modMenuItem;
   data = this.settingsSvc.dataset;
+  i18n = this.settingsSvc.i18n;
 
   collections: MenuItem[] = [
     {

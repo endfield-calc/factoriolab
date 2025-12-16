@@ -60,25 +60,6 @@ export class HeaderComponent {
   @HostBinding('class.settings-xl-hidden') @Input() settingsXlHidden = false;
 
   gameInfo = this.settingsSvc.gameInfo;
-  gameOptions = toSignal(
-    combineLatest([
-      toObservable(this.settingsSvc.game),
-      ...gameOptions.map((o) => this.translateSvc.get(gameInfo[o.value].label)),
-    ]).pipe(
-      map(([game, ...labels]): MenuItem[] => {
-        return gameOptions
-          .map((o, i): [Game, string] => [o.value, labels[i]])
-          .filter(([g]) => g !== game)
-          .map(
-            ([g, label]): MenuItem => ({
-              icon: 'lab-icon small ' + gameInfo[g].icon,
-              label,
-              routerLink: gameInfo[g].route,
-            }),
-          );
-      }),
-    ),
-  );
 
   appName = toSignal(this.translateSvc.get('app.name'));
 

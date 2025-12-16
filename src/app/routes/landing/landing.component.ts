@@ -56,6 +56,7 @@ export class LandingComponent {
 
   modId = this.settingsSvc.modId;
   mod = this.settingsSvc.mod;
+  i18nWithDefault = this.settingsSvc.i18nWithDefault;
   data = this.settingsSvc.dataset;
   settings = this.settingsSvc.settings;
   states = this.settingsSvc.modStates;

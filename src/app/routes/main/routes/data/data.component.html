@@ -38,7 +38,7 @@
   <ng-template pTemplate="body" let-version>
     <tr>
       <td>{{ version.key }}</td>
-      <td>{{ i18n()?.version?.[version.key] ?? version.value }}</td>
+      <td>{{ i18nWithDefault()?.version?.[version.key] ?? version.value }}</td>
     </tr>
   </ng-template>
 </p-table>

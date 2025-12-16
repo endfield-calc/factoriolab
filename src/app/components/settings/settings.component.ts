@@ -126,6 +126,7 @@ export class SettingsComponent {
   modId = this.settingsSvc.modId;
   gameInfo = this.settingsSvc.gameInfo;
   data = this.settingsSvc.dataset;
+  i18nWithDefault = this.settingsSvc.i18nWithDefault;
   savedStates = this.settingsSvc.stateOptions;
   gameStates = this.settingsSvc.modStates;
   settings = this.settingsSvc.settings;

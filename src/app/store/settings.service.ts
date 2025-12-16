@@ -30,6 +30,7 @@ import { Game } from '~/models/enum/game';
 import { InserterCapacity } from '~/models/enum/inserter-capacity';
 import { InserterTarget } from '~/models/enum/inserter-target';
 import { ItemId } from '~/models/enum/item-id';
+import { DEFAULT_LANGUAGE } from '~/models/enum/language';
 import { linkValueOptions } from '~/models/enum/link-value';
 import { MaximizeType } from '~/models/enum/maximize-type';
 import { objectiveUnitOptions } from '~/models/enum/objective-unit';
@@ -168,6 +169,17 @@ export class SettingsService extends Store<SettingsState> {
     const lang = this.preferencesSvc.language();
     return datasets[modId]?.i18n?.[lang];
   });
+
+  i18nWithDefault = computed(() => {
+    const modId = this.modId();
+    if (modId == null) return undefined;
+    const datasets = this.datasetsSvc.state();
+    const lang = this.preferencesSvc.language();
+    const i18nMap = datasets[modId]?.i18n;
+    if (!i18nMap) return undefined;
+    return i18nMap[lang] ?? i18nMap[String(DEFAULT_LANGUAGE)];
+  });
+
   game = computed(() => {
     const mod = this.mod();
     return coalesce(mod?.game, Game.ArknightsEndfield);
@@ -208,7 +220,7 @@ export class SettingsService extends Store<SettingsState> {
     this.computeDataset(
       this.mod(),
       this.hash(),
-      this.i18n(),
+      this.i18nWithDefault(),
       this.game(),
       this.defaults(),
     ),
@@ -316,7 +328,7 @@ export class SettingsService extends Store<SettingsState> {
 
   modMenuItem = computed((): MenuItem => {
     const mod = this.mod();
-    const i18n = this.i18n();
+    const i18n = this.i18nWithDefault();
 
     return {
       icon: 'fa-solid fa-database',

@@ -2,7 +2,7 @@ import { effect, inject, Injectable, untracked } from '@angular/core';
 
 import { spread } from '~/helpers';
 import { FlowDiagram } from '~/models/enum/flow-diagram';
-import { Language } from '~/models/enum/language';
+import { DEFAULT_LANGUAGE, Language } from '~/models/enum/language';
 import { LinkValue } from '~/models/enum/link-value';
 import { PowerUnit } from '~/models/enum/power-unit';
 import { SankeyAlign } from '~/models/enum/sankey-align';
@@ -39,7 +39,7 @@ export interface PreferencesState {
 export const initialPreferencesState: PreferencesState = {
   states: {},
   columns: initialColumnsState,
-  language: Language.English,
+  language: DEFAULT_LANGUAGE,
   powerUnit: PowerUnit.kW,
   theme: Theme.Light,
   bypassLanding: false,

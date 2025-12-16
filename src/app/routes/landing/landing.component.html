@@ -16,7 +16,7 @@
             </span>
         @for (mod of data().version | keyvalue; track mod.key) {
           <small>
-            {{ mod.value }}
+            {{ i18nWithDefault()?.version?.[mod.key] ?? mod.value }}
           </small>
         }
       </div>

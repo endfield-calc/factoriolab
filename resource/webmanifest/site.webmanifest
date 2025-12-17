@@ -1,6 +1,6 @@
 {
-  "name": "EndFieldLab",
-  "short_name": "EndFieldLab",
+  "name": "EndfieldLab",
+  "short_name": "EndfieldLab",
   "description": "A feature-rich factory production calculator for Arknights: Endfield. Determine resource and machine requirements for your desired objectives.",
   "id": "/endfield-calc",
   "start_url": "./",

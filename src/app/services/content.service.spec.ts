@@ -63,7 +63,7 @@ describe('ContentService', () => {
       let version: string | undefined;
       service.version$.subscribe((v) => (version = v));
       http.expectOne('assets/release.json').flush({ version: '0.0.0' });
-      expect(version).toEqual('终末地量化计算器 0.0.0 (test)');
+      expect(version).toEqual('EndfieldLab 0.0.0 (test)');
     });
   });
 });

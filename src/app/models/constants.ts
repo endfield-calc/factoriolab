@@ -1,7 +1,7 @@
 import { environment } from '../../environments';
 import { Entities } from './utils';
 
-export const APP = 'EndFieldLab';
+export const APP = 'EndfieldLab';
 
 export const ARKNIGHTS_ENDFIELD_ID = 'aef';
 export const DEFAULT_MOD = environment.production

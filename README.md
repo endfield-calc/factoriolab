@@ -1,6 +1,6 @@
-# EndFieldLab
+# EndfieldLab
 
-This is the repository for the [EndFieldLab](https://endfield-calc.github.io) project, a tool for calculating resource and factory requirements for Arknights: Endfiled.
+This is the repository for the [EndfieldLab](https://endfield-calc.github.io) project, a tool for calculating resource and factory requirements for Arknights: Endfiled.
 
 This project is fork from [FactorioLab](https://factoriolab.github.io).
 

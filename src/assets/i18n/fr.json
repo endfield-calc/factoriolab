@@ -16,7 +16,15 @@
     "dontShowAgain": "Ne plus afficher",
     "data": "Donnée",
     "resetTooltip": "Appuyer pour réinitialiser",
-    "migrationWarning": "Migration"
+    "migrationWarning": "Migration",
+    "swUpdate": {
+      "detectSummary": "Nouvelle version détectée",
+      "detectDetail": "Téléchargement de la nouvelle version en cours, veuillez patienter...",
+      "readySummary": "Version prête",
+      "readyDetail": "Veuillez actualiser la page pour utiliser la nouvelle version",
+      "updateRequired": "Mise à jour requise",
+      "updateRequiredMessage": "Une mise à jour est disponible. La page doit être rechargée pour continuer."
+    }
   },
   "options": {
     "column": {

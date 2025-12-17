@@ -14,7 +14,15 @@
     "errorDetail": "エラーが発生しました:",
     "resetTooltip": "クリックしてリセット",
     "simplexSolved": "計算時間 {{ time }}ms、 コスト: {{ cost }}",
-    "migrationWarning": "Migration warning"
+    "migrationWarning": "Migration warning",
+    "swUpdate": {
+      "detectSummary": "新しいバージョンを検出しました",
+      "detectDetail": "新しいバージョンをダウンロード中です。しばらくお待ちください...",
+      "readySummary": "バージョンの準備が完了しました",
+      "readyDetail": "新しいバージョンをご利用になるにはページを更新してください",
+      "updateRequired": "更新が必要です",
+      "updateRequiredMessage": "更新が利用可能です。続行するにはページを再読み込みしてください。"
+    }
   },
   "options": {
     "column": {

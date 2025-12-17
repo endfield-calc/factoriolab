@@ -15,7 +15,15 @@
     "resetTooltip": "Zum Zurücksetzen klicken",
     "simplexSolved": "Simplex {{ resultType }}: {{ time }}ms, Kosten: {{ cost }}",
     "simplexUnsolved": "Simplex {{ resultType }}",
-    "migrationWarning": "Warnung Migration"
+    "migrationWarning": "Warnung Migration",
+    "swUpdate": {
+      "detectSummary": "Neue Version erkannt",
+      "detectDetail": "Neue Version wird heruntergeladen, bitte warten...",
+      "readySummary": "Version bereit",
+      "readyDetail": "Bitte Seite aktualisieren, um die neue Version zu verwenden",
+      "updateRequired": "Update erforderlich",
+      "updateRequiredMessage": "Eine neue Version ist verfügbar. Bitte Seite neu laden, um fortzufahren."
+    }
   },
   "options": {
     "column": {

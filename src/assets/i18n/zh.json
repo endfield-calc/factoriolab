@@ -19,9 +19,9 @@
       "detectSummary": "检测到新版本",
       "detectDetail": "正在下载新版本，请稍候...",
       "readySummary": "新版本已就绪",
-      "readyDetail": "请刷新网页来切换到新版本",
-      "installationFailSummary": "新版本安装失败",
-      "installationFailDetail": "失败原因：{{ error }}"
+      "readyDetail": "请刷新页面来切换到新版本",
+      "updateRequired": "需要更新",
+      "updateRequiredMessage": "新版本已就绪，请刷新页面以继续使用"
     }
   },
   "options": {

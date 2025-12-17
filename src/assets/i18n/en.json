@@ -15,10 +15,14 @@
     "resetTooltip": "Click to reset",
     "simplexSolved": "Solved, {{ time }}ms, cost: {{ cost }}",
     "migrationWarning": "Migration warning",
-    "updateAvailable": "Update available",
-    "updateAvailableMessage": "An update is available. Would you like to reload the page to update?",
-    "updateRequired": "Update required",
-    "updateRequiredMessage": "An update is available, and the page must be reloaded to proceed."
+    "swUpdate": {
+      "detectSummary": "New Version Detected",
+      "detectDetail": "Downloading new version, please wait...",
+      "readySummary": "Version Ready",
+      "readyDetail": "Please refresh page to use new version",
+      "updateRequired": "Update required",
+      "updateRequiredMessage": "An update is available, and the page must be reloaded to proceed."
+    }
   },
   "options": {
     "column": {

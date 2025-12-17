@@ -1,7 +1,11 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
+
+import { Language } from '~/models/enum/language';
 import { TranslatePipe } from '~/pipes/translate.pipe';
+import { PreferencesService } from '~/store/preferences.service';
+
 import { environment } from '../../../environments';
 
 @Component({
@@ -14,6 +18,10 @@ import { environment } from '../../../environments';
 })
 export class UserTipsComponent {
   protected readonly environment = environment;
+  protected readonly Language = Language;
+
+  preferencesSvc = inject(PreferencesService);
+  language = this.preferencesSvc.language;
 
   protected readonly examples: { name: string; url: string }[] = [
     {

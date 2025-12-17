@@ -107,12 +107,14 @@
       <div>
         <h3 class="fw-bold mb-2"><i class="pi pi-headphones text-warning me-2"></i>反馈与建议</h3>
         <div class="d-flex flex-wrap gap-2">
-          <a
-            href="https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr"
-            target="_blank"
-            class="p-button p-button-outlined p-button-help text-decoration-none">
-            <i class="pi pi-comments me-2"></i>QQ群：1071155059
-          </a>
+          @if (language() === Language.Chinese) {
+            <a
+              href="https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr"
+              target="_blank"
+              class="p-button p-button-outlined p-button-help text-decoration-none">
+              <i class="pi pi-comments me-2"></i>QQ群：1071155059
+            </a>
+          }
 
           <a href="https://github.com/endfield-calc/endfield-calc.github.io/issues"
              target="_blank"

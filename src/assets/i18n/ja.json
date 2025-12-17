@@ -193,7 +193,7 @@
     "support": "支援する"
   },
   "landing": {
-    "welcome": "<b>FactorioLab</b>へようこそ! さあ、仕事を始めよう。",
+    "welcome": "<b>EndField Calculator</b>へようこそ! さあ、仕事を始めよう。",
     "addItems": "アイテムを追加",
     "addMachines": "機械を追加",
     "selectAnItem": "アイテムを選択",
@@ -217,7 +217,7 @@
   "settings": {
     "header": "設定",
     "reset": "すべての設定をリセット",
-    "resetWarning": "このブラウザに保存されたFactorioLabの設定がすべて削除されます。本当によろしいですか？",
+    "resetWarning": "このブラウザに保存されたEndField Calculatorの設定がすべて削除されます。本当によろしいですか？",
     "savedStates": "状態を保存",
     "createSavedState": "新規作成",
     "editSavedState": "名前変更",

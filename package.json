@@ -1,11 +1,8 @@
 {
-  "name": "factoriolab",
-  "description": "Angular-based calculator for the game Factorio",
+  "name": "endfield-calc",
+  "description": "Angular-based calculator for the game Arknights: EndFiled",
   "version": "0.0.0",
   "private": true,
-  "contributors": [
-    "Doug Broad (https://github.com/dcbroad3)"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/endfield-calc/factoriolab.git"

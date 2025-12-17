@@ -1,48 +1,7 @@
-> 温馨提示：想要clone项目的请使用git的浅克隆功能，因为该项目的完整历史超过2G，且下载历史提交意义不大。现代IDE一般都提供了相关的勾选框可以直接设为浅克隆，如果使用命令行的话只需增加`--depth n`参数(n为想要下载的commit数量，一般用1就行)。
+# EndField Calculator
 
-# FactorioLab
+This is the repository for the [EndField Calculator](https://endfield-calc.github.io) project, a tool for calculating resource and factory requirements for Arknights: Endfiled.
 
-[![prod](https://github.com/factoriolab/factoriolab/actions/workflows/prod.yml/badge.svg)](https://github.com/factoriolab/factoriolab/actions/workflows/prod.yml) [![tests](https://github.com/factoriolab/factoriolab/actions/workflows/tests.yml/badge.svg)](https://github.com/factoriolab/factoriolab/actions/workflows/tests.yml)
+This project is fork from [FactorioLab](https://factoriolab.github.io).
 
-This is the repository for the [FactorioLab](https://factoriolab.github.io) project, a tool for calculating resource and factory requirements for factory games.
-
-| Supported games                                             |                                                           |                                                                            |
-| ----------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [Factorio](https://factorio.com)                            | [Calculator](https://factoriolab.github.io/factorio)      | [Steam](https://store.steampowered.com/app/427520/Factorio/)               |
-| Dyson Sphere Program                                        | [Calculator](https://factoriolab.github.io/dsp)           | [Steam](https://store.steampowered.com/app/1366540/Dyson_Sphere_Program/)  |
-| [Satisfactory](https://www.satisfactorygame.com/)           | [Calculator](https://factoriolab.github.io/satisfactory)  | [Steam](https://store.steampowered.com/app/526870/Satisfactory/)           |
-| [Captain of Industry](https://www.captain-of-industry.com/) | [Calculator](https://factoriolab.github.io/coi)           | [Steam](https://store.steampowered.com/app/1594320/Captain_of_Industry/)   |
-| [Techtonica](https://techtonicagame.com/)                   | [Calculator](https://factoriolab.github.io/techtonica)    | [Steam](https://store.steampowered.com/app/1457320/Techtonica/)            |
-| Final Factory                                               | [Calculator](https://factoriolab.github.io/final-factory) | [Steam](https://store.steampowered.com/app/1383150/Final_Factory/)         |
-| [Factor Y](https://buckmartin.de/products/factor-y.html)    | [Calculator](https://factoriolab.github.io/fay)           | [Steam](https://store.steampowered.com/app/2220850?utm_source=FactorioLab) |
-
-This project is intended to build on the features of the Kirk McDonald [Factorio Calculator](https://kirkmcdonald.github.io) ([GitHub](https://github.com/KirkMcDonald/kirkmcdonald.github.io)). It is built from the ground up using Angular, Redux, and TypeScript.
-
-**To submit suggestions or issues,** please check out the [issues page](https://github.com/factoriolab/factoriolab/issues).
-
-**To discuss the calculator,** join the [Discord](https://discord.gg/N4FKV687x2).
-
-**If you love FactorioLab,** consider supporting it by [buying me a ☕](https://ko-fi.com/dcbroad3)!
-
-## Running online
-
-The calculator can be found at <https://factoriolab.github.io>.  
-The staging environment, for testing pull requests, can be found at <https://factoriolab.github.io/staging>.
-
-## Running locally
-
-To run this project locally:
-
-1. Install [NodeJS](https://nodejs.org/en/)
-1. Install dependencies, using `npm ci`
-1. Build and serve the project, using `npm start`
-1. Open a browser at <http://localhost:4200>
-
-The app will reload automatically if source code is changed.
-
-## Running tests
-
-To run the automated unit tests:
-
-1. Install NodeJs, Angular CLI, and the dependencies as described above
-2. Build and run the tests, using `npm test`
+**To submit suggestions or issues,** please check out the [issues page](https://github.com/endfield-calc/factoriolab/issues).

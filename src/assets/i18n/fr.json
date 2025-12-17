@@ -220,7 +220,7 @@
     "support": "Support"
   },
   "landing": {
-    "welcome": "Bienvenue sur <b>FactorioLab</b>! Mettons-nous au travail.",
+    "welcome": "Bienvenue sur <b>EndField Calculator</b>! Mettons-nous au travail.",
     "addItems": "Ajouter des Articles",
     "addMachines": "Ajouter des Machines",
     "selectAnItem": "Selectioner un article",
@@ -244,7 +244,7 @@
   "settings": {
     "header": "Paramètres",
     "reset": "Réinitialiser tout les paramètres",
-    "resetWarning": "Cela supprimera tous les paramètres FactorioLab enregistré sur ce navigateur, êtes-vous sur de vouloir continuer?",
+    "resetWarning": "Cela supprimera tous les paramètres EndField Calculator enregistré sur ce navigateur, êtes-vous sur de vouloir continuer?",
     "savedStates": "Sauvegardes",
     "createSavedState": "Nouvelle sauvegarde",
     "editSavedState": "Renommer sauvegarde",

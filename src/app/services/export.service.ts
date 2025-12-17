@@ -76,11 +76,11 @@ export class ExportService {
     const csv = json.map((row) => fields.map((f) => row[f]).join(','));
     csv.unshift(fields.join(','));
     csv.unshift(`"${window.location.href}"`);
-    this.saveAsCsv(csv.join('\r\n'), 'factoriolab_list');
+    this.saveAsCsv(csv.join('\r\n'), 'endfield-calc_list');
   }
 
   flowToJson(flowData: FlowData): void {
-    this.saveAsJson(JSON.stringify(flowData), 'factoriolab_flow');
+    this.saveAsJson(JSON.stringify(flowData), 'endfield-calc_flow');
   }
 
   // istanbul ignore next: Don't test dependencies (file-saver)

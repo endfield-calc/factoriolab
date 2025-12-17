@@ -423,6 +423,6 @@ export class FlowComponent implements AfterViewInit {
 
   // istanbul ignore next: Don't test dependencies (file-saver/cytoscape)
   saveCytoscapePng(cy: cytoscape.Core): void {
-    saveAs(cy.png(), 'factoriolab_flow.png');
+    saveAs(cy.png(), 'endfield-calc_flow.png');
   }
 }

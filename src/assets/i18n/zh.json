@@ -13,7 +13,7 @@
     "error": "错误",
     "errorDetail": "此应用遇到了一个错误：",
     "resetTooltip": "点击重置",
-    "simplexSolved": "计算完成, {{ time }}毫秒, 耗费: {{ cost }}",
+    "simplexSolved": "计算完成, {{ time }}毫秒, 成本: {{ cost }}",
     "migrationWarning": "迁移警告",
     "swUpdate": {
       "detectSummary": "检测到新版本",

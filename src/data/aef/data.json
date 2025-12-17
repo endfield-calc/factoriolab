@@ -1909,7 +1909,7 @@
         "plant_grass_1": 1
       },
       "out": {
-        "carbon_mtl": 1
+        "carbon_mtl": 2
       },
       "producers": [
         "furnance_1"
@@ -1926,7 +1926,7 @@
         "plant_grass_2": 1
       },
       "out": {
-        "carbon_mtl": 1
+        "carbon_mtl": 2
       },
       "producers": [
         "furnance_1"

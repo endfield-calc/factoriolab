@@ -29,7 +29,7 @@ describe('HeaderComponent', () => {
       component.objectivesSvc.load(Mocks.objectivesState);
       fixture.detectChanges();
       expect(component.title.setTitle).toHaveBeenCalledWith(
-        'Advanced circuit | 终末地量化计算器',
+        'Advanced circuit | app.name',
       );
     });
   });

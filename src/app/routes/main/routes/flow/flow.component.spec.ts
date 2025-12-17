@@ -60,7 +60,7 @@ describe('FlowComponent', () => {
     it('should rebuild the chart', fakeAsync(() => {
       spyOn(component, 'rebuildChart');
       TestBed.inject(ThemeService).themeValues$.next(Mocks.themeValues);
-      tick();
+      tick(100);
       expect(component.rebuildChart).toHaveBeenCalled();
     }));
   });

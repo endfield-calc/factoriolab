@@ -40,7 +40,7 @@ describe('AppComponent', () => {
       spyOn(console, 'log');
       spyOn(component.analyticsSvc, 'event');
       http.expectOne('assets/release.json').flush({ version: 'version' });
-      expect(console.log).toHaveBeenCalledWith('终末地量化计算器 version (test)');
+      expect(console.log).toHaveBeenCalledWith('EndfieldLab version (test)');
       expect(component.analyticsSvc.event).toHaveBeenCalled();
     });
 
@@ -57,12 +57,18 @@ describe('AppComponent', () => {
 
     it('should handle version updates', () => {
       spyOn(component.contentSvc, 'reload');
+      spyOn(component.contentSvc.showToast$, 'next');
+      swUpdate.versionUpdates.next({ type: 'VERSION_DETECTED' } as any);
+      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(1);
+      swUpdate.versionUpdates.next({ type: 'VERSION_READY' } as any);
+      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(2);
+
       spyOn(component.contentSvc, 'confirm').and.callFake((confirm) => {
         confirm.accept?.();
         confirm.reject?.();
-        expect(component.contentSvc.reload).toHaveBeenCalledTimes(1);
+        expect(component.contentSvc.reload).toHaveBeenCalledTimes(2);
       });
-      swUpdate.versionUpdates.next({ type: 'VERSION_READY' } as any);
+      swUpdate.versionUpdates.next({ type: 'VERSION_INSTALLATION_FAILED' } as any);
       expect(component.contentSvc.confirm).toHaveBeenCalled();
     });
   });
@@ -76,29 +82,6 @@ describe('AppComponent', () => {
       expect(component.dataSvc.error$.next).toHaveBeenCalledWith(undefined);
       expect(component.router.navigate).toHaveBeenCalledWith(['/']);
       expect(component.contentSvc.reload).toHaveBeenCalled();
-    });
-  });
-
-  describe('handleSwUpdateEvent', () => {
-    it('should show version toast', () => {
-      spyOn(component.contentSvc.showToast$, 'next');
-      component.handleSwUpdateEvent({
-        type: 'VERSION_DETECTED',
-        version: { hash: '' },
-      });
-      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(1);
-      component.handleSwUpdateEvent({
-        type: 'VERSION_READY',
-        currentVersion: { hash: '' },
-        latestVersion: { hash: '' },
-      });
-      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(2);
-      component.handleSwUpdateEvent({
-        type: 'VERSION_INSTALLATION_FAILED',
-        version: { hash: '' },
-        error: '',
-      });
-      expect(component.contentSvc.showToast$.next).toHaveBeenCalledTimes(3);
     });
   });
 });

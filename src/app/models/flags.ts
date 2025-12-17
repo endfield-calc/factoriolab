@@ -144,6 +144,7 @@ export const flags: Record<FlagSet, Set<Flag>> = {
     'consumptionAsDrain',
     'power',
     'resourcePurity',
+    'hideMachineSettings',
   ]),
   sfy: new Set([
     'consumptionAsDrain',

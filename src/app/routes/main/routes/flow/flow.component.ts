@@ -105,7 +105,7 @@ export class FlowComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.data$
-      .pipe(debounceTime(0), takeUntilDestroyed(this.destroyRef))
+      .pipe(debounceTime(100), takeUntilDestroyed(this.destroyRef))
       .subscribe((args) => {
         this.rebuildChart(...args);
       });

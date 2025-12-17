@@ -5,7 +5,7 @@
   "reset": "Reset",
   "none": "None",
   "app": {
-    "name": "EndField Calculator",
+    "name": "EndfieldLab",
     "factory": "Factory",
     "list": "List",
     "flow": "Flow",
@@ -207,7 +207,7 @@
     "support": "Support"
   },
   "landing": {
-    "welcome": "Welcome to <b>EndField Calculator</b>! Let's get to work.",
+    "welcome": "Welcome to <b>EndfieldLab</b>! Let's get to work.",
     "addItems": "Add items",
     "addMachines": "Add machines",
     "selectAnItem": "Select an item",
@@ -231,7 +231,7 @@
   "settings": {
     "header": "Settings",
     "reset": "Reset all settings",
-    "resetWarning": "This will delete all saved EndField Calculator settings in this browser, are you sure you want to continue?",
+    "resetWarning": "This will delete all saved EndfieldLab settings in this browser, are you sure you want to continue?",
     "savedStates": "Saved states",
     "createSavedState": "Create new",
     "editSavedState": "Rename",

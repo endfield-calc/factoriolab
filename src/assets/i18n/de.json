@@ -144,7 +144,7 @@
     "researched": "Erforscht"
   },
   "landing": {
-    "welcome": "Willkommen bei <b>EndField Calculator</b>! Lass uns starten.",
+    "welcome": "Willkommen bei <b>EndfieldLab</b>! Lass uns starten.",
     "addItems": "Items hinzufügen",
     "addMachines": "Maschinen hinzufügen",
     "selectAnItem": "Wähle ein Item",
@@ -168,7 +168,7 @@
   "settings": {
     "header": "Einstellungen",
     "reset": "Alle Einstellungen zurücksetzen",
-    "resetWarning": "Diese Aktion wird alle gespeicherten EndField Calculator-Einstellungen in diesem Browser löschen, bist du sicher, dass du fortfahren willst?",
+    "resetWarning": "Diese Aktion wird alle gespeicherten EndfieldLab-Einstellungen in diesem Browser löschen, bist du sicher, dass du fortfahren willst?",
     "savedStates": "Speicherungen",
     "createSavedState": "Erstellen",
     "editSavedState": "Umbenennen",

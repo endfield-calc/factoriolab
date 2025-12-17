@@ -1,0 +1,25 @@
+{
+  "name": "EndFieldLab",
+  "short_name": "EndFieldLab",
+  "description": "A feature-rich factory production calculator for Arknights: Endfield. Determine resource and machine requirements for your desired objectives.",
+  "id": "/endfield-calc",
+  "start_url": "./",
+  "scope": "./",
+  "theme_color": "#754f29",
+  "background_color": "#f8f9fa",
+  "display": "standalone",
+  "categories": ["games", "utilities"],
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": []
+}

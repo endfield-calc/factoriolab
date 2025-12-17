@@ -38,8 +38,10 @@ jobs:
       - name: Run build
         run: npm run build -- -c=production
 
-      - name: Copy index to 404
-        run: cp dist/browser/index.html dist/browser/404.html
+      - name: Copy files
+        run: |
+          cp dist/browser/index.html dist/browser/404.html
+          cp resource/webmanifest/site.webmanifest dist/browser/site.webmanifest
 
       - name: Write release info
         uses: actions/github-script@v8
@@ -73,7 +75,7 @@ jobs:
             const basePath = './dist/browser/';
 
             // 定义文件路径和新内容
-            const [I, I2, M, T, S] = [`${basePath}/index.html`, `${basePath}/404.html`, `${basePath}/site.webmanifest`, '终末地量化计算器', '终末地计算器'];
+            const [I, I2, T] = [`${basePath}/index.html`, `${basePath}/404.html`, '终末地量化计算器'];
 
             // 1. 更新 index.html 和 404.html (替换 <title>...</title> 标签内的内容)
             // 使用 [\s\S]*? 匹配任何内容（包括换行），实现非贪婪替换
@@ -82,15 +84,7 @@ jobs:
             fs.writeFileSync(I2, fs.readFileSync(I2, 'utf8')
               .replace(/<title>[\s\S]*?<\/title>/, `<title>${T}</title>`), 'utf8');
 
-            // 2. 更新 manifest.json (替换 "name" 和 "short_name" 的值)
-            let manifestContent = fs.readFileSync(M, 'utf8');
-
-            // 使用 [^"]* 匹配双引号内的所有非引号字符，直到下一个双引号
-            manifestContent = manifestContent
-              .replace(/"name":\s*"[^"]*"/, `"name": "${T}"`) // 匹配 "name": "..."
-              .replace(/"short_name":\s*"[^"]*"/, `"short_name": "${S}"`); // 匹配 "short_name": "..."
-
-            fs.writeFileSync(M, manifestContent, 'utf8');
+            fs.copyFileSync('resource/webmanifest/site-zh.webmanifest', `${basePath}/site.webmanifest`);
 
             // 重新计算文件hash
             const exitCode = await exec.exec('npm run ngsw-config');

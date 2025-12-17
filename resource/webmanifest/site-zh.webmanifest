@@ -1,12 +1,12 @@
 {
-  "name": "EndField Calculator",
-  "short_name": "EndField Calc",
-  "description": "A feature-rich factory production calculator for ArknightsEndfield. Determine resource and machine requirements for your desired objectives.",
+  "name": "终末地量化计算器",
+  "short_name": "终末地计算器",
+  "description": "功能丰富的《明日方舟：终末地》工厂生产计算器。根据您的目标产出，精准计算所需的资源与机器数量。",
   "id": "/endfield-calc",
   "start_url": "./",
   "scope": "./",
-  "theme_color": "#009fce",
-  "background_color": "#121212",
+  "theme_color": "#754f29",
+  "background_color": "#f8f9fa",
   "display": "standalone",
   "categories": ["games", "utilities"],
   "icons": [

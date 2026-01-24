@@ -1,4 +1,4 @@
-name: 3rd-test Deploy
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -50,8 +50,8 @@ jobs:
         with:
           script: |
             const exitCode = await exec.exec('./scripts/write-release-info.sh',[
-              `3rd-test-${process.env.COMMIT_SHA.substring(0, 7)}`,
-              'ark-endfield-3rd-test',
+              `${process.env.COMMIT_SHA.substring(0, 7)}`,
+              'ark-endfield',
               (new Date()).toISOString(),
               'unused-tag',
             ]);

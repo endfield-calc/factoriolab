@@ -11,12 +11,12 @@
     {
       "id": "belt",
       "position": "-64px 0px",
-      "color": "#da9269"
+      "color": "#d99065"
     },
     {
       "id": "pipe",
       "position": "-128px 0px",
-      "color": "#7ca8c0"
+      "color": "#80afc8"
     },
     {
       "id": "carbon_enr_powder",
@@ -65,592 +65,682 @@
     },
     {
       "id": "glass_cmpt",
-      "position": "0px -64px",
+      "position": "-768px 0px",
       "color": "#9294a1"
     },
     {
       "id": "glass_enr_bottle",
-      "position": "-64px -64px",
+      "position": "0px -64px",
       "color": "#76758f"
     },
     {
       "id": "glass_enr_cmpt",
-      "position": "-128px -64px",
+      "position": "-64px -64px",
       "color": "#969199"
     },
     {
       "id": "iron_bottle",
-      "position": "-192px -64px",
+      "position": "-128px -64px",
       "color": "#3b597b"
     },
     {
       "id": "iron_cmpt",
-      "position": "-256px -64px",
+      "position": "-192px -64px",
       "color": "#6e81a9"
     },
     {
       "id": "iron_enr_bottle",
-      "position": "-320px -64px",
+      "position": "-256px -64px",
       "color": "#5b6d83"
     },
     {
       "id": "iron_enr_cmpt",
-      "position": "-384px -64px",
+      "position": "-320px -64px",
       "color": "#5e748d"
     },
     {
       "id": "iron_enr_powder",
-      "position": "-448px -64px",
+      "position": "-384px -64px",
       "color": "#5b7e97"
     },
     {
       "id": "iron_enr",
-      "position": "-512px -64px",
+      "position": "-448px -64px",
       "color": "#56829c"
     },
     {
       "id": "iron_nugget",
-      "position": "-576px -64px",
+      "position": "-512px -64px",
       "color": "#618095"
     },
     {
       "id": "iron_ore",
-      "position": "-640px -64px",
+      "position": "-576px -64px",
       "color": "#59708d"
     },
     {
       "id": "iron_powder",
-      "position": "-704px -64px",
+      "position": "-640px -64px",
       "color": "#36526a"
     },
     {
       "id": "liquid_plant_grass_1",
-      "position": "0px -128px",
+      "position": "-704px -64px",
       "color": "#e4f6e3"
     },
     {
       "id": "liquid_plant_grass_2",
-      "position": "-64px -128px",
+      "position": "-768px -64px",
       "color": "#c2ed7c"
     },
     {
       "id": "liquid_water",
-      "position": "-128px -128px",
+      "position": "0px -128px",
       "color": "#5ae5f9"
     },
     {
       "id": "liquid_xiranite",
-      "position": "-192px -128px",
+      "position": "-64px -128px",
       "color": "#467866"
     },
     {
       "id": "originium_enr_powder",
-      "position": "-256px -128px",
+      "position": "-128px -128px",
       "color": "#76532f"
     },
     {
       "id": "originium_ore",
-      "position": "-320px -128px",
+      "position": "-192px -128px",
       "color": "#805f3c"
     },
     {
       "id": "originium_powder",
-      "position": "-384px -128px",
+      "position": "-256px -128px",
       "color": "#4d3c2b"
     },
     {
       "id": "plant_bbflower_1",
-      "position": "-448px -128px",
+      "position": "-320px -128px",
       "color": "#635c3e"
     },
     {
       "id": "plant_bbflower_powder_1",
-      "position": "-512px -128px",
+      "position": "-384px -128px",
       "color": "#7c7436"
     },
     {
       "id": "plant_bbflower_seed_1",
-      "position": "-576px -128px",
+      "position": "-448px -128px",
       "color": "#aca368"
     },
     {
       "id": "plant_grass_1",
-      "position": "-640px -128px",
+      "position": "-512px -128px",
       "color": "#7a8462"
     },
     {
       "id": "plant_grass_2",
-      "position": "-704px -128px",
+      "position": "-576px -128px",
       "color": "#5c5f4b"
     },
     {
       "id": "plant_grass_powder_1",
-      "position": "0px -192px",
+      "position": "-640px -128px",
       "color": "#babca0"
     },
     {
       "id": "plant_grass_powder_2",
-      "position": "-64px -192px",
+      "position": "-704px -128px",
       "color": "#b3907a"
     },
     {
       "id": "plant_grass_seed_1",
-      "position": "-128px -192px",
+      "position": "-768px -128px",
       "color": "#979e75"
     },
     {
       "id": "plant_grass_seed_2",
-      "position": "-192px -192px",
+      "position": "0px -192px",
       "color": "#9e7f6a"
     },
     {
       "id": "plant_moss_1",
-      "position": "-256px -192px",
+      "position": "-64px -192px",
       "color": "#605926"
     },
     {
       "id": "plant_moss_2",
-      "position": "-320px -192px",
+      "position": "-128px -192px",
       "color": "#65681f"
     },
     {
       "id": "plant_moss_3",
-      "position": "-384px -192px",
+      "position": "-192px -192px",
       "color": "#917729"
     },
     {
       "id": "plant_moss_enr_powder_1",
-      "position": "-448px -192px",
+      "position": "-256px -192px",
       "color": "#896361"
     },
     {
       "id": "plant_moss_enr_powder_2",
-      "position": "-512px -192px",
+      "position": "-320px -192px",
       "color": "#90845b"
     },
     {
       "id": "plant_moss_powder_1",
-      "position": "-576px -192px",
+      "position": "-384px -192px",
       "color": "#ad6c66"
     },
     {
       "id": "plant_moss_powder_2",
-      "position": "-640px -192px",
+      "position": "-448px -192px",
       "color": "#d5c274"
     },
     {
       "id": "plant_moss_powder_3",
-      "position": "-704px -192px",
+      "position": "-512px -192px",
       "color": "#9c7008"
     },
     {
       "id": "plant_moss_seed_1",
-      "position": "0px -256px",
+      "position": "-576px -192px",
       "color": "#9e6244"
     },
     {
       "id": "plant_moss_seed_2",
-      "position": "-64px -256px",
+      "position": "-640px -192px",
       "color": "#928029"
     },
     {
       "id": "plant_moss_seed_3",
-      "position": "-128px -256px",
+      "position": "-704px -192px",
       "color": "#856812"
     },
     {
       "id": "quartz_enr_powder",
-      "position": "-192px -256px",
+      "position": "-768px -192px",
       "color": "#b1afc1"
     },
     {
       "id": "quartz_enr",
-      "position": "-256px -256px",
+      "position": "0px -256px",
       "color": "#9998a5"
     },
     {
       "id": "quartz_glass",
-      "position": "-320px -256px",
+      "position": "-64px -256px",
       "color": "#715f92"
     },
     {
       "id": "quartz_powder",
-      "position": "-384px -256px",
+      "position": "-128px -256px",
       "color": "#62507b"
     },
     {
       "id": "quartz_sand",
-      "position": "-448px -256px",
+      "position": "-192px -256px",
       "color": "#5d486c"
     },
     {
       "id": "xiranite_powder",
-      "position": "-512px -256px",
+      "position": "-256px -256px",
       "color": "#335246"
     },
     {
       "id": "bottled_food_1",
-      "position": "-576px -256px",
+      "position": "-320px -256px",
       "color": "#7f847c"
     },
     {
       "id": "bottled_food_2",
-      "position": "-640px -256px",
+      "position": "-384px -256px",
       "color": "#878c69"
     },
     {
       "id": "bottled_food_3",
-      "position": "-704px -256px",
+      "position": "-448px -256px",
       "color": "#838882"
     },
     {
       "id": "bottled_food_4",
-      "position": "0px -320px",
+      "position": "-512px -256px",
       "color": "#526d71"
     },
     {
       "id": "bottled_rec_hp_1",
-      "position": "-64px -320px",
+      "position": "-576px -256px",
       "color": "#b39497"
     },
     {
       "id": "bottled_rec_hp_2",
-      "position": "-128px -320px",
+      "position": "-640px -256px",
       "color": "#bca2a2"
     },
     {
       "id": "bottled_rec_hp_3",
-      "position": "-192px -320px",
+      "position": "-704px -256px",
       "color": "#b5959c"
     },
     {
       "id": "bottled_rec_hp_4",
-      "position": "-256px -320px",
+      "position": "-768px -256px",
       "color": "#a69690"
     },
     {
       "id": "equip_script_1",
-      "position": "-320px -320px",
+      "position": "0px -320px",
       "color": "#a2a0b0"
     },
     {
       "id": "equip_script_2",
-      "position": "-384px -320px",
+      "position": "-64px -320px",
       "color": "#8898bf"
     },
     {
       "id": "equip_script_3",
-      "position": "-448px -320px",
+      "position": "-128px -320px",
       "color": "#a2a4b0"
     },
     {
       "id": "equip_script_4",
-      "position": "-512px -320px",
+      "position": "-192px -320px",
       "color": "#5d5644"
     },
     {
       "id": "product",
-      "position": "-576px -320px",
+      "position": "-256px -320px",
       "color": "#967d7a"
     },
     {
       "id": "proc_battery_1",
-      "position": "-640px -320px",
+      "position": "-320px -320px",
       "color": "#9e9f99"
     },
     {
       "id": "proc_battery_2",
-      "position": "-704px -320px",
+      "position": "-384px -320px",
       "color": "#9c999d"
     },
     {
       "id": "proc_battery_3",
-      "position": "0px -384px",
+      "position": "-448px -320px",
       "color": "#9e999c"
     },
     {
       "id": "proc_battery_4",
-      "position": "-64px -384px",
+      "position": "-512px -320px",
       "color": "#6a8872"
     },
     {
       "id": "proc_bomb_1",
-      "position": "-128px -384px",
+      "position": "-576px -320px",
       "color": "#8c7e7a"
     },
     {
       "id": "jinlong_coupon",
-      "position": "-192px -384px",
+      "position": "-640px -320px",
       "color": "#8ca0a0"
     },
     {
       "id": "tundra_coupon",
-      "position": "-256px -384px",
+      "position": "-704px -320px",
       "color": "#c5c8b4"
     },
     {
       "id": "jinlong",
-      "position": "-320px -384px",
+      "position": "-768px -320px",
       "color": "#7f9b97"
     },
     {
       "id": "tundra",
-      "position": "-384px -384px",
+      "position": "0px -384px",
       "color": "#9caa7b"
     },
     {
       "id": "cmpt_mc_1",
-      "position": "-448px -384px",
+      "position": "-64px -384px",
       "color": "#848580"
     },
     {
       "id": "dismantler_1",
-      "position": "-512px -384px",
+      "position": "-128px -384px",
       "color": "#98988e"
     },
     {
       "id": "filling_pd_mc_1",
-      "position": "-576px -384px",
+      "position": "-192px -384px",
       "color": "#808183"
     },
     {
       "id": "furnance_1",
-      "position": "-640px -384px",
+      "position": "-256px -384px",
       "color": "#aa9f99"
     },
     {
       "id": "grinder_1",
-      "position": "-704px -384px",
+      "position": "-320px -384px",
       "color": "#939799"
     },
     {
       "id": "miner_2",
-      "position": "0px -448px",
+      "position": "-384px -384px",
       "color": "#868785"
     },
     {
       "id": "miner_3",
-      "position": "-64px -448px",
+      "position": "-448px -384px",
       "color": "#918a89"
     },
     {
       "id": "mix_pool_1",
-      "position": "-128px -448px",
+      "position": "-512px -384px",
       "color": "#898b8d"
     },
     {
       "id": "planter_1",
-      "position": "-192px -448px",
+      "position": "-576px -384px",
       "color": "#7c827f"
     },
     {
       "id": "power_sta_1",
-      "position": "-256px -448px",
+      "position": "-640px -384px",
       "color": "#939da1"
     },
     {
       "id": "pump_1",
-      "position": "-320px -448px",
+      "position": "-704px -384px",
       "color": "#8f8d87"
     },
     {
       "id": "seedcol_1",
-      "position": "-384px -448px",
+      "position": "-768px -384px",
       "color": "#757c76"
     },
     {
       "id": "shaper_1",
-      "position": "-448px -448px",
+      "position": "0px -448px",
       "color": "#919291"
     },
     {
       "id": "thickener_1",
-      "position": "-512px -448px",
+      "position": "-64px -448px",
       "color": "#898a8a"
     },
     {
       "id": "tools_asm_mc_1",
-      "position": "-576px -448px",
+      "position": "-128px -448px",
       "color": "#868888"
     },
     {
       "id": "winder_1",
-      "position": "-640px -448px",
+      "position": "-192px -448px",
       "color": "#979593"
     },
     {
       "id": "xiranite_oven_1",
-      "position": "-704px -448px",
+      "position": "-256px -448px",
       "color": "#a2a79a"
     },
     {
+      "id": "carbon_enr_powder-carbon_powder",
+      "position": "-320px -448px",
+      "color": "#4b4b4b"
+    },
+    {
+      "id": "carbon_enr_powder-plant_moss_enr_powder_1",
+      "position": "-384px -448px",
+      "color": "#605353"
+    },
+    {
+      "id": "carbon_enr_powder-plant_moss_enr_powder_2",
+      "position": "-448px -448px",
+      "color": "#625e51"
+    },
+    {
       "id": "carbon_mtl-plant_grass_1",
-      "position": "0px -512px",
+      "position": "-512px -448px",
       "color": "#4c504d"
     },
     {
       "id": "carbon_mtl-plant_grass_2",
-      "position": "-64px -512px",
+      "position": "-576px -448px",
       "color": "#444749"
     },
     {
       "id": "carbon_mtl-plant_moss_1",
-      "position": "-128px -512px",
+      "position": "-640px -448px",
       "color": "#484743"
     },
     {
       "id": "carbon_mtl-plant_moss_2",
-      "position": "-192px -512px",
+      "position": "-704px -448px",
       "color": "#4a4c42"
     },
     {
       "id": "carbon_mtl-plant_moss_3",
-      "position": "-256px -512px",
+      "position": "-768px -448px",
       "color": "#585044"
     },
     {
-      "id": "crystal_enr_powder-crystal_powder",
+      "id": "carbon_powder-carbon_mtl",
+      "position": "0px -512px",
+      "color": "#4b4c4e"
+    },
+    {
+      "id": "carbon_powder-plant_grass_powder_1",
+      "position": "-64px -512px",
+      "color": "#797a6d"
+    },
+    {
+      "id": "carbon_powder-plant_grass_powder_2",
+      "position": "-128px -512px",
+      "color": "#75665d"
+    },
+    {
+      "id": "carbon_powder-plant_moss_powder_1",
+      "position": "-192px -512px",
+      "color": "#725856"
+    },
+    {
+      "id": "carbon_powder-plant_moss_powder_2",
+      "position": "-256px -512px",
+      "color": "#857c5b"
+    },
+    {
+      "id": "carbon_powder-plant_moss_powder_3",
       "position": "-320px -512px",
+      "color": "#655744"
+    },
+    {
+      "id": "crystal_enr_powder-crystal_powder",
+      "position": "-384px -512px",
       "color": "#9b6237"
     },
     {
       "id": "crystal_enr_powder-originium_enr_powder",
-      "position": "-384px -512px",
+      "position": "-448px -512px",
       "color": "#9c653a"
     },
     {
+      "id": "crystal_powder-crystal_shell",
+      "position": "-512px -512px",
+      "color": "#7b552d"
+    },
+    {
+      "id": "crystal_powder-originium_powder",
+      "position": "-576px -512px",
+      "color": "#674222"
+    },
+    {
+      "id": "crystal_shell-crystal_powder",
+      "position": "-640px -512px",
+      "color": "#8c6c3d"
+    },
+    {
+      "id": "crystal_shell-originium_ore",
+      "position": "-704px -512px",
+      "color": "#8f6f41"
+    },
+    {
       "id": "dismantler_1-liquid_plant_grass_1",
-      "position": "-448px -512px",
+      "position": "-768px -512px",
       "color": "#a1a498"
     },
     {
       "id": "dismantler_1-liquid_plant_grass_2",
-      "position": "-512px -512px",
+      "position": "0px -576px",
       "color": "#9ba289"
     },
     {
       "id": "iron_bottle-liquid_plant_grass_1",
-      "position": "-576px -512px",
+      "position": "-64px -576px",
       "color": "#7b909a"
     },
     {
       "id": "iron_bottle-liquid_plant_grass_2",
-      "position": "-640px -512px",
+      "position": "-128px -576px",
       "color": "#6c8c7a"
     },
     {
       "id": "iron_bottle-liquid_water",
-      "position": "-704px -512px",
+      "position": "-192px -576px",
       "color": "#44869e"
     },
     {
+      "id": "iron_nugget-iron_ore",
+      "position": "-256px -576px",
+      "color": "#648299"
+    },
+    {
+      "id": "iron_nugget-iron_powder",
+      "position": "-320px -576px",
+      "color": "#5f7c91"
+    },
+    {
+      "id": "jinlong_coupon-bottled_food_4",
+      "position": "-384px -576px",
+      "color": "#8b9c9c"
+    },
+    {
       "id": "jinlong_coupon-bottled_rec_hp_4",
-      "position": "0px -576px",
+      "position": "-448px -576px",
       "color": "#96a09f"
     },
     {
       "id": "jinlong_coupon-proc_battery_4",
-      "position": "-64px -576px",
+      "position": "-512px -576px",
       "color": "#8d9f9c"
     },
     {
       "id": "jinlong_coupon-xiranite_powder",
-      "position": "-128px -576px",
+      "position": "-576px -576px",
       "color": "#869897"
     },
     {
       "id": "power_sta_1-originium_ore",
-      "position": "-192px -576px",
+      "position": "-640px -576px",
       "color": "#929595"
     },
     {
       "id": "power_sta_1-proc_battery_1",
-      "position": "-256px -576px",
+      "position": "-704px -576px",
       "color": "#99a1a4"
     },
     {
       "id": "power_sta_1-proc_battery_2",
-      "position": "-320px -576px",
+      "position": "-768px -576px",
       "color": "#98a0a5"
     },
     {
       "id": "power_sta_1-proc_battery_3",
-      "position": "-384px -576px",
+      "position": "0px -640px",
       "color": "#98a0a4"
     },
     {
       "id": "power_sta_1-proc_battery_4",
-      "position": "-448px -576px",
+      "position": "-64px -640px",
       "color": "#919d9f"
     },
     {
+      "id": "quartz_glass-quartz_powder",
+      "position": "-128px -640px",
+      "color": "#6c5a8b"
+    },
+    {
+      "id": "quartz_glass-quartz_sand",
+      "position": "-192px -640px",
+      "color": "#695785"
+    },
+    {
       "id": "tundra_coupon-bottled_food_1",
-      "position": "-512px -576px",
+      "position": "-256px -640px",
       "color": "#bcbfac"
     },
     {
       "id": "tundra_coupon-bottled_food_2",
-      "position": "-576px -576px",
+      "position": "-320px -640px",
       "color": "#bcbfa7"
     },
     {
       "id": "tundra_coupon-bottled_food_3",
-      "position": "-640px -576px",
+      "position": "-384px -640px",
       "color": "#b6b9a9"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_1",
-      "position": "-704px -576px",
+      "position": "-448px -640px",
       "color": "#c5c1b2"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_2",
-      "position": "0px -640px",
+      "position": "-512px -640px",
       "color": "#c8c3b4"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_3",
-      "position": "-64px -640px",
+      "position": "-576px -640px",
       "color": "#c3bbaf"
     },
     {
       "id": "tundra_coupon-crystal_shell",
-      "position": "-128px -640px",
+      "position": "-640px -640px",
       "color": "#bdb9a2"
     },
     {
       "id": "tundra_coupon-glass_bottle",
-      "position": "-192px -640px",
+      "position": "-704px -640px",
       "color": "#b7b8aa"
     },
     {
       "id": "tundra_coupon-glass_cmpt",
-      "position": "-256px -640px",
+      "position": "-768px -640px",
       "color": "#bec1b5"
     },
     {
       "id": "tundra_coupon-iron_cmpt",
-      "position": "-320px -640px",
+      "position": "0px -704px",
       "color": "#b8bdb7"
     },
     {
       "id": "tundra_coupon-iron_enr_cmpt",
-      "position": "-384px -640px",
+      "position": "-64px -704px",
       "color": "#b6bbb0"
     },
     {
       "id": "tundra_coupon-proc_battery_1",
-      "position": "-448px -640px",
+      "position": "-128px -704px",
       "color": "#bfc1af"
     },
     {
       "id": "tundra_coupon-proc_battery_2",
-      "position": "-512px -640px",
+      "position": "-192px -704px",
       "color": "#bec0b0"
     },
     {
       "id": "tundra_coupon-proc_battery_3",
-      "position": "-576px -640px",
+      "position": "-256px -704px",
       "color": "#bfc0af"
     }
   ],
@@ -1634,7 +1724,7 @@
       "name": "管道",
       "stack": 1,
       "pipe": {
-        "speed": 4
+        "speed": 2
       },
       "category": "belt-and-pipe",
       "row": 999,
@@ -1838,6 +1928,91 @@
     {
       "time": 2,
       "in": {
+        "plant_moss_powder_1": 1
+      },
+      "out": {
+        "carbon_powder": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_powder-plant_moss_powder_1",
+      "name": "碳粉末(荞花粉末)",
+      "category": "material",
+      "row": 0,
+      "icon": "carbon_powder-plant_moss_powder_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_powder_2": 1
+      },
+      "out": {
+        "carbon_powder": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_powder-plant_moss_powder_2",
+      "name": "碳粉末(柑实粉末)",
+      "category": "material",
+      "row": 0,
+      "icon": "carbon_powder-plant_moss_powder_2"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_powder_3": 3
+      },
+      "out": {
+        "carbon_powder": 2
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_powder-plant_moss_powder_3",
+      "name": "碳粉末(砂叶粉末)",
+      "category": "material",
+      "row": 0,
+      "icon": "carbon_powder-plant_moss_powder_3"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_grass_powder_1": 1
+      },
+      "out": {
+        "carbon_powder": 2
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_powder-plant_grass_powder_1",
+      "name": "碳粉末(锦草粉末)",
+      "category": "material",
+      "row": 0,
+      "icon": "carbon_powder-plant_grass_powder_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_grass_powder_2": 1
+      },
+      "out": {
+        "carbon_powder": 2
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_powder-plant_grass_powder_2",
+      "name": "碳粉末(芽针粉末)",
+      "category": "material",
+      "row": 0,
+      "icon": "carbon_powder-plant_grass_powder_2"
+    },
+    {
+      "time": 2,
+      "in": {
         "carbon_mtl": 1
       },
       "out": {
@@ -1846,96 +2021,11 @@
       "producers": [
         "grinder_1"
       ],
-      "id": "carbon_powder",
-      "name": "碳粉末",
+      "id": "carbon_powder-carbon_mtl",
+      "name": "碳粉末(碳块)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder"
-    },
-    {
-      "time": 2,
-      "in": {
-        "plant_moss_1": 1
-      },
-      "out": {
-        "carbon_mtl": 1
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "carbon_mtl-plant_moss_1",
-      "name": "碳块(荞花)",
-      "category": "material",
-      "row": 0,
-      "icon": "carbon_mtl-plant_moss_1"
-    },
-    {
-      "time": 2,
-      "in": {
-        "plant_moss_2": 1
-      },
-      "out": {
-        "carbon_mtl": 1
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "carbon_mtl-plant_moss_2",
-      "name": "碳块(柑实)",
-      "category": "material",
-      "row": 0,
-      "icon": "carbon_mtl-plant_moss_2"
-    },
-    {
-      "time": 2,
-      "in": {
-        "plant_moss_3": 1
-      },
-      "out": {
-        "carbon_mtl": 1
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "carbon_mtl-plant_moss_3",
-      "name": "碳块(砂叶)",
-      "category": "material",
-      "row": 0,
-      "icon": "carbon_mtl-plant_moss_3"
-    },
-    {
-      "time": 2,
-      "in": {
-        "plant_grass_1": 1
-      },
-      "out": {
-        "carbon_mtl": 2
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "carbon_mtl-plant_grass_1",
-      "name": "碳块(锦草)",
-      "category": "material",
-      "row": 0,
-      "icon": "carbon_mtl-plant_grass_1"
-    },
-    {
-      "time": 2,
-      "in": {
-        "plant_grass_2": 1
-      },
-      "out": {
-        "carbon_mtl": 2
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "carbon_mtl-plant_grass_2",
-      "name": "碳块(芽针)",
-      "category": "material",
-      "row": 0,
-      "icon": "carbon_mtl-plant_grass_2"
+      "icon": "carbon_powder-carbon_mtl"
     },
     {
       "time": 2,
@@ -2046,7 +2136,7 @@
         "plant_bbflower_1": 1
       },
       "out": {
-        "plant_bbflower_powder_1": 1
+        "plant_bbflower_powder_1": 2
       },
       "producers": [
         "grinder_1"
@@ -2133,37 +2223,87 @@
     {
       "time": 2,
       "in": {
-        "carbon_powder": 2,
-        "plant_moss_powder_3": 1
+        "plant_moss_1": 1
       },
       "out": {
-        "carbon_enr_powder": 1
-      },
-      "producers": [
-        "thickener_1"
-      ],
-      "id": "carbon_enr_powder",
-      "name": "致密碳粉末",
-      "category": "material",
-      "row": 1,
-      "icon": "carbon_enr_powder"
-    },
-    {
-      "time": 2,
-      "in": {
-        "carbon_enr_powder": 1
-      },
-      "out": {
-        "carbon_enr": 1
+        "carbon_mtl": 1
       },
       "producers": [
         "furnance_1"
       ],
-      "id": "carbon_enr",
-      "name": "稳定碳块",
+      "id": "carbon_mtl-plant_moss_1",
+      "name": "碳块(荞花)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_enr"
+      "icon": "carbon_mtl-plant_moss_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_2": 1
+      },
+      "out": {
+        "carbon_mtl": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_mtl-plant_moss_2",
+      "name": "碳块(柑实)",
+      "category": "material",
+      "row": 1,
+      "icon": "carbon_mtl-plant_moss_2"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_3": 1
+      },
+      "out": {
+        "carbon_mtl": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_mtl-plant_moss_3",
+      "name": "碳块(砂叶)",
+      "category": "material",
+      "row": 1,
+      "icon": "carbon_mtl-plant_moss_3"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_grass_1": 1
+      },
+      "out": {
+        "carbon_mtl": 2
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_mtl-plant_grass_1",
+      "name": "碳块(锦草)",
+      "category": "material",
+      "row": 1,
+      "icon": "carbon_mtl-plant_grass_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_grass_2": 1
+      },
+      "out": {
+        "carbon_mtl": 2
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_mtl-plant_grass_2",
+      "name": "碳块(芽针)",
+      "category": "material",
+      "row": 1,
+      "icon": "carbon_mtl-plant_grass_2"
     },
     {
       "time": 3,
@@ -2187,19 +2327,19 @@
     {
       "time": 2,
       "in": {
-        "originium_ore": 1
+        "originium_powder": 1
       },
       "out": {
-        "crystal_shell": 1
+        "crystal_powder": 1
       },
       "producers": [
         "furnance_1"
       ],
-      "id": "crystal_shell",
-      "name": "晶体外壳",
+      "id": "crystal_powder-originium_powder",
+      "name": "晶体外壳粉末(源石粉末)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_shell"
+      "icon": "crystal_powder-originium_powder"
     },
     {
       "time": 2,
@@ -2212,11 +2352,45 @@
       "producers": [
         "grinder_1"
       ],
-      "id": "crystal_powder",
-      "name": "晶体外壳粉末",
+      "id": "crystal_powder-crystal_shell",
+      "name": "晶体外壳粉末(晶体外壳)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_powder"
+      "icon": "crystal_powder-crystal_shell"
+    },
+    {
+      "time": 2,
+      "in": {
+        "originium_ore": 1
+      },
+      "out": {
+        "crystal_shell": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "crystal_shell-originium_ore",
+      "name": "晶体外壳(源矿)",
+      "category": "material",
+      "row": 2,
+      "icon": "crystal_shell-originium_ore"
+    },
+    {
+      "time": 2,
+      "in": {
+        "crystal_powder": 1
+      },
+      "out": {
+        "crystal_shell": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "crystal_shell-crystal_powder",
+      "name": "晶体外壳(晶体外壳粉末)",
+      "category": "material",
+      "row": 2,
+      "icon": "crystal_shell-crystal_powder"
     },
     {
       "time": 2,
@@ -2306,6 +2480,75 @@
       "icon": "crystal_enr_powder-originium_enr_powder"
     },
     {
+      "time": 2,
+      "in": {
+        "carbon_powder": 2,
+        "plant_moss_powder_3": 1
+      },
+      "out": {
+        "carbon_enr_powder": 1
+      },
+      "producers": [
+        "thickener_1"
+      ],
+      "id": "carbon_enr_powder-carbon_powder",
+      "name": "致密碳粉末(碳粉末)",
+      "category": "material",
+      "row": 2,
+      "icon": "carbon_enr_powder-carbon_powder"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_enr_powder_1": 1
+      },
+      "out": {
+        "carbon_enr_powder": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_enr_powder-plant_moss_enr_powder_1",
+      "name": "致密碳粉末(细磨荞花粉末)",
+      "category": "material",
+      "row": 2,
+      "icon": "carbon_enr_powder-plant_moss_enr_powder_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "plant_moss_enr_powder_2": 1
+      },
+      "out": {
+        "carbon_enr_powder": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_enr_powder-plant_moss_enr_powder_2",
+      "name": "致密碳粉末(细磨柑实粉末)",
+      "category": "material",
+      "row": 2,
+      "icon": "carbon_enr_powder-plant_moss_enr_powder_2"
+    },
+    {
+      "time": 2,
+      "in": {
+        "carbon_enr_powder": 1
+      },
+      "out": {
+        "carbon_enr": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "carbon_enr",
+      "name": "稳定碳块",
+      "category": "material",
+      "row": 2,
+      "icon": "carbon_enr"
+    },
+    {
       "time": 3,
       "in": {},
       "out": {
@@ -2327,23 +2570,6 @@
     {
       "time": 2,
       "in": {
-        "quartz_sand": 1
-      },
-      "out": {
-        "quartz_glass": 1
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "quartz_glass",
-      "name": "紫晶纤维",
-      "category": "material",
-      "row": 3,
-      "icon": "quartz_glass"
-    },
-    {
-      "time": 2,
-      "in": {
         "quartz_glass": 1
       },
       "out": {
@@ -2357,6 +2583,40 @@
       "category": "material",
       "row": 3,
       "icon": "quartz_powder"
+    },
+    {
+      "time": 2,
+      "in": {
+        "quartz_sand": 1
+      },
+      "out": {
+        "quartz_glass": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "quartz_glass-quartz_sand",
+      "name": "紫晶纤维(紫晶矿)",
+      "category": "material",
+      "row": 3,
+      "icon": "quartz_glass-quartz_sand"
+    },
+    {
+      "time": 2,
+      "in": {
+        "quartz_powder": 1
+      },
+      "out": {
+        "quartz_glass": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "quartz_glass-quartz_powder",
+      "name": "紫晶纤维(紫晶粉末)",
+      "category": "material",
+      "row": 3,
+      "icon": "quartz_glass-quartz_powder"
     },
     {
       "time": 2,
@@ -2482,23 +2742,6 @@
     {
       "time": 2,
       "in": {
-        "iron_ore": 1
-      },
-      "out": {
-        "iron_nugget": 1
-      },
-      "producers": [
-        "furnance_1"
-      ],
-      "id": "iron_nugget",
-      "name": "蓝铁块",
-      "category": "material",
-      "row": 4,
-      "icon": "iron_nugget"
-    },
-    {
-      "time": 2,
-      "in": {
         "iron_nugget": 1
       },
       "out": {
@@ -2512,6 +2755,40 @@
       "category": "material",
       "row": 4,
       "icon": "iron_powder"
+    },
+    {
+      "time": 2,
+      "in": {
+        "iron_ore": 1
+      },
+      "out": {
+        "iron_nugget": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "iron_nugget-iron_ore",
+      "name": "蓝铁块(蓝铁矿)",
+      "category": "material",
+      "row": 4,
+      "icon": "iron_nugget-iron_ore"
+    },
+    {
+      "time": 2,
+      "in": {
+        "iron_powder": 1
+      },
+      "out": {
+        "iron_nugget": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "iron_nugget-iron_powder",
+      "name": "蓝铁块(蓝铁粉末)",
+      "category": "material",
+      "row": 4,
+      "icon": "iron_nugget-iron_powder"
     },
     {
       "time": 2,
@@ -2835,9 +3112,6 @@
       "producers": [
         "tools_asm_mc_1"
       ],
-      "locations": [
-        "jinlong"
-      ],
       "id": "bottled_food_4",
       "name": "锦草软饮",
       "category": "product",
@@ -2909,9 +3183,6 @@
       },
       "producers": [
         "tools_asm_mc_1"
-      ],
-      "locations": [
-        "jinlong"
       ],
       "id": "bottled_rec_hp_4",
       "name": "芽针针剂",
@@ -3247,7 +3518,7 @@
         "iron_enr_cmpt": 1
       },
       "out": {
-        "tundra_coupon": 1
+        "tundra_coupon": 3
       },
       "producers": [
         "settlement-tundra_coupon"
@@ -3500,6 +3771,26 @@
       "category": "settlement",
       "row": 4,
       "icon": "jinlong_coupon-proc_battery_4"
+    },
+    {
+      "time": 10,
+      "in": {
+        "bottled_food_4": 1
+      },
+      "out": {
+        "jinlong_coupon": 16
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "id": "jinlong_coupon-bottled_food_4",
+      "name": "武陵调度券(锦草软饮)",
+      "category": "settlement",
+      "row": 999,
+      "icon": "jinlong_coupon-bottled_food_4"
     }
   ],
   "locations": [

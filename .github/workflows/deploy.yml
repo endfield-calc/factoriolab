@@ -50,7 +50,7 @@ jobs:
         with:
           script: |
             const exitCode = await exec.exec('./scripts/write-release-info.sh',[
-              `${process.env.COMMIT_SHA.substring(0, 7)}`,
+              `v1.0-${process.env.COMMIT_SHA.substring(0, 7)}`,
               'ark-endfield',
               (new Date()).toISOString(),
               'unused-tag',

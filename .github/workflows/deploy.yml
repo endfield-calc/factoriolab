@@ -49,8 +49,9 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         with:
           script: |
+            const dateStr = new Date().toISOString().slice(0, 10).replaceAll('-', '');
             const exitCode = await exec.exec('./scripts/write-release-info.sh',[
-              `v1.0-${process.env.COMMIT_SHA.substring(0, 7)}`,
+              `v${dateStr}-${process.env.COMMIT_SHA.substring(0, 7)}`,
               'ark-endfield',
               (new Date()).toISOString(),
               'unused-tag',

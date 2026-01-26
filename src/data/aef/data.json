@@ -3446,6 +3446,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "tundra_coupon-crystal_shell",
       "name": "谷地调度券(晶体外壳)",
       "category": "settlement",
@@ -3466,6 +3467,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "tundra_coupon-glass_bottle",
       "name": "谷地调度券(紫晶质瓶)",
       "category": "settlement",
@@ -3486,6 +3488,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "tundra_coupon-glass_cmpt",
       "name": "谷地调度券(紫晶零件)",
       "category": "settlement",
@@ -3506,6 +3509,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "tundra_coupon-iron_cmpt",
       "name": "谷地调度券(铁制零件)",
       "category": "settlement",
@@ -3526,6 +3530,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "tundra_coupon-iron_enr_cmpt",
       "name": "谷地调度券(钢制零件)",
       "category": "settlement",
@@ -3546,6 +3551,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_food_1",
       "name": "谷地调度券(柑实罐头)",
       "category": "settlement",
@@ -3566,6 +3572,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_food_2",
       "name": "谷地调度券(优质柑实罐头)",
       "category": "settlement",
@@ -3586,6 +3593,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_food_3",
       "name": "谷地调度券(精选柑实罐头)",
       "category": "settlement",
@@ -3606,6 +3614,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_1",
       "name": "谷地调度券(荞愈胶囊)",
       "category": "settlement",
@@ -3626,6 +3635,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_2",
       "name": "谷地调度券(优质荞愈胶囊)",
       "category": "settlement",
@@ -3646,6 +3656,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_3",
       "name": "谷地调度券(精选荞愈胶囊)",
       "category": "settlement",
@@ -3666,6 +3677,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-proc_battery_1",
       "name": "谷地调度券(低容谷地电池)",
       "category": "settlement",
@@ -3686,6 +3698,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-proc_battery_2",
       "name": "谷地调度券(中容谷地电池)",
       "category": "settlement",
@@ -3706,6 +3719,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "tundra_coupon-proc_battery_3",
       "name": "谷地调度券(高容谷地电池)",
       "category": "settlement",
@@ -3726,6 +3740,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 150,
       "id": "jinlong_coupon-xiranite_powder",
       "name": "武陵调度券(息壤)",
       "category": "settlement",
@@ -3746,6 +3761,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "jinlong_coupon-bottled_food_4",
       "name": "武陵调度券(锦草软饮)",
       "category": "settlement",
@@ -3766,6 +3782,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "jinlong_coupon-bottled_rec_hp_4",
       "name": "武陵调度券(芽针针剂)",
       "category": "settlement",
@@ -3786,6 +3803,7 @@
       "flags": [
         "hideProducer"
       ],
+      "cost": 30,
       "id": "jinlong_coupon-proc_battery_4",
       "name": "武陵调度券(低容武陵电池)",
       "category": "settlement",

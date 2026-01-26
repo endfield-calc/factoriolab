@@ -3609,7 +3609,7 @@
       "id": "tundra_coupon-bottled_rec_hp_1",
       "name": "谷地调度券(荞愈胶囊)",
       "category": "settlement",
-      "row": 2,
+      "row": 1,
       "icon": "tundra_coupon-bottled_rec_hp_1"
     },
     {
@@ -3629,7 +3629,7 @@
       "id": "tundra_coupon-bottled_rec_hp_2",
       "name": "谷地调度券(优质荞愈胶囊)",
       "category": "settlement",
-      "row": 2,
+      "row": 1,
       "icon": "tundra_coupon-bottled_rec_hp_2"
     },
     {
@@ -3649,7 +3649,7 @@
       "id": "tundra_coupon-bottled_rec_hp_3",
       "name": "谷地调度券(精选荞愈胶囊)",
       "category": "settlement",
-      "row": 2,
+      "row": 1,
       "icon": "tundra_coupon-bottled_rec_hp_3"
     },
     {
@@ -3669,7 +3669,7 @@
       "id": "tundra_coupon-proc_battery_1",
       "name": "谷地调度券(低容谷地电池)",
       "category": "settlement",
-      "row": 3,
+      "row": 2,
       "icon": "tundra_coupon-proc_battery_1"
     },
     {
@@ -3689,7 +3689,7 @@
       "id": "tundra_coupon-proc_battery_2",
       "name": "谷地调度券(中容谷地电池)",
       "category": "settlement",
-      "row": 3,
+      "row": 2,
       "icon": "tundra_coupon-proc_battery_2"
     },
     {
@@ -3709,7 +3709,7 @@
       "id": "tundra_coupon-proc_battery_3",
       "name": "谷地调度券(高容谷地电池)",
       "category": "settlement",
-      "row": 3,
+      "row": 2,
       "icon": "tundra_coupon-proc_battery_3"
     },
     {
@@ -3729,8 +3729,28 @@
       "id": "jinlong_coupon-xiranite_powder",
       "name": "武陵调度券(息壤)",
       "category": "settlement",
-      "row": 4,
+      "row": 3,
       "icon": "jinlong_coupon-xiranite_powder"
+    },
+    {
+      "time": 10,
+      "in": {
+        "bottled_food_4": 1
+      },
+      "out": {
+        "jinlong_coupon": 16
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "id": "jinlong_coupon-bottled_food_4",
+      "name": "武陵调度券(锦草软饮)",
+      "category": "settlement",
+      "row": 3,
+      "icon": "jinlong_coupon-bottled_food_4"
     },
     {
       "time": 10,
@@ -3749,7 +3769,7 @@
       "id": "jinlong_coupon-bottled_rec_hp_4",
       "name": "武陵调度券(芽针针剂)",
       "category": "settlement",
-      "row": 4,
+      "row": 3,
       "icon": "jinlong_coupon-bottled_rec_hp_4"
     },
     {
@@ -3769,28 +3789,8 @@
       "id": "jinlong_coupon-proc_battery_4",
       "name": "武陵调度券(低容武陵电池)",
       "category": "settlement",
-      "row": 4,
+      "row": 3,
       "icon": "jinlong_coupon-proc_battery_4"
-    },
-    {
-      "time": 10,
-      "in": {
-        "bottled_food_4": 1
-      },
-      "out": {
-        "jinlong_coupon": 16
-      },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
-      "flags": [
-        "hideProducer"
-      ],
-      "id": "jinlong_coupon-bottled_food_4",
-      "name": "武陵调度券(锦草软饮)",
-      "category": "settlement",
-      "row": 999,
-      "icon": "jinlong_coupon-bottled_food_4"
     }
   ],
   "locations": [

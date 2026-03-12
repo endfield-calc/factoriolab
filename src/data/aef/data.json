@@ -3379,6 +3379,48 @@
       "icon": "copper_cmpt"
     },
     {
+      "time": 2,
+      "in": {
+        "copper_bottle": 1,
+        "liquid_plant_grass_1": 1
+      },
+      "out": {
+        "copper_bottle-liquid_plant_grass_1": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "id": "copper_bottle-liquid_plant_grass_1",
+      "name": "赤铜瓶(锦草溶液)",
+      "category": "material",
+      "row": 5,
+      "icon": "copper_bottle-liquid_plant_grass_1"
+    },
+    {
+      "time": 2,
+      "in": {
+        "copper_bottle": 1,
+        "liquid_plant_grass_2": 1
+      },
+      "out": {
+        "copper_bottle-liquid_plant_grass_2": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "id": "copper_bottle-liquid_plant_grass_2",
+      "name": "赤铜瓶(芽针溶液)",
+      "category": "material",
+      "row": 5,
+      "icon": "copper_bottle-liquid_plant_grass_2"
+    },
+    {
       "time": 1,
       "in": {},
       "out": {

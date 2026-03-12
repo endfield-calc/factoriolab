@@ -30,7 +30,11 @@ export class UserTipsComponent {
     },
     {
       name: '谷地理论最高调度券(超出需求)',
-      url: 'aef/flow?z=eJwtxqEKgEAQBNC.2TAg7N15YpmyyWA02cSqTBGDXy.ivfTEWAFkEzfUwYFioiP3rQuSj-0dKgowmfigfA0T69.ZdF50O7Qz7GZKL9NzFbY_&v=11',
+      url: 'aef/flow?o=tundra_coupon***2&o=originium_ore*560**3&o=quartz_sand*240**3&o=iron_ore*1080**3&o=power_proc_battery_3*4*3**power_sta_1&o=power_proc_battery_2**3&omt=0&loc=B&v=11',
+    },
+    {
+      name: '武陵毕业示例(暂定)(需谷地传输蓝铁块)',
+      url: 'aef/flow?z=eJxNjbEKAjEQRP9miyk0m-QOLbYwweMELSSKYnfYWKjbqN8vGyLYvZkd3qqkCT07UklPIMBjTyoT4sIBgVQu8BEBWJOKQysPWDY6Ic46uw-kUuA7gE12A.s2yTv0tjiSCrcaxUYFVW2cR7Cr.7eWhv-U3vBzM6UErpA35sBo3fmHj5c4uutVVvQR5i-dgTMN&v=11',
     },
     {
       name: '旧版本武陵毕业示例(需谷地传输铁零件)',

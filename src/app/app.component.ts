@@ -8,6 +8,7 @@ import { first } from 'rxjs';
 
 import { TranslateService } from '~/services/translate.service';
 
+import { environment } from '../environments';
 import { ContentComponent } from './components/content/content.component';
 import { versionStr } from './helpers';
 import { TranslatePipe } from './pipes/translate.pipe';
@@ -68,7 +69,7 @@ export class AppComponent {
         this.showSwUpdateToast('success', 'ready');
         break;
       case 'VERSION_INSTALLATION_FAILED':
-        this.requireReload();
+        if (environment.production) this.requireReload();
         break;
     }
   }

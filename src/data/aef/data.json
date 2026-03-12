@@ -3452,6 +3452,7 @@
         "liquid_sewage": 1
       },
       "out": {},
+      "cost": -1,
       "producers": [
         "liquid_cleaner_1"
       ],
@@ -3468,6 +3469,7 @@
         "liquid_xiranite_lowpoly": 1
       },
       "out": {},
+      "cost": -1,
       "producers": [
         "liquid_cleaner_1"
       ],
@@ -3484,6 +3486,7 @@
         "liquid_xiranite_poly": 1
       },
       "out": {},
+      "cost": -1,
       "producers": [
         "liquid_cleaner_1"
       ],
@@ -3948,7 +3951,7 @@
       "id": "power_proc_battery_4",
       "name": "发电(低容武陵电池)",
       "category": "gen-power",
-      "row": 1,
+      "row": 2,
       "icon": "power_sta_1-proc_battery_4"
     },
     {
@@ -3964,7 +3967,7 @@
       "id": "power_proc_battery_5",
       "name": "发电(中容武陵电池)",
       "category": "gen-power",
-      "row": 999,
+      "row": 2,
       "icon": "power_sta_1-proc_battery_5"
     },
     {

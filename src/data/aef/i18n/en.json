@@ -101,6 +101,7 @@
     "proc_bomb_1": "Industrial Explosive",
     "jinlong_coupon": "Wuling Stock Bill",
     "tundra_coupon": "Valley Stock Bill",
+    "__miner_water": "Clean Water",
     "cmpt_mc_1": "Fitting Unit",
     "dismantler_1": "Separating Unit",
     "filling_pd_mc_1": "Filling Unit",
@@ -122,6 +123,7 @@
     "tools_asm_mc_1": "Packaging Unit",
     "winder_1": "Gearing Unit",
     "xiranite_oven_1": "Forge of the Sky",
+    "__miner_pump_1": "Fluid Pump(Hydro Mining Rig)",
     "belt": "Transport Belt",
     "pipe": "Pipe"
   },
@@ -260,7 +262,8 @@
     "tundra_coupon-iron_enr_cmpt": "Valley Stock Bill(Steel Part)",
     "tundra_coupon-proc_battery_1": "Valley Stock Bill(LC Valley Battery)",
     "tundra_coupon-proc_battery_2": "Valley Stock Bill(SC Valley Battery)",
-    "tundra_coupon-proc_battery_3": "Valley Stock Bill(HC Valley Battery)"
+    "tundra_coupon-proc_battery_3": "Valley Stock Bill(HC Valley Battery)",
+    "__miner_water": "Clean Water"
   },
   "locations": {
     "jinlong": "Wuling",

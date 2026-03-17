@@ -101,6 +101,7 @@
     "proc_bomb_1": "工業爆弾",
     "jinlong_coupon": "武陵取引券",
     "tundra_coupon": "谷地取引券",
+    "__miner_water": "水",
     "cmpt_mc_1": "組立機",
     "dismantler_1": "解体機",
     "filling_pd_mc_1": "充填機",
@@ -122,6 +123,7 @@
     "tools_asm_mc_1": "包装機",
     "winder_1": "装備部品加工機",
     "xiranite_oven_1": "天有洪炉",
+    "__miner_pump_1": "液体ポンプ(水力採鉱機)",
     "belt": "ベルトコンベア",
     "pipe": "パイプ"
   },
@@ -260,7 +262,8 @@
     "tundra_coupon-iron_enr_cmpt": "谷地取引券(鋼製部品)",
     "tundra_coupon-proc_battery_1": "谷地取引券(小容量谷地バッテリー)",
     "tundra_coupon-proc_battery_2": "谷地取引券(中容量谷地バッテリー)",
-    "tundra_coupon-proc_battery_3": "谷地取引券(大容量谷地バッテリー)"
+    "tundra_coupon-proc_battery_3": "谷地取引券(大容量谷地バッテリー)",
+    "__miner_water": "真水"
   },
   "locations": {
     "jinlong": "武陵",

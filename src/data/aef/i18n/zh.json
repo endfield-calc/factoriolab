@@ -101,6 +101,7 @@
     "proc_bomb_1": "工业爆炸物",
     "jinlong_coupon": "武陵调度券",
     "tundra_coupon": "谷地调度券",
+    "__miner_water": "清水",
     "cmpt_mc_1": "配件机",
     "dismantler_1": "拆解机",
     "filling_pd_mc_1": "灌装机",
@@ -122,6 +123,7 @@
     "tools_asm_mc_1": "封装机",
     "winder_1": "装备原件机",
     "xiranite_oven_1": "天有洪炉",
+    "__miner_pump_1": "水泵(水驱矿机)",
     "belt": "传送带",
     "pipe": "管道"
   },
@@ -260,7 +262,8 @@
     "tundra_coupon-iron_enr_cmpt": "谷地调度券(钢制零件)",
     "tundra_coupon-proc_battery_1": "谷地调度券(低容谷地电池)",
     "tundra_coupon-proc_battery_2": "谷地调度券(中容谷地电池)",
-    "tundra_coupon-proc_battery_3": "谷地调度券(高容谷地电池)"
+    "tundra_coupon-proc_battery_3": "谷地调度券(高容谷地电池)",
+    "__miner_water": "清水"
   },
   "locations": {
     "jinlong": "武陵",

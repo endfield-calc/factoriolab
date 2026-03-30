@@ -43,7 +43,9 @@
       "perMinute": "Единиц в Минуту",
       "perMinuteSuffix": "/м",
       "perHour": "Единиц в час",
-      "perHourSuffix": "/ч"
+      "perHourSuffix": "/ч",
+      "perDay": "Единиц в день",
+      "perDaySuffix": "/д"
     },
     "game": {
       "arknightsEndfield": "Arknights: Endfield",

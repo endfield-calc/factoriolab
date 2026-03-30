@@ -43,7 +43,9 @@
       "perMinute": "個/m",
       "perMinuteSuffix": "/m",
       "perHour": "個/h",
-      "perHourSuffix": "/h"
+      "perHourSuffix": "/h",
+      "perDay": "個/d",
+      "perDaySuffix": "/d"
     },
     "game": {
       "arknightsEndfield": "Arknights: Endfield",

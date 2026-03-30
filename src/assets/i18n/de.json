@@ -44,7 +44,9 @@
       "perMinute": "Teile pro Minute",
       "perMinuteSuffix": "/min",
       "perHour": "Teile pro Stunde",
-      "perHourSuffix": "/h"
+      "perHourSuffix": "/h",
+      "perDay": "Teile pro Tag",
+      "perDaySuffix": "/d"
     },
     "game": {
       "arknightsEndfield": "Arknights: Endfield",

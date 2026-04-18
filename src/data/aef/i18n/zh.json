@@ -3,13 +3,6 @@
   "version": {
     "arknights-endfield": "v1.2.4"
   },
-  "categories": {
-    "activity": "活动",
-    "material": "材料",
-    "product": "工业产物",
-    "settlement": "据点",
-    "gen-power": "发电"
-  },
   "items": {
     "activity_xiranite_bottle": "实验息壤瓶",
     "activity_xiranite_cmpt": "实验息壤零件",
@@ -146,6 +139,12 @@
     "__miner_pump_1": "水泵(水驱矿机)",
     "belt": "传送带",
     "pipe": "管道"
+  },
+  "categories": {
+    "material": "材料",
+    "product": "工业产物",
+    "settlement": "据点",
+    "gen-power": "发电"
   },
   "recipes": {
     "activity_xiranite_bottle": "实验息壤瓶",

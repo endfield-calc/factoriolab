@@ -3,13 +3,6 @@
   "version": {
     "arknights-endfield": "v1.2.4"
   },
-  "categories": {
-    "activity": "イベント",
-    "material": "素材",
-    "product": "工業製品",
-    "settlement": "拠点",
-    "gen-power": "発電"
-  },
   "items": {
     "activity_xiranite_bottle": "実験用息壌ボトル",
     "activity_xiranite_cmpt": "実験用息壌部品",
@@ -146,6 +139,12 @@
     "__miner_pump_1": "液体ポンプ(水力採鉱機)",
     "belt": "ベルトコンベア",
     "pipe": "パイプ"
+  },
+  "categories": {
+    "material": "素材",
+    "product": "工業製品",
+    "settlement": "拠点",
+    "gen-power": "発電"
   },
   "recipes": {
     "activity_xiranite_bottle": "実験用息壌ボトル",

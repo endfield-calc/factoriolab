@@ -3,13 +3,6 @@
   "version": {
     "arknights-endfield": "v1.2.4"
   },
-  "categories": {
-    "activity": "Event",
-    "material": "Material",
-    "product": "AIC Products",
-    "settlement": "Outpost",
-    "gen-power": "Power"
-  },
   "items": {
     "activity_xiranite_bottle": "Experimental Xiranite Bottle",
     "activity_xiranite_cmpt": "Experimental Xiranite Part",
@@ -146,6 +139,12 @@
     "__miner_pump_1": "Fluid Pump(Hydro Mining Rig)",
     "belt": "Transport Belt",
     "pipe": "Pipe"
+  },
+  "categories": {
+    "material": "Material",
+    "product": "AIC Products",
+    "settlement": "Outpost",
+    "gen-power": "Power"
   },
   "recipes": {
     "activity_xiranite_bottle": "Experimental Xiranite Bottle",

@@ -3,6 +3,13 @@
   "version": {
     "arknights-endfield": "v1.2.4"
   },
+  "categories": {
+    "activity": "Событие",
+    "material": "Материал",
+    "product": "Изделия АПК",
+    "settlement": "Аванпост",
+    "gen-power": "Энергия"
+  },
   "items": {
     "activity_xiranite_bottle": "Экспериментальная ксиранитовая бутылка",
     "activity_xiranite_cmpt": "Экспериментальная ксиранитовая деталь",
@@ -139,12 +146,6 @@
     "__miner_pump_1": "Гидронасос(Добывающая гидроустановка)",
     "belt": "Транспортировочная лента",
     "pipe": "Труба"
-  },
-  "categories": {
-    "material": "Материал",
-    "product": "Изделия АПК",
-    "settlement": "Аванпост",
-    "gen-power": "Энергия"
   },
   "recipes": {
     "activity_xiranite_bottle": "Экспериментальная ксиранитовая бутылка",

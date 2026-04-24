@@ -34,6 +34,7 @@ import { Step } from '~/models/step';
 import { Entities } from '~/models/utils';
 
 import { RateService } from './rate.service';
+import { ObjectiveUnit } from '~/models/enum/objective-unit';
 
 const simplexConfig: Simplex.Options = environment.debug
   ? // istanbul ignore next: Don't test debug environment level
@@ -541,6 +542,45 @@ export class SimplexService {
       }
     }
 
+    // ===== 硬编码机器数量上限与整数约束 =====
+    const machineLimits = state.objectives
+      .filter((it) => it.unit === ObjectiveUnit.MachineLimit)
+      .map<[string, Rational]>(it => [it.targetId, it.value]);
+
+    let hasMachineIntegerConstraints = false;
+
+    for (const [machineId, limit] of machineLimits) {
+      const coeffs: [Variable, number][] = [];
+
+      // 处理普通配方变量
+      for (const recipeId of recipeIds) {
+        if (state.recipes[recipeId].producers.includes(machineId)) {
+          recipeVarEntities[recipeId].type = 'integer';
+          coeffs.push([recipeVarEntities[recipeId], 1]);
+          hasMachineIntegerConstraints = true;
+        }
+      }
+
+      // 处理配方目标变量（ObjectiveType.Output / Maximize）
+      for (const obj of state.recipeObjectives) {
+        if (obj.recipe.producers.includes(machineId)) {
+          recipeObjectiveVarEntities[obj.id].type = 'integer';
+          coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
+          hasMachineIntegerConstraints = true;
+        }
+      }
+
+      if (coeffs.length > 0) {
+        console.log(coeffs);
+        m.addConstr({
+          coeffs,
+          ub: limit.toNumber(),
+          name: `machine-limit-${machineId}`,
+        });
+      }
+    }
+    // ===== 结束：硬编码机器数量上限与整数约束 =====
+
     // Add unproduceable vars to model
     for (const itemId of state.unproduceableIds) {
       const obj = this.itemCost(itemId, 'unproduceable', state);
@@ -697,7 +737,10 @@ export class SimplexService {
 
     // Run GLPK simplex
     const start = Date.now();
-    const [returnCode, status] = this.glpkSimplex(m);
+    const [returnCode, status] = this.glpkSimplex(
+      m,
+      hasMachineIntegerConstraints,
+    );
     const time = Date.now() - start;
     const surplus: Entities<Rational> = {};
     const unproduceable: Entities<Rational> = {};
@@ -770,7 +813,12 @@ export class SimplexService {
     }
 
     for (const recipeId of recipeIds) {
-      const val = rational(recipeVarEntities[recipeId].value);
+      const v = recipeVarEntities[recipeId];
+      const raw =
+        hasMachineIntegerConstraints && v.type === 'integer'
+          ? v.valueMIP // MIP 解
+          : v.value; // LP 解
+      const val = rational(raw);
       if (val.nonzero()) recipes[recipeId] = val;
     }
 
@@ -803,8 +851,11 @@ export class SimplexService {
   }
 
   /** Simplex method wrapper mainly for test mocking */
-  glpkSimplex(model: Model): [Simplex.ReturnCode, Status] {
+  glpkSimplex(model: Model, useIntopt = false): [Simplex.ReturnCode, Status] {
     const returnCode = model.simplex(simplexConfig);
+    if (useIntopt && returnCode === 'ok') {
+      model.intopt();
+    }
     return [returnCode, model.status];
   }
   //#endregion

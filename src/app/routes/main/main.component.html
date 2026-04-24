@@ -20,6 +20,7 @@
   <main class="px-sm-4 py-4">
     @if (mod()) {
       <lab-user-tips></lab-user-tips>
+      <lab-resource-input></lab-resource-input>
       <lab-objectives></lab-objectives>
       <p-card styleClass="mt-4" [header]="'app.factory' | translate">
         @if (tabItems$ | async; as model) {

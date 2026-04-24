@@ -82,6 +82,13 @@ export abstract class Store<T extends object> {
     return entities;
   }
 
+  /** Removes multi entry from an Entities object */
+  protected _removeEntries<T>(entities: Entities<T>, ids: string[]): Entities<T> {
+    entities = spread(entities);
+    ids.forEach((id) => delete entities[id]);
+    return entities;
+  }
+
   /** Resets a passed field of the state */
   protected _resetField<T extends object>(
     state: Entities<T>,

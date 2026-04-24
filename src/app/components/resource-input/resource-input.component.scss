@@ -1,0 +1,43 @@
+:host {
+  ::ng-deep {
+    .p-fieldset .p-fieldset-legend, .p-fieldset.p-fieldset-toggleable .p-fieldset-legend a {
+      padding: 0.5rem;
+      border: none;
+    }
+    .p-fieldset .p-fieldset-content {
+      padding: 4px;
+    }
+    .p-card .p-card-content {
+      padding: 0;
+    }
+  }
+}
+
+@mixin common-container {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1rem;
+  row-gap: 4px;
+
+  button {
+    opacity: 1;
+  }
+}
+
+.one-key-container {
+  @include common-container;
+}
+
+.resource-input-container {
+  @include common-container;
+  justify-content: space-between;
+}
+
+.resource-input {
+  display: flex;
+  align-items: center;
+}
+
+.adv-limit-container {
+  @include common-container;
+}

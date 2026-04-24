@@ -109,6 +109,25 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
     const data = this.recipesSvc.adjustedDataset();
     const paused = this.preferencesSvc.paused();
 
+    objectives.forEach((it) => {
+      switch (it.unit) {
+        case ObjectiveUnit.ItemLimit: {
+          it.unit = ObjectiveUnit.Items;
+          it.type = ObjectiveType.Limit;
+          break;
+        }
+        case ObjectiveUnit.ItemLimitOutput: {
+          it.unit = ObjectiveUnit.Machines;
+          it.type = ObjectiveType.Output;
+          break;
+        }
+        case ObjectiveUnit.MachineLimit: {
+          it.type = ObjectiveType.Limit;
+          it.machineId = it.targetId;
+        }
+      }
+    });
+
     return this.simplexSvc.solve(objectives, settings, data, paused);
   });
 
@@ -515,6 +534,30 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
     });
   }
 
+  addMulti(objectives: ObjectiveBase[]): void {
+    this.reduce((state) => {
+      let value = rational.one;
+      const ids = Object.keys(state);
+      const lastId = ids.at(-1);
+      if (lastId) value = state[lastId].value;
+
+      const newObj: Entities<ObjectiveState> = {};
+      let n = 1;
+      objectives.forEach((it) => {
+        while (state[n.toString()] != null) n++;
+        const id = n.toString();
+
+        const base = {
+          id,
+          value,
+          type: ObjectiveType.Output,
+        } as ObjectiveState;
+        newObj[id] = state[id] = spread(base, it);
+      });
+      return spread(state, newObj);
+    });
+  }
+
   create(objective: Omit<ObjectiveState, 'id'>): void {
     const id = '1';
     this.set({ [id]: spread(objective as ObjectiveState, { id }) });
@@ -523,6 +566,14 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
   remove(id: string): void {
     this.reduce((state) => {
       state = this._removeEntry(state, id);
+      const objectives = Object.keys(state).map((i) => state[i]);
+      return this.reduceObjectives(objectives);
+    });
+  }
+
+  removeMulti(ids: string[]): void {
+    this.reduce((state) => {
+      state = this._removeEntries(state, ids);
       const objectives = Object.keys(state).map((i) => state[i]);
       return this.reduceObjectives(objectives);
     });

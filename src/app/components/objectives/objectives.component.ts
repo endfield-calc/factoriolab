@@ -93,7 +93,9 @@ export class ObjectivesComponent {
   settings = this.settingsSvc.settings;
   convertObjectiveValues = this.preferencesSvc.convertObjectiveValues;
   paused = this.preferencesSvc.paused;
-  objectives = computed(() => [...this.objectivesSvc.objectives()]);
+  objectives = computed(() => {
+    return this.objectivesSvc.objectives().filter(it => it.unit < ObjectiveUnit.HideSep);
+  });
 
   messages = computed(() => {
     const objectives = this.objectivesSvc.objectives();

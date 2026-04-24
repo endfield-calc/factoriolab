@@ -8,6 +8,7 @@ import { map } from 'rxjs';
 
 import { HeaderComponent } from '~/components/header/header.component';
 import { ObjectivesComponent } from '~/components/objectives/objectives.component';
+import { ResourceInputComponent } from '~/components/resource-input/resource-input.component';
 import { SettingsComponent } from '~/components/settings/settings.component';
 import { UserTipsComponent } from '~/components/user-tips/user-tips.component';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
@@ -29,6 +30,7 @@ import { SettingsService } from '~/store/settings.service';
     ObjectivesComponent,
     SettingsComponent,
     UserTipsComponent,
+    ResourceInputComponent,
     TranslatePipe,
   ],
   templateUrl: './main.component.html',

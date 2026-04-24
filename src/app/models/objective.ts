@@ -5,13 +5,16 @@ import { Rational } from './rational';
 import { RecipeSettings, RecipeState } from './settings/recipe-settings';
 
 export function isRecipeObjective(obj: ObjectiveState): obj is RecipeObjective {
-  return obj.unit === ObjectiveUnit.Machines;
+  return (
+    obj.unit === ObjectiveUnit.Machines || obj.unit === ObjectiveUnit.ItemLimitOutput
+  );
 }
 
 export interface ObjectiveBase {
   /** If unit is ObjectiveUnit.Machines, a recipe id; otherwise an item id */
   targetId: string;
   unit: ObjectiveUnit;
+  value?: Rational;
   type?: ObjectiveType;
 }
 

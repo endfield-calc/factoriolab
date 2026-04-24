@@ -12,7 +12,7 @@ import { DisplayRateInfo } from '~/models/enum/display-rate';
 import { EnergyType } from '~/models/enum/energy-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
-import { ObjectiveSettings } from '~/models/objective';
+import { isRecipeObjective, ObjectiveSettings } from '~/models/objective';
 import { Rational, rational } from '~/models/rational';
 import { Settings } from '~/models/settings/settings';
 import { Step } from '~/models/step';
@@ -31,9 +31,9 @@ export class RateService {
     displayRateInfo: DisplayRateInfo,
     data: AdjustedDataset,
   ): Rational {
-    // Ignore unit entirely when maximizing, do not adjust if unit is Machines
+    // Ignore unit entirely when maximizing, do not adjust if objective is recipe
     if (
-      objective.unit === ObjectiveUnit.Machines ||
+      isRecipeObjective(objective) ||
       objective.type === ObjectiveType.Maximize
     )
       return objective.value;
@@ -41,6 +41,7 @@ export class RateService {
     const rate = objective.value;
     let factor = rational.one;
     switch (objective.unit) {
+      case ObjectiveUnit.ItemLimit:
       case ObjectiveUnit.Items: {
         factor = displayRateInfo.value.reciprocal();
         break;

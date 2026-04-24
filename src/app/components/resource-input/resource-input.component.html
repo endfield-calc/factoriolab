@@ -1,0 +1,136 @@
+<p-accordion styleClass="mb-4" [activeIndex]="0">
+  <p-accordionTab>
+    <ng-template pTemplate="header">
+      <div class="d-flex align-items-center">
+        <i class="pi pi-compass text-primary me-2" style="font-size: 1.2rem"></i>
+        <span>资源配置</span>
+      </div>
+    </ng-template>
+
+    <p-fieldset legend="一键配置" styleClass="mb-2">
+      <div class="one-key-container">
+        @for (cfg of oneKeyConfig; track cfg.id) {
+          <button
+            pButton pRipple type="button"
+            class="p-button-outlined text-truncate"
+            (click)="applyOneKey(cfg.id)"
+          >
+            <i class="p-button-icon" [class]="cfg.icon | iconSmClass"></i>
+            <span class="p-button-label">{{ cfg.name }}</span>
+          </button>
+        }
+      </div>
+    </p-fieldset>
+
+    <p-fieldset legend="原料" styleClass="mb-2">
+      <div class="resource-input-container">
+        <p-checkbox
+          [binary]="true"
+          [label]="'启用原料限制'"
+          [(ngModel)]="enableLimitItems"
+        ></p-checkbox>
+        <span style="flex-basis: 100%"></span>
+        @for (it of limitItems(); track it.id) {
+          <div class="resource-input">
+            <button
+              pButton type="button"
+              class="p-button-outlined text-truncate"
+              disabled
+            >
+              <i class="p-button-icon" [class]="it.id | iconSmClass"></i>
+              @if (!contentSvc.isMobile()) {
+                <span class="p-button-label">
+                {{ data().itemEntities[it.id]?.name }}
+              </span>
+              }
+            </button>
+            @if (limitItemsNum()[it.id]) {
+              <lab-input-number
+                width="4rem"
+                [disabled]="!enableLimitItems()"
+                [integer]="true"
+                [value]="limitItemsNum()[it.id]"
+                (setValue)="updateItemLimits(it.id, $event)"
+              ></lab-input-number>
+            }
+          </div>
+        }
+      </div>
+    </p-fieldset>
+
+    <p-fieldset legend="特殊限制">
+      <div class="resource-input-container">
+        <p-checkbox
+          [binary]="true"
+          [label]="'启用机器数量限制'"
+          [(ngModel)]="enableLimitMachines"
+        ></p-checkbox>
+        @for (machine of limitMachines(); track machine) {
+          <div class="resource-input">
+            <button
+              pButton type="button"
+              class="p-button-outlined text-truncate"
+              disabled
+            >
+              <i class="p-button-icon" [class]="machine | iconSmClass"></i>
+              <span class="p-button-label">
+              {{ data().itemEntities[machine]?.name }}
+            </span>
+            </button>
+            @if (limitMachinesNum()[machine]) {
+              <lab-input-number
+                width="4rem"
+                [disabled]="!enableLimitMachines()"
+                [integer]="true"
+                [value]="limitMachinesNum()[machine]"
+                (setValue)="updateMachineLimits(machine, $event)"
+              ></lab-input-number>
+            }
+          </div>
+        }
+        <span style="flex-basis: 100%"></span>
+        <p-checkbox
+          [binary]="true"
+          [label]="'启用跨地区传输'"
+          [(ngModel)]="enableDomainTransfer"
+        ></p-checkbox>
+        <span>
+          <button
+            pButton type="button"
+            class="p-button-outlined text-truncate"
+            disabled
+          >
+            <span class="p-button-label">{{ '传输来源' | translate }}</span>
+          </button>
+          <p-dropdown
+            labNoDrag
+            appendTo="body"
+            scrollHeight="260px"
+            panelStyleClass="tooltip"
+            [style]="{ width: '200px' }"
+            [(ngModel)]="transferSource"
+            [options]="transferSourceOptions()"
+            [disabled]="!enableDomainTransfer()"
+          >
+            <ng-template pTemplate="selectedItem">
+              @if (data().locationEntities[transferSource()]; as loc) {
+                <div class="d-flex align-items-center w-100">
+                  <i class="mx-1" [class]="loc.icon | iconSmClass"></i>
+                  <span class="ms-3">{{ loc.name }}</span>
+                </div>
+              }
+            </ng-template>
+            <ng-template pTemplate="item" let-item>
+              @if (data().locationEntities[item]; as loc) {
+                <div class="d-flex align-items-center py-2 w-100 h-100">
+                  <i [class]="loc.icon | iconSmClass"></i>
+                  <span class="ms-3">{{ loc.name }}</span>
+                </div>
+              }
+            </ng-template>
+          </p-dropdown>
+        </span>
+      </div>
+    </p-fieldset>
+  </p-accordionTab>
+</p-accordion>

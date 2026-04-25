@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import {
   Constraint,
   ConstraintProperties,
+  MIP,
   Model,
   Simplex,
   Status,
@@ -16,6 +17,7 @@ import { AdjustedRecipe, Recipe } from '~/models/data/recipe';
 import { AdjustedDataset } from '~/models/dataset';
 import { MaximizeType } from '~/models/enum/maximize-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
+import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { MatrixResult } from '~/models/matrix-result';
 import {
@@ -34,7 +36,6 @@ import { Step } from '~/models/step';
 import { Entities } from '~/models/utils';
 
 import { RateService } from './rate.service';
-import { ObjectiveUnit } from '~/models/enum/objective-unit';
 
 const simplexConfig: Simplex.Options = environment.debug
   ? // istanbul ignore next: Don't test debug environment level
@@ -83,7 +84,7 @@ export interface MatrixState {
 export interface MatrixSolution {
   resultType: SimplexResultType;
   /** GLPK simplex return code */
-  returnCode?: Simplex.ReturnCode;
+  returnCode?: Simplex.ReturnCode | MIP.ReturnCode;
   /** GLPK model simplex status */
   simplexStatus?: StatusSimplex;
   /** If simplex solution is unbounded, the recipe that represents the ray */
@@ -116,7 +117,7 @@ export interface GlpkResult {
   unproduceable: Entities<Rational>;
   excluded: Entities<Rational>;
   cost: Rational;
-  returnCode: Simplex.ReturnCode;
+  returnCode: Simplex.ReturnCode | MIP.ReturnCode;
   status: Status;
   unboundedRecipeId?: string;
   error: boolean;
@@ -555,6 +556,7 @@ export class SimplexService {
       // 处理普通配方变量
       for (const recipeId of recipeIds) {
         if (state.recipes[recipeId].producers.includes(machineId)) {
+          console.log('1: ' + recipeId);
           recipeVarEntities[recipeId].type = 'integer';
           coeffs.push([recipeVarEntities[recipeId], 1]);
           hasMachineIntegerConstraints = true;
@@ -564,6 +566,7 @@ export class SimplexService {
       // 处理配方目标变量（ObjectiveType.Output / Maximize）
       for (const obj of state.recipeObjectives) {
         if (obj.recipe.producers.includes(machineId)) {
+          console.log('2: ' + obj.targetId);
           recipeObjectiveVarEntities[obj.id].type = 'integer';
           coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
           hasMachineIntegerConstraints = true;
@@ -775,16 +778,20 @@ export class SimplexService {
       };
     }
 
+    const getValue = (variable: Variable): number => {
+      return hasMachineIntegerConstraints ? variable.valueMIP : variable.value;
+    }
+
     // Parse solution
     for (const itemId of itemIds) {
       const values = state.itemValues[itemId];
-      const val = rational(surplusVarEntities[itemId].value);
+      const val = rational(getValue(surplusVarEntities[itemId]));
       if (val.nonzero()) surplus[itemId] = val;
 
       if (recipeObjectiveOutput[itemId]) {
         for (const objId of Object.keys(recipeObjectiveOutput[itemId])) {
           const outRat = recipeObjectiveOutput[itemId][objId];
-          const recipeVal = recipeObjectiveVarEntities[objId].value;
+          const recipeVal = getValue(recipeObjectiveVarEntities[objId]);
           const recipeValRat = rational(recipeVal);
           const val = recipeValRat.mul(outRat);
           values.out = values.out.add(val);
@@ -794,7 +801,7 @@ export class SimplexService {
       if (values.max != null) {
         switch (state.maximizeType) {
           case MaximizeType.Ratio: {
-            const maxVal = maximizeVar.value;
+            const maxVal = getValue(maximizeVar);
             const maxRat = rational(maxVal);
             const val = maxRat.mul(values.max);
             // Add maximize output to items output
@@ -802,7 +809,7 @@ export class SimplexService {
             break;
           }
           case MaximizeType.Weight: {
-            const maxVal = maximizeItemVarEntities[itemId].value;
+            const maxVal = getValue(maximizeItemVarEntities[itemId]);
             const val = rational(maxVal);
             // Add maximize output to items output
             values.out = values.out.add(val);
@@ -813,28 +820,24 @@ export class SimplexService {
     }
 
     for (const recipeId of recipeIds) {
-      const v = recipeVarEntities[recipeId];
-      const raw =
-        hasMachineIntegerConstraints && v.type === 'integer'
-          ? v.valueMIP // MIP 解
-          : v.value; // LP 解
+      const raw = getValue(recipeVarEntities[recipeId]);
       const val = rational(raw);
       if (val.nonzero()) recipes[recipeId] = val;
     }
 
     for (const itemId of state.unproduceableIds) {
-      const val = rational(unproduceableVarEntities[itemId].value);
+      const val = rational(getValue(unproduceableVarEntities[itemId]));
       if (val.nonzero()) unproduceable[itemId] = val;
     }
 
     for (const itemId of state.excludedIds) {
-      const val = rational(excludedVarEntities[itemId].value);
+      const val = rational(getValue(excludedVarEntities[itemId]));
       if (val.nonzero()) excluded[itemId] = val;
     }
 
     // Update recipe objective counts to account for maximizations
     state.recipeObjectives = state.recipeObjectives.map((o) =>
-      spread(o, { value: rational(recipeObjectiveVarEntities[o.id].value) }),
+      spread(o, { value: rational(getValue(recipeObjectiveVarEntities[o.id])) }),
     );
 
     return {
@@ -851,10 +854,10 @@ export class SimplexService {
   }
 
   /** Simplex method wrapper mainly for test mocking */
-  glpkSimplex(model: Model, useIntopt = false): [Simplex.ReturnCode, Status] {
-    const returnCode = model.simplex(simplexConfig);
+  glpkSimplex(model: Model, useIntopt = false): [Simplex.ReturnCode | MIP.ReturnCode, Status] {
+    let returnCode: Simplex.ReturnCode | MIP.ReturnCode = model.simplex(simplexConfig);
     if (useIntopt && returnCode === 'ok') {
-      model.intopt();
+      returnCode = model.intopt();
     }
     return [returnCode, model.status];
   }

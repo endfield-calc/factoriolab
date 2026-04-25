@@ -20,6 +20,12 @@
   <main class="px-sm-4 py-4">
     @if (mod()) {
       <lab-user-tips></lab-user-tips>
+      <p-messages severity="info" styleClass="mb-2">
+        <ng-template pTemplate>
+          更新内容：<br/>
+          2026.4.25：修复启用机器限制时计算结果未正确读取导致显示错误的问题
+        </ng-template>
+      </p-messages>
       <lab-resource-input></lab-resource-input>
       <lab-objectives></lab-objectives>
       <p-card styleClass="mt-4" [header]="'app.factory' | translate">

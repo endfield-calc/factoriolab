@@ -2,6 +2,7 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { CardModule } from 'primeng/card';
+import { MessagesModule } from 'primeng/messages';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabMenuModule } from 'primeng/tabmenu';
 import { map } from 'rxjs';
@@ -26,6 +27,7 @@ import { SettingsService } from '~/store/settings.service';
     CardModule,
     ProgressSpinnerModule,
     TabMenuModule,
+    MessagesModule,
     HeaderComponent,
     ObjectivesComponent,
     SettingsComponent,

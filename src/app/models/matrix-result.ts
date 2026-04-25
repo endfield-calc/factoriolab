@@ -1,4 +1,4 @@
-import { Simplex } from 'glpk-ts';
+import { MIP, Simplex } from 'glpk-ts';
 import { StatusSimplex } from 'node_modules/glpk-ts/dist/status';
 
 import { SimplexResultType } from './enum/simplex-result-type';
@@ -9,7 +9,7 @@ export interface MatrixResult {
   steps: Step[];
   resultType: SimplexResultType;
   /** GLPK simplex return code */
-  returnCode?: Simplex.ReturnCode;
+  returnCode?: Simplex.ReturnCode | MIP.ReturnCode;
   /** GLPK model simplex status */
   simplexStatus?: StatusSimplex;
   /** If simplex solution is unbounded, the recipe that represents the ray */

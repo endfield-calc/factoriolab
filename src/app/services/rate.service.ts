@@ -34,14 +34,14 @@ export class RateService {
     // Ignore unit entirely when maximizing, do not adjust if objective is recipe
     if (
       isRecipeObjective(objective) ||
-      objective.type === ObjectiveType.Maximize
+      objective.type === ObjectiveType.Maximize ||
+      objective.type === ObjectiveType.MachineLimit
     )
       return objective.value;
 
     const rate = objective.value;
     let factor = rational.one;
     switch (objective.unit) {
-      case ObjectiveUnit.ItemLimit:
       case ObjectiveUnit.Items: {
         factor = displayRateInfo.value.reciprocal();
         break;

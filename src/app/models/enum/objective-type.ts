@@ -5,6 +5,11 @@ export enum ObjectiveType {
   Input = 1,
   Maximize = 2,
   Limit = 3,
+  HideSep = 10,
+  ItemLimit = 11,
+  ItemLimitOutput = 12,
+  MachineLimit = 13,
+  DomainTransfer = 14,
 }
 
 export const objectiveTypeOptions: SelectItem<ObjectiveType>[] = [

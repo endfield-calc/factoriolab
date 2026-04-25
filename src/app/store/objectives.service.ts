@@ -110,19 +110,18 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
     const paused = this.preferencesSvc.paused();
 
     objectives.forEach((it) => {
-      switch (it.unit) {
-        case ObjectiveUnit.ItemLimit: {
+      switch (it.type) {
+        case ObjectiveType.ItemLimit: {
           it.unit = ObjectiveUnit.Items;
           it.type = ObjectiveType.Limit;
           break;
         }
-        case ObjectiveUnit.ItemLimitOutput: {
+        case ObjectiveType.ItemLimitOutput: {
           it.unit = ObjectiveUnit.Machines;
           it.type = ObjectiveType.Output;
           break;
         }
-        case ObjectiveUnit.MachineLimit: {
-          it.type = ObjectiveType.Limit;
+        case ObjectiveType.MachineLimit: {
           it.machineId = it.targetId;
         }
       }
@@ -518,7 +517,13 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
     this.reduce((state) => {
       let value = rational.one;
       const ids = Object.keys(state);
-      const lastId = ids.at(-1);
+      let lastId: string | undefined;
+      for (let i = ids.length - 1; i >= 0; i--) {
+        if (state[ids[i]]?.type < ObjectiveType.HideSep) {
+          lastId = ids[i];
+          break;
+        }
+      }
       if (lastId) value = state[lastId].value;
 
       let n = 1;

@@ -5,9 +5,7 @@ import { Rational } from './rational';
 import { RecipeSettings, RecipeState } from './settings/recipe-settings';
 
 export function isRecipeObjective(obj: ObjectiveState): obj is RecipeObjective {
-  return (
-    obj.unit === ObjectiveUnit.Machines || obj.unit === ObjectiveUnit.ItemLimitOutput
-  );
+  return obj.unit === ObjectiveUnit.Machines;
 }
 
 export interface ObjectiveBase {

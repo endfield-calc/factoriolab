@@ -8,10 +8,6 @@ export enum ObjectiveUnit {
   Belts = 1,
   Wagons = 2,
   Machines = 3,
-  HideSep = 10,
-  ItemLimit = 11,
-  ItemLimitOutput = 12,
-  MachineLimit = 13,
 }
 
 export function objectiveUnitOptions(

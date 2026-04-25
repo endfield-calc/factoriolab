@@ -115,7 +115,7 @@
             <ng-template pTemplate="selectedItem">
               @if (data().locationEntities[transferSource()]; as loc) {
                 <div class="d-flex align-items-center w-100">
-                  <i class="mx-1" [class]="loc.icon | iconSmClass"></i>
+                  <i class="mx-1" [class]="('domain_key_' + loc.icon) | iconSmClass"></i>
                   <span class="ms-3">{{ loc.name }}</span>
                 </div>
               }
@@ -123,7 +123,7 @@
             <ng-template pTemplate="item" let-item>
               @if (data().locationEntities[item]; as loc) {
                 <div class="d-flex align-items-center py-2 w-100 h-100">
-                  <i [class]="loc.icon | iconSmClass"></i>
+                  <i [class]="('domain_key_' + loc.icon) | iconSmClass"></i>
                   <span class="ms-3">{{ loc.name }}</span>
                 </div>
               }

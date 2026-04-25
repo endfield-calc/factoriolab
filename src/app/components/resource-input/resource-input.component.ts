@@ -24,17 +24,18 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InputNumberComponent } from '~/components/input-number/input-number.component';
+import { NoDragDirective } from '~/directives/no-drag.directive';
+import { ObjectiveType } from '~/models/enum/objective-type';
+import { ObjectiveUnit } from '~/models/enum/objective-unit';
+import { ObjectiveBase, ObjectiveSettings } from '~/models/objective';
 import { fromNumber, Rational, rational } from '~/models/rational';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
 import { ItemsService } from '~/store/items.service';
+import { ObjectivesService } from '~/store/objectives.service';
 import { RecipesService } from '~/store/recipes.service';
 import { SettingsService } from '~/store/settings.service';
-import { NoDragDirective } from '~/directives/no-drag.directive';
-import { ObjectivesService } from '~/store/objectives.service';
-import { ObjectiveBase, ObjectiveSettings } from '~/models/objective';
-import { ObjectiveUnit } from '~/models/enum/objective-unit';
 
 const rational20 = fromNumber(20);
 
@@ -88,7 +89,7 @@ export class ResourceInputComponent {
   enableLimitMachines = signal(false);
   limitMachinesNum = signal<Record<string, Rational>>({});
 
-  readonly allowTransferSource = ['tundra', 'jinlong'];
+  readonly allowTransferSource = ['tundra'];
   enableDomainTransfer = signal(false);
   transferSourceOptions = computed(() => {
     const setLoc = this.settings().locationIds;
@@ -109,6 +110,7 @@ export class ResourceInputComponent {
     location?: string;
     limitItems?: { id: string; num: Rational }[];
     limitMachines?: { id: string; num: Rational }[];
+    transferSource?: string;
   }[] = [
     {
       id: 'tundra',
@@ -134,6 +136,7 @@ export class ResourceInputComponent {
         { id: 'copper_ore', num: fromNumber(180) },
       ],
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(8) }],
+      transferSource: 'tundra',
     },
     {
       id: 'jinlong1.2new',
@@ -147,6 +150,7 @@ export class ResourceInputComponent {
         { id: 'copper_ore', num: fromNumber(240) },
       ],
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
+      transferSource: 'tundra',
     },
     {
       id: 'clear',
@@ -198,32 +202,35 @@ export class ResourceInputComponent {
       const removeLimits = (
         predicate: (obj: ObjectiveSettings) => boolean,
       ): void => {
-        const needRemoveObj = this.objectivesSvc
-          .objectives()
-          .filter((it) => predicate(it))
-          .map((it) => it.id);
-        if (needRemoveObj.length > 0)
-          this.objectivesSvc.removeMulti(needRemoveObj);
+        untracked(() => {
+          const needRemoveObj = this.objectivesSvc
+            .baseObjectives()
+            .filter((it) => predicate(it))
+            .map((it) => it.id);
+          if (needRemoveObj.length > 0)
+            this.objectivesSvc.removeMulti(needRemoveObj);
+        });
       };
       if (this.enableLimitItems()) {
+        const needRemove = new Set(
+          limitItems.flatMap((it) => [it.id, it.recipe]),
+        );
+        removeLimits((it) => needRemove.has(it.targetId));
         untracked(() => {
-          const needRemove = new Set(
-            limitItems.flatMap((it) => [it.id, it.recipe]),
-          );
-          removeLimits((it) => needRemove.has(it.targetId));
-
           const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
             const ret = [
               {
                 targetId: it.id,
-                unit: ObjectiveUnit.ItemLimit,
+                unit: ObjectiveUnit.Items,
+                type: ObjectiveType.ItemLimit,
                 value: it.num,
               },
             ];
             if (it.num?.gt(rational.zero)) {
               ret.push({
                 targetId: it.recipe,
-                unit: ObjectiveUnit.ItemLimitOutput,
+                unit: ObjectiveUnit.Machines,
+                type: ObjectiveType.ItemLimitOutput,
                 value: it.num.div(rational20),
               });
             }
@@ -232,13 +239,11 @@ export class ResourceInputComponent {
           if (needAdd.length > 0) this.objectivesSvc.addMulti(needAdd);
         });
       } else {
-        untracked(() => {
-          removeLimits(
-            (it) =>
-              it.unit === ObjectiveUnit.ItemLimit ||
-              it.unit === ObjectiveUnit.ItemLimitOutput,
-          );
-        });
+        removeLimits(
+          (it) =>
+            it.type === ObjectiveType.ItemLimit ||
+            it.type === ObjectiveType.ItemLimitOutput,
+        );
       }
     });
     effect(() => {
@@ -250,32 +255,54 @@ export class ResourceInputComponent {
         }));
       });
       const removeLimits = (): void => {
-        const needRemove = new Set(limitMachines.map((it) => it.id));
-        const needRemoveObj = this.objectivesSvc
-          .objectives()
-          .filter(
-            (it) =>
-              needRemove.has(it.targetId) &&
-              it.unit === ObjectiveUnit.MachineLimit,
-          )
-          .map((it) => it.id);
-        if (needRemoveObj.length > 0)
-          this.objectivesSvc.removeMulti(needRemoveObj);
+        untracked(() => {
+          const needRemoveObj = this.objectivesSvc
+            .baseObjectives()
+            .filter((it) => it.type === ObjectiveType.MachineLimit)
+            .map((it) => it.id);
+          if (needRemoveObj.length > 0)
+            this.objectivesSvc.removeMulti(needRemoveObj);
+        });
       };
       if (this.enableLimitMachines()) {
+        removeLimits();
         untracked(() => {
-          removeLimits();
           const needAdd = limitMachines.map<ObjectiveBase>((it) => ({
             targetId: it.id,
-            unit: ObjectiveUnit.MachineLimit,
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.MachineLimit,
             value: it.num,
           }));
           if (needAdd.length > 0) this.objectivesSvc.addMulti(needAdd);
         });
       } else {
-        untracked(() => {
-          removeLimits();
-        });
+        removeLimits();
+      }
+    });
+    effect(() => {
+      // 先移除
+      untracked(() => {
+        const needRemoveObj = this.objectivesSvc
+          .baseObjectives()
+          .filter((it) => it.type === ObjectiveType.DomainTransfer)
+          .map((it) => it.id);
+        if (needRemoveObj.length > 0)
+          this.objectivesSvc.removeMulti(needRemoveObj);
+      });
+      // 再添加
+      if (this.enableDomainTransfer()) {
+        const transferSource = this.transferSource();
+        if (transferSource && transferSource.length > 0) {
+          const obj: ObjectiveBase = {
+            targetId: `domain_key_${transferSource}`,
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.DomainTransfer,
+            value: rational.one,
+          };
+          untracked(() => {
+            this.objectivesSvc.add(obj);
+          });
+        }
       }
     });
   }
@@ -317,10 +344,11 @@ export class ResourceInputComponent {
       this.settings().defaultLocationIds,
     );
     // 跨地区传输更新
-    const transferSourceOptions = this.transferSourceOptions();
-    if (transferSourceOptions.length === 1) {
-      this.transferSource.set(transferSourceOptions[0]);
+    if (cfg.transferSource) {
+      this.enableDomainTransfer.set(true);
+      this.transferSource.set(cfg.transferSource);
     } else {
+      this.enableDomainTransfer.set(false);
       this.transferSource.set('');
     }
   }

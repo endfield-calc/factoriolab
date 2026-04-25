@@ -94,7 +94,9 @@ export class ObjectivesComponent {
   convertObjectiveValues = this.preferencesSvc.convertObjectiveValues;
   paused = this.preferencesSvc.paused;
   objectives = computed(() => {
-    return this.objectivesSvc.objectives().filter(it => it.unit < ObjectiveUnit.HideSep);
+    return this.objectivesSvc
+      .objectives()
+      .filter((it) => it.type < ObjectiveType.HideSep);
   });
 
   messages = computed(() => {
@@ -111,6 +113,17 @@ export class ObjectivesComponent {
   MaximizeType = MaximizeType;
   ObjectiveUnit = ObjectiveUnit;
   ObjectiveType = ObjectiveType;
+
+  reorderObjectives(): void {
+    const newOrder = this.objectives();
+    const arr = [...this.objectivesSvc.objectives()];
+    arr.sort((a, b) => {
+      const aSort = newOrder.indexOf(a) ?? arr.indexOf(a);
+      const bSort = newOrder.indexOf(b) ?? arr.indexOf(b);
+      return aSort - bSort;
+    });
+    this.objectivesSvc.setOrder(arr);
+  }
 
   getMessages(
     objectives: ObjectiveState[],

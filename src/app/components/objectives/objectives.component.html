@@ -4,7 +4,7 @@
       [value]="objectives()"
       [dragdrop]="true"
       [trackBy]="trackSvc.trackById"
-      (onReorder)="objectivesSvc.setOrder(objectives())"
+      (onReorder)="reorderObjectives()"
     >
       <ng-template pTemplate="item" let-objective let-i="index">
         <div class="p-inputgroup">

@@ -17,7 +17,7 @@ import { AdjustedRecipe, Recipe } from '~/models/data/recipe';
 import { AdjustedDataset } from '~/models/dataset';
 import { MaximizeType } from '~/models/enum/maximize-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
-import { ObjectiveUnit } from '~/models/enum/objective-unit';
+import { ObjectiveUnit } from "~/models/enum/objective-unit";
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { MatrixResult } from '~/models/matrix-result';
 import {
@@ -151,6 +151,42 @@ export class SimplexService {
 
     if (objectives.length === 0)
       return { steps: [], resultType: SimplexResultType.Skipped };
+
+    // 跨地区传输 TODO 这里是丑陋的硬编码，需要重构
+    const transferNum = new Rational(1n,3600n);
+    const disableTransfer = ['domain_key_tundra'];
+    const useTransfer: string[] = [];
+    objectives = objectives.filter(it => {
+      if (it.type !== ObjectiveType.DomainTransfer) return true;
+      disableTransfer.splice(disableTransfer.indexOf(it.targetId), 1);
+      useTransfer.push(it.targetId);
+      return false;
+    });
+    useTransfer.forEach(it => {
+      objectives.push({
+        id: it + '-1',
+        targetId: it,
+        type: ObjectiveType.Limit,
+        unit: ObjectiveUnit.Items,
+        value: transferNum,
+      });
+      objectives.push({
+        id: it + '-2',
+        targetId: it,
+        type: ObjectiveType.Input,
+        unit: ObjectiveUnit.Items,
+        value: transferNum,
+      });
+    });
+    disableTransfer.forEach((it) => {
+      objectives.push({
+        id: it,
+        targetId: it,
+        type: ObjectiveType.Limit,
+        unit: ObjectiveUnit.Items,
+        value: rational.zero,
+      });
+    });
 
     // Get matrix state
     const state = this.getState(objectives, settings, data);
@@ -544,9 +580,13 @@ export class SimplexService {
     }
 
     // ===== 硬编码机器数量上限与整数约束 =====
+    // TODO 目前的循环和硬编码都挺抽象的，之后要调整
     const machineLimits = state.objectives
-      .filter((it) => it.unit === ObjectiveUnit.MachineLimit)
-      .map<[string, Rational]>(it => [it.targetId, it.value]);
+      .filter((it) => it.type === ObjectiveType.MachineLimit)
+      .map<[string, Rational]>((it) => [it.targetId, it.value]);
+    const blackRecipe: Record<string, string[]> = {
+      'xiranite_oven_1': ['xiranite_enr_powder'],
+    };
 
     let hasMachineIntegerConstraints = false;
 
@@ -556,8 +596,9 @@ export class SimplexService {
       // 处理普通配方变量
       for (const recipeId of recipeIds) {
         if (state.recipes[recipeId].producers.includes(machineId)) {
-          console.log('1: ' + recipeId);
-          recipeVarEntities[recipeId].type = 'integer';
+          if (!blackRecipe[machineId]?.includes(recipeId)) {
+            recipeVarEntities[recipeId].type = 'integer';
+          }
           coeffs.push([recipeVarEntities[recipeId], 1]);
           hasMachineIntegerConstraints = true;
         }
@@ -566,15 +607,15 @@ export class SimplexService {
       // 处理配方目标变量（ObjectiveType.Output / Maximize）
       for (const obj of state.recipeObjectives) {
         if (obj.recipe.producers.includes(machineId)) {
-          console.log('2: ' + obj.targetId);
-          recipeObjectiveVarEntities[obj.id].type = 'integer';
+          if (!blackRecipe[machineId]?.includes(obj.recipe.id)) {
+            recipeObjectiveVarEntities[obj.id].type = 'integer';
+          }
           coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
           hasMachineIntegerConstraints = true;
         }
       }
 
       if (coeffs.length > 0) {
-        console.log(coeffs);
         m.addConstr({
           coeffs,
           ub: limit.toNumber(),
@@ -780,7 +821,7 @@ export class SimplexService {
 
     const getValue = (variable: Variable): number => {
       return hasMachineIntegerConstraints ? variable.valueMIP : variable.value;
-    }
+    };
 
     // Parse solution
     for (const itemId of itemIds) {
@@ -837,7 +878,9 @@ export class SimplexService {
 
     // Update recipe objective counts to account for maximizations
     state.recipeObjectives = state.recipeObjectives.map((o) =>
-      spread(o, { value: rational(getValue(recipeObjectiveVarEntities[o.id])) }),
+      spread(o, {
+        value: rational(getValue(recipeObjectiveVarEntities[o.id])),
+      }),
     );
 
     return {
@@ -854,8 +897,12 @@ export class SimplexService {
   }
 
   /** Simplex method wrapper mainly for test mocking */
-  glpkSimplex(model: Model, useIntopt = false): [Simplex.ReturnCode | MIP.ReturnCode, Status] {
-    let returnCode: Simplex.ReturnCode | MIP.ReturnCode = model.simplex(simplexConfig);
+  glpkSimplex(
+    model: Model,
+    useIntopt = false,
+  ): [Simplex.ReturnCode | MIP.ReturnCode, Status] {
+    let returnCode: Simplex.ReturnCode | MIP.ReturnCode =
+      model.simplex(simplexConfig);
     if (useIntopt && returnCode === 'ok') {
       returnCode = model.intopt();
     }

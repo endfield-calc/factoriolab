@@ -108,7 +108,8 @@
             scrollHeight="260px"
             panelStyleClass="tooltip"
             [style]="{ width: '200px' }"
-            [(ngModel)]="transferSource"
+            [ngModel]="transferSource()"
+            (ngModelChange)="updateTransferSource($event.toString())"
             [options]="transferSourceOptions()"
             [disabled]="!enableDomainTransfer()"
           >

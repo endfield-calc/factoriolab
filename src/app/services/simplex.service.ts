@@ -522,6 +522,11 @@ export class SimplexService {
         config.ub = state.recipeLimits[recipeId].toNumber();
       }
 
+      // 跨地区传输只能是整数
+      if (recipeId.startsWith('transfer_')) {
+        config.type = 'integer';
+      }
+
       recipeVarEntities[recipeId] = m.addVar(config);
     }
 
@@ -588,6 +593,7 @@ export class SimplexService {
       'xiranite_oven_1': ['xiranite_enr_powder'],
     };
 
+    // TODO 这个变量目前的逻辑实际上跟固定true没区别，之后要根据资源配置卡片是否启用来判断
     let hasMachineIntegerConstraints = false;
 
     for (const [machineId, limit] of machineLimits) {

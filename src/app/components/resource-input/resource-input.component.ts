@@ -7,7 +7,6 @@ import {
   inject,
   input,
   InputSignal,
-  model,
   signal,
   untracked,
 } from '@angular/core';
@@ -32,11 +31,11 @@ import { fromNumber, Rational, rational } from '~/models/rational';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
+import { RouterService } from '~/services/router.service';
 import { ItemsService } from '~/store/items.service';
 import { ObjectivesService } from '~/store/objectives.service';
 import { RecipesService } from '~/store/recipes.service';
 import { SettingsService } from '~/store/settings.service';
-import { RouterService } from '~/services/router.service';
 
 const rational20 = fromNumber(20);
 
@@ -143,20 +142,20 @@ export class ResourceInputComponent {
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(8) }],
       transferSource: 'tundra',
     },
-    {
-      id: 'jinlong1.2new',
-      icon: 'jinlong',
-      name: '武陵 1.2版本 下半',
-      location: 'jinlong',
-      limitItems: [
-        { id: 'originium_ore', num: fromNumber(480) },
-        { id: 'quartz_sand', num: rational.zero },
-        { id: 'iron_ore', num: fromNumber(90) },
-        { id: 'copper_ore', num: fromNumber(240) },
-      ],
-      limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
-      transferSource: 'tundra',
-    },
+    // {
+    //   id: 'jinlong1.2new',
+    //   icon: 'jinlong',
+    //   name: '武陵 1.2版本 下半',
+    //   location: 'jinlong',
+    //   limitItems: [
+    //     { id: 'originium_ore', num: fromNumber(480) },
+    //     { id: 'quartz_sand', num: rational.zero },
+    //     { id: 'iron_ore', num: fromNumber(90) },
+    //     { id: 'copper_ore', num: fromNumber(240) },
+    //   ],
+    //   limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
+    //   transferSource: 'tundra',
+    // },
     {
       id: 'clear',
       icon: 'pipe',

@@ -597,6 +597,7 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
         .filter(
           (o) =>
             o.type !== ObjectiveType.Maximize &&
+            o.type !== ObjectiveType.MachineLimit &&
             (o.unit === ObjectiveUnit.Items || o.unit === ObjectiveUnit.Wagons),
         )) {
         const value = objective.value.mul(factor);

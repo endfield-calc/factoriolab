@@ -6,18 +6,15 @@ import {
   inject,
   Input,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
-import { combineLatest, map } from 'rxjs';
 
 import { APP } from '~/models/constants';
-import { Game, gameOptions } from '~/models/enum/game';
-import { gameInfo } from '~/models/game-info';
+import { ObjectiveType } from '~/models/enum/objective-type';
 import { isRecipeObjective } from '~/models/objective';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
@@ -92,14 +89,15 @@ export class HeaderComponent {
       const data = this.settingsSvc.dataset();
 
       const name = objectives
-        .map((o) =>
-          isRecipeObjective(o)
+        .map((o) => {
+          if (o.type >= ObjectiveType.HideSep) return null;
+          return isRecipeObjective(o)
             ? data.recipeEntities[o.targetId]?.name
-            : data.itemEntities[o.targetId]?.name,
-        )
-        .find((n) => n != null);
+            : data.itemEntities[o.targetId]?.name;
+        })
+        .find((n) => !!n);
       const appNameVal = this.appName() ?? APP;
-      this.title.setTitle(name != null ? `${name} | ${appNameVal}` : appNameVal);
+      this.title.setTitle(name ? `${name} | ${appNameVal}` : appNameVal);
     });
   }
 

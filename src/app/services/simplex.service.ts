@@ -911,6 +911,7 @@ export class SimplexService {
       model.simplex(simplexConfig);
     if (useIntopt && returnCode === 'ok') {
       returnCode = model.intopt();
+      return [returnCode, model.statusMIP];
     }
     return [returnCode, model.status];
   }

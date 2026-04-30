@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -38,12 +37,13 @@ import { RecipesService } from '~/store/recipes.service';
 import { SettingsService } from '~/store/settings.service';
 
 const rational20 = fromNumber(20);
+const rational60 = fromNumber(60);
+const rational1d60 = rational60.reciprocal();
 
 @Component({
   selector: 'lab-resource-input',
   standalone: true,
   imports: [
-    AsyncPipe,
     AccordionModule,
     FormsModule,
     ButtonModule,
@@ -198,6 +198,8 @@ export class ResourceInputComponent {
         removeLoadEffect.destroy();
         untracked(() => {
           const objectives = this.objectives();
+          const displayRate = this.settingsSvc.displayRateInfo().value;
+          const rateFactor = rational60.mul(displayRate.reciprocal());
           const cfg: (typeof this.oneKeyConfig)[number] = {
             id: 'load',
             icon: 'tundra',
@@ -238,6 +240,7 @@ export class ResourceInputComponent {
               }
             }
           }
+          cfg.limitItems?.forEach((it) => (it.num = it.num.mul(rateFactor)));
           this.applyOneKeyConfig(cfg);
           setTimeout(() => {
             this.ready.set(true);
@@ -247,15 +250,17 @@ export class ResourceInputComponent {
     });
     // 700ms后无条件设为初始化完毕
     const effectRef = effect(() => {
-        if (this.routerSvc.ready()) {
-          effectRef.destroy();
-          setTimeout(() => {
-            this.ready.set(true);
-          }, 700);
-        }
-      });
+      if (this.routerSvc.ready()) {
+        effectRef.destroy();
+        setTimeout(() => {
+          this.ready.set(true);
+        }, 700);
+      }
+    });
     effect(() => {
       if (!this.ready()) return;
+      const displayRate = this.settingsSvc.displayRateInfo().value;
+      const rateFactor = displayRate.mul(rational1d60);
       {
         // Items
         const limitItemsNum = this.limitItemsNum();
@@ -289,7 +294,7 @@ export class ResourceInputComponent {
                   targetId: it.id,
                   unit: ObjectiveUnit.Items,
                   type: ObjectiveType.ItemLimit,
-                  value: it.num,
+                  value: it.num.mul(rateFactor),
                 },
               ];
               if (it.num?.gt(rational.zero)) {
@@ -363,7 +368,7 @@ export class ResourceInputComponent {
               targetId: `domain_key_${transferSource}`,
               unit: ObjectiveUnit.Items,
               type: ObjectiveType.DomainTransfer,
-              value: rational.one,
+              value: rational.one.mul(rateFactor),
             };
             untracked(() => {
               this.objectivesSvc.add(obj);

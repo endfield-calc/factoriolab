@@ -11,14 +11,6 @@
     "gen-power": "発電"
   },
   "items": {
-    "activity_xiranite_bottle": "実験用息壌ボトル",
-    "activity_xiranite_cmpt": "実験用息壌部品",
-    "activity_xiranite_enr_bottle": "実験用重息壌ボトル",
-    "activity_xiranite_enr_cmpt": "実験用重息壌部品",
-    "activity_xiranite_enr_hulu": "息壌玉ひょうたん",
-    "activity_xiranite_enr_tool": "実験用玉銅拡散装置",
-    "activity_xiranite_hulu": "息壌ひょうたん",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "実験用重息壌ボトル(芽針エキス)",
     "carbon_enr": "安定炭塊",
     "carbon_enr_powder": "高密度炭塊粉末",
     "carbon_mtl": "炭塊",
@@ -152,16 +144,6 @@
     "pipe": "パイプ"
   },
   "recipes": {
-    "activity_xiranite_bottle": "実験用息壌ボトル",
-    "activity_xiranite_cmpt": "実験用息壌部品",
-    "activity_xiranite_enr_bottle": "実験用重息壌ボトル",
-    "activity_xiranite_enr_cmpt": "実験用重息壌部品",
-    "activity_xiranite_enr_hulu": "息壌玉ひょうたん",
-    "activity_xiranite_enr_tool": "実験用玉銅拡散装置",
-    "activity_xiranite_hulu": "息壌ひょうたん",
-    "jinlong_coupon-activity_xiranite_enr_hulu": "武陵取引券(息壌玉ひょうたん)",
-    "jinlong_coupon-activity_xiranite_hulu": "武陵取引券(息壌ひょうたん)",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "実験用重息壌ボトル(芽針エキス)",
     "power_originium_ore": "発電(源石鉱物)",
     "power_proc_battery_1": "発電(小容量谷地バッテリー)",
     "power_proc_battery_2": "発電(中容量谷地バッテリー)",

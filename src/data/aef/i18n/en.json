@@ -11,14 +11,6 @@
     "gen-power": "Power"
   },
   "items": {
-    "activity_xiranite_bottle": "Experimental Xiranite Bottle",
-    "activity_xiranite_cmpt": "Experimental Xiranite Part",
-    "activity_xiranite_enr_bottle": "Experimental Heavy Xiranite Bottle",
-    "activity_xiranite_enr_cmpt": "Experimental Heavy Xiranite Part",
-    "activity_xiranite_enr_hulu": "Xiranite Jade Gourd",
-    "activity_xiranite_enr_tool": "Experimental Xiran-Hue Atomizer",
-    "activity_xiranite_hulu": "Xiranite Gourd",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "Experimental Heavy Xiranite Bottle(Yazhen Solution)",
     "carbon_enr": "Stabilized Carbon",
     "carbon_enr_powder": "Dense Carbon Powder",
     "carbon_mtl": "Carbon",
@@ -152,16 +144,6 @@
     "pipe": "Pipe"
   },
   "recipes": {
-    "activity_xiranite_bottle": "Experimental Xiranite Bottle",
-    "activity_xiranite_cmpt": "Experimental Xiranite Part",
-    "activity_xiranite_enr_bottle": "Experimental Heavy Xiranite Bottle",
-    "activity_xiranite_enr_cmpt": "Experimental Heavy Xiranite Part",
-    "activity_xiranite_enr_hulu": "Xiranite Jade Gourd",
-    "activity_xiranite_enr_tool": "Experimental Xiran-Hue Atomizer",
-    "activity_xiranite_hulu": "Xiranite Gourd",
-    "jinlong_coupon-activity_xiranite_enr_hulu": "Wuling Stock Bill(Xiranite Jade Gourd)",
-    "jinlong_coupon-activity_xiranite_hulu": "Wuling Stock Bill(Xiranite Gourd)",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "Experimental Heavy Xiranite Bottle(Yazhen Solution)",
     "power_originium_ore": "Power(Originium Ore)",
     "power_proc_battery_1": "Power(LC Valley Battery)",
     "power_proc_battery_2": "Power(SC Valley Battery)",

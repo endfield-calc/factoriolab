@@ -11,14 +11,6 @@
     "gen-power": "Энергия"
   },
   "items": {
-    "activity_xiranite_bottle": "Экспериментальная ксиранитовая бутылка",
-    "activity_xiranite_cmpt": "Экспериментальная ксиранитовая деталь",
-    "activity_xiranite_enr_bottle": "Экспериментальная тяжелая ксиранитовая бутылка",
-    "activity_xiranite_enr_cmpt": "Экспериментальная тяжелая ксиранитовая деталь",
-    "activity_xiranite_enr_hulu": "Нефритовая фляга с ксиранитом",
-    "activity_xiranite_enr_tool": "Экспериментальный ксиранитовый распылитель",
-    "activity_xiranite_hulu": "Тыквенная фляга с ксиранитом",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "Экспериментальная тяжелая ксиранитовая бутылка(Раствор ячжэня)",
     "carbon_enr": "Стабилизированный углерод",
     "carbon_enr_powder": "Мелкомолотый углерод",
     "carbon_mtl": "Углерод",
@@ -152,16 +144,6 @@
     "pipe": "Труба"
   },
   "recipes": {
-    "activity_xiranite_bottle": "Экспериментальная ксиранитовая бутылка",
-    "activity_xiranite_cmpt": "Экспериментальная ксиранитовая деталь",
-    "activity_xiranite_enr_bottle": "Экспериментальная тяжелая ксиранитовая бутылка",
-    "activity_xiranite_enr_cmpt": "Экспериментальная тяжелая ксиранитовая деталь",
-    "activity_xiranite_enr_hulu": "Нефритовая фляга с ксиранитом",
-    "activity_xiranite_enr_tool": "Экспериментальный ксиранитовый распылитель",
-    "activity_xiranite_hulu": "Тыквенная фляга с ксиранитом",
-    "jinlong_coupon-activity_xiranite_enr_hulu": "Облигация Улина(Нефритовая фляга с ксиранитом)",
-    "jinlong_coupon-activity_xiranite_hulu": "Облигация Улина(Тыквенная фляга с ксиранитом)",
-    "xiranite_enr_bottle-liquid_plant_grass_2": "Экспериментальная тяжелая ксиранитовая бутылка(Раствор ячжэня)",
     "power_originium_ore": "Энергия(Ориджиниевая руда)",
     "power_proc_battery_1": "Энергия(Батарея МЕ Долины)",
     "power_proc_battery_2": "Энергия(Батарея СЕ Долины)",

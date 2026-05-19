@@ -549,404 +549,419 @@
       "color": "#91969b"
     },
     {
-      "id": "liquid_cleaner_1",
+      "id": "liquid_clean_gate",
       "position": "-704px -448px",
-      "color": "#787d7e"
+      "color": "#98999a"
+    },
+    {
+      "id": "liquid_cleaner_1",
+      "position": "-768px -448px",
+      "color": "#797c7c"
     },
     {
       "id": "liquid_purifier_1",
-      "position": "-768px -448px",
-      "color": "#8d9090"
+      "position": "-832px -448px",
+      "color": "#8e9391"
     },
     {
       "id": "miner_2",
-      "position": "-832px -448px",
-      "color": "#868785"
+      "position": "0px -512px",
+      "color": "#858684"
     },
     {
       "id": "miner_3",
-      "position": "0px -512px",
-      "color": "#918a88"
+      "position": "-64px -512px",
+      "color": "#93898a"
     },
     {
       "id": "miner_4",
-      "position": "-64px -512px",
-      "color": "#8f8d8a"
+      "position": "-128px -512px",
+      "color": "#8c8d89"
     },
     {
       "id": "mix_pool_1",
-      "position": "-128px -512px",
-      "color": "#88898d"
+      "position": "-192px -512px",
+      "color": "#8a8b8c"
     },
     {
       "id": "mix_pool_2",
-      "position": "-192px -512px",
-      "color": "#868778"
+      "position": "-256px -512px",
+      "color": "#858678"
     },
     {
       "id": "planter_1",
-      "position": "-256px -512px",
-      "color": "#7d827c"
+      "position": "-320px -512px",
+      "color": "#7f807e"
     },
     {
       "id": "power_sta_1",
-      "position": "-320px -512px",
-      "color": "#939ca2"
+      "position": "-384px -512px",
+      "color": "#939fa1"
     },
     {
       "id": "pump_1",
-      "position": "-384px -512px",
-      "color": "#8f8f85"
+      "position": "-448px -512px",
+      "color": "#8e8d86"
     },
     {
       "id": "pump_2",
-      "position": "-448px -512px",
-      "color": "#8a817a"
+      "position": "-512px -512px",
+      "color": "#898278"
     },
     {
       "id": "seedcol_1",
-      "position": "-512px -512px",
-      "color": "#757e74"
+      "position": "-576px -512px",
+      "color": "#757d76"
     },
     {
       "id": "shaper_1",
-      "position": "-576px -512px",
-      "color": "#919192"
+      "position": "-640px -512px",
+      "color": "#909391"
     },
     {
       "id": "thickener_1",
-      "position": "-640px -512px",
-      "color": "#888b89"
+      "position": "-704px -512px",
+      "color": "#8b8988"
     },
     {
       "id": "tools_asm_mc_1",
-      "position": "-704px -512px",
-      "color": "#878988"
+      "position": "-768px -512px",
+      "color": "#858a8b"
     },
     {
       "id": "winder_1",
-      "position": "-768px -512px",
-      "color": "#959693"
+      "position": "-832px -512px",
+      "color": "#979593"
     },
     {
       "id": "xiranite_oven_1",
-      "position": "-832px -512px",
-      "color": "#a3a59b"
+      "position": "0px -576px",
+      "color": "#a0a699"
     },
     {
       "id": "carbon_enr_powder-carbon_powder",
-      "position": "0px -576px",
-      "color": "#484a49"
+      "position": "-64px -576px",
+      "color": "#4a4a49"
     },
     {
       "id": "carbon_enr_powder-plant_moss_enr_powder_1",
-      "position": "-64px -576px",
-      "color": "#625251"
+      "position": "-128px -576px",
+      "color": "#615253"
     },
     {
       "id": "carbon_enr_powder-plant_moss_enr_powder_2",
-      "position": "-128px -576px",
-      "color": "#615e53"
+      "position": "-192px -576px",
+      "color": "#635d52"
     },
     {
       "id": "carbon_mtl-plant_grass_1",
-      "position": "-192px -576px",
-      "color": "#4f514e"
+      "position": "-256px -576px",
+      "color": "#4f504d"
     },
     {
       "id": "carbon_mtl-plant_grass_2",
-      "position": "-256px -576px",
-      "color": "#474449"
+      "position": "-320px -576px",
+      "color": "#464449"
     },
     {
       "id": "carbon_mtl-plant_moss_1",
-      "position": "-320px -576px",
-      "color": "#4a4441"
+      "position": "-384px -576px",
+      "color": "#494640"
     },
     {
       "id": "carbon_mtl-plant_moss_2",
-      "position": "-384px -576px",
-      "color": "#494e40"
+      "position": "-448px -576px",
+      "color": "#4a4c42"
     },
     {
       "id": "carbon_mtl-plant_moss_3",
-      "position": "-448px -576px",
-      "color": "#5a5046"
+      "position": "-512px -576px",
+      "color": "#5a5144"
     },
     {
       "id": "carbon_powder-carbon_mtl",
-      "position": "-512px -576px",
-      "color": "#4a4d4c"
+      "position": "-576px -576px",
+      "color": "#484c4d"
     },
     {
       "id": "carbon_powder-plant_grass_powder_1",
-      "position": "-576px -576px",
-      "color": "#78786d"
+      "position": "-640px -576px",
+      "color": "#79786d"
     },
     {
       "id": "carbon_powder-plant_grass_powder_2",
-      "position": "-640px -576px",
-      "color": "#75645d"
+      "position": "-704px -576px",
+      "color": "#77655e"
     },
     {
       "id": "carbon_powder-plant_moss_powder_1",
-      "position": "-704px -576px",
-      "color": "#735956"
+      "position": "-768px -576px",
+      "color": "#725955"
     },
     {
       "id": "carbon_powder-plant_moss_powder_2",
-      "position": "-768px -576px",
-      "color": "#867d59"
+      "position": "-832px -576px",
+      "color": "#877d58"
     },
     {
       "id": "carbon_powder-plant_moss_powder_3",
-      "position": "-832px -576px",
-      "color": "#675544"
+      "position": "0px -640px",
+      "color": "#655646"
     },
     {
       "id": "copper_bottle-liquid_plant_grass_1",
-      "position": "0px -640px",
-      "color": "#958a82"
+      "position": "-64px -640px",
+      "color": "#948983"
     },
     {
       "id": "copper_bottle-liquid_plant_grass_2",
-      "position": "-64px -640px",
-      "color": "#88855b"
+      "position": "-128px -640px",
+      "color": "#898559"
     },
     {
       "id": "copper_ore-liquid_water",
-      "position": "-128px -640px",
-      "color": "#a18181"
+      "position": "-192px -640px",
+      "color": "#a28082"
     },
     {
       "id": "crystal_enr_powder-crystal_powder",
-      "position": "-192px -640px",
-      "color": "#9a6036"
+      "position": "-256px -640px",
+      "color": "#986236"
     },
     {
       "id": "crystal_enr_powder-originium_enr_powder",
-      "position": "-256px -640px",
-      "color": "#9c663a"
+      "position": "-320px -640px",
+      "color": "#9c653a"
     },
     {
       "id": "crystal_powder-crystal_shell",
-      "position": "-320px -640px",
-      "color": "#78552e"
+      "position": "-384px -640px",
+      "color": "#79552d"
     },
     {
       "id": "crystal_powder-originium_powder",
-      "position": "-384px -640px",
-      "color": "#654121"
+      "position": "-448px -640px",
+      "color": "#664322"
     },
     {
       "id": "crystal_shell-crystal_powder",
-      "position": "-448px -640px",
-      "color": "#8e6f3e"
+      "position": "-512px -640px",
+      "color": "#8d6e3d"
     },
     {
       "id": "crystal_shell-originium_ore",
-      "position": "-512px -640px",
-      "color": "#8d6e41"
+      "position": "-576px -640px",
+      "color": "#8c6d42"
     },
     {
       "id": "iron_bottle-liquid_plant_grass_1",
-      "position": "-576px -640px",
-      "color": "#78919a"
+      "position": "-640px -640px",
+      "color": "#799299"
     },
     {
       "id": "iron_bottle-liquid_plant_grass_2",
-      "position": "-640px -640px",
-      "color": "#6d8e79"
+      "position": "-704px -640px",
+      "color": "#6e8e79"
     },
     {
       "id": "iron_nugget-iron_ore",
-      "position": "-704px -640px",
-      "color": "#668299"
+      "position": "-768px -640px",
+      "color": "#658299"
     },
     {
       "id": "iron_nugget-iron_powder",
-      "position": "-768px -640px",
-      "color": "#5d7e91"
+      "position": "-832px -640px",
+      "color": "#5d7d92"
     },
     {
       "id": "jinlong_coupon-bottled_food_4",
-      "position": "-832px -640px",
-      "color": "#899d9e"
+      "position": "0px -704px",
+      "color": "#8b9c9d"
     },
     {
       "id": "jinlong_coupon-bottled_food_5",
-      "position": "0px -704px",
-      "color": "#8b9c99"
+      "position": "-64px -704px",
+      "color": "#8a9d98"
     },
     {
       "id": "jinlong_coupon-bottled_rec_hp_4",
-      "position": "-64px -704px",
-      "color": "#96a19c"
+      "position": "-128px -704px",
+      "color": "#94a29f"
     },
     {
       "id": "jinlong_coupon-bottled_rec_hp_5",
-      "position": "-128px -704px",
-      "color": "#949e9f"
+      "position": "-192px -704px",
+      "color": "#959d9e"
     },
     {
       "id": "jinlong_coupon-copper_cmpt",
-      "position": "-192px -704px",
-      "color": "#919596"
+      "position": "-256px -704px",
+      "color": "#909795"
     },
     {
       "id": "jinlong_coupon-copper_enr_cmpt",
-      "position": "-256px -704px",
-      "color": "#a09f99"
+      "position": "-320px -704px",
+      "color": "#a29c99"
     },
     {
       "id": "jinlong_coupon-proc_battery_4",
-      "position": "-320px -704px",
-      "color": "#8e9c9d"
+      "position": "-384px -704px",
+      "color": "#8d9e9f"
     },
     {
       "id": "jinlong_coupon-proc_battery_5",
-      "position": "-384px -704px",
-      "color": "#899a9b"
+      "position": "-448px -704px",
+      "color": "#88999a"
     },
     {
       "id": "jinlong_coupon-xiranite_enr_powder",
-      "position": "-448px -704px",
-      "color": "#849992"
+      "position": "-512px -704px",
+      "color": "#849b90"
     },
     {
       "id": "jinlong_coupon-xiranite_powder",
-      "position": "-512px -704px",
-      "color": "#849b94"
+      "position": "-576px -704px",
+      "color": "#869b97"
     },
     {
       "id": "liquid_cleaner_1-liquid_sewage",
-      "position": "-576px -704px",
-      "color": "#7a7b7f"
+      "position": "-640px -704px",
+      "color": "#797a7d"
     },
     {
       "id": "liquid_cleaner_1-liquid_xiranite_lowpoly",
-      "position": "-640px -704px",
-      "color": "#757a79"
+      "position": "-704px -704px",
+      "color": "#76797a"
     },
     {
       "id": "liquid_cleaner_1-liquid_xiranite_poly",
-      "position": "-704px -704px",
-      "color": "#767d7a"
+      "position": "-768px -704px",
+      "color": "#747d79"
+    },
+    {
+      "id": "liquid_sewage-liquid_clean_gate",
+      "position": "-832px -704px",
+      "color": "#767477"
+    },
+    {
+      "id": "liquid_xiranite_poly-liquid_clean_gate",
+      "position": "0px -768px",
+      "color": "#697b69"
     },
     {
       "id": "liquid_xiranite_poly-liquid_purifier_1",
-      "position": "-768px -704px",
-      "color": "#707d75"
+      "position": "-64px -768px",
+      "color": "#707d76"
     },
     {
       "id": "power_sta_1-originium_ore",
-      "position": "-832px -704px",
-      "color": "#929497"
+      "position": "-128px -768px",
+      "color": "#939795"
     },
     {
       "id": "power_sta_1-proc_battery_1",
-      "position": "0px -768px",
-      "color": "#99a3a5"
+      "position": "-192px -768px",
+      "color": "#9ba0a6"
     },
     {
       "id": "power_sta_1-proc_battery_2",
-      "position": "-64px -768px",
-      "color": "#98a1a6"
+      "position": "-256px -768px",
+      "color": "#99a2a6"
     },
     {
       "id": "power_sta_1-proc_battery_3",
-      "position": "-128px -768px",
-      "color": "#9ba3a5"
+      "position": "-320px -768px",
+      "color": "#99a1a6"
     },
     {
       "id": "power_sta_1-proc_battery_4",
-      "position": "-192px -768px",
-      "color": "#939c9e"
+      "position": "-384px -768px",
+      "color": "#939f9d"
     },
     {
       "id": "power_sta_1-proc_battery_5",
-      "position": "-256px -768px",
-      "color": "#8d9a9a"
+      "position": "-448px -768px",
+      "color": "#8e9b98"
     },
     {
       "id": "quartz_glass-quartz_powder",
-      "position": "-320px -768px",
-      "color": "#6d598a"
+      "position": "-512px -768px",
+      "color": "#6d5a88"
     },
     {
       "id": "quartz_glass-quartz_sand",
-      "position": "-384px -768px",
-      "color": "#6b5785"
+      "position": "-576px -768px",
+      "color": "#695586"
     },
     {
       "id": "tundra_coupon-bottled_food_1",
-      "position": "-448px -768px",
-      "color": "#bebfac"
+      "position": "-640px -768px",
+      "color": "#bcbeac"
     },
     {
       "id": "tundra_coupon-bottled_food_2",
-      "position": "-512px -768px",
-      "color": "#bdbea4"
+      "position": "-704px -768px",
+      "color": "#bebea5"
     },
     {
       "id": "tundra_coupon-bottled_food_3",
-      "position": "-576px -768px",
-      "color": "#b5b9aa"
+      "position": "-768px -768px",
+      "color": "#b4b8a8"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_1",
-      "position": "-640px -768px",
-      "color": "#c4c2b0"
+      "position": "-832px -768px",
+      "color": "#c5c1b0"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_2",
-      "position": "-704px -768px",
-      "color": "#cac2b5"
+      "position": "0px -832px",
+      "color": "#c9c3b5"
     },
     {
       "id": "tundra_coupon-bottled_rec_hp_3",
-      "position": "-768px -768px",
-      "color": "#c0b8ac"
+      "position": "-64px -832px",
+      "color": "#c2baad"
     },
     {
       "id": "tundra_coupon-crystal_shell",
-      "position": "-832px -768px",
-      "color": "#bdb9a0"
+      "position": "-128px -832px",
+      "color": "#bdbba1"
     },
     {
       "id": "tundra_coupon-glass_bottle",
-      "position": "0px -832px",
-      "color": "#b5bba9"
+      "position": "-192px -832px",
+      "color": "#b4b9aa"
     },
     {
       "id": "tundra_coupon-glass_cmpt",
-      "position": "-64px -832px",
-      "color": "#bec2b5"
+      "position": "-256px -832px",
+      "color": "#bec0b5"
     },
     {
       "id": "tundra_coupon-iron_cmpt",
-      "position": "-128px -832px",
-      "color": "#b9bfb5"
+      "position": "-320px -832px",
+      "color": "#bbbdb5"
     },
     {
       "id": "tundra_coupon-iron_enr_cmpt",
-      "position": "-192px -832px",
-      "color": "#b4b9b2"
+      "position": "-384px -832px",
+      "color": "#b5bab0"
     },
     {
       "id": "tundra_coupon-proc_battery_1",
-      "position": "-256px -832px",
-      "color": "#bec0ad"
+      "position": "-448px -832px",
+      "color": "#bec0ae"
     },
     {
       "id": "tundra_coupon-proc_battery_2",
-      "position": "-320px -832px",
-      "color": "#bfc1b1"
+      "position": "-512px -832px",
+      "color": "#bec0b1"
     },
     {
       "id": "tundra_coupon-proc_battery_3",
-      "position": "-384px -832px",
-      "color": "#bdc2ac"
+      "position": "-576px -832px",
+      "color": "#bec1ad"
     }
   ],
   "categories": [
@@ -1908,6 +1923,22 @@
       "icon": "grinder_1"
     },
     {
+      "id": "liquid_clean_gate",
+      "name": "净水节点(污水接入口)",
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "category": "machine",
+      "row": 999,
+      "icon": "liquid_clean_gate"
+    },
+    {
       "id": "liquid_cleaner_1",
       "name": "废水处理机",
       "stack": 50,
@@ -1946,6 +1977,22 @@
       "category": "machine",
       "row": 999,
       "icon": "liquid_purifier_1"
+    },
+    {
+      "id": "liquid_recycle_gate",
+      "name": "净水节点(产物排出口)",
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "liquid_clean_gate",
+      "category": "machine",
+      "row": 999
     },
     {
       "id": "miner_2",
@@ -3943,6 +3990,38 @@
       "category": "material",
       "row": 999,
       "icon": "liquid_cleaner_1-liquid_xiranite_poly"
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_sewage": 2
+      },
+      "out": {},
+      "producers": [
+        "liquid_clean_gate"
+      ],
+      "id": "sewage-treat",
+      "name": "净水节点",
+      "category": "material",
+      "row": 999,
+      "icon": "liquid_sewage-liquid_clean_gate"
+    },
+    {
+      "time": 60,
+      "in": {
+        "liquid_sewage": 360
+      },
+      "out": {
+        "liquid_xiranite_poly": 12
+      },
+      "producers": [
+        "liquid_recycle_gate"
+      ],
+      "id": "sewage-treat-export",
+      "name": "壤晶废液(净水节点)",
+      "category": "material",
+      "row": 999,
+      "icon": "liquid_xiranite_poly-liquid_clean_gate"
     },
     {
       "time": 10,

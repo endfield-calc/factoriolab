@@ -131,21 +131,7 @@ export class ResourceInputComponent {
     {
       id: 'jinlong1.2.4',
       icon: 'jinlong',
-      name: '武陵 1.2版本 上半',
-      location: 'jinlong',
-      limitItems: [
-        { id: 'originium_ore', num: fromNumber(480) },
-        { id: 'quartz_sand', num: rational.zero },
-        { id: 'iron_ore', num: fromNumber(90) },
-        { id: 'copper_ore', num: fromNumber(180) },
-      ],
-      limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(8) }],
-      transferSource: 'tundra',
-    },
-    {
-      id: 'jinlong1.2.4 part2',
-      icon: 'jinlong',
-      name: '武陵 1.2版本 下半',
+      name: '武陵 1.2版本',
       location: 'jinlong',
       limitItems: [
         { id: 'originium_ore', num: fromNumber(540) },

@@ -40,8 +40,8 @@
               <i class="p-button-icon" [class]="it.id | iconSmClass"></i>
               @if (!contentSvc.isMobile()) {
                 <span class="p-button-label">
-                {{ data().itemEntities[it.id]?.name }}
-              </span>
+                  {{ data().itemEntities[it.id]?.name }}
+                </span>
               }
             </button>
             @if (limitItemsNum()[it.id]) {
@@ -74,8 +74,8 @@
             >
               <i class="p-button-icon" [class]="machine | iconSmClass"></i>
               <span class="p-button-label">
-              {{ data().itemEntities[machine]?.name }}
-            </span>
+                {{ data().itemEntities[machine]?.name }}
+              </span>
             </button>
             @if (limitMachinesNum()[machine]) {
               <lab-input-number
@@ -131,6 +131,14 @@
             </ng-template>
           </p-dropdown>
         </span>
+        <span style="flex-basis: 100%">
+          <p-checkbox
+            [binary]="true"
+            [label]="'禁用净水节点'"
+            [ngModel]="disableWaterNode()"
+            (onChange)="updateWaterNodeSetting($event.checked)"
+          ></p-checkbox
+        ></span>
       </div>
     </p-fieldset>
   </p-accordionTab>

@@ -39,6 +39,7 @@ import { SettingsService } from '~/store/settings.service';
 const rational20 = fromNumber(20);
 const rational60 = fromNumber(60);
 const rational1d60 = rational60.reciprocal();
+const waterNodeRecipeIds = ['sewage-treat', 'sewage-treat-export'];
 
 @Component({
   selector: 'lab-resource-input',
@@ -92,6 +93,7 @@ export class ResourceInputComponent {
 
   readonly allowTransferSource = ['tundra'];
   enableDomainTransfer = signal(false);
+  disableWaterNode = signal(false);
   transferSourceOptions = computed(() => {
     const setLoc = this.settings().locationIds;
     if (setLoc.size === 1) {
@@ -115,6 +117,7 @@ export class ResourceInputComponent {
     limitItems?: { id: string; num: Rational }[];
     limitMachines?: { id: string; num: Rational }[];
     transferSource?: string;
+    disableWaterNode?: boolean;
   }[] = [
     {
       id: 'tundra',
@@ -141,12 +144,14 @@ export class ResourceInputComponent {
       ],
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
       transferSource: 'tundra',
+      disableWaterNode: false,
     },
     {
       id: 'clear',
       icon: 'pipe',
       name: '清空设置',
       clearLoc: true,
+      disableWaterNode: false,
     },
   ];
 
@@ -190,6 +195,9 @@ export class ResourceInputComponent {
             id: 'load',
             icon: 'tundra',
             name: '加载',
+            disableWaterNode: waterNodeRecipeIds.every((id) =>
+              this.settings().excludedRecipeIds.has(id),
+            ),
           };
           for (const obj of objectives) {
             if (obj.type < ObjectiveType.HideSep) {
@@ -238,6 +246,13 @@ export class ResourceInputComponent {
     const effectRef = effect(() => {
       if (this.routerSvc.ready()) {
         effectRef.destroy();
+        untracked(() => {
+          this.disableWaterNode.set(
+            waterNodeRecipeIds.every((id) =>
+              this.settings().excludedRecipeIds.has(id),
+            ),
+          );
+        });
         setTimeout(() => {
           this.ready.set(true);
         }, 700);
@@ -418,11 +433,33 @@ export class ResourceInputComponent {
       this.enableDomainTransfer.set(false);
       this.transferSource.set('');
     }
+    // 自动计算行为更新
+    if (cfg.disableWaterNode != null) {
+      if (cfg.id === 'load') {
+        this.disableWaterNode.set(cfg.disableWaterNode);
+      } else {
+        this.updateWaterNodeSetting(cfg.disableWaterNode);
+      }
+    }
   }
 
   protected updateTransferSource($event: string): void {
     if (this.ready()) {
       this.transferSource.set($event);
     }
+  }
+
+  protected updateWaterNodeSetting(disable: boolean): void {
+    this.disableWaterNode.set(disable);
+    const excludedRecipeIds = new Set(this.settings().excludedRecipeIds);
+    for (const id of waterNodeRecipeIds) {
+      if (disable) excludedRecipeIds.add(id);
+      else excludedRecipeIds.delete(id);
+    }
+    this.settingsSvc.updateField(
+      'excludedRecipeIds',
+      excludedRecipeIds,
+      this.settings().defaultExcludedRecipeIds,
+    );
   }
 }

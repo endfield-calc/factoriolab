@@ -744,9 +744,12 @@ export class RecipeService {
             // Adjust based on machine size
             const machine = data.machineEntities[settings.machineId];
             if (machine.size != null) {
-              recipe.cost = recipe.cost.mul(
-                rational(machine.size[0] * machine.size[1]),
-              );
+              let sizeCost = rational(machine.size[0] * machine.size[1]);
+              // TODO 电力成本的编码应当放进设置而不是硬编码
+              if (machine.usage != null) {
+                sizeCost = sizeCost.add(machine.usage);
+              }
+              recipe.cost = recipe.cost.mul(sizeCost);
             }
           }
         }

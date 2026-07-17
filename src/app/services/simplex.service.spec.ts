@@ -39,6 +39,7 @@ describe('SimplexService', () => {
       excluded: rational.zero,
       surplus: rational.zero,
       maximize: rational(-1000000n),
+      electric: rational.one,
     },
     hasSurplusCost: false,
   });

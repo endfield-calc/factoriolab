@@ -131,6 +131,8 @@
     "recipe": "Rezept",
     "machineTooltip": "Multipliziert Kosten von physischen Maschinen, die Rezepte ausführen",
     "machine": "Maschine",
+    "electricTooltip": "Multipliziert Kosten mit dem Gesamtstromverbrauch von Maschinen, die Rezepte ausführen",
+    "electric": "Strom",
     "unproduceableTooltip": "Kosten von Items, die nicht mit den inkludierten Rezepten hergestellt werden können",
     "unproduceable": "Nicht produzierbar",
     "excludedTooltip": "Kosten von Items, die explizit exkludiert wurden",

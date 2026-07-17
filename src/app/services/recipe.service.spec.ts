@@ -1188,7 +1188,10 @@ describe('RecipeService', () => {
         Mocks.adjustedDataset.recipeIds,
         adjustedRecipe,
         Mocks.recipesStateInitial,
-        Mocks.costs,
+        {
+          ...Mocks.costs,
+          electric: rational.zero
+        },
         Mocks.adjustedDataset,
       );
       expect(adjustedRecipe[RecipeId.Coal].cost).toEqual(rational(1183n, 4n));

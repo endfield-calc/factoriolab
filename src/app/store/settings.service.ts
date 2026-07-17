@@ -128,6 +128,7 @@ export const initialSettingsState: SettingsState = {
     surplus: rational.one,
     maximize: rational(-1000000n),
     recycling: rational(1000n),
+    electric: rational.one,
   },
 };
 

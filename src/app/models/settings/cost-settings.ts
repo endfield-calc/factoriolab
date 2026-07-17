@@ -8,7 +8,8 @@ export type CostKey =
   | 'excluded'
   | 'surplus'
   | 'maximize'
-  | 'recycling';
+  | 'recycling'
+  | 'electric';
 
 export type CostSettings = Record<CostKey, Rational>;
 

@@ -739,18 +739,27 @@ export class RecipeService {
             .div(recipe.time);
           recipe.cost = output.mul(recipe.cost).mul(costs.factor);
         } else {
-          recipe.cost = costs.machine;
-          if (settings.machineId != null && costs.footprint.nonzero()) {
-            // Adjust based on machine size
+          recipe.cost = rational.zero;
+          if (settings.machineId != null) {
             const machine = data.machineEntities[settings.machineId];
-            if (machine.size != null) {
-              let sizeCost = rational(machine.size[0] * machine.size[1]);
-              // TODO 电力成本的编码应当放进设置而不是硬编码
-              if (machine.usage != null) {
-                sizeCost = sizeCost.add(machine.usage);
-              }
-              recipe.cost = recipe.cost.mul(sizeCost);
+            if (machine.usage && costs.electric.nonzero()) {
+              recipe.cost = recipe.cost.add(
+                costs.machine.mul(costs.electric).mul(machine.usage),
+              );
             }
+            if (costs.footprint.nonzero()) {
+              // Adjust based on machine size
+              if (machine.size != null) {
+                recipe.cost = recipe.cost.add(
+                  costs.machine.mul(
+                    rational(machine.size[0] * machine.size[1]),
+                  ),
+                );
+              }
+            }
+          }
+          if (recipe.cost.isZero()) {
+            recipe.cost = costs.machine;
           }
         }
 

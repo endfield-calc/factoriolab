@@ -167,6 +167,8 @@
     "recipe": "Recipe",
     "machineTooltip": "Multiplies cost by number of machines running recipes",
     "machine": "Machine",
+    "electricTooltip": "Multiplies cost by total power consumption of machines running recipes",
+    "electric": "Power",
     "recyclingTooltip": "Multiplies cost of recycling recipes by this number",
     "recycling": "Recycling",
     "footprintTooltip": "Whether to multiply cost by tile area of machines",

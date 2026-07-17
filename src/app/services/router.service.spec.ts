@@ -107,6 +107,7 @@ const mockSettingsState: SettingsState = {
     excluded: rational(100n),
     surplus: rational.zero,
     maximize: rational(-100000n),
+    electric: rational.one,
   },
 };
 const mockZip: Zip<LabParams> = {
@@ -418,6 +419,7 @@ describe('RouterService', () => {
     delete mockStateV10.settingsState?.requireMachinesOutput;
     delete mockStateV10.settingsState?.costs?.footprint;
     delete mockStateV10.settingsState?.costs?.recycling;
+    delete mockStateV10.settingsState?.costs?.electric;
 
     const mockStateV8: PartialState = spread(mockStateV10, {
       settingsState: spread(mockStateV10.settingsState),

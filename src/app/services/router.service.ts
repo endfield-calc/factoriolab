@@ -907,6 +907,7 @@ export class RouterService {
     sub('loc', (s) => s.locationIds, data.locationIds, hash.locations ?? []);
     rat('cfa', (s) => s.costs.factor);
     rat('cma', (s) => s.costs.machine);
+    rat('cet', (s) => s.costs.electric);
     rat('cfp', (s) => s.costs.footprint);
     rat('cun', (s) => s.costs.unproduceable);
     rat('cex', (s) => s.costs.excluded);
@@ -970,6 +971,7 @@ export class RouterService {
     const costs: Partial<CostSettings> = {
       factor: rat('cfa'),
       machine: rat('cma'),
+      electric: rat('cet'),
       footprint: rat('cfp'),
       unproduceable: rat('cun'),
       excluded: rat('cex'),

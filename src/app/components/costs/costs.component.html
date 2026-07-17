@@ -31,6 +31,16 @@
         ></lab-input-number>
       </td>
     </tr>
+    <tr [pTooltip]="'costs.electricTooltip' | translate">
+      <td>{{ 'costs.electric' | translate }}</td>
+      <td>
+        <lab-input-number
+          width="8rem"
+          [value]="editValue.electric"
+          (setValue)="editValue.electric = $event"
+        ></lab-input-number>
+      </td>
+    </tr>
     <tr [pTooltip]="'costs.recyclingTooltip' | translate">
       <td>{{ 'costs.recycling' | translate }}</td>
       <td>

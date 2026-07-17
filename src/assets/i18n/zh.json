@@ -170,6 +170,8 @@
     "recipe": "配方",
     "machineTooltip": "将运行配方的机器数量与定义的权重相乘",
     "machine": "设备",
+    "electricTooltip": "将运行配方的机器总耗电量与定义的权重相乘",
+    "electric": "电力",
     "recyclingTooltip": "将回收配方的成本与定义的权重相乘",
     "recycling": "回收",
     "footprintTooltip": "是否将设备的占地面积乘以权重",

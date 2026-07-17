@@ -89,6 +89,8 @@ export interface LabParams {
   cfa?: string;
   /** `Rational` Cost machine */
   cma?: string;
+  /** `Rational` Cost electric */
+  cet?: string;
   /** `Rational` Cost footprint */
   cfp?: string;
   /** `Rational` Cost unproduceable */

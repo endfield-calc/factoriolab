@@ -187,6 +187,8 @@
     "recipe": "Recette",
     "machineTooltip": "Multiplie le cout par le nombre de machine utilisant la recette",
     "machine": "Machine",
+    "electricTooltip": "Multiplie le cout par la consommation électrique totale des machines utilisant la recette",
+    "electric": "Électricité",
     "recyclingTooltip": "Multiplie le cout des recette de recyclage par ce nombre",
     "recycling": "Recylcage",
     "footprintTooltip": "Si il faut multiplier le cout par la surface en tuile de la machine",

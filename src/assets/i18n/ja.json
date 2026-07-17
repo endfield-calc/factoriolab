@@ -165,6 +165,8 @@
     "recipe": "レシピ",
     "machineTooltip": "レシピを実行するマシンの数にかけるコストの係数",
     "machine": "機械",
+    "electricTooltip": "レシピを実行するマシンの総消費電力にかけるコストの係数",
+    "electric": "電力",
     "footprintTooltip": "コストに機械のタイル面積を掛けるかどうか",
     "footprint": "Footprint",
     "unproduceableTooltip": "どのレシピでもアイテムを生産不可能とするコスト",

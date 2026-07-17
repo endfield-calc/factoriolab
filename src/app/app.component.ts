@@ -69,7 +69,7 @@ export class AppComponent {
         this.showSwUpdateToast('success', 'ready');
         break;
       case 'VERSION_INSTALLATION_FAILED':
-        if (environment.production) this.requireReload();
+        if (environment.production || environment.name === 'test') this.requireReload();
         break;
     }
   }

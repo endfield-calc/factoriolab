@@ -112,7 +112,7 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
     objectives.forEach((it) => {
       switch (it.type) {
         case ObjectiveType.ItemLimit: {
-          it.unit = ObjectiveUnit.Items;
+          it.unit = ObjectiveUnit.Machines;
           it.type = ObjectiveType.Limit;
           break;
         }

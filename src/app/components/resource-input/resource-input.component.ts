@@ -210,15 +210,15 @@ export class ResourceInputComponent {
               continue;
             }
             switch (obj.type) {
-              case ObjectiveType.ItemLimit: {
+              case ObjectiveType.ItemLimitOutput: {
                 if (!cfg.limitItems) cfg.limitItems = [];
                 const exist = cfg.limitItems.find(
                   (it) => it.id === obj.targetId,
                 );
                 if (exist) {
-                  exist.num = obj.value;
+                  exist.num = obj.value.mul(rational20);
                 } else {
-                  cfg.limitItems.push({ id: obj.targetId, num: obj.value });
+                  cfg.limitItems.push({ id: obj.targetId, num: obj.value.mul(rational20) });
                 }
                 break;
               }
@@ -291,17 +291,17 @@ export class ResourceInputComponent {
         };
         if (this.enableLimitItems()) {
           const needRemove = new Set(
-            limitItems.flatMap((it) => [it.id, it.recipe]),
+            limitItems.map((it) => it.recipe),
           );
           removeLimits((it) => needRemove.has(it.targetId));
           untracked(() => {
             const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
               const ret = [
                 {
-                  targetId: it.id,
-                  unit: ObjectiveUnit.Items,
+                  targetId: it.recipe,
+                  unit: ObjectiveUnit.Machines,
                   type: ObjectiveType.ItemLimit,
-                  value: it.num.mul(rateFactor),
+                  value: rational.zero,
                 },
               ];
               if (it.num?.gt(rational.zero)) {

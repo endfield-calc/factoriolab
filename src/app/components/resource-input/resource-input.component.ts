@@ -205,20 +205,25 @@ export class ResourceInputComponent {
               this.settings().excludedRecipeIds.has(id),
             ),
           };
+          const limitRecipe2ItemId = Object.fromEntries(this.limitItems().map(it => [it.recipe, it.id]));
           for (const obj of objectives) {
             if (obj.type < ObjectiveType.HideSep) {
               continue;
             }
             switch (obj.type) {
               case ObjectiveType.ItemLimitOutput: {
+                const targetItemId = limitRecipe2ItemId[obj.targetId];
                 if (!cfg.limitItems) cfg.limitItems = [];
                 const exist = cfg.limitItems.find(
-                  (it) => it.id === obj.targetId,
+                  (it) => it.id === targetItemId,
                 );
                 if (exist) {
                   exist.num = obj.value.mul(rational20);
                 } else {
-                  cfg.limitItems.push({ id: obj.targetId, num: obj.value.mul(rational20) });
+                  cfg.limitItems.push({
+                    id: targetItemId,
+                    num: obj.value.mul(rational20),
+                  });
                 }
                 break;
               }

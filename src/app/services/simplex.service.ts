@@ -153,40 +153,42 @@ export class SimplexService {
       return { steps: [], resultType: SimplexResultType.Skipped };
 
     // 跨地区传输 TODO 这里是丑陋的硬编码，需要重构
-    const transferNum = new Rational(1n,3600n);
-    const disableTransfer = ['domain_key_tundra'];
-    const useTransfer: string[] = [];
-    objectives = objectives.filter(it => {
-      if (it.type !== ObjectiveType.DomainTransfer) return true;
-      disableTransfer.splice(disableTransfer.indexOf(it.targetId), 1);
-      useTransfer.push(it.targetId);
-      return false;
-    });
-    useTransfer.forEach(it => {
-      objectives.push({
-        id: it + '-1',
-        targetId: it,
-        type: ObjectiveType.Limit,
-        unit: ObjectiveUnit.Items,
-        value: transferNum,
+    if (settings.modId === 'aef') {
+      const transferNum = new Rational(1n, 3600n);
+      const disableTransfer = ['domain_key_tundra'];
+      const useTransfer: string[] = [];
+      objectives = objectives.filter((it) => {
+        if (it.type !== ObjectiveType.DomainTransfer) return true;
+        disableTransfer.splice(disableTransfer.indexOf(it.targetId), 1);
+        useTransfer.push(it.targetId);
+        return false;
       });
-      objectives.push({
-        id: it + '-2',
-        targetId: it,
-        type: ObjectiveType.Input,
-        unit: ObjectiveUnit.Items,
-        value: transferNum,
+      useTransfer.forEach((it) => {
+        objectives.push({
+          id: it + '-1',
+          targetId: it,
+          type: ObjectiveType.Limit,
+          unit: ObjectiveUnit.Items,
+          value: transferNum,
+        });
+        objectives.push({
+          id: it + '-2',
+          targetId: it,
+          type: ObjectiveType.Input,
+          unit: ObjectiveUnit.Items,
+          value: transferNum,
+        });
       });
-    });
-    disableTransfer.forEach((it) => {
-      objectives.push({
-        id: it,
-        targetId: it,
-        type: ObjectiveType.Limit,
-        unit: ObjectiveUnit.Items,
-        value: rational.zero,
+      disableTransfer.forEach((it) => {
+        objectives.push({
+          id: it,
+          targetId: it,
+          type: ObjectiveType.Limit,
+          unit: ObjectiveUnit.Items,
+          value: rational.zero,
+        });
       });
-    });
+    }
 
     // Get matrix state
     const state = this.getState(objectives, settings, data);
@@ -585,48 +587,49 @@ export class SimplexService {
     }
 
     // ===== 硬编码机器数量上限与整数约束 =====
-    // TODO 目前的循环和硬编码都挺抽象的，之后要调整
-    const machineLimits = state.objectives
-      .filter((it) => it.type === ObjectiveType.MachineLimit)
-      .map<[string, Rational]>((it) => [it.targetId, it.value]);
-    const blackRecipe: Record<string, string[]> = {
-      'xiranite_oven_1': ['xiranite_enr_powder'],
-    };
-
     // TODO 这个变量目前的逻辑实际上跟固定true没区别，之后要根据资源配置卡片是否启用来判断
     let hasMachineIntegerConstraints = false;
+    if (state.data.modId === 'aef') {
+      // TODO 目前的循环和硬编码都挺抽象的，之后要调整
+      const machineLimits = state.objectives
+        .filter((it) => it.type === ObjectiveType.MachineLimit)
+        .map<[string, Rational]>((it) => [it.targetId, it.value]);
+      const blackRecipe: Record<string, string[]> = {
+        xiranite_oven_1: ['xiranite_enr_powder'],
+      };
 
-    for (const [machineId, limit] of machineLimits) {
-      const coeffs: [Variable, number][] = [];
+      for (const [machineId, limit] of machineLimits) {
+        const coeffs: [Variable, number][] = [];
 
-      // 处理普通配方变量
-      for (const recipeId of recipeIds) {
-        if (state.recipes[recipeId].producers.includes(machineId)) {
-          if (!blackRecipe[machineId]?.includes(recipeId)) {
-            recipeVarEntities[recipeId].type = 'integer';
+        // 处理普通配方变量
+        for (const recipeId of recipeIds) {
+          if (state.recipes[recipeId].producers.includes(machineId)) {
+            if (!blackRecipe[machineId]?.includes(recipeId)) {
+              recipeVarEntities[recipeId].type = 'integer';
+            }
+            coeffs.push([recipeVarEntities[recipeId], 1]);
+            hasMachineIntegerConstraints = true;
           }
-          coeffs.push([recipeVarEntities[recipeId], 1]);
-          hasMachineIntegerConstraints = true;
         }
-      }
 
-      // 处理配方目标变量（ObjectiveType.Output / Maximize）
-      for (const obj of state.recipeObjectives) {
-        if (obj.recipe.producers.includes(machineId)) {
-          if (!blackRecipe[machineId]?.includes(obj.recipe.id)) {
-            recipeObjectiveVarEntities[obj.id].type = 'integer';
+        // 处理配方目标变量（ObjectiveType.Output / Maximize）
+        for (const obj of state.recipeObjectives) {
+          if (obj.recipe.producers.includes(machineId)) {
+            if (!blackRecipe[machineId]?.includes(obj.recipe.id)) {
+              recipeObjectiveVarEntities[obj.id].type = 'integer';
+            }
+            coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
+            hasMachineIntegerConstraints = true;
           }
-          coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
-          hasMachineIntegerConstraints = true;
         }
-      }
 
-      if (coeffs.length > 0) {
-        m.addConstr({
-          coeffs,
-          ub: limit.toNumber(),
-          name: `machine-limit-${machineId}`,
-        });
+        if (coeffs.length > 0) {
+          m.addConstr({
+            coeffs,
+            ub: limit.toNumber(),
+            name: `machine-limit-${machineId}`,
+          });
+        }
       }
     }
     // ===== 结束：硬编码机器数量上限与整数约束 =====

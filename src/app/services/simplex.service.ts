@@ -274,6 +274,13 @@ export class SimplexService {
             }
             break;
           }
+          case ObjectiveType.RecipeLimit: {
+            const current = state.recipeLimits[obj.targetId];
+            if (current == null || current.gt(obj.value)) {
+              state.recipeLimits[obj.targetId] = obj.value;
+            }
+            break;
+          }
         }
       } else {
         switch (obj.type) {

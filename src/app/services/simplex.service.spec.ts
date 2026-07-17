@@ -4,6 +4,7 @@ import { MaximizeType } from '~/models/enum/maximize-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
+import { AdjustedRecipe } from '~/models/data/recipe';
 import { rational } from '~/models/rational';
 import { Entities } from '~/models/utils';
 import { ItemId, Mocks, RecipeId, TestModule } from '~/tests';
@@ -327,6 +328,28 @@ describe('SimplexService', () => {
       const result = service.getSolution(state);
       expect(result.resultType).toEqual(SimplexResultType.Failed);
     });
+
+    it('should add recipe limits to matrix state', () => {
+      const objectives = [
+        {
+          id: 'recipe-limit',
+          targetId: RecipeId.CopperPlate,
+          type: ObjectiveType.RecipeLimit,
+          unit: ObjectiveUnit.Machines,
+          value: rational(5n),
+        },
+      ];
+
+      const result = service.getState(
+        objectives,
+        Mocks.settingsStateInitial,
+        Mocks.adjustedDataset,
+      );
+
+      expect(result.recipeLimits).toEqual({
+        [RecipeId.CopperPlate]: rational(5n),
+      });
+    });
   });
 
   describe('itemCost', () => {
@@ -460,6 +483,72 @@ describe('SimplexService', () => {
       const state = getState();
       const result = service.glpk(state);
       expect(result.returnCode).toEqual('failure');
+    });
+
+    it('should apply recipe limits only to the target recipe', () => {
+      const state = service.getState([], Mocks.settingsStateInitial, Mocks.adjustedDataset);
+
+      // Two recipes producing the same item (CopperPlate)
+      // natural-gas: cheap (cost 0), with limit 1
+      // synthetic-gas: more expensive (cost 10), no limit
+      // Demand = 2 → natural-gas capped at 1, synthetic-gas fills remainder at 1
+      const naturalGas: AdjustedRecipe = {
+        id: 'natural-gas',
+        name: 'Natural Gas',
+        category: 'mining',
+        row: 0,
+        time: rational.one,
+        producers: [],
+        in: {},
+        out: { [ItemId.CopperPlate]: rational.one },
+        effects: {
+          consumption: rational.one,
+          pollution: rational.one,
+          productivity: rational.one,
+          quality: rational.zero,
+          speed: rational.one,
+        },
+        produces: new Set([ItemId.CopperPlate]),
+        output: { [ItemId.CopperPlate]: rational.one },
+        cost: rational.zero,
+        flags: new Set(),
+      };
+
+      const syntheticGas: AdjustedRecipe = {
+        ...naturalGas,
+        id: 'synthetic-gas',
+        name: 'Synthetic Gas',
+        cost: rational(10n),
+      };
+
+      state.recipes = {
+        'natural-gas': naturalGas,
+        'synthetic-gas': syntheticGas,
+      };
+
+      state.data.itemAvailableIoRecipeIds[ItemId.CopperPlate] = [
+        'natural-gas',
+        'synthetic-gas',
+      ];
+
+      state.itemValues = {
+        [ItemId.CopperPlate]: { out: rational(2n) },
+      };
+
+      state.recipeLimits = {
+        'natural-gas': rational(1n),
+      };
+
+      state.itemIds = [ItemId.CopperPlate];
+      state.recipeObjectives = [];
+      state.unproduceableIds = new Set();
+      state.excludedIds = new Set();
+
+      const result = service.glpk(state);
+      expect(result.returnCode).toEqual('ok');
+      expect(result.status).toEqual('optimal');
+      expect(result.recipes['natural-gas']).toEqual(rational.one);
+      expect(result.recipes['synthetic-gas']).toEqual(rational.one);
     });
   });
 

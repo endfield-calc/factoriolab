@@ -10,6 +10,7 @@ export enum ObjectiveType {
   ItemLimitOutput = 12,
   MachineLimit = 13,
   DomainTransfer = 14,
+  RecipeLimit = 15,
 }
 
 export const objectiveTypeOptions: SelectItem<ObjectiveType>[] = [

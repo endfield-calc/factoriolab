@@ -4,10 +4,7 @@ import { Entities } from './utils';
 export const APP = 'EndfieldLab';
 
 export const ARKNIGHTS_ENDFIELD_ID = 'aef';
-export const DEFAULT_MOD = environment.production
-  ? // istanbul ignore next: Don't test default mod set to endfield for production
-    ARKNIGHTS_ENDFIELD_ID
-  : 'spa';
+export const DEFAULT_MOD = ARKNIGHTS_ENDFIELD_ID;
 
 export const MIN_LINK_VALUE = 1e-10;
 export const MIN_ZIP = 200;

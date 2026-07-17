@@ -83,6 +83,8 @@ export class ResourceInputComponent {
     { id: 'quartz_sand', recipe: 'quartz_sand' },
     { id: 'iron_ore', recipe: 'iron_ore' },
     { id: 'copper_ore', recipe: 'copper_ore-liquid_water' },
+    { id: 'gas_xiranite', recipe: 'gas_xiranite' },
+    { id: 'gas_inert', recipe: 'gas_inert' },
   ]);
   enableLimitItems = signal(false);
   limitItemsNum = signal<Record<string, Rational>>({});
@@ -141,7 +143,8 @@ export class ResourceInputComponent {
         { id: 'quartz_sand', num: rational.zero },
         { id: 'iron_ore', num: fromNumber(120) },
         { id: 'copper_ore', num: fromNumber(420) },
-        // TODO 需要气矿的数据
+        { id: 'gas_xiranite', num: fromNumber(100) },
+        { id: 'gas_inert', num: fromNumber(460) },
       ],
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
       transferSource: 'tundra',
@@ -291,7 +294,21 @@ export class ResourceInputComponent {
           removeLimits((it) => needRemove.has(it.targetId));
           untracked(() => {
             const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
-              const ret = [
+              const recipe = this.data().adjustedRecipe[it.recipe];
+              const output = recipe?.out[it.id];
+              const isGasMining = it.id === 'gas_xiranite' || it.id === 'gas_inert';
+              if (isGasMining && recipe && output) {
+                const recipeTime = recipe.time ?? rational.one;
+                const value: Rational = it.num.div(displayRate).mul(recipeTime).div(output);
+                const gasLimit: ObjectiveBase = {
+                  targetId: it.recipe,
+                  unit: ObjectiveUnit.Machines,
+                  type: ObjectiveType.RecipeLimit as ObjectiveType,
+                  value,
+                };
+                return [gasLimit];
+              }
+              const ret: ObjectiveBase[] = [
                 {
                   targetId: it.id,
                   unit: ObjectiveUnit.Items,
@@ -315,7 +332,9 @@ export class ResourceInputComponent {
           removeLimits(
             (it) =>
               it.type === ObjectiveType.ItemLimit ||
-              it.type === ObjectiveType.ItemLimitOutput,
+              it.type === ObjectiveType.ItemLimitOutput ||
+              (it.type === ObjectiveType.RecipeLimit &&
+               (it.targetId === 'gas_xiranite' || it.targetId === 'gas_inert')),
           );
         }
       }

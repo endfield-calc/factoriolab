@@ -83,6 +83,8 @@ export class ResourceInputComponent {
     { id: 'quartz_sand', recipe: 'quartz_sand' },
     { id: 'iron_ore', recipe: 'iron_ore' },
     { id: 'copper_ore', recipe: 'copper_ore-liquid_water' },
+    { id: 'gas_xiranite', recipe: 'gas_xiranite' },
+    { id: 'gas_inert', recipe: 'gas_inert' },
   ]);
   enableLimitItems = signal(false);
   limitItemsNum = signal<Record<string, Rational>>({});
@@ -129,6 +131,8 @@ export class ResourceInputComponent {
         { id: 'quartz_sand', num: fromNumber(240) },
         { id: 'iron_ore', num: fromNumber(1080) },
         { id: 'copper_ore', num: rational.zero },
+        { id: 'gas_xiranite', num: rational.zero },
+        { id: 'gas_inert', num: rational.zero },
       ],
     },
     {
@@ -141,7 +145,8 @@ export class ResourceInputComponent {
         { id: 'quartz_sand', num: rational.zero },
         { id: 'iron_ore', num: fromNumber(120) },
         { id: 'copper_ore', num: fromNumber(420) },
-        // TODO 需要气矿的数据
+        { id: 'gas_xiranite', num: fromNumber(100) },
+        { id: 'gas_inert', num: fromNumber(460) },
       ],
       limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
       transferSource: 'tundra',

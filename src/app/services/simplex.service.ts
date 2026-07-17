@@ -152,8 +152,9 @@ export class SimplexService {
     if (objectives.length === 0)
       return { steps: [], resultType: SimplexResultType.Skipped };
 
-    // 跨地区传输 TODO 这里是丑陋的硬编码，需要重构
+    // TODO 这里是丑陋的硬编码，需要重构
     if (settings.modId === 'aef') {
+      // 跨地区传输
       const transferNum = new Rational(1n, 3600n);
       const disableTransfer = ['domain_key_tundra'];
       const useTransfer: string[] = [];
@@ -630,6 +631,23 @@ export class SimplexService {
             name: `machine-limit-${machineId}`,
           });
         }
+      }
+
+      // 净水节点限制
+      if (
+        recipeVarEntities['sewage-treat'] &&
+        recipeVarEntities['sewage-treat-export']
+      ) {
+        const varSewageTreat = recipeVarEntities['sewage-treat'];
+        varSewageTreat.ub = 3;
+        const varSewageTreatExport = recipeVarEntities['sewage-treat-export'];
+        varSewageTreatExport.ub = 1;
+        const constraint = m.addConstr({
+          ub: 3,
+        });
+
+        constraint.add(varSewageTreat, 1);
+        constraint.add(varSewageTreatExport, 3);
       }
     }
     // ===== 结束：硬编码机器数量上限与整数约束 =====

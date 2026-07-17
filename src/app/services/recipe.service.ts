@@ -732,12 +732,14 @@ export class RecipeService {
         if (settings.cost) {
           recipe.cost = settings.cost;
         } else if (recipe.cost) {
+          // 忽略根据输出和耗时修正的逻辑，因为空输出会导致成本为0，而且既然手动设置了那就遵循手动的设定
           // Recipe has a declared cost, base this on output items not machines
           // Calculate total output, sum, and multiply cost by output
-          const output = Object.keys(recipe.out)
-            .reduce((v, o) => v.add(recipe.out[o]), rational.zero)
-            .div(recipe.time);
-          recipe.cost = output.mul(recipe.cost).mul(costs.factor);
+          // const output = Object.keys(recipe.out)
+          //   .reduce((v, o) => v.add(recipe.out[o]), rational.zero)
+          //   .div(recipe.time);
+          // recipe.cost = output.mul(recipe.cost).mul(costs.factor);
+          recipe.cost = recipe.cost.mul(costs.factor);
         } else {
           recipe.cost = rational.zero;
           if (settings.machineId != null) {

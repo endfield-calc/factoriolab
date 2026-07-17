@@ -2290,7 +2290,6 @@
         "speed": 1,
         "type": "electric",
         "usage": 0,
-        "cost": -1,
         "locations": [
           "jinlong"
         ]
@@ -2347,7 +2346,6 @@
         "speed": 1,
         "type": "electric",
         "usage": 0,
-        "cost": -1,
         "locations": [
           "jinlong"
         ]
@@ -4960,7 +4958,7 @@
         "liquid_xiranite_lowpoly": 1
       },
       "out": {},
-      "cost": -1,
+      "cost": 0,
       "producers": [
         "liquid_cleaner_1"
       ],
@@ -4977,7 +4975,7 @@
         "liquid_xiranite_poly": 1
       },
       "out": {},
-      "cost": -1,
+      "cost": 0,
       "producers": [
         "liquid_cleaner_1"
       ],
@@ -4996,6 +4994,7 @@
       "producers": [
         "liquid_clean_gate"
       ],
+      "cost": -30,
       "id": "sewage-treat",
       "name": "净水节点",
       "category": "material",
@@ -5013,6 +5012,7 @@
       "producers": [
         "liquid_recycle_gate"
       ],
+      "cost": -50,
       "id": "sewage-treat-export",
       "name": "壤晶废液(净水节点)",
       "category": "material",

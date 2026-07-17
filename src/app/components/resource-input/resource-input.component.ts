@@ -277,23 +277,19 @@ export class ResourceInputComponent {
             num: limitItemsNum[it.id],
           }));
         });
-        const removeLimits = (
-          predicate: (obj: ObjectiveSettings) => boolean,
-        ): void => {
-          untracked(() => {
-            const needRemoveObj = this.objectivesSvc
-              .baseObjectives()
-              .filter((it) => predicate(it))
-              .map((it) => it.id);
-            if (needRemoveObj.length > 0)
-              this.objectivesSvc.removeMulti(needRemoveObj);
-          });
-        };
+        untracked(() => {
+          const needRemoveObj = this.objectivesSvc
+            .baseObjectives()
+            .filter(
+              (it) =>
+                it.type === ObjectiveType.ItemLimit ||
+                it.type === ObjectiveType.ItemLimitOutput,
+            )
+            .map((it) => it.id);
+          if (needRemoveObj.length > 0)
+            this.objectivesSvc.removeMulti(needRemoveObj);
+        });
         if (this.enableLimitItems()) {
-          const needRemove = new Set(
-            limitItems.map((it) => it.recipe),
-          );
-          removeLimits((it) => needRemove.has(it.targetId));
           untracked(() => {
             const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
               const ret = [
@@ -316,12 +312,6 @@ export class ResourceInputComponent {
             });
             if (needAdd.length > 0) this.objectivesSvc.addMulti(needAdd);
           });
-        } else {
-          removeLimits(
-            (it) =>
-              it.type === ObjectiveType.ItemLimit ||
-              it.type === ObjectiveType.ItemLimitOutput,
-          );
         }
       }
       {

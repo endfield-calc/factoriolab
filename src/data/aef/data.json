@@ -3380,6 +3380,7 @@
       "producers": [
         "furnance_1"
       ],
+      "cost": 100,
       "id": "crystal_shell-originium_ore",
       "name": "晶体外壳(源矿)",
       "category": "material",
@@ -3449,6 +3450,7 @@
       "producers": [
         "grinder_1"
       ],
+      "cost": 100,
       "id": "originium_powder",
       "name": "源石粉末",
       "category": "material",
@@ -3778,6 +3780,7 @@
       "producers": [
         "furnance_1"
       ],
+      "cost": 100,
       "id": "iron_nugget-iron_ore",
       "name": "蓝铁块(蓝铁矿)",
       "category": "material",
@@ -3999,6 +4002,7 @@
       "locations": [
         "jinlong"
       ],
+      "cost": 100,
       "id": "copper_nugget",
       "name": "赤铜块",
       "category": "material",
@@ -5443,6 +5447,7 @@
       "producers": [
         "power_sta_1"
       ],
+      "cost": 100,
       "id": "power_originium_ore",
       "name": "发电(源矿)",
       "category": "gen-power",

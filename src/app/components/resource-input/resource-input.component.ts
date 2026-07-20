@@ -218,11 +218,11 @@ export class ResourceInputComponent {
                   (it) => it.id === targetItemId,
                 );
                 if (exist) {
-                  exist.num = obj.value.mul(rational20);
+                  exist.num = obj.value.mul(rational20).div(rateFactor);
                 } else {
                   cfg.limitItems.push({
                     id: targetItemId,
-                    num: obj.value.mul(rational20),
+                    num: obj.value.mul(rational20).div(rateFactor),
                   });
                 }
                 break;

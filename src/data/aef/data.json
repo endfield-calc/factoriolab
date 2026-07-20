@@ -724,469 +724,474 @@
       "color": "#a2a49a"
     },
     {
-      "id": "carbon_enr_powder-carbon_powder",
+      "id": "-5xQnlo_H",
       "position": "0px -576px",
-      "color": "#484a4a"
+      "color": "#645646"
     },
     {
-      "id": "carbon_enr_powder-plant_moss_enr_powder_1",
+      "id": "-IDibphrv",
       "position": "-64px -576px",
-      "color": "#605152"
+      "color": "#9c653a"
     },
     {
-      "id": "carbon_enr_powder-plant_moss_enr_powder_2",
+      "id": "-PLwC7rav",
       "position": "-128px -576px",
-      "color": "#615d51"
+      "color": "#996135"
     },
     {
-      "id": "carbon_mtl-plant_grass_1",
+      "id": "08QnmafUO",
       "position": "-192px -576px",
-      "color": "#4e534e"
+      "color": "#b2bb96"
     },
     {
-      "id": "carbon_mtl-plant_grass_2",
+      "id": "0pLWUXtXS",
       "position": "-256px -576px",
-      "color": "#454649"
+      "color": "#b9beb5"
     },
     {
-      "id": "carbon_mtl-plant_moss_1",
+      "id": "1x5_iFxrl",
       "position": "-320px -576px",
-      "color": "#484542"
+      "color": "#bc918a"
     },
     {
-      "id": "carbon_mtl-plant_moss_2",
+      "id": "21JXqNHcO",
       "position": "-384px -576px",
-      "color": "#494e41"
+      "color": "#b19e95"
     },
     {
-      "id": "carbon_mtl-plant_moss_3",
+      "id": "3nEkFN4v3",
       "position": "-448px -576px",
-      "color": "#5a5245"
+      "color": "#c2b6b1"
     },
     {
-      "id": "carbon_powder-carbon_mtl",
+      "id": "4N6PISlNQ",
       "position": "-512px -576px",
-      "color": "#494e4d"
+      "color": "#a1c6ad"
     },
     {
-      "id": "carbon_powder-plant_grass_powder_1",
+      "id": "4uTTruYze",
       "position": "-576px -576px",
-      "color": "#79796e"
+      "color": "#a9b58e"
     },
     {
-      "id": "carbon_powder-plant_grass_powder_2",
+      "id": "5FnJGJYHD",
       "position": "-640px -576px",
-      "color": "#77645d"
+      "color": "#3b5049"
     },
     {
-      "id": "carbon_powder-plant_moss_powder_1",
+      "id": "5ReMJ-axh",
       "position": "-704px -576px",
-      "color": "#725954"
+      "color": "#6e5988"
     },
     {
-      "id": "carbon_powder-plant_moss_powder_2",
+      "id": "6cFT0YI85",
       "position": "-768px -576px",
-      "color": "#847e5b"
+      "color": "#bca29b"
     },
     {
-      "id": "carbon_powder-plant_moss_powder_3",
+      "id": "7aWLncdum",
       "position": "-832px -576px",
-      "color": "#655546"
+      "color": "#79919a"
     },
     {
-      "id": "copper_bottle-liquid_plant_grass_1",
+      "id": "8f-XntBAi",
       "position": "-896px -576px",
-      "color": "#948b81"
+      "color": "#585345"
     },
     {
-      "id": "copper_bottle-liquid_plant_grass_2",
+      "id": "aNhoXNVVI",
       "position": "-960px -576px",
-      "color": "#8a8459"
+      "color": "#4a4849"
     },
     {
-      "id": "copper_enr-phase_trans_2",
+      "id": "b06HlUyW9",
       "position": "0px -640px",
-      "color": "#bd928b"
+      "color": "#79562f"
     },
     {
-      "id": "copper_enr2-phase_trans_2",
+      "id": "B33Y1xtAN",
       "position": "-64px -640px",
-      "color": "#c89986"
+      "color": "#c8c1b6"
     },
     {
-      "id": "copper_nugget-phase_trans_2",
+      "id": "be5cdHAfy",
       "position": "-128px -640px",
-      "color": "#8c6358"
+      "color": "#bcc3ac"
     },
     {
-      "id": "copper_ore-liquid_water",
+      "id": "bfVwkel-1",
       "position": "-192px -640px",
-      "color": "#a28383"
+      "color": "#4a4f4f"
     },
     {
-      "id": "crystal_enr_powder-crystal_powder",
+      "id": "BTDiP1-WN",
       "position": "-256px -640px",
-      "color": "#996235"
+      "color": "#c5baa1"
     },
     {
-      "id": "crystal_enr_powder-originium_enr_powder",
+      "id": "CZoh2vwOX",
       "position": "-320px -640px",
-      "color": "#9e653a"
+      "color": "#6a796a"
     },
     {
-      "id": "crystal_powder-crystal_shell",
+      "id": "D87_y4QHp",
       "position": "-384px -640px",
-      "color": "#78552d"
+      "color": "#bcbdad"
     },
     {
-      "id": "crystal_powder-originium_powder",
+      "id": "D9uBSezBN",
       "position": "-448px -640px",
-      "color": "#664023"
+      "color": "#5e6863"
     },
     {
-      "id": "crystal_shell-crystal_powder",
+      "id": "DCZK3_Hum",
       "position": "-512px -640px",
-      "color": "#8d6f3d"
+      "color": "#99a3a5"
     },
     {
-      "id": "crystal_shell-originium_ore",
+      "id": "e13iR_HPS",
       "position": "-576px -640px",
-      "color": "#8c6d42"
+      "color": "#88999a"
     },
     {
-      "id": "gas_acid-phase_trans_1",
+      "id": "eAPSNjYPO",
       "position": "-640px -640px",
-      "color": "#c7bba1"
+      "color": "#9faf99"
     },
     {
-      "id": "gas_copper_enr-gas_inert",
+      "id": "EkYDieNFa",
       "position": "-704px -640px",
-      "color": "#c7bcbe"
+      "color": "#877c5a"
     },
     {
-      "id": "gas_copper_enr-phase_trans_1",
+      "id": "eNbizvaDC",
       "position": "-768px -640px",
-      "color": "#c1b6b2"
+      "color": "#a17e7a"
     },
     {
-      "id": "gas_copper_enr-phase_trans_2",
+      "id": "eVII5GgNz",
       "position": "-832px -640px",
-      "color": "#bdadaa"
+      "color": "#758576"
     },
     {
-      "id": "gas_copper_enr2-phase_trans_2",
+      "id": "EyVhscDqY",
       "position": "-896px -640px",
-      "color": "#bf9f8d"
+      "color": "#77675d"
     },
     {
-      "id": "gas_copper-phase_trans_1",
+      "id": "F26jLFsSM",
       "position": "-960px -640px",
-      "color": "#bea398"
+      "color": "#beafa8"
     },
     {
-      "id": "gas_copper-phase_trans_2",
+      "id": "fftXa_L3O",
       "position": "0px -704px",
-      "color": "#b59a90"
+      "color": "#919694"
     },
     {
-      "id": "gas_water-phase_trans_1",
+      "id": "fpxipfxQ_",
       "position": "-64px -704px",
-      "color": "#adb1b2"
+      "color": "#b5b9aa"
     },
     {
-      "id": "gas_xiranite_enr-gas_inert",
+      "id": "FRZxbTuQP",
       "position": "-128px -704px",
-      "color": "#b0c69c"
+      "color": "#bcbaa0"
     },
     {
-      "id": "gas_xiranite_enr-phase_trans_1",
+      "id": "g6eZC2ckR",
       "position": "-192px -704px",
-      "color": "#b2ba95"
+      "color": "#968a81"
     },
     {
-      "id": "gas_xiranite_enr-phase_trans_2",
+      "id": "gMs3wV6Mc",
       "position": "-256px -704px",
-      "color": "#a8b48c"
+      "color": "#78787c"
     },
     {
-      "id": "gas_xiranite-phase_trans_1",
+      "id": "grKjDDYLU",
       "position": "-320px -704px",
-      "color": "#a5b5a0"
+      "color": "#c99984"
     },
     {
-      "id": "gas_xiranite-phase_trans_2",
+      "id": "HsYpeEhwA",
       "position": "-384px -704px",
-      "color": "#9daf99"
+      "color": "#bdc3b1"
     },
     {
-      "id": "iron_bottle-liquid_plant_grass_1",
+      "id": "j2R9Yyfk7",
       "position": "-448px -704px",
-      "color": "#7a9299"
+      "color": "#664221"
     },
     {
-      "id": "iron_bottle-liquid_plant_grass_2",
+      "id": "KsAbKo-kL",
       "position": "-512px -704px",
-      "color": "#6d8f79"
+      "color": "#798b81"
     },
     {
-      "id": "iron_nugget-iron_ore",
+      "id": "LChCprdXR",
       "position": "-576px -704px",
-      "color": "#64819a"
+      "color": "#bcbda6"
     },
     {
-      "id": "iron_nugget-iron_powder",
+      "id": "LESvbc0cp",
       "position": "-640px -704px",
-      "color": "#5e7c91"
+      "color": "#babcc9"
     },
     {
-      "id": "jinlong_coupon-bottled_food_4",
+      "id": "lG5pYr6_F",
       "position": "-704px -704px",
-      "color": "#8b9d9d"
+      "color": "#b7b9a9"
     },
     {
-      "id": "jinlong_coupon-bottled_food_5",
+      "id": "LIU8uRWtP",
       "position": "-768px -704px",
-      "color": "#899e98"
+      "color": "#757a78"
     },
     {
-      "id": "jinlong_coupon-bottled_rec_hp_4",
+      "id": "lIwML7hJA",
       "position": "-832px -704px",
-      "color": "#96a09e"
+      "color": "#4a4442"
     },
     {
-      "id": "jinlong_coupon-bottled_rec_hp_5",
+      "id": "lpxYv1B-a",
       "position": "-896px -704px",
-      "color": "#969c9d"
+      "color": "#a29895"
     },
     {
-      "id": "jinlong_coupon-copper_cmpt",
+      "id": "MN3RgE0QK",
       "position": "-960px -704px",
-      "color": "#929595"
+      "color": "#869995"
     },
     {
-      "id": "jinlong_coupon-copper_enr_cmpt",
+      "id": "MZA0Aj7xM",
       "position": "0px -768px",
-      "color": "#a19e9b"
+      "color": "#757e7b"
     },
     {
-      "id": "jinlong_coupon-copper_enr2_cmpt",
+      "id": "MzFhhwu9q",
       "position": "-64px -768px",
-      "color": "#a29996"
+      "color": "#b69992"
     },
     {
-      "id": "jinlong_coupon-filter_core",
+      "id": "n1F3_H0xn",
       "position": "-128px -768px",
-      "color": "#8d9899"
+      "color": "#9d9081"
     },
     {
-      "id": "jinlong_coupon-proc_battery_4",
+      "id": "ngnifkfVC",
       "position": "-192px -768px",
-      "color": "#8e9d9e"
+      "color": "#aeb1b2"
     },
     {
-      "id": "jinlong_coupon-proc_battery_5",
+      "id": "nL57eW-eu",
       "position": "-256px -768px",
-      "color": "#899a9a"
+      "color": "#a19e9a"
     },
     {
-      "id": "jinlong_coupon-xiranite_enr_powder",
+      "id": "NXpQnBpZJ",
       "position": "-320px -768px",
-      "color": "#859992"
+      "color": "#c5c1b2"
     },
     {
-      "id": "jinlong_coupon-xiranite_powder",
+      "id": "o7qlvjIpX",
       "position": "-384px -768px",
-      "color": "#859995"
+      "color": "#596d59"
     },
     {
-      "id": "liquid_acid-phase_trans_1",
+      "id": "OIsG_0_gQ",
       "position": "-448px -768px",
-      "color": "#9e9380"
+      "color": "#8e6f40"
     },
     {
-      "id": "liquid_cleaner_1-liquid_sewage",
+      "id": "PaI2yXcVi",
       "position": "-512px -768px",
-      "color": "#797a7d"
+      "color": "#b5bab1"
     },
     {
-      "id": "liquid_cleaner_1-liquid_xiranite_lowpoly",
+      "id": "pSkp8UtzR",
       "position": "-576px -768px",
-      "color": "#74787a"
+      "color": "#a08082"
     },
     {
-      "id": "liquid_cleaner_1-liquid_xiranite_poly",
+      "id": "PZWgDQOzb",
       "position": "-640px -768px",
-      "color": "#777d79"
+      "color": "#9ba1a5"
     },
     {
-      "id": "liquid_copper_enr-phase_trans_1",
+      "id": "qA-EMB1fs",
       "position": "-704px -768px",
-      "color": "#b29c97"
+      "color": "#8a9c9b"
     },
     {
-      "id": "liquid_copper-phase_trans_1",
+      "id": "QU3-0LfcJ",
       "position": "-768px -768px",
-      "color": "#a17e78"
+      "color": "#898658"
     },
     {
-      "id": "liquid_sewage-liquid_clean_gate",
+      "id": "qUq983O5F",
       "position": "-832px -768px",
-      "color": "#757576"
+      "color": "#717d76"
     },
     {
-      "id": "liquid_water-phase_trans_1",
+      "id": "rCPd1tfS9",
       "position": "-896px -768px",
-      "color": "#7fb0b9"
+      "color": "#5f7c91"
     },
     {
-      "id": "liquid_xiranite_enr-phase_trans_1",
+      "id": "rNYknIToK",
       "position": "-960px -768px",
-      "color": "#768477"
+      "color": "#6a5487"
     },
     {
-      "id": "liquid_xiranite_poly-liquid_clean_gate",
+      "id": "RSg0ZawgK",
       "position": "0px -832px",
-      "color": "#687a6b"
+      "color": "#747677"
     },
     {
-      "id": "liquid_xiranite_poly-liquid_purifier_1",
+      "id": "sJ497s081",
       "position": "-64px -832px",
-      "color": "#737d76"
+      "color": "#735956"
     },
     {
-      "id": "liquid_xiranite-phase_trans_1",
+      "id": "Sjdqh9m2X",
       "position": "-128px -832px",
-      "color": "#798a81"
+      "color": "#95a29d"
     },
     {
-      "id": "power_sta_1-originium_ore",
+      "id": "tcIJgshsc",
       "position": "-192px -832px",
-      "color": "#929495"
+      "color": "#bec0ad"
     },
     {
-      "id": "power_sta_1-proc_battery_1",
+      "id": "tF0KCVMNv",
       "position": "-256px -832px",
-      "color": "#99a2a4"
+      "color": "#454648"
     },
     {
-      "id": "power_sta_1-proc_battery_2",
+      "id": "TIRc8l-Ov",
       "position": "-320px -832px",
-      "color": "#9ba1a7"
+      "color": "#8f615b"
     },
     {
-      "id": "power_sta_1-proc_battery_3",
+      "id": "tnHAWZomJ",
       "position": "-384px -832px",
-      "color": "#99a0a5"
+      "color": "#7db0b9"
     },
     {
-      "id": "power_sta_1-proc_battery_4",
+      "id": "TQnSxeYps",
       "position": "-448px -832px",
-      "color": "#929f9f"
+      "color": "#869b93"
     },
     {
-      "id": "power_sta_1-proc_battery_5",
+      "id": "TqWZWVpY3",
       "position": "-512px -832px",
-      "color": "#8d9b98"
+      "color": "#899f9c"
     },
     {
-      "id": "quartz_glass-quartz_powder",
+      "id": "tVuwQqAnt",
       "position": "-576px -832px",
-      "color": "#6e598a"
+      "color": "#8e6d3e"
     },
     {
-      "id": "quartz_glass-quartz_sand",
+      "id": "u_hgkzqGZ",
       "position": "-640px -832px",
-      "color": "#6a5585"
+      "color": "#929d9d"
     },
     {
-      "id": "tundra_coupon-bottled_food_1",
+      "id": "uE4Xzd-Nt",
       "position": "-704px -832px",
-      "color": "#bebfaf"
+      "color": "#8e9b9b"
     },
     {
-      "id": "tundra_coupon-bottled_food_2",
+      "id": "ugzGGeljq",
       "position": "-768px -832px",
-      "color": "#bdbea7"
+      "color": "#bd9e8f"
     },
     {
-      "id": "tundra_coupon-bottled_food_3",
+      "id": "UK3cw32jH",
       "position": "-832px -832px",
-      "color": "#b4b9aa"
+      "color": "#78796e"
     },
     {
-      "id": "tundra_coupon-bottled_rec_hp_1",
+      "id": "vI10u14eE",
       "position": "-896px -832px",
-      "color": "#c4c1b1"
+      "color": "#8c9d9d"
     },
     {
-      "id": "tundra_coupon-bottled_rec_hp_2",
+      "id": "VM4dhho2c",
       "position": "-960px -832px",
-      "color": "#cac0b6"
+      "color": "#a6b4a2"
     },
     {
-      "id": "tundra_coupon-bottled_rec_hp_3",
+      "id": "VqJ8q3DQp",
       "position": "0px -896px",
-      "color": "#c0baae"
+      "color": "#949e9e"
     },
     {
-      "id": "tundra_coupon-crystal_shell",
+      "id": "vzHASkcwW",
       "position": "-64px -896px",
-      "color": "#bdb8a0"
+      "color": "#919494"
     },
     {
-      "id": "tundra_coupon-glass_bottle",
+      "id": "WP8nZAgGK",
       "position": "-128px -896px",
-      "color": "#b4b9a9"
+      "color": "#344d45"
     },
     {
-      "id": "tundra_coupon-glass_cmpt",
+      "id": "WqhucJQl5",
       "position": "-192px -896px",
       "color": "#bcc1b7"
     },
     {
-      "id": "tundra_coupon-iron_cmpt",
+      "id": "wSTIJRUt2",
       "position": "-256px -896px",
-      "color": "#b9beb6"
+      "color": "#494e42"
     },
     {
-      "id": "tundra_coupon-iron_enr_cmpt",
+      "id": "Wy_OqDd79",
       "position": "-320px -896px",
-      "color": "#b5b9b3"
+      "color": "#c1b9af"
     },
     {
-      "id": "tundra_coupon-proc_battery_1",
+      "id": "xFMoNt_0-",
       "position": "-384px -896px",
-      "color": "#bdc0ad"
+      "color": "#4d504d"
     },
     {
-      "id": "tundra_coupon-proc_battery_2",
+      "id": "xFsOz8GXn",
       "position": "-448px -896px",
-      "color": "#bec2b0"
+      "color": "#625e50"
     },
     {
-      "id": "tundra_coupon-proc_battery_3",
+      "id": "ynGeJZzIH",
       "position": "-512px -896px",
-      "color": "#bdc3ad"
+      "color": "#dda779"
     },
     {
-      "id": "xiranite_enr_powder-phase_trans_2",
+      "id": "YP_fqgPjK",
       "position": "-576px -896px",
-      "color": "#596d5a"
+      "color": "#65819a"
     },
     {
-      "id": "xiranite_powder-carbon_enr",
+      "id": "YvRkgjni9",
       "position": "-640px -896px",
-      "color": "#385248"
+      "color": "#98a2a4"
     },
     {
-      "id": "xiranite_powder-carbon_mtl",
+      "id": "Z2IEDQBer",
       "position": "-704px -896px",
-      "color": "#364e44"
+      "color": "#625250"
     },
     {
-      "id": "xiranite_powder-phase_trans_2",
+      "id": "zbLLpntwq",
       "position": "-768px -896px",
-      "color": "#5d6a61"
+      "color": "#8d9a99"
+    },
+    {
+      "id": "zSG48A1GN",
+      "position": "-832px -896px",
+      "color": "#6d8d7a"
     }
   ],
   "categories": [
@@ -1633,7 +1638,7 @@
       "stack": 50,
       "category": "material",
       "row": 4,
-      "icon": "iron_bottle-liquid_plant_grass_1"
+      "icon": "7aWLncdum"
     },
     {
       "id": "iron_bottle-liquid_plant_grass_2",
@@ -1645,7 +1650,7 @@
       "stack": 50,
       "category": "material",
       "row": 4,
-      "icon": "iron_bottle-liquid_plant_grass_2"
+      "icon": "zSG48A1GN"
     },
     {
       "id": "copper_ore",
@@ -1788,7 +1793,7 @@
       "stack": 50,
       "category": "material",
       "row": 6,
-      "icon": "copper_bottle-liquid_plant_grass_1"
+      "icon": "g6eZC2ckR"
     },
     {
       "id": "copper_bottle-liquid_plant_grass_2",
@@ -1800,7 +1805,7 @@
       "stack": 50,
       "category": "material",
       "row": 6,
-      "icon": "copper_bottle-liquid_plant_grass_2"
+      "icon": "QU3-0LfcJ"
     },
     {
       "id": "xiranite_powder",
@@ -2950,7 +2955,7 @@
       "name": "碳粉末(荞花粉末)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-plant_moss_powder_1"
+      "icon": "sJ497s081"
     },
     {
       "time": 2,
@@ -2967,7 +2972,7 @@
       "name": "碳粉末(柑实粉末)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-plant_moss_powder_2"
+      "icon": "EkYDieNFa"
     },
     {
       "time": 2,
@@ -2984,7 +2989,7 @@
       "name": "碳粉末(砂叶粉末)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-plant_moss_powder_3"
+      "icon": "-5xQnlo_H"
     },
     {
       "time": 2,
@@ -3001,7 +3006,7 @@
       "name": "碳粉末(锦草粉末)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-plant_grass_powder_1"
+      "icon": "UK3cw32jH"
     },
     {
       "time": 2,
@@ -3018,7 +3023,7 @@
       "name": "碳粉末(芽针粉末)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-plant_grass_powder_2"
+      "icon": "EyVhscDqY"
     },
     {
       "time": 2,
@@ -3035,7 +3040,7 @@
       "name": "碳粉末(碳块)",
       "category": "material",
       "row": 0,
-      "icon": "carbon_powder-carbon_mtl"
+      "icon": "bfVwkel-1"
     },
     {
       "time": 2,
@@ -3246,7 +3251,7 @@
       "name": "碳块(荞花)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_mtl-plant_moss_1"
+      "icon": "lIwML7hJA"
     },
     {
       "time": 2,
@@ -3263,7 +3268,7 @@
       "name": "碳块(柑实)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_mtl-plant_moss_2"
+      "icon": "wSTIJRUt2"
     },
     {
       "time": 2,
@@ -3280,7 +3285,7 @@
       "name": "碳块(砂叶)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_mtl-plant_moss_3"
+      "icon": "8f-XntBAi"
     },
     {
       "time": 2,
@@ -3297,7 +3302,7 @@
       "name": "碳块(锦草)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_mtl-plant_grass_1"
+      "icon": "xFMoNt_0-"
     },
     {
       "time": 2,
@@ -3314,7 +3319,7 @@
       "name": "碳块(芽针)",
       "category": "material",
       "row": 1,
-      "icon": "carbon_mtl-plant_grass_2"
+      "icon": "tF0KCVMNv"
     },
     {
       "time": 3,
@@ -3350,7 +3355,7 @@
       "name": "晶体外壳粉末(源石粉末)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_powder-originium_powder"
+      "icon": "j2R9Yyfk7"
     },
     {
       "time": 2,
@@ -3367,7 +3372,7 @@
       "name": "晶体外壳粉末(晶体外壳)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_powder-crystal_shell"
+      "icon": "b06HlUyW9"
     },
     {
       "time": 2,
@@ -3385,7 +3390,7 @@
       "name": "晶体外壳(源矿)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_shell-originium_ore"
+      "icon": "OIsG_0_gQ"
     },
     {
       "time": 2,
@@ -3402,7 +3407,7 @@
       "name": "晶体外壳(晶体外壳粉末)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_shell-crystal_powder"
+      "icon": "tVuwQqAnt"
     },
     {
       "time": 2,
@@ -3420,7 +3425,7 @@
       "name": "致密晶体粉末(晶体外壳粉末)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_enr_powder-crystal_powder"
+      "icon": "-PLwC7rav"
     },
     {
       "time": 2,
@@ -3490,7 +3495,7 @@
       "name": "致密晶体粉末(致密源石粉末)",
       "category": "material",
       "row": 2,
-      "icon": "crystal_enr_powder-originium_enr_powder"
+      "icon": "-IDibphrv"
     },
     {
       "time": 2,
@@ -3508,7 +3513,7 @@
       "name": "致密碳粉末(碳粉末)",
       "category": "material",
       "row": 2,
-      "icon": "carbon_enr_powder-carbon_powder"
+      "icon": "aNhoXNVVI"
     },
     {
       "time": 2,
@@ -3525,7 +3530,7 @@
       "name": "致密碳粉末(细磨荞花粉末)",
       "category": "material",
       "row": 2,
-      "icon": "carbon_enr_powder-plant_moss_enr_powder_1"
+      "icon": "Z2IEDQBer"
     },
     {
       "time": 2,
@@ -3542,7 +3547,7 @@
       "name": "致密碳粉末(细磨柑实粉末)",
       "category": "material",
       "row": 2,
-      "icon": "carbon_enr_powder-plant_moss_enr_powder_2"
+      "icon": "xFsOz8GXn"
     },
     {
       "time": 2,
@@ -3608,11 +3613,12 @@
       "producers": [
         "furnance_1"
       ],
+      "cost": 100,
       "id": "quartz_glass-quartz_sand",
       "name": "紫晶纤维(紫晶矿)",
       "category": "material",
       "row": 3,
-      "icon": "quartz_glass-quartz_sand"
+      "icon": "rNYknIToK"
     },
     {
       "time": 2,
@@ -3629,7 +3635,7 @@
       "name": "紫晶纤维(紫晶粉末)",
       "category": "material",
       "row": 3,
-      "icon": "quartz_glass-quartz_powder"
+      "icon": "5ReMJ-axh"
     },
     {
       "time": 2,
@@ -3785,7 +3791,7 @@
       "name": "蓝铁块(蓝铁矿)",
       "category": "material",
       "row": 4,
-      "icon": "iron_nugget-iron_ore"
+      "icon": "YP_fqgPjK"
     },
     {
       "time": 2,
@@ -3802,7 +3808,7 @@
       "name": "蓝铁块(蓝铁粉末)",
       "category": "material",
       "row": 4,
-      "icon": "iron_nugget-iron_powder"
+      "icon": "rCPd1tfS9"
     },
     {
       "time": 2,
@@ -3926,7 +3932,7 @@
       "name": "蓝铁瓶(锦草溶液)",
       "category": "material",
       "row": 4,
-      "icon": "iron_bottle-liquid_plant_grass_1"
+      "icon": "7aWLncdum"
     },
     {
       "time": 2,
@@ -3947,7 +3953,7 @@
       "name": "蓝铁瓶(芽针溶液)",
       "category": "material",
       "row": 4,
-      "icon": "iron_bottle-liquid_plant_grass_2"
+      "icon": "zSG48A1GN"
     },
     {
       "time": 3,
@@ -3967,7 +3973,7 @@
       "name": "赤铜矿",
       "category": "material",
       "row": 5,
-      "icon": "copper_ore-liquid_water"
+      "icon": "pSkp8UtzR"
     },
     {
       "time": 2,
@@ -3999,10 +4005,10 @@
       "producers": [
         "furnance_1"
       ],
+      "cost": 100,
       "locations": [
         "jinlong"
       ],
-      "cost": 100,
       "id": "copper_nugget",
       "name": "赤铜块",
       "category": "material",
@@ -4025,7 +4031,7 @@
       "name": "赤铜块(固气转化机)",
       "category": "material",
       "row": 5,
-      "icon": "copper_nugget-phase_trans_2"
+      "icon": "TIRc8l-Ov"
     },
     {
       "time": 2,
@@ -4063,7 +4069,7 @@
       "name": "赫铜块(固气转化机)",
       "category": "material",
       "row": 5,
-      "icon": "copper_enr-phase_trans_2"
+      "icon": "1x5_iFxrl"
     },
     {
       "time": 2,
@@ -4081,7 +4087,7 @@
       "name": "灼铜块(固气转化机)",
       "category": "material",
       "row": 5,
-      "icon": "copper_enr2-phase_trans_2"
+      "icon": "grKjDDYLU"
     },
     {
       "time": 2,
@@ -4187,7 +4193,7 @@
       "name": "赤铜瓶(锦草溶液)",
       "category": "material",
       "row": 5,
-      "icon": "copper_bottle-liquid_plant_grass_1"
+      "icon": "g6eZC2ckR"
     },
     {
       "time": 2,
@@ -4208,7 +4214,7 @@
       "name": "赤铜瓶(芽针溶液)",
       "category": "material",
       "row": 5,
-      "icon": "copper_bottle-liquid_plant_grass_2"
+      "icon": "QU3-0LfcJ"
     },
     {
       "time": 2,
@@ -4284,7 +4290,7 @@
       "name": "赤铜溶液(液气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "liquid_copper-phase_trans_1"
+      "icon": "eNbizvaDC"
     },
     {
       "time": 2,
@@ -4320,7 +4326,7 @@
       "name": "赫铜溶液(液气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "liquid_copper_enr-phase_trans_1"
+      "icon": "21JXqNHcO"
     },
     {
       "time": 2,
@@ -4338,7 +4344,7 @@
       "name": "气态赤铜(液气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper-phase_trans_1"
+      "icon": "6cFT0YI85"
     },
     {
       "time": 2,
@@ -4356,7 +4362,7 @@
       "name": "气态赤铜(固气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper-phase_trans_2"
+      "icon": "MzFhhwu9q"
     },
     {
       "time": 2,
@@ -4374,7 +4380,7 @@
       "name": "气态赫铜(液气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper_enr-phase_trans_1"
+      "icon": "3nEkFN4v3"
     },
     {
       "time": 2,
@@ -4392,7 +4398,7 @@
       "name": "气态赫铜(惰气)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper_enr-gas_inert"
+      "icon": "LESvbc0cp"
     },
     {
       "time": 2,
@@ -4428,7 +4434,7 @@
       "name": "气态赫铜(固气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper_enr-phase_trans_2"
+      "icon": "F26jLFsSM"
     },
     {
       "time": 2,
@@ -4446,7 +4452,7 @@
       "name": "气态灼铜",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper_enr2"
+      "icon": "ynGeJZzIH"
     },
     {
       "time": 2,
@@ -4464,7 +4470,7 @@
       "name": "气态灼铜(固气转化机)",
       "category": "material",
       "row": 6,
-      "icon": "gas_copper_enr2-phase_trans_2"
+      "icon": "ugzGGeljq"
     },
     {
       "time": 2,
@@ -4482,7 +4488,7 @@
       "name": "息壤(碳块)",
       "category": "material",
       "row": 7,
-      "icon": "xiranite_powder-carbon_mtl"
+      "icon": "WP8nZAgGK"
     },
     {
       "time": 2,
@@ -4500,7 +4506,7 @@
       "name": "息壤(稳定碳块)",
       "category": "material",
       "row": 7,
-      "icon": "xiranite_powder-carbon_enr"
+      "icon": "5FnJGJYHD"
     },
     {
       "time": 2,
@@ -4517,7 +4523,7 @@
       "name": "息壤(固气转化机)",
       "category": "material",
       "row": 7,
-      "icon": "xiranite_powder-phase_trans_2"
+      "icon": "D9uBSezBN"
     },
     {
       "time": 2,
@@ -4573,7 +4579,7 @@
       "name": "重息壤(固气转化机)",
       "category": "material",
       "row": 7,
-      "icon": "xiranite_enr_powder-phase_trans_2"
+      "icon": "o7qlvjIpX"
     },
     {
       "time": 2,
@@ -4610,7 +4616,7 @@
       "name": "液化息壤(液气转化机)",
       "category": "material",
       "row": 7,
-      "icon": "liquid_xiranite-phase_trans_1"
+      "icon": "KsAbKo-kL"
     },
     {
       "time": 2,
@@ -4647,7 +4653,7 @@
       "name": "液化重息壤(液气转化机)",
       "category": "material",
       "row": 7,
-      "icon": "liquid_xiranite_enr-phase_trans_1"
+      "icon": "eVII5GgNz"
     },
     {
       "time": 2,
@@ -4685,7 +4691,7 @@
       "name": "壤晶废液(提纯机)",
       "category": "material",
       "row": 7,
-      "icon": "liquid_xiranite_poly-liquid_purifier_1"
+      "icon": "qUq983O5F"
     },
     {
       "time": 1,
@@ -4721,7 +4727,7 @@
       "name": "清水(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "liquid_water-phase_trans_1"
+      "icon": "tnHAWZomJ"
     },
     {
       "time": 1,
@@ -4757,7 +4763,7 @@
       "name": "沉积酸(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "liquid_acid-phase_trans_1"
+      "icon": "n1F3_H0xn"
     },
     {
       "time": 2,
@@ -4775,7 +4781,7 @@
       "name": "水蒸气(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_water-phase_trans_1"
+      "icon": "ngnifkfVC"
     },
     {
       "time": 2,
@@ -4792,7 +4798,7 @@
       "name": "息壤气(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_xiranite-phase_trans_1"
+      "icon": "VM4dhho2c"
     },
     {
       "time": 2,
@@ -4810,7 +4816,7 @@
       "name": "息壤气(固气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_xiranite-phase_trans_2"
+      "icon": "eAPSNjYPO"
     },
     {
       "time": 2,
@@ -4846,7 +4852,7 @@
       "name": "重息壤气(惰气)",
       "category": "material",
       "row": 8,
-      "icon": "gas_xiranite_enr-gas_inert"
+      "icon": "4N6PISlNQ"
     },
     {
       "time": 10,
@@ -4864,7 +4870,7 @@
       "name": "重息壤气(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_xiranite_enr-phase_trans_1"
+      "icon": "08QnmafUO"
     },
     {
       "time": 10,
@@ -4882,7 +4888,7 @@
       "name": "重息壤气(固气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_xiranite_enr-phase_trans_2"
+      "icon": "4uTTruYze"
     },
     {
       "time": 2,
@@ -4900,7 +4906,7 @@
       "name": "酸气(液气转化机)",
       "category": "material",
       "row": 8,
-      "icon": "gas_acid-phase_trans_1"
+      "icon": "BTDiP1-WN"
     },
     {
       "time": 3,
@@ -4953,7 +4959,7 @@
       "name": "废水处理机(污水)",
       "category": "material",
       "row": 999,
-      "icon": "liquid_cleaner_1-liquid_sewage"
+      "icon": "gMs3wV6Mc"
     },
     {
       "usage": 50,
@@ -4970,7 +4976,7 @@
       "name": "废水处理机(惰性壤晶废液)",
       "category": "material",
       "row": 999,
-      "icon": "liquid_cleaner_1-liquid_xiranite_lowpoly"
+      "icon": "LIU8uRWtP"
     },
     {
       "usage": 50,
@@ -4987,7 +4993,7 @@
       "name": "废水处理机(壤晶废液)",
       "category": "material",
       "row": 999,
-      "icon": "liquid_cleaner_1-liquid_xiranite_poly"
+      "icon": "MZA0Aj7xM"
     },
     {
       "time": 1,
@@ -5003,7 +5009,7 @@
       "name": "净水节点",
       "category": "material",
       "row": 999,
-      "icon": "liquid_sewage-liquid_clean_gate"
+      "icon": "RSg0ZawgK"
     },
     {
       "time": 60,
@@ -5021,7 +5027,7 @@
       "name": "壤晶废液(净水节点)",
       "category": "material",
       "row": 999,
-      "icon": "liquid_xiranite_poly-liquid_clean_gate"
+      "icon": "CZoh2vwOX"
     },
     {
       "time": 10,
@@ -5447,12 +5453,11 @@
       "producers": [
         "power_sta_1"
       ],
-      "cost": 100,
       "id": "power_originium_ore",
       "name": "发电(源矿)",
       "category": "gen-power",
       "row": 0,
-      "icon": "power_sta_1-originium_ore"
+      "icon": "vzHASkcwW"
     },
     {
       "usage": -220,
@@ -5468,7 +5473,7 @@
       "name": "发电(低容谷地电池)",
       "category": "gen-power",
       "row": 1,
-      "icon": "power_sta_1-proc_battery_1"
+      "icon": "DCZK3_Hum"
     },
     {
       "usage": -420,
@@ -5484,7 +5489,7 @@
       "name": "发电(中容谷地电池)",
       "category": "gen-power",
       "row": 1,
-      "icon": "power_sta_1-proc_battery_2"
+      "icon": "PZWgDQOzb"
     },
     {
       "usage": -1100,
@@ -5500,7 +5505,7 @@
       "name": "发电(高容谷地电池)",
       "category": "gen-power",
       "row": 1,
-      "icon": "power_sta_1-proc_battery_3"
+      "icon": "YvRkgjni9"
     },
     {
       "usage": -1600,
@@ -5516,7 +5521,7 @@
       "name": "发电(低容武陵电池)",
       "category": "gen-power",
       "row": 2,
-      "icon": "power_sta_1-proc_battery_4"
+      "icon": "u_hgkzqGZ"
     },
     {
       "usage": -3200,
@@ -5532,7 +5537,7 @@
       "name": "发电(中容武陵电池)",
       "category": "gen-power",
       "row": 2,
-      "icon": "power_sta_1-proc_battery_5"
+      "icon": "uE4Xzd-Nt"
     },
     {
       "time": 2,
@@ -5553,7 +5558,7 @@
       "name": "谷地调度券(晶体外壳)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-crystal_shell"
+      "icon": "FRZxbTuQP"
     },
     {
       "time": 2,
@@ -5574,7 +5579,7 @@
       "name": "谷地调度券(紫晶质瓶)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-glass_bottle"
+      "icon": "fpxipfxQ_"
     },
     {
       "time": 2,
@@ -5595,7 +5600,7 @@
       "name": "谷地调度券(紫晶零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-glass_cmpt"
+      "icon": "WqhucJQl5"
     },
     {
       "time": 2,
@@ -5616,7 +5621,7 @@
       "name": "谷地调度券(铁制零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-iron_cmpt"
+      "icon": "0pLWUXtXS"
     },
     {
       "time": 2,
@@ -5637,7 +5642,7 @@
       "name": "谷地调度券(钢制零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-iron_enr_cmpt"
+      "icon": "PaI2yXcVi"
     },
     {
       "time": 10,
@@ -5658,7 +5663,7 @@
       "name": "谷地调度券(柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_food_1"
+      "icon": "D87_y4QHp"
     },
     {
       "time": 10,
@@ -5679,7 +5684,7 @@
       "name": "谷地调度券(优质柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_food_2"
+      "icon": "LChCprdXR"
     },
     {
       "time": 10,
@@ -5700,7 +5705,7 @@
       "name": "谷地调度券(精选柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_food_3"
+      "icon": "lG5pYr6_F"
     },
     {
       "time": 10,
@@ -5721,7 +5726,7 @@
       "name": "谷地调度券(荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_rec_hp_1"
+      "icon": "NXpQnBpZJ"
     },
     {
       "time": 10,
@@ -5742,7 +5747,7 @@
       "name": "谷地调度券(优质荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_rec_hp_2"
+      "icon": "B33Y1xtAN"
     },
     {
       "time": 10,
@@ -5763,7 +5768,7 @@
       "name": "谷地调度券(精选荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-bottled_rec_hp_3"
+      "icon": "Wy_OqDd79"
     },
     {
       "time": 10,
@@ -5784,7 +5789,7 @@
       "name": "谷地调度券(低容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-proc_battery_1"
+      "icon": "be5cdHAfy"
     },
     {
       "time": 10,
@@ -5805,7 +5810,7 @@
       "name": "谷地调度券(中容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-proc_battery_2"
+      "icon": "HsYpeEhwA"
     },
     {
       "time": 10,
@@ -5826,7 +5831,7 @@
       "name": "谷地调度券(高容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "tundra_coupon-proc_battery_3"
+      "icon": "tcIJgshsc"
     },
     {
       "time": 2,
@@ -5847,7 +5852,7 @@
       "name": "武陵调度券(赤铜零件)",
       "category": "settlement",
       "row": 1,
-      "icon": "jinlong_coupon-copper_cmpt"
+      "icon": "fftXa_L3O"
     },
     {
       "time": 10,
@@ -5868,7 +5873,7 @@
       "name": "武陵调度券(赫铜零件)",
       "category": "settlement",
       "row": 1,
-      "icon": "jinlong_coupon-copper_enr_cmpt"
+      "icon": "nL57eW-eu"
     },
     {
       "time": 2,
@@ -5889,7 +5894,7 @@
       "name": "武陵调度券(息壤)",
       "category": "settlement",
       "row": 1,
-      "icon": "jinlong_coupon-xiranite_powder"
+      "icon": "MN3RgE0QK"
     },
     {
       "time": 10,
@@ -5910,7 +5915,7 @@
       "name": "武陵调度券(重息壤)",
       "category": "settlement",
       "row": 1,
-      "icon": "jinlong_coupon-xiranite_enr_powder"
+      "icon": "TQnSxeYps"
     },
     {
       "time": 10,
@@ -5931,7 +5936,7 @@
       "name": "武陵调度券(锦草软饮)",
       "category": "settlement",
       "row": 2,
-      "icon": "jinlong_coupon-bottled_food_4"
+      "icon": "TqWZWVpY3"
     },
     {
       "time": 10,
@@ -5952,7 +5957,7 @@
       "name": "武陵调度券(优质锦草软饮)",
       "category": "settlement",
       "row": 2,
-      "icon": "jinlong_coupon-bottled_food_5"
+      "icon": "qA-EMB1fs"
     },
     {
       "time": 10,
@@ -5973,7 +5978,7 @@
       "name": "武陵调度券(芽针针剂)",
       "category": "settlement",
       "row": 2,
-      "icon": "jinlong_coupon-bottled_rec_hp_4"
+      "icon": "Sjdqh9m2X"
     },
     {
       "time": 10,
@@ -5994,7 +5999,7 @@
       "name": "武陵调度券(优质芽针针剂)",
       "category": "settlement",
       "row": 2,
-      "icon": "jinlong_coupon-bottled_rec_hp_5"
+      "icon": "VqJ8q3DQp"
     },
     {
       "time": 10,
@@ -6015,7 +6020,7 @@
       "name": "武陵调度券(低容武陵电池)",
       "category": "settlement",
       "row": 3,
-      "icon": "jinlong_coupon-proc_battery_4"
+      "icon": "vI10u14eE"
     },
     {
       "time": 10,
@@ -6036,7 +6041,7 @@
       "name": "武陵调度券(中容武陵电池)",
       "category": "settlement",
       "row": 3,
-      "icon": "jinlong_coupon-proc_battery_5"
+      "icon": "e13iR_HPS"
     },
     {
       "time": 10,
@@ -6057,7 +6062,7 @@
       "name": "武陵调度券(灼铜零件)",
       "category": "settlement",
       "row": 999,
-      "icon": "jinlong_coupon-copper_enr2_cmpt"
+      "icon": "lpxYv1B-a"
     },
     {
       "time": 2,
@@ -6078,7 +6083,7 @@
       "name": "武陵调度券(分离芯)",
       "category": "settlement",
       "row": 999,
-      "icon": "jinlong_coupon-filter_core"
+      "icon": "zbLLpntwq"
     },
     {
       "time": 3600,

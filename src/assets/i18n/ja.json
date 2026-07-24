@@ -315,6 +315,8 @@
     "theme": "テーマ",
     "themeTooltip": "テーマを選んでください。",
     "advanced": "上級",
+    "simplifiedRecipes": "簡略レシピを使用",
+    "simplifiedRecipesTooltip": "元のレシピと一緒に簡略レシピを計算に使用します。",
     "maximizeType": "最大化する値の種類",
     "maximizeTypeTooltip": "最大化の目的とする値を選んでください。",
     "openCosts": "コスト設定を開く",

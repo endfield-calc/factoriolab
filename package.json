@@ -34,7 +34,8 @@
     "minify-data": "ts-node -r tsconfig-paths/register scripts/minify-data.ts",
     "update-defaults": "ts-node -r tsconfig-paths/register scripts/update-defaults.ts",
     "update-hash": "ts-node -r tsconfig-paths/register scripts/update-hash.ts",
-    "generate-hash": "ts-node -r tsconfig-paths/register scripts/generate-hash.ts"
+    "generate-hash": "ts-node -r tsconfig-paths/register scripts/generate-hash.ts",
+    "build:aef-data": "ts-node -r tsconfig-paths/register scripts/build-aef-data.ts && npm run generate-hash -- aef"
   },
   "dependencies": {
     "@angular/animations": "^18.1.0",

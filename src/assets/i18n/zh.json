@@ -329,6 +329,8 @@
     "theme": "主题",
     "themeTooltip": "选择主题",
     "advanced": "高级",
+    "simplifiedRecipes": "使用简化配方",
+    "simplifiedRecipesTooltip": "启用后，简化配方会与原配方一起参与计算。",
     "maximizeType": "最大化数值类型",
     "maximizeTypeTooltip": "选择最大化目标数值类型",
     "openCosts": "打开权重设置",

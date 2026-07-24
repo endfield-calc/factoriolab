@@ -82,6 +82,7 @@ export interface SettingsState {
   excludedRecipeIds?: Set<string>;
   checkedRecipeIds: Set<string>;
   netProductionOnly: boolean;
+  simplifiedRecipes?: boolean;
   preset: number;
   machineRankIds?: string[];
   fuelRankIds?: string[];
@@ -114,6 +115,7 @@ export const initialSettingsState: SettingsState = {
   flowRate: rational(1200n),
   checkedRecipeIds: new Set(),
   netProductionOnly: false,
+  simplifiedRecipes: false,
   proliferatorSprayId: ItemId.Module,
   inserterTarget: InserterTarget.ExpressTransportBelt,
   miningBonus: rational.zero,
@@ -890,6 +892,7 @@ export class SettingsService extends Store<SettingsState> {
                 baseId(r.id),
               ),
             )) &&
+          (!r.flags.has('simplified') || state.simplifiedRecipes) &&
           (r.quality == null || r.quality <= quality),
       );
 

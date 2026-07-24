@@ -541,6 +541,25 @@ describe('SettingsService', () => {
       expect(result.availableRecipeIds.size).toEqual(data.recipeIds.length - 2);
       expect(result.availableItemIds.size).toEqual(data.itemIds.length);
     });
+
+    it('should enable simplified recipes only when requested', () => {
+      const data = Mocks.getDataset();
+      data.recipeEntities[RecipeId.Coal].flags.add('simplified');
+
+      const disabled = service.computeSettings(
+        Mocks.settingsStateInitial,
+        Mocks.defaults,
+        data,
+      );
+      const enabled = service.computeSettings(
+        spread(Mocks.settingsStateInitial, { simplifiedRecipes: true }),
+        Mocks.defaults,
+        data,
+      );
+
+      expect(disabled.availableRecipeIds.has(RecipeId.Coal)).toBeFalse();
+      expect(enabled.availableRecipeIds.has(RecipeId.Coal)).toBeTrue();
+    });
   });
 
   describe('options', () => {

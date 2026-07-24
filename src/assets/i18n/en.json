@@ -326,6 +326,8 @@
     "theme": "Theme",
     "themeTooltip": "Select theme",
     "advanced": "Advanced",
+    "simplifiedRecipes": "Use simplified recipes",
+    "simplifiedRecipesTooltip": "Enable simplified recipes alongside the original recipes.",
     "maximizeType": "Maximize value type",
     "maximizeTypeTooltip": "Select maximize objective value type",
     "openCosts": "Open cost settings",

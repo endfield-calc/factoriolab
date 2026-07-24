@@ -14,7 +14,8 @@ export type RecipeFlag =
   | 'locked'
   | 'hideProducer'
   | 'canProdUpgrade'
-  | 'forceShowLabel';
+  | 'forceShowLabel'
+  | 'simplified';
 
 export interface RecipeJson {
   id: string;

@@ -55,6 +55,8 @@ export interface LabParams {
   v10rch?: string;
   /** `boolean` Net production only */
   rnp?: string;
+  /** `boolean` Enable simplified recipes */
+  rsi?: string;
   /** `number` Preset */
   mpr?: string;
   /** `string[]` Machine rank */

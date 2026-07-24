@@ -886,6 +886,7 @@ export class RouterService {
     sub('rex', (s) => s.excludedRecipeIds, data.recipeIds, hash.recipes);
     sub('rch', (s) => s.checkedRecipeIds, data.recipeIds, hash.recipes);
     bln('rnp', (s) => s.netProductionOnly);
+    bln('rsi', (s) => s.simplifiedRecipes ?? false);
     num('mpr', (s) => s.preset);
     rnk('mmr', (s) => s.machineRankIds, hash.machines);
     rnk('mfr', (s) => s.fuelRankIds, hash.fuels);
@@ -952,6 +953,7 @@ export class RouterService {
       excludedRecipeIds: sub('rex', modHash.recipes),
       checkedRecipeIds: sub('rch', modHash.recipes),
       netProductionOnly: bln('rnp'),
+      simplifiedRecipes: bln('rsi'),
       preset: num('mpr'),
       machineRankIds: rnk('mmr', hash?.machines),
       fuelRankIds: rnk('mfr', hash?.fuels),

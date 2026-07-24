@@ -1,0 +1,1030 @@
+{
+  "itemInsertAfter": "__domain_transfer",
+  "items": [
+    {
+      "id": "__simplified_recipe",
+      "name": "简化计算配方",
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "hideRate": true
+      },
+      "category": "machine",
+      "row": 999,
+      "icon": "__domain_transfer"
+    }
+  ],
+  "recipes": [
+    {
+      "time": 1,
+      "in": {
+        "originium_ore": 2
+      },
+      "out": {
+        "originium_enr_powder": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "tundra"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-originium_enr_powder",
+      "name": "简化配方：致密源石粉末",
+      "category": "material",
+      "row": 7,
+      "icon": "originium_enr_powder"
+    },
+    {
+      "time": 2,
+      "in": {},
+      "out": {
+        "xiranite_powder": 1
+      },
+      "producers": [
+        "xiranite_oven_1"
+      ],
+      "usage": 0,
+      "flags": [
+        "simplified"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "id": "simplified-xiranite_powder",
+      "name": "简化配方：息壤",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "liquid_xiranite": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_xiranite",
+      "name": "简化配方：液化息壤",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_powder": 5
+      },
+      "out": {
+        "gas_xiranite": 4
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_xiranite",
+      "name": "简化配方：息壤气",
+      "category": "material",
+      "row": 8
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_powder": 1,
+        "liquid_sewage": 1
+      },
+      "out": {
+        "liquid_xiranite_poly": 1,
+        "liquid_xiranite_lowpoly": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_xiranite_poly-xiranite",
+      "name": "简化配方：壤晶废液（息壤）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_xiranite_lowpoly": 4
+      },
+      "out": {
+        "liquid_xiranite_poly": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_xiranite_poly-lowpoly",
+      "name": "简化配方：壤晶废液（惰性壤晶废液）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_xiranite_poly": 2,
+        "iron_ore": 1
+      },
+      "out": {
+        "xiranite_poly": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-xiranite_poly",
+      "name": "简化配方：壤晶",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_xiranite": 2,
+        "filter_core": 1
+      },
+      "out": {
+        "gas_xiranite_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_xiranite_enr-filter_core",
+      "name": "简化配方：重息壤气（息壤气）",
+      "category": "material",
+      "row": 8
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_powder": 5,
+        "filter_core": 2
+      },
+      "out": {
+        "gas_xiranite_enr": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_xiranite_enr-xiranite",
+      "name": "简化配方：重息壤气（息壤）",
+      "category": "material",
+      "row": 8
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_enr_powder": 2,
+        "xiranite_powder": 1
+      },
+      "out": {
+        "gas_xiranite_enr": 5
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_xiranite_enr-xiranite_enr_powder",
+      "name": "简化配方：重息壤气（重息壤）",
+      "category": "material",
+      "row": 8
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_enr_powder": 2,
+        "gas_xiranite": 1
+      },
+      "out": {
+        "gas_xiranite_enr": 5
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_xiranite_enr-gas_xiranite",
+      "name": "简化配方：重息壤气（息壤气相变）",
+      "category": "material",
+      "row": 8
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_powder": 10,
+        "liquid_xiranite_poly": 5
+      },
+      "out": {
+        "xiranite_enr_powder": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-xiranite_enr_powder-liquid",
+      "name": "简化配方：重息壤（壤晶废液）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_xiranite": 11,
+        "filter_core": 5
+      },
+      "out": {
+        "xiranite_enr_powder": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-xiranite_enr_powder-gas",
+      "name": "简化配方：重息壤（重息壤气）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "xiranite_enr_powder": 1
+      },
+      "out": {
+        "liquid_xiranite_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_xiranite_enr-powder",
+      "name": "简化配方：液化重息壤（重息壤）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_xiranite_enr": 5,
+        "xiranite_powder": 1
+      },
+      "out": {
+        "liquid_xiranite_enr": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_xiranite_enr-gas",
+      "name": "简化配方：液化重息壤（重息壤气）",
+      "category": "material",
+      "row": 7
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 1
+      },
+      "out": {
+        "copper_nugget": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_nugget-ore",
+      "name": "简化配方：赤铜块（赤铜矿）",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "copper_nugget": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_nugget-gas",
+      "name": "简化配方：赤铜块（气态赤铜）",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 1
+      },
+      "out": {
+        "copper_powder": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_powder",
+      "name": "简化配方：赤铜粉末",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 1
+      },
+      "out": {
+        "liquid_copper": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_copper-ore",
+      "name": "简化配方：赤铜溶液（赤铜矿）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper": 1,
+        "xiranite_powder": 0.2
+      },
+      "out": {
+        "liquid_copper": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_copper-gas",
+      "name": "简化配方：赤铜溶液（气态赤铜）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 2
+      },
+      "out": {
+        "copper_bottle": 1,
+        "liquid_sewage": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_bottle",
+      "name": "简化配方：赤铜瓶",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 1
+      },
+      "out": {
+        "copper_cmpt": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_cmpt",
+      "name": "简化配方：赤铜零件",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 2
+      },
+      "out": {
+        "copper_jar": 1,
+        "liquid_sewage": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_jar",
+      "name": "简化配方：赤铜耐压罐",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 2,
+        "xiranite_powder": 1
+      },
+      "out": {
+        "filter_core": 2,
+        "liquid_sewage": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-filter_core",
+      "name": "简化配方：分离芯",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 2,
+        "xiranite_powder": 0.2
+      },
+      "out": {
+        "gas_copper": 1,
+        "liquid_sewage": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper-xiranite",
+      "name": "简化配方：气态赤铜（息壤）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_ore": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_copper": 1,
+        "liquid_sewage": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper-gas_xiranite",
+      "name": "简化配方：气态赤铜（息壤气）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_copper": 4
+      },
+      "out": {
+        "liquid_copper_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_copper_enr-liquid",
+      "name": "简化配方：赫铜溶液（赤铜溶液）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper_enr": 1,
+        "xiranite_powder": 0.2
+      },
+      "out": {
+        "liquid_copper_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_copper_enr-gas",
+      "name": "简化配方：赫铜溶液（气态赫铜）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper": 2,
+        "filter_core": 1
+      },
+      "out": {
+        "gas_copper_enr": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper_enr-filter_core",
+      "name": "简化配方：气态赫铜（分离芯）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_copper_enr": 1,
+        "xiranite_powder": 0.2
+      },
+      "out": {
+        "gas_copper_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper_enr-liquid",
+      "name": "简化配方：气态赫铜（赫铜溶液）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_enr": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_copper_enr": 2
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper_enr-solid",
+      "name": "简化配方：气态赫铜（赫铜块）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "liquid_copper_enr": 2,
+        "iron_ore": 1
+      },
+      "out": {
+        "copper_enr": 1,
+        "liquid_sewage": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr-liquid",
+      "name": "简化配方：赫铜块（赫铜溶液）",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper_enr": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "copper_enr": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr-gas",
+      "name": "简化配方：赫铜块（气态赫铜）",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_enr": 2
+      },
+      "out": {
+        "copper_enr_bottle": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr_bottle",
+      "name": "简化配方：赫铜瓶",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_enr": 5
+      },
+      "out": {
+        "copper_enr_cmpt": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr_cmpt",
+      "name": "简化配方：赫铜零件",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper_enr": 2,
+        "gas_xiranite": 1
+      },
+      "out": {
+        "gas_copper_enr2": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper_enr2-reaction",
+      "name": "简化配方：气态灼铜（气态赫铜）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_enr2": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_copper_enr2": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-gas_copper_enr2-solid",
+      "name": "简化配方：气态灼铜（灼铜块）",
+      "category": "material",
+      "row": 6
+    },
+    {
+      "time": 1,
+      "in": {
+        "gas_copper_enr2": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "copper_enr2": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr2",
+      "name": "简化配方：灼铜块",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {
+        "copper_enr2": 5
+      },
+      "out": {
+        "copper_enr2_cmpt": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-copper_enr2_cmpt",
+      "name": "简化配方：灼铜零件",
+      "category": "material",
+      "row": 5
+    },
+    {
+      "time": 1,
+      "in": {},
+      "out": {
+        "liquid_plant_grass_1": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_plant_grass_1",
+      "name": "简化配方：锦草溶液",
+      "category": "material",
+      "row": 0,
+      "icon": "liquid_plant_grass_1"
+    },
+    {
+      "time": 1,
+      "in": {},
+      "out": {
+        "liquid_plant_grass_2": 1
+      },
+      "producers": [
+        "__simplified_recipe"
+      ],
+      "flags": [
+        "simplified",
+        "hideProducer"
+      ],
+      "cost": "0.000001",
+      "id": "simplified-liquid_plant_grass_2",
+      "name": "简化配方：芽针溶液",
+      "category": "material",
+      "row": 1,
+      "icon": "liquid_plant_grass_2"
+    }
+  ]
+}

@@ -264,6 +264,8 @@
     "theme": "Thema",
     "themeTooltip": "Wähle Thema",
     "advanced": "Erweiterte Einstellungen",
+    "simplifiedRecipes": "Vereinfachte Rezepte verwenden",
+    "simplifiedRecipesTooltip": "Aktiviert vereinfachte Rezepte zusätzlich zu den ursprünglichen Rezepten.",
     "maximizeType": "Typ von Maximierungswert",
     "maximizeTypeTooltip": "Wähle den Typ von Maximierungswert",
     "openCosts": "Öffne Einstellungen zu Kosten",

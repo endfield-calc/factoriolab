@@ -138,6 +138,11 @@ export class SettingsComponent {
   preferences = this.preferencesSvc.state;
   machinesState = this.machinesSvc.settings;
   machineIds = computed(() => [...this.settings().machineRankIds]);
+  hasSimplifiedRecipes = computed(() =>
+    this.data().recipeIds.some((id) =>
+      this.data().recipeEntities[id].flags.has('simplified'),
+    ),
+  );
 
   state = '';
   editValue = '';

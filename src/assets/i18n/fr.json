@@ -331,6 +331,8 @@
     "theme": "Thème",
     "themeTooltip": "Séléctionner un thème",
     "advanced": "Avancé",
+    "simplifiedRecipes": "Utiliser les recettes simplifiées",
+    "simplifiedRecipesTooltip": "Active les recettes simplifiées en plus des recettes originales.",
     "simplexSolver": "Solveur simplexe",
     "simplexSolverTooltip": "Séléctionner l'algorithme du solveur simplexe; JS BigInt Rational est plus lent mais a une précision totale"
   },

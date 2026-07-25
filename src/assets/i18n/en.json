@@ -388,6 +388,7 @@
     "openNewTabTooltip": "Open in a new tab",
     "stepUndoTooltip": "Undo modifications to this step",
     "sources": "Sources",
+    "externalSupply": "External supply",
     "destinations": "Destinations",
     "depletion": "Depletion",
     "inputs": "Inputs",

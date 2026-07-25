@@ -5,6 +5,7 @@ import { Step } from './step';
 
 export interface StepOutput {
   inputs?: boolean;
+  external?: boolean;
   value: Rational;
   step?: Step;
 }

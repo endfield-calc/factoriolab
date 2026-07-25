@@ -369,6 +369,7 @@
     "openNewTabTooltip": "新しいタブで開く",
     "stepUndoTooltip": "このステップのすべての変更をもとに戻す",
     "sources": "ソース",
+    "externalSupply": "外部供給",
     "destinations": "使用先",
     "depletion": "枯渇",
     "inputs": "入力",

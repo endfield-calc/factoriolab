@@ -391,6 +391,7 @@
     "openNewTabTooltip": "在新标签页中打开",
     "stepUndoTooltip": "撤销此步骤之后的更改",
     "sources": "原料",
+    "externalSupply": "外源供应",
     "destinations": "成品",
     "depletion": "消耗",
     "inputs": "输入",

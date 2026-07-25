@@ -5,7 +5,7 @@ import { MIN_LINK_VALUE } from '~/models/constants';
 import { LinkValue } from '~/models/enum/link-value';
 import { rational } from '~/models/rational';
 import { Step } from '~/models/step';
-import { Mocks, TestModule } from '~/tests';
+import { ItemId, Mocks, RecipeId, TestModule } from '~/tests';
 
 import { FlowService } from './flow.service';
 
@@ -86,6 +86,56 @@ describe('FlowService', () => {
 
       expect(result.nodes.length).toEqual(7);
       expect(result.links.length).toEqual(7);
+    });
+
+    it('should show external supply separately from local production', () => {
+      const itemId = ItemId.IronPlate;
+      const recipeId = RecipeId.IronPlate;
+      const result = service.buildGraph(
+        [
+          {
+            id: '0',
+            itemId,
+            items: rational(300n),
+            externalInput: rational(30n),
+            recipeId,
+            recipe: Mocks.adjustedDataset.adjustedRecipe[recipeId],
+            recipeSettings: Mocks.recipesStateInitial[recipeId],
+            machines: rational(9n),
+            outputs: { [itemId]: rational(9n, 10n) },
+          },
+        ],
+        '/m',
+        Mocks.settingsStateInitial,
+        Mocks.preferencesState,
+        Mocks.adjustedDataset,
+        Mocks.themeValues,
+        'External supply',
+      );
+
+      expect(
+        result.nodes.some(
+          (node) =>
+            node.id === `x|${itemId}` &&
+            node.name ===
+              `External supply: ${Mocks.adjustedDataset.itemEntities[itemId].name}`,
+        ),
+      ).toBeTrue();
+      expect(result.nodes.some((node) => node.id === `i|${itemId}`)).toBeTrue();
+
+      const externalLink = result.links.find(
+        (link) =>
+          link.source === `x|${itemId}` && link.target === `i|${itemId}`,
+      );
+      expect(externalLink?.text).toEqual('30/m');
+      expect(externalLink?.value).toEqual(30);
+
+      const localLink = result.links.find(
+        (link) =>
+          link.source === `r|${recipeId}` && link.target === `i|${itemId}`,
+      );
+      expect(localLink?.text).toEqual('270/m');
+      expect(localLink?.value).toEqual(270);
     });
   });
 

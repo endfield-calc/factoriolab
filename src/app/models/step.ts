@@ -14,8 +14,10 @@ export interface Step {
    */
   checked?: boolean;
   itemId?: string;
-  /** Amount of item produced by all recipes */
+  /** Total amount of item available from recipes and external supply */
   items?: Rational;
+  /** Amount of this item consumed from an external supply */
+  externalInput?: Rational;
   /** Amount of item that goes towards objectives */
   output?: Rational;
   /** Amount of item that is unused */

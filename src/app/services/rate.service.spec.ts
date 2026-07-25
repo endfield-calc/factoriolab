@@ -503,6 +503,7 @@ describe('RateService', () => {
       const step: Step = {
         id: '0',
         items: rational.one,
+        externalInput: rational(6n),
         surplus: rational(2n),
         wagons: rational(3n),
         pollution: rational(4n),
@@ -514,6 +515,7 @@ describe('RateService', () => {
         displayRateInfo[DisplayRate.PerMinute],
       );
       expect(step.items).toEqual(rational(60n));
+      expect(step.externalInput).toEqual(rational(360n));
       expect(step.surplus).toEqual(rational(120n));
       expect(step.wagons).toEqual(rational(180n));
       expect(step.pollution).toEqual(rational(240n));

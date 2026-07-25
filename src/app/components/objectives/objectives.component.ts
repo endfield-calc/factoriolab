@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,12 +6,12 @@ import {
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AccordionModule } from 'primeng/accordion';
 import { Message } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
+import { FieldsetModule } from 'primeng/fieldset';
 import { MessagesModule } from 'primeng/messages';
-import { OrderListModule } from 'primeng/orderlist';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 import { combineLatest, EMPTY, first, map, Observable } from 'rxjs';
@@ -21,10 +21,7 @@ import { NoDragDirective } from '~/directives/no-drag.directive';
 import { AdjustedDataset } from '~/models/dataset';
 import { displayRateOptions } from '~/models/enum/display-rate';
 import { MaximizeType } from '~/models/enum/maximize-type';
-import {
-  ObjectiveType,
-  objectiveTypeOptions,
-} from '~/models/enum/objective-type';
+import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { MatrixResult } from '~/models/matrix-result';
@@ -35,7 +32,6 @@ import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
 import { RateService } from '~/services/rate.service';
-import { TrackService } from '~/services/track.service';
 import { TranslateService } from '~/services/translate.service';
 import { ItemsService } from '~/store/items.service';
 import { ObjectivesService } from '~/store/objectives.service';
@@ -52,12 +48,13 @@ import { TooltipComponent } from '../tooltip/tooltip.component';
   standalone: true,
   imports: [
     AsyncPipe,
+    NgTemplateOutlet,
     FormsModule,
+    AccordionModule,
     ButtonModule,
-    CardModule,
     DropdownModule,
+    FieldsetModule,
     MessagesModule,
-    OrderListModule,
     ToggleButtonModule,
     TooltipModule,
     DropdownTranslateDirective,
@@ -80,7 +77,6 @@ export class ObjectivesComponent {
   rateSvc = inject(RateService);
   recipesSvc = inject(RecipesService);
   settingsSvc = inject(SettingsService);
-  trackSvc = inject(TrackService);
   translateSvc = inject(TranslateService);
 
   result = this.objectivesSvc.matrixResult;
@@ -98,6 +94,32 @@ export class ObjectivesComponent {
       .objectives()
       .filter((it) => it.type < ObjectiveType.HideSep);
   });
+  fixedObjectives = computed(() =>
+    this.objectives().filter((it) => it.type === ObjectiveType.Output),
+  );
+  maximizeObjectives = computed(() =>
+    this.objectives().filter((it) => it.type === ObjectiveType.Maximize),
+  );
+  fixedOutputAvailableItemIds = computed(() => {
+    const targetIds = new Set(
+      this.fixedObjectives()
+        .filter((it) => it.unit !== ObjectiveUnit.Machines)
+        .map((it) => it.targetId),
+    );
+    return Array.from(this.settings().availableItemIds).filter(
+      (id) => !targetIds.has(id),
+    );
+  });
+  maximizeOutputAvailableItemIds = computed(() => {
+    const targetIds = new Set(
+      this.maximizeObjectives()
+        .filter((it) => it.unit !== ObjectiveUnit.Machines)
+        .map((it) => it.targetId),
+    );
+    return Array.from(this.settings().availableItemIds).filter(
+      (id) => !targetIds.has(id),
+    );
+  });
 
   messages = computed(() => {
     const objectives = this.objectivesSvc.objectives();
@@ -107,22 +129,28 @@ export class ObjectivesComponent {
     return this.getMessages(objectives, matrixResult, settings);
   });
 
-  objectiveTypeOptions = objectiveTypeOptions;
   displayRateOptions = displayRateOptions;
 
   MaximizeType = MaximizeType;
   ObjectiveUnit = ObjectiveUnit;
   ObjectiveType = ObjectiveType;
 
-  reorderObjectives(): void {
-    const newOrder = this.objectives();
-    const arr = [...this.objectivesSvc.objectives()];
-    arr.sort((a, b) => {
-      const aSort = newOrder.indexOf(a) ?? arr.indexOf(a);
-      const bSort = newOrder.indexOf(b) ?? arr.indexOf(b);
-      return aSort - bSort;
+  addFixedOutput(targetId: string): void {
+    this.objectivesSvc.add({
+      targetId,
+      unit: ObjectiveUnit.Items,
+      type: ObjectiveType.Output,
+      value: this.dispRateInfo().value.div(rational(10n)),
     });
-    this.objectivesSvc.setOrder(arr);
+  }
+
+  addMaximizeOutput(targetId: string): void {
+    this.objectivesSvc.add({
+      targetId,
+      unit: ObjectiveUnit.Items,
+      type: ObjectiveType.Maximize,
+      value: rational.one,
+    });
   }
 
   getMessages(

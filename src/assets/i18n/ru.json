@@ -337,6 +337,7 @@
     "openNewTabTooltip": "Открыть в новой вкладке",
     "stepUndoTooltip": "Отменить изменения этого шага",
     "sources": "Источники",
+    "externalSupply": "Внешнее снабжение",
     "destinations": "Направления",
     "depletion": "Истощение",
     "inputs": "Входы",

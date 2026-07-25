@@ -2,12 +2,29 @@
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins/breakpoints';
 
-.objectives-content {
-  max-width: 1000px;
+.objective-groups {
+  display: grid;
+  gap: 1rem;
+  max-width: 96rem;
+}
+
+.objective-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.objective-group-add {
+  margin-top: 0.5rem;
+}
+
+.objective-group-add-button {
+  width: 18rem;
 }
 
 .objectives-buttons {
   gap: 0.25rem;
+  justify-content: flex-end;
 }
 
 .p-inputgroup {
@@ -16,20 +33,63 @@
   }
 }
 
-@include media-breakpoint-up(sm) {
-  button.text-truncate,
-  .p-inputgroup lab-input-number.p-inputwrapper {
-    flex: 0 0 25%;
+.objective-row {
+  > button.text-truncate {
+    flex: 1 1 16rem;
+    min-width: 0;
+    max-width: 18rem;
+  }
+
+  > lab-input-number.p-inputwrapper {
+    flex: 0 0 7rem;
+  }
+
+  > p-dropdown {
+    flex: 0 0 7rem;
+  }
+
+  > button:last-child {
+    flex: 0 0 2.5rem;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  .objective-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @include media-breakpoint-down(sm) {
-  .p-inputgroup lab-input-number.p-inputwrapper {
-    flex: 0 0 15%;
+  .objective-row {
+    > lab-input-number.p-inputwrapper {
+      flex-basis: 5.5rem;
+    }
+
+    > p-dropdown {
+      flex-basis: 5.5rem;
+    }
   }
 }
 
 :host ::ng-deep {
+  .p-fieldset .p-fieldset-legend,
+  .p-fieldset.p-fieldset-toggleable .p-fieldset-legend a {
+    border: none;
+    padding: 0.5rem;
+  }
+
+  .p-fieldset .p-fieldset-content {
+    padding: 4px;
+  }
+
+  .p-card .p-card-content {
+    padding: 0;
+  }
+
+  .objective-group {
+    height: 100%;
+  }
+
   @include media-breakpoint-down(sm) {
     button.lab-button-icon-only {
       justify-content: center;

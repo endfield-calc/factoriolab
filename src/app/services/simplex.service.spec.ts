@@ -73,6 +73,9 @@ describe('SimplexService', () => {
       expect(result['id'].out).toEqual(rational.one);
       service.addItemValue(result, 'id', rational(2n), 'lim');
       expect(result['id'].lim).toEqual(rational(2n));
+      service.addItemValue(result, 'input', rational.one, 'in');
+      service.addItemValue(result, 'input', rational(2n), 'in');
+      expect(result['input'].in).toEqual(rational(3n));
     });
   });
 
@@ -197,6 +200,31 @@ describe('SimplexService', () => {
         costs: Mocks.costs,
         hasSurplusCost: true,
       });
+    });
+
+    it('should allow an unbounded external item supply', () => {
+      const result = service.getState(
+        [
+          {
+            id: '1',
+            targetId: ItemId.IronPlate,
+            value: rational.one,
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.Output,
+          },
+          {
+            id: '2',
+            targetId: ItemId.IronOre,
+            value: rational.zero,
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.ItemSupplyUnlimited,
+          },
+        ],
+        Mocks.settingsStateInitial,
+        Mocks.adjustedDataset,
+      );
+
+      expect(result.itemValues[ItemId.IronOre].inputUnlimited).toBeTrue();
     });
   });
 
@@ -345,6 +373,43 @@ describe('SimplexService', () => {
   });
 
   describe('glpk', () => {
+    it('should use only the external input required by the target', () => {
+      const state = service.getState(
+        [
+          {
+            id: '1',
+            targetId: ItemId.IronPlate,
+            value: rational.one,
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.Output,
+          },
+          {
+            id: '2',
+            targetId: ItemId.IronOre,
+            value: rational(2n),
+            unit: ObjectiveUnit.Items,
+            type: ObjectiveType.Input,
+          },
+          {
+            id: '3',
+            targetId: RecipeId.IronOre,
+            value: rational.zero,
+            unit: ObjectiveUnit.Machines,
+            type: ObjectiveType.Limit,
+          },
+        ],
+        Mocks.settingsStateInitial,
+        Mocks.adjustedDataset,
+      );
+
+      const result = service.glpk(state);
+
+      expect(result.returnCode).toEqual('ok');
+      expect(result.inputs?.[ItemId.IronOre]).toEqual(rational(5n, 6n));
+      expect(result.inputs?.[ItemId.IronOre].lt(rational(2n))).toBeTrue();
+      expect(result.recipes[RecipeId.IronOre]).toBeUndefined();
+    });
+
     it('should find a solution using glpk', () => {
       const state = getState();
       // Coal = excluded input, Wood = normal input
@@ -607,6 +672,7 @@ describe('SimplexService', () => {
           id: '0',
           itemId: ItemId.Coal,
           items: rational.one,
+          externalInput: rational.one,
         },
       ]);
     });

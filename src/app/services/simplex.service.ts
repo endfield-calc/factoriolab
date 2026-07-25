@@ -17,7 +17,7 @@ import { AdjustedRecipe, Recipe } from '~/models/data/recipe';
 import { AdjustedDataset } from '~/models/dataset';
 import { MaximizeType } from '~/models/enum/maximize-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
-import { ObjectiveUnit } from "~/models/enum/objective-unit";
+import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { MatrixResult } from '~/models/matrix-result';
 import {
@@ -47,6 +47,8 @@ export interface ItemValues {
   out: Rational;
   /** Sum of values from input objectives */
   in?: Rational;
+  /** Item has an unbounded external input */
+  inputUnlimited?: true;
   /** Sum of values from max objectives */
   max?: Rational;
   /** Smallest value from limit objectives */
@@ -107,6 +109,8 @@ export interface MatrixSolution {
   unproduceable: Entities<Rational>;
   /** Excluded items, may be empty */
   excluded: Entities<Rational>;
+  /** External inputs consumed by the solution, may be empty */
+  inputs?: Entities<Rational>;
   /** Recipe values of the solution */
   recipes: Entities<Rational>;
 }
@@ -116,6 +120,7 @@ export interface GlpkResult {
   recipes: Entities<Rational>;
   unproduceable: Entities<Rational>;
   excluded: Entities<Rational>;
+  inputs?: Entities<Rational>;
   cost: Rational;
   returnCode: Simplex.ReturnCode | MIP.ReturnCode;
   status: Status;
@@ -132,7 +137,7 @@ export class SimplexService {
     obj: Entities<ItemValues>,
     id: string,
     value = rational.zero,
-    key: keyof ItemValues = 'out',
+    key: Exclude<keyof ItemValues, 'inputUnlimited'> = 'out',
   ): void {
     if (obj[id]) {
       const current = obj[id][key];
@@ -315,6 +320,11 @@ export class SimplexService {
             }
             break;
           }
+          case ObjectiveType.ItemSupplyUnlimited: {
+            this.addItemValue(state.itemValues, obj.targetId);
+            state.itemValues[obj.targetId].inputUnlimited = true;
+            break;
+          }
         }
       }
     }
@@ -433,6 +443,7 @@ export class SimplexService {
         surplus: {},
         unproduceable: {},
         excluded: {},
+        inputs: {},
         recipes: {},
         time: 0,
         cost: rational.zero,
@@ -446,7 +457,7 @@ export class SimplexService {
     const itemIds = Object.keys(state.itemValues);
     const recipeIds = Object.keys(state.recipes);
     const { unproduceableIds, excludedIds } = state;
-    const { surplus, unproduceable, excluded, recipes } = glpkResult;
+    const { surplus, unproduceable, excluded, inputs, recipes } = glpkResult;
 
     return {
       resultType: SimplexResultType.Solved,
@@ -454,6 +465,7 @@ export class SimplexService {
       recipes,
       unproduceable,
       excluded,
+      inputs,
       time: glpkResult.time,
       itemIds,
       recipeIds,
@@ -685,12 +697,12 @@ export class SimplexService {
       surplusVarEntities[itemId] = m.addVar(config);
 
       const values = state.itemValues[itemId];
-      if (values.in) {
+      if (values.in || values.inputUnlimited) {
         const inputConfig: VariableProperties = {
           lb: 0,
-          ub: values.in.toNumber(),
           name: itemId,
         };
+        if (values.in) inputConfig.ub = values.in.toNumber();
         inputVarEntities[itemId] = m.addVar(inputConfig);
       }
     }
@@ -753,7 +765,7 @@ export class SimplexService {
       }
 
       // Add input coeff
-      if (values.in) {
+      if (values.in || values.inputUnlimited) {
         netCoeffs.push([inputVarEntities[itemId], 1]);
       }
 
@@ -816,6 +828,7 @@ export class SimplexService {
     const surplus: Entities<Rational> = {};
     const unproduceable: Entities<Rational> = {};
     const excluded: Entities<Rational> = {};
+    const inputs: Entities<Rational> = {};
     const recipes: Entities<Rational> = {};
     const cost = rational(m.value);
 
@@ -840,6 +853,7 @@ export class SimplexService {
         surplus,
         unproduceable,
         excluded,
+        inputs,
         recipes,
         cost,
         error: true,
@@ -893,6 +907,11 @@ export class SimplexService {
       if (val.nonzero()) recipes[recipeId] = val;
     }
 
+    for (const itemId of Object.keys(inputVarEntities)) {
+      const val = rational(getValue(inputVarEntities[itemId]));
+      if (val.nonzero()) inputs[itemId] = val;
+    }
+
     for (const itemId of state.unproduceableIds) {
       const val = rational(getValue(unproduceableVarEntities[itemId]));
       if (val.nonzero()) unproduceable[itemId] = val;
@@ -917,6 +936,7 @@ export class SimplexService {
       surplus,
       unproduceable,
       excluded,
+      inputs,
       recipes,
       cost,
       error: false,
@@ -984,8 +1004,10 @@ export class SimplexService {
       output = output.add(amount);
     });
 
-    const input = state.itemValues[itemId].in;
-    if (input) output = output.add(input);
+    const externalInput = solution.inputs
+      ? solution.inputs[itemId]
+      : state.itemValues[itemId].in;
+    if (externalInput) output = output.add(externalInput);
 
     for (const objective of state.recipeObjectives) {
       const recipe = objective.recipe;
@@ -1009,6 +1031,7 @@ export class SimplexService {
         itemId,
         items: output,
       };
+      if (externalInput?.nonzero()) step.externalInput = externalInput;
       if (values.out.gt(rational.zero)) {
         step.output = values.out;
         step.parents = { '': step.output };

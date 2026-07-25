@@ -66,6 +66,56 @@ describe('ObjectivesService', () => {
       service.matrixResult();
       expect(service.simplexSvc.solve).toHaveBeenCalled();
     });
+
+    it('should map direct supplies to input limits without forcing output', () => {
+      spyOn(service, 'normalizedObjectives').and.returnValue([
+        {
+          id: '1',
+          targetId: RecipeId.Coal,
+          value: rational.one,
+          unit: ObjectiveUnit.Machines,
+          type: ObjectiveType.ItemSupply,
+        },
+        {
+          id: '2',
+          targetId: ItemId.Coal,
+          value: rational(60n),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.ItemSupply,
+        },
+        {
+          id: '3',
+          targetId: ItemId.IronOre,
+          value: rational(30n),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.CustomItemSupply,
+        },
+      ]);
+      const solveSpy = spyOn(service.simplexSvc, 'solve').and.returnValue({
+        steps: [],
+        resultType: SimplexResultType.Skipped,
+      });
+
+      service.matrixResult();
+
+      const objectives = solveSpy.calls.mostRecent().args[0];
+      expect(objectives).toEqual([
+        {
+          id: '2',
+          targetId: ItemId.Coal,
+          value: rational(60n),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Input,
+        },
+        {
+          id: '3',
+          targetId: ItemId.IronOre,
+          value: rational(30n),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Input,
+        },
+      ]);
+    });
   });
 
   describe('steps', () => {
@@ -292,6 +342,35 @@ describe('ObjectivesService', () => {
           recipeOptions: [],
         },
       });
+    });
+
+    it('should identify external supply separately from recipe sources', () => {
+      const itemStep: Step = {
+        id: '0',
+        itemId: ItemId.Coal,
+        items: rational(10n),
+        externalInput: rational(3n),
+      };
+      const recipeStep: Step = {
+        id: '1',
+        recipeId: RecipeId.Coal,
+        machines: rational.one,
+        outputs: { [ItemId.Coal]: rational(7n, 10n) },
+      };
+      spyOn(service, 'steps').and.returnValue([itemStep, recipeStep]);
+
+      const result = service.stepDetails();
+
+      expect(result['0'].outputs).toEqual([
+        {
+          value: rational(7n, 10n),
+          step: recipeStep,
+        },
+        {
+          external: true,
+          value: rational(3n, 10n),
+        },
+      ]);
     });
   });
 

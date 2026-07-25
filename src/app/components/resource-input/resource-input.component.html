@@ -2,8 +2,11 @@
   <p-accordionTab>
     <ng-template pTemplate="header">
       <div class="d-flex align-items-center">
-        <i class="pi pi-compass text-primary me-2" style="font-size: 1.2rem"></i>
-        <span>资源配置</span>
+        <i
+          class="pi pi-compass text-primary me-2"
+          style="font-size: 1.2rem"
+        ></i>
+        <span>原材料供应</span>
       </div>
     </ng-template>
 
@@ -11,7 +14,9 @@
       <div class="one-key-container">
         @for (cfg of oneKeyConfig; track cfg.id) {
           <button
-            pButton pRipple type="button"
+            pButton
+            pRipple
+            type="button"
             class="p-button-outlined text-truncate"
             (click)="applyOneKey(cfg.id)"
           >
@@ -22,40 +27,97 @@
       </div>
     </p-fieldset>
 
-    <p-fieldset legend="原料" styleClass="mb-2">
+    <p-fieldset legend="原料供应" styleClass="mb-2">
       <div class="resource-input-container">
         <p-checkbox
           [binary]="true"
-          [label]="'启用原料限制'"
-          [(ngModel)]="enableLimitItems"
+          [label]="'忽略采集设备'"
+          [(ngModel)]="ignoreCollectionDevices"
         ></p-checkbox>
-        <span style="flex-basis: 100%"></span>
-        @for (it of limitItems(); track it.id) {
-          <div class="resource-input">
-            <button
-              pButton type="button"
-              class="p-button-outlined text-truncate"
-              disabled
-            >
-              <i class="p-button-icon" [class]="it.id | iconSmClass"></i>
-              @if (!contentSvc.isMobile()) {
-                <span class="p-button-label">
-                  {{ data().itemEntities[it.id]?.name }}
-                </span>
+      </div>
+      <div class="resource-groups">
+        @for (group of resourceGroups(); track group.id) {
+          <section class="resource-group">
+            <div class="resource-group-title">{{ group.label }}</div>
+            <div class="resource-input-list">
+              @for (it of group.items; track it.id) {
+                <div class="resource-input">
+                  <span
+                    class="p-button p-component p-button-outlined text-truncate resource-item-label"
+                  >
+                    <i class="p-button-icon" [class]="it.id | iconSmClass"></i>
+                    <span class="p-button-label">
+                      {{ data().itemEntities[it.id]?.name }}
+                    </span>
+                  </span>
+                  @if (limitItemsNum()[it.id]) {
+                    <lab-input-number
+                      width="4rem"
+                      [integer]="true"
+                      [value]="limitItemsNum()[it.id]"
+                      (setValue)="updateItemLimits(it.id, $event)"
+                    ></lab-input-number>
+                  }
+                  <span class="resource-input-action-placeholder"></span>
+                </div>
               }
-            </button>
-            @if (limitItemsNum()[it.id]) {
-              <lab-input-number
-                width="4rem"
-                [disabled]="!enableLimitItems()"
-                [integer]="true"
-                [value]="limitItemsNum()[it.id]"
-                (setValue)="updateItemLimits(it.id, $event)"
-              ></lab-input-number>
+            </div>
+          </section>
+        }
+        <section class="resource-group">
+          <div class="resource-group-title">自定义原料输入</div>
+          <div class="resource-input-list">
+            @for (input of customInputs(); track input.id) {
+              <div class="resource-input custom-input">
+                <span
+                  class="p-button p-component p-button-outlined text-truncate resource-item-label"
+                >
+                  <i class="p-button-icon" [class]="input.id | iconSmClass"></i>
+                  <span class="p-button-label">
+                    {{ data().itemEntities[input.id]?.name }}
+                  </span>
+                </span>
+                <lab-input-number
+                  width="4rem"
+                  [integer]="true"
+                  [value]="input.num"
+                  (setValue)="updateCustomInputNum(input.id, $event)"
+                ></lab-input-number>
+                <button
+                  pButton
+                  pRipple
+                  type="button"
+                  icon="pi pi-times"
+                  class="p-button-outlined p-button-danger"
+                  pTooltip="移除"
+                  tooltipPosition="top"
+                  (click)="removeCustomInput(input.id)"
+                ></button>
+              </div>
             }
           </div>
-        }
+          <div class="custom-input-add">
+            <button
+              pButton
+              pRipple
+              type="button"
+              label="添加物品"
+              icon="pi pi-plus"
+              class="p-button-outlined custom-input-add-button"
+              pTooltip="添加"
+              tooltipPosition="top"
+              (click)="
+                customInputPicker.clickOpen('item', customInputAvailableIds())
+              "
+            ></button>
+          </div>
+        </section>
       </div>
+      <lab-picker
+        #customInputPicker
+        header="选择物品"
+        (selectId)="addCustomInput($event)"
+      ></lab-picker>
     </p-fieldset>
 
     <p-fieldset legend="特殊限制">
@@ -68,7 +130,8 @@
         @for (machine of limitMachines(); track machine) {
           <div class="resource-input">
             <button
-              pButton type="button"
+              pButton
+              type="button"
               class="p-button-outlined text-truncate"
               disabled
             >
@@ -96,7 +159,8 @@
         ></p-checkbox>
         <span>
           <button
-            pButton type="button"
+            pButton
+            type="button"
             class="p-button-outlined text-truncate"
             disabled
           >
@@ -116,7 +180,10 @@
             <ng-template pTemplate="selectedItem">
               @if (data().locationEntities[transferSource()]; as loc) {
                 <div class="d-flex align-items-center w-100">
-                  <i class="mx-1" [class]="('domain_key_' + loc.icon) | iconSmClass"></i>
+                  <i
+                    class="mx-1"
+                    [class]="'domain_key_' + loc.icon | iconSmClass"
+                  ></i>
                   <span class="ms-3">{{ loc.name }}</span>
                 </div>
               }
@@ -124,7 +191,7 @@
             <ng-template pTemplate="item" let-item>
               @if (data().locationEntities[item]; as loc) {
                 <div class="d-flex align-items-center py-2 w-100 h-100">
-                  <i [class]="('domain_key_' + loc.icon) | iconSmClass"></i>
+                  <i [class]="'domain_key_' + loc.icon | iconSmClass"></i>
                   <span class="ms-3">{{ loc.name }}</span>
                 </div>
               }

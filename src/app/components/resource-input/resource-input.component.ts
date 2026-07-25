@@ -22,10 +22,11 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { InputNumberComponent } from '~/components/input-number/input-number.component';
+import { PickerComponent } from '~/components/picker/picker.component';
 import { NoDragDirective } from '~/directives/no-drag.directive';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
-import { ObjectiveBase, ObjectiveSettings } from '~/models/objective';
+import { ObjectiveBase } from '~/models/objective';
 import { fromNumber, Rational, rational } from '~/models/rational';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
@@ -40,6 +41,21 @@ const rational20 = fromNumber(20);
 const rational60 = fromNumber(60);
 const rational1d60 = rational60.reciprocal();
 const waterNodeRecipeIds = ['sewage-treat', 'sewage-treat-export'];
+const ignoredCollectionRecipeIds = ['liquid_water', 'liquid_acid'];
+const unlimitedSupplyItemIds = ['liquid_water', 'liquid_acid'];
+
+type ResourceGroup = 'solid' | 'liquid' | 'gas';
+
+interface ResourceSupplyItem {
+  id: string;
+  recipe: string;
+  group: ResourceGroup;
+}
+
+interface CustomSupplyInput {
+  id: string;
+  num: Rational;
+}
 
 @Component({
   selector: 'lab-resource-input',
@@ -58,6 +74,7 @@ const waterNodeRecipeIds = ['sewage-treat', 'sewage-treat-export'];
     TooltipModule,
     IconSmClassPipe,
     InputNumberComponent,
+    PickerComponent,
     TranslatePipe,
     NoDragDirective,
   ],
@@ -78,16 +95,42 @@ export class ResourceInputComponent {
   data = this.recipesSvc.adjustedDataset;
   objectives = computed(() => [...this.objectivesSvc.objectives()]);
 
-  readonly limitItems: InputSignal<{ id: string; recipe: string }[]> = input([
-    { id: 'originium_ore', recipe: 'originium_ore' },
-    { id: 'quartz_sand', recipe: 'quartz_sand' },
-    { id: 'iron_ore', recipe: 'iron_ore' },
-    { id: 'copper_ore', recipe: 'copper_ore-liquid_water' },
-    { id: 'gas_xiranite', recipe: 'gas_xiranite' },
-    { id: 'gas_inert', recipe: 'gas_inert' },
+  readonly limitItems: InputSignal<ResourceSupplyItem[]> = input<
+    ResourceSupplyItem[]
+  >([
+    { id: 'originium_ore', recipe: 'originium_ore', group: 'solid' },
+    { id: 'quartz_sand', recipe: 'quartz_sand', group: 'solid' },
+    { id: 'iron_ore', recipe: 'iron_ore', group: 'solid' },
+    {
+      id: 'copper_ore',
+      recipe: 'copper_ore-liquid_water',
+      group: 'solid',
+    },
+    { id: 'gas_xiranite', recipe: 'gas_xiranite', group: 'gas' },
+    { id: 'gas_inert', recipe: 'gas_inert', group: 'gas' },
   ]);
-  enableLimitItems = signal(false);
   limitItemsNum = signal<Record<string, Rational>>({});
+  ignoreCollectionDevices = signal(false);
+  customInputs = signal<CustomSupplyInput[]>([]);
+  resourceGroups = computed(() => {
+    const labels: Record<ResourceGroup, string> = {
+      solid: '固体',
+      liquid: '液体',
+      gas: '气体',
+    };
+    const groups: ResourceGroup[] = ['solid', 'liquid', 'gas'];
+    return groups
+      .map((id) => ({
+        id,
+        label: labels[id],
+        items: this.limitItems().filter((it) => it.group === id),
+      }))
+      .filter((group) => group.items.length > 0);
+  });
+  customInputAvailableIds = computed(() => {
+    const selectedIds = new Set(this.customInputs().map((it) => it.id));
+    return this.data().itemIds.filter((id) => !selectedIds.has(id));
+  });
 
   readonly limitMachines: InputSignal<string[]> = input(['xiranite_oven_1']);
   enableLimitMachines = signal(false);
@@ -120,6 +163,8 @@ export class ResourceInputComponent {
     limitMachines?: { id: string; num: Rational }[];
     transferSource?: string;
     disableWaterNode?: boolean;
+    ignoreCollectionDevices?: boolean;
+    customInputs?: CustomSupplyInput[];
   }[] = [
     {
       id: 'tundra',
@@ -158,6 +203,7 @@ export class ResourceInputComponent {
       name: '清空设置',
       clearLoc: true,
       disableWaterNode: false,
+      customInputs: [],
     },
   ];
 
@@ -205,28 +251,78 @@ export class ResourceInputComponent {
               this.settings().excludedRecipeIds.has(id),
             ),
           };
-          const limitRecipe2ItemId = Object.fromEntries(this.limitItems().map(it => [it.recipe, it.id]));
+          const limitRecipe2ItemId = Object.fromEntries(
+            this.limitItems().map((it) => [it.recipe, it.id]),
+          );
+          const limitItemIds = new Set(this.limitItems().map((it) => it.id));
           for (const obj of objectives) {
             if (obj.type < ObjectiveType.HideSep) {
               continue;
             }
             switch (obj.type) {
-              case ObjectiveType.ItemLimitOutput: {
+              case ObjectiveType.ItemLimit: {
                 const targetItemId = limitRecipe2ItemId[obj.targetId];
+                if (!targetItemId) break;
                 if (!cfg.limitItems) cfg.limitItems = [];
                 const exist = cfg.limitItems.find(
                   (it) => it.id === targetItemId,
                 );
                 if (exist) {
-                  exist.num = obj.value.mul(rational20).div(rateFactor);
+                  exist.num = obj.value.mul(rational20);
                 } else {
                   cfg.limitItems.push({
                     id: targetItemId,
-                    num: obj.value.mul(rational20).div(rateFactor),
+                    num: obj.value.mul(rational20),
                   });
                 }
                 break;
               }
+              case ObjectiveType.ItemSupply: {
+                // Type 12 used to represent a mining recipe output objective.
+                // Keep old shared links in local-collection mode.
+                if (obj.unit === ObjectiveUnit.Machines) {
+                  const targetItemId = limitRecipe2ItemId[obj.targetId];
+                  if (!targetItemId) break;
+                  if (!cfg.limitItems) cfg.limitItems = [];
+                  const exist = cfg.limitItems.find(
+                    (it) => it.id === targetItemId,
+                  );
+                  if (exist) {
+                    exist.num = obj.value.mul(rational20);
+                  } else {
+                    cfg.limitItems.push({
+                      id: targetItemId,
+                      num: obj.value.mul(rational20),
+                    });
+                  }
+                } else if (limitItemIds.has(obj.targetId)) {
+                  cfg.ignoreCollectionDevices = true;
+                  if (!cfg.limitItems) cfg.limitItems = [];
+                  const exist = cfg.limitItems.find(
+                    (it) => it.id === obj.targetId,
+                  );
+                  const num = obj.value.mul(rateFactor);
+                  if (exist) exist.num = num;
+                  else cfg.limitItems.push({ id: obj.targetId, num });
+                } else {
+                  if (!cfg.customInputs) cfg.customInputs = [];
+                  cfg.customInputs.push({
+                    id: obj.targetId,
+                    num: obj.value.mul(rateFactor),
+                  });
+                }
+                break;
+              }
+              case ObjectiveType.ItemSupplyUnlimited:
+                cfg.ignoreCollectionDevices = true;
+                break;
+              case ObjectiveType.CustomItemSupply:
+                if (!cfg.customInputs) cfg.customInputs = [];
+                cfg.customInputs.push({
+                  id: obj.targetId,
+                  num: obj.value.mul(rateFactor),
+                });
+                break;
               case ObjectiveType.MachineLimit: {
                 if (!cfg.limitMachines) cfg.limitMachines = [];
                 const exist = cfg.limitMachines.find(
@@ -245,7 +341,6 @@ export class ResourceInputComponent {
               }
             }
           }
-          cfg.limitItems?.forEach((it) => (it.num = it.num.mul(rateFactor)));
           this.applyOneKeyConfig(cfg);
           setTimeout(() => {
             this.ready.set(true);
@@ -282,40 +377,81 @@ export class ResourceInputComponent {
             num: limitItemsNum[it.id],
           }));
         });
+        const ignoreCollectionDevices = this.ignoreCollectionDevices();
         untracked(() => {
           const needRemoveObj = this.objectivesSvc
             .baseObjectives()
             .filter(
               (it) =>
                 it.type === ObjectiveType.ItemLimit ||
-                it.type === ObjectiveType.ItemLimitOutput,
+                it.type === ObjectiveType.ItemSupply ||
+                it.type === ObjectiveType.ItemSupplyUnlimited,
             )
             .map((it) => it.id);
           if (needRemoveObj.length > 0)
             this.objectivesSvc.removeMulti(needRemoveObj);
         });
-        if (this.enableLimitItems()) {
+        untracked(() => {
+          const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
+            const miningLimit: ObjectiveBase = {
+              targetId: it.recipe,
+              unit: ObjectiveUnit.Machines,
+              type: ObjectiveType.ItemLimit,
+              value: ignoreCollectionDevices
+                ? rational.zero
+                : it.num.div(rational20),
+            };
+            if (!ignoreCollectionDevices) return [miningLimit];
+            return [
+              miningLimit,
+              {
+                targetId: it.id,
+                unit: ObjectiveUnit.Items,
+                type: ObjectiveType.ItemSupply,
+                value: it.num.mul(rateFactor),
+              },
+            ];
+          });
+          if (ignoreCollectionDevices) {
+            needAdd.push(
+              ...ignoredCollectionRecipeIds.map<ObjectiveBase>((targetId) => ({
+                targetId,
+                unit: ObjectiveUnit.Machines,
+                type: ObjectiveType.ItemLimit,
+                value: rational.zero,
+              })),
+              ...unlimitedSupplyItemIds.map<ObjectiveBase>((targetId) => ({
+                targetId,
+                unit: ObjectiveUnit.Items,
+                type: ObjectiveType.ItemSupplyUnlimited,
+                value: rational.zero,
+              })),
+            );
+          }
+          if (needAdd.length > 0) this.objectivesSvc.addMulti(needAdd);
+        });
+      }
+      {
+        // Custom inputs
+        const customInputs = this.customInputs();
+        untracked(() => {
+          const needRemoveObj = this.objectivesSvc
+            .baseObjectives()
+            .filter((it) => it.type === ObjectiveType.CustomItemSupply)
+            .map((it) => it.id);
+          if (needRemoveObj.length > 0)
+            this.objectivesSvc.removeMulti(needRemoveObj);
+        });
+        if (customInputs.length > 0) {
           untracked(() => {
-            const needAdd = limitItems.flatMap<ObjectiveBase>((it) => {
-              const ret = [
-                {
-                  targetId: it.recipe,
-                  unit: ObjectiveUnit.Machines,
-                  type: ObjectiveType.ItemLimit,
-                  value: rational.zero,
-                },
-              ];
-              if (it.num?.gt(rational.zero)) {
-                ret.push({
-                  targetId: it.recipe,
-                  unit: ObjectiveUnit.Machines,
-                  type: ObjectiveType.ItemLimitOutput,
-                  value: it.num.div(rational20),
-                });
-              }
-              return ret;
-            });
-            if (needAdd.length > 0) this.objectivesSvc.addMulti(needAdd);
+            this.objectivesSvc.addMulti(
+              customInputs.map<ObjectiveBase>((it) => ({
+                targetId: it.id,
+                unit: ObjectiveUnit.Items,
+                type: ObjectiveType.CustomItemSupply,
+                value: it.num.mul(rateFactor),
+              })),
+            );
           });
         }
       }
@@ -389,6 +525,24 @@ export class ResourceInputComponent {
     this.limitMachinesNum.set({ ...this.limitMachinesNum(), [id]: num });
   }
 
+  protected addCustomInput(id: string): void {
+    if (!id || this.customInputs().some((it) => it.id === id)) return;
+    this.customInputs.update((inputs) => [
+      ...inputs,
+      { id, num: rational.zero },
+    ]);
+  }
+
+  protected updateCustomInputNum(id: string, num: Rational): void {
+    this.customInputs.update((inputs) =>
+      inputs.map((it) => (it.id === id ? { ...it, num } : it)),
+    );
+  }
+
+  protected removeCustomInput(id: string): void {
+    this.customInputs.update((inputs) => inputs.filter((it) => it.id !== id));
+  }
+
   applyOneKey(oneKeyId: string): void {
     const cfg = this.oneKeyConfig.find((it) => it.id === oneKeyId);
     if (!cfg) return;
@@ -398,12 +552,14 @@ export class ResourceInputComponent {
   applyOneKeyConfig(cfg: (typeof this.oneKeyConfig)[number]): void {
     // 物品限制更新
     const limitItems = cfg.limitItems;
-    this.enableLimitItems.set(!!limitItems?.length);
     this.limitItemsNum.update((old) => {
       Object.keys(old).forEach((k) => (old[k] = rational.zero));
       limitItems?.forEach((it) => (old[it.id] = it.num));
       return { ...old };
     });
+    if (cfg.customInputs != null) {
+      this.customInputs.set([...cfg.customInputs]);
+    }
     // 机器限制更新
     const limitMachines = cfg.limitMachines;
     this.enableLimitMachines.set(!!limitMachines?.length);
@@ -441,6 +597,9 @@ export class ResourceInputComponent {
       } else {
         this.updateWaterNodeSetting(cfg.disableWaterNode);
       }
+    }
+    if (cfg.ignoreCollectionDevices != null) {
+      this.ignoreCollectionDevices.set(cfg.ignoreCollectionDevices);
     }
   }
 

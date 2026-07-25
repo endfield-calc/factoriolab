@@ -32,6 +32,32 @@ describe('ObjectivesComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should add fixed outputs at an equivalent rate of six items per minute', () => {
+    spyOn(component.objectivesSvc, 'add');
+
+    component.addFixedOutput(ItemId.Coal);
+
+    expect(component.objectivesSvc.add).toHaveBeenCalledWith({
+      targetId: ItemId.Coal,
+      unit: ObjectiveUnit.Items,
+      type: ObjectiveType.Output,
+      value: component.dispRateInfo().value.div(rational(10n)),
+    });
+  });
+
+  it('should add maximize outputs with a default weight of one', () => {
+    spyOn(component.objectivesSvc, 'add');
+
+    component.addMaximizeOutput(ItemId.Coal);
+
+    expect(component.objectivesSvc.add).toHaveBeenCalledWith({
+      targetId: ItemId.Coal,
+      unit: ObjectiveUnit.Items,
+      type: ObjectiveType.Maximize,
+      value: rational.one,
+    });
+  });
+
   describe('getMessages', () => {
     let result: Message[];
 

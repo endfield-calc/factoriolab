@@ -104,28 +104,34 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
   });
 
   matrixResult = computed(() => {
-    const objectives = this.normalizedObjectives();
-    const settings = this.settingsSvc.settings();
-    const data = this.recipesSvc.adjustedDataset();
-    const paused = this.preferencesSvc.paused();
-
-    objectives.forEach((it) => {
+    const objectives = this.normalizedObjectives().flatMap((it) => {
       switch (it.type) {
+        case ObjectiveType.ItemSupply: {
+          // Old links used this numeric type for a recipe output objective.
+          // Ignore those legacy objectives; their paired ItemLimit remains valid.
+          if (it.unit === ObjectiveUnit.Machines) return [];
+          it.type = ObjectiveType.Input;
+          break;
+        }
+        case ObjectiveType.CustomItemSupply: {
+          it.type = ObjectiveType.Input;
+          break;
+        }
         case ObjectiveType.ItemLimit: {
           it.unit = ObjectiveUnit.Machines;
           it.type = ObjectiveType.Limit;
           break;
         }
-        case ObjectiveType.ItemLimitOutput: {
-          it.unit = ObjectiveUnit.Machines;
-          it.type = ObjectiveType.Output;
-          break;
-        }
         case ObjectiveType.MachineLimit: {
           it.machineId = it.targetId;
+          break;
         }
       }
+      return [it];
     });
+    const settings = this.settingsSvc.settings();
+    const data = this.recipesSvc.adjustedDataset();
+    const paused = this.preferencesSvc.paused();
 
     return this.simplexSvc.solve(objectives, settings, data, paused);
   });
@@ -324,6 +330,14 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
               }),
             ),
         );
+
+        const externalInput = s.externalInput?.div(s.items) ?? rational.zero;
+        if (externalInput.nonzero()) {
+          outputs.push({
+            external: true,
+            value: externalInput,
+          });
+        }
 
         const inputs = outputs.reduce((r: Rational, o) => {
           return r.sub(o.value);

@@ -295,6 +295,8 @@ export class RateService {
       }
       step.items = step.items.mul(dispRateInfo.value);
     }
+    if (step.externalInput)
+      step.externalInput = step.externalInput.mul(dispRateInfo.value);
     if (step.surplus) {
       step.surplus = step.surplus.mul(dispRateInfo.value);
     }

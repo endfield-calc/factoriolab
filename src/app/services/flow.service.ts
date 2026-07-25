@@ -39,13 +39,31 @@ export class FlowService {
     suffix: toObservable(this.settingsSvc.displayRateInfo).pipe(
       switchMap((dr) => this.translateSvc.get(dr.suffix)),
     ),
+    externalSupply: this.translateSvc.get('steps.externalSupply'),
     settings: toObservable(this.settingsSvc.settings),
     preferences: toObservable(this.preferencesSvc.state),
     data: toObservable(this.recipesSvc.adjustedDataset),
     themeValues: this.themeSvc.themeValues$,
   }).pipe(
-    map(({ steps, suffix, settings, preferences, data, themeValues }) =>
-      this.buildGraph(steps, suffix, settings, preferences, data, themeValues),
+    map(
+      ({
+        steps,
+        suffix,
+        externalSupply,
+        settings,
+        preferences,
+        data,
+        themeValues,
+      }) =>
+        this.buildGraph(
+          steps,
+          suffix,
+          settings,
+          preferences,
+          data,
+          themeValues,
+          externalSupply,
+        ),
     ),
   );
 
@@ -60,6 +78,7 @@ export class FlowService {
     preferences: PreferencesState,
     data: AdjustedDataset,
     themeValues: ThemeValues,
+    externalSupply = 'External supply',
   ): FlowData {
     const itemPrec = preferences.columns.items.precision;
     const machinePrec = preferences.columns.machines.precision;
@@ -104,6 +123,38 @@ export class FlowService {
           href: data.iconFile,
           ...this.positionProps(icon),
         });
+
+        if (step.externalInput?.nonzero()) {
+          const externalId = `x|${step.itemId}`;
+          flow.nodes.push({
+            id: externalId,
+            name: `${externalSupply}: ${item.name}`,
+            text: `${externalSupply} ${step.externalInput.toString(itemPrec)}${suffix}`,
+            color: icon.color,
+            stepId: step.id,
+            href: data.iconFile,
+            ...this.positionProps(icon),
+          });
+          flow.links.push({
+            source: externalId,
+            target: id,
+            name: item.name,
+            text: this.linkText(
+              step.externalInput,
+              rational.one,
+              LinkValue.Items,
+              preferences.columns,
+              suffix,
+            ),
+            color: icon.color,
+            value: this.linkSize(
+              step.externalInput,
+              rational.one,
+              LinkValue.Items,
+              item.stack,
+            ),
+          });
+        }
 
         if (step.parents) {
           for (const stepId of Object.keys(step.parents)) {
@@ -253,7 +304,10 @@ export class FlowService {
     // Remove unnecessary item nodes
     const removeNodes = new Map<string, string>();
     for (const node of flow.nodes) {
-      if (node.id.startsWith('i')) {
+      const hasExternalSupply = flow.links.some(
+        (link) => link.source.startsWith('x|') && link.target === node.id,
+      );
+      if (node.id.startsWith('i') && !hasExternalSupply) {
         const links = flow.links.filter((l) => l.target === node.id);
         if (links.length === 1) {
           const link = links[0];

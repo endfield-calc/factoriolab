@@ -375,6 +375,7 @@
     "openNewTabTooltip": "Ouvrir dans un nouvel onglet",
     "stepUndoTooltip": "Annuler les modifications de cette étape",
     "sources": "Sources",
+    "externalSupply": "Approvisionnement externe",
     "destinations": "Destinations",
     "depletion": "Epuisement des ressources",
     "inputs": "Entrées",

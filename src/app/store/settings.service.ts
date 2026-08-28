@@ -11,6 +11,13 @@ import {
   toEntities,
 } from '~/helpers';
 import { DEFAULT_MOD } from '~/models/constants';
+import {
+  CUSTOM_ITEM_CATEGORY_ID,
+  CUSTOM_ITEM_CATEGORY_NAME,
+  CustomItemJson,
+  CustomRecipeJson,
+  CustomRecipeValidationContext,
+} from '~/models/custom-recipe';
 import { Beacon } from '~/models/data/beacon';
 import { Belt } from '~/models/data/belt';
 import { CargoWagon } from '~/models/data/cargo-wagon';
@@ -59,6 +66,7 @@ import { ModuleSettings } from '~/models/settings/module-settings';
 import { Settings } from '~/models/settings/settings';
 import { Entities, Optional } from '~/models/utils';
 import { AnalyticsService } from '~/services/analytics.service';
+import { CustomRecipeService } from '~/services/custom-recipe.service';
 import { RecipeService } from '~/services/recipe.service';
 
 import { DatasetsService } from './datasets.service';
@@ -137,6 +145,7 @@ export const initialSettingsState: SettingsState = {
 })
 export class SettingsService extends Store<SettingsState> {
   analyticsSvc = inject(AnalyticsService);
+  customRecipeSvc = inject(CustomRecipeService);
   datasetsSvc = inject(DatasetsService);
   preferencesSvc = inject(PreferencesService);
   recipeSvc = inject(RecipeService);
@@ -160,7 +169,55 @@ export class SettingsService extends Store<SettingsState> {
     const modId = this.modId();
     if (modId == null) return undefined;
     const datasets = this.datasetsSvc.state();
-    return datasets[modId]?.hash;
+    const hash = datasets[modId]?.hash;
+    if (hash == null) return;
+    const customItemIds = this.customRecipeSvc
+      .itemsForMod(modId)
+      .map((item) => item.id);
+    const customRecipeIds = this.customRecipeSvc
+      .recipesForMod(modId)
+      .map((recipe) => recipe.id);
+    return spread(hash, {
+      items: [
+        ...hash.items,
+        ...customItemIds.filter((id) => !hash.items.includes(id)),
+      ],
+      recipes: [
+        ...hash.recipes,
+        ...customRecipeIds.filter((id) => !hash.recipes.includes(id)),
+      ],
+    });
+  });
+
+  customRecipeContext = computed<CustomRecipeValidationContext | undefined>(
+    () => {
+      const mod = this.mod();
+      if (mod == null) return;
+      return {
+        modId: mod.id,
+        recipeIds: new Set(mod.recipes.map((recipe) => recipe.id)),
+        itemIds: new Set(mod.items.map((item) => item.id)),
+        machineIds: new Set(
+          mod.items
+            .filter((item) => item.machine != null)
+            .map((item) => item.id),
+        ),
+        categoryIds: new Set(mod.categories.map((category) => category.id)),
+        locationIds: new Set(
+          (mod.locations ?? []).map((location) => location.id),
+        ),
+      };
+    },
+  );
+
+  customRecipes = computed<CustomRecipeJson[]>(() => {
+    const modId = this.modId();
+    return modId == null ? [] : this.customRecipeSvc.recipesForMod(modId);
+  });
+
+  customItems = computed<CustomItemJson[]>(() => {
+    const modId = this.modId();
+    return modId == null ? [] : this.customRecipeSvc.itemsForMod(modId);
   });
 
   i18n = computed(() => {
@@ -224,6 +281,8 @@ export class SettingsService extends Store<SettingsState> {
       this.i18nWithDefault(),
       this.game(),
       this.defaults(),
+      this.customRecipes(),
+      this.customItems(),
     ),
   );
 
@@ -476,20 +535,41 @@ export class SettingsService extends Store<SettingsState> {
     i18n: Optional<ModI18n>,
     game: Game,
     defaults: Optional<Defaults>,
+    customRecipes: CustomRecipeJson[] = [],
+    customItems: CustomItemJson[] = [],
   ): Dataset {
     // Map out entities with mods
-    const categoryEntities = toEntities(
-      coalesce(mod?.categories, []),
-      environment.debug,
-    );
+    const categories = [...coalesce(mod?.categories, [])];
+    if (
+      customItems.length &&
+      !categories.some((category) => category.id === CUSTOM_ITEM_CATEGORY_ID)
+    )
+      categories.push({
+        id: CUSTOM_ITEM_CATEGORY_ID,
+        name: CUSTOM_ITEM_CATEGORY_NAME,
+        iconText: '?',
+      });
+    const categoryEntities = toEntities(categories, environment.debug);
     const iconFile = `data/${coalesce(mod?.id, DEFAULT_MOD)}/icons.webp`;
     const iconEntities = toEntities(
       coalesce(mod?.icons, []),
       environment.debug,
     );
-    const itemData = toEntities(coalesce(mod?.items, []), environment.debug);
+    const itemData = toEntities<ItemJson>(
+      [
+        ...coalesce(mod?.items, []),
+        ...customItems.map(
+          (item): ItemJson => ({
+            ...item,
+            category: item.category ?? CUSTOM_ITEM_CATEGORY_ID,
+            row: item.row ?? 999,
+          }),
+        ),
+      ],
+      environment.debug,
+    );
     const recipeData = toEntities(
-      coalesce(mod?.recipes, []),
+      [...coalesce(mod?.recipes, []), ...customRecipes],
       environment.debug,
     );
     const limitations = reduceEntities(coalesce(mod?.limitations, {}));
@@ -539,7 +619,7 @@ export class SettingsService extends Store<SettingsState> {
     // Calculate missing implicit recipe icons
     // For recipes with no icon, use icon of first output item
     recipes
-      .filter((r) => !iconEntities[r.id] && !r.icon)
+      .filter((r) => !r.iconBackground && !iconEntities[r.id] && !r.icon)
       .forEach((r) => {
         const firstOutId = Object.keys(r.out)[0];
         const firstOutItem = itemData[firstOutId];

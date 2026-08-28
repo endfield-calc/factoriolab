@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { spread } from '~/helpers';
+import { CustomRecipeJson } from '~/models/custom-recipe';
 import { DisplayRate, displayRateInfo } from '~/models/enum/display-rate';
 import { EnergyType } from '~/models/enum/energy-type';
 import { Game } from '~/models/enum/game';
@@ -371,6 +372,65 @@ describe('SettingsService', () => {
       expect(
         result.recipeEntities[RecipeId.AdvancedOilProcessing].icon,
       ).toEqual(ItemId.HeavyOil);
+    });
+
+    it('should include custom recipes without inferring an image icon', () => {
+      const customRecipe: CustomRecipeJson = {
+        id: 'custom-recipe',
+        name: 'Custom recipe',
+        category: Mocks.mod.categories[0].id,
+        row: 999,
+        time: 2,
+        producers: [Mocks.mod.items.find((item) => item.machine)!.id],
+        in: {},
+        out: { [Mocks.mod.items[0].id]: 1 },
+        iconText: '自',
+        iconBackground: '#3b82f6',
+      };
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [customRecipe],
+      );
+      const recipe = result.recipeEntities[customRecipe.id];
+
+      expect(result.recipeIds).toContain(customRecipe.id);
+      expect(recipe.icon).toBeUndefined();
+      expect(recipe.iconText).toEqual('自');
+      expect(recipe.iconBackground).toEqual('#3b82f6');
+    });
+
+    it('should include custom items in the custom category', () => {
+      const customItem = {
+        id: 'custom-item',
+        name: 'Custom item',
+        iconText: '自',
+        iconBackground: '#22c55e',
+      };
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [],
+        [customItem],
+      );
+
+      expect(result.itemEntities[customItem.id].category).toEqual(
+        '__custom_items',
+      );
+      expect(result.categoryEntities['__custom_items'].name).toEqual(
+        '自定义物品',
+      );
+      expect(result.categoryItemRows['__custom_items']).toEqual([
+        [customItem.id],
+      ]);
     });
 
     it('should handle data not loaded yet', () => {

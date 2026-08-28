@@ -54,6 +54,7 @@ import {
   SettingsState,
 } from '../store/settings.service';
 import { CompressionService } from './compression.service';
+import { CustomRecipeService } from './custom-recipe.service';
 import { DataService } from './data.service';
 import { MigrationService } from './migration.service';
 import { ZipService } from './zip.service';
@@ -82,6 +83,7 @@ export interface PartialState {
 export class RouterService {
   router = inject(Router);
   compressionSvc = inject(CompressionService);
+  customRecipeSvc = inject(CustomRecipeService);
   dataSvc = inject(DataService);
   itemsSvc = inject(ItemsService);
   machinesSvc = inject(MachinesService);
@@ -337,7 +339,24 @@ export class RouterService {
       this.dataSvc.requestData(modId ?? DEFAULT_MOD),
     );
 
-    const hash = isBare ? undefined : modHash;
+    const customItemIds = this.customRecipeSvc
+      .itemsForMod(modId ?? DEFAULT_MOD)
+      .map((item) => item.id);
+    const customRecipeIds = this.customRecipeSvc
+      .recipesForMod(modId ?? DEFAULT_MOD)
+      .map((recipe) => recipe.id);
+    const hash = isBare
+      ? undefined
+      : spread(modHash, {
+          items: [
+            ...modHash.items,
+            ...customItemIds.filter((id) => !modHash.items.includes(id)),
+          ],
+          recipes: [
+            ...modHash.recipes,
+            ...customRecipeIds.filter((id) => !modHash.recipes.includes(id)),
+          ],
+        });
     const ms = this.unzipModules(params, hash);
     const bs = this.unzipBeacons(params, ms, hash);
     const state: PartialState = {};

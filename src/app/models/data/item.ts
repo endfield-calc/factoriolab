@@ -28,6 +28,8 @@ export interface ItemJson {
   icon?: string;
   /** Used to add extra text to an already defined icon */
   iconText?: string;
+  /** Used to render a character icon with a custom background color */
+  iconBackground?: string;
 }
 
 export interface Item {
@@ -49,6 +51,8 @@ export interface Item {
   icon?: string;
   /** Used to add extra text to an already defined icon */
   iconText?: string;
+  /** Used to render a character icon with a custom background color */
+  iconBackground?: string;
   quality?: Quality;
 }
 
@@ -70,5 +74,6 @@ export function parseItem(json: ItemJson): Item {
     technology: json.technology,
     icon: json.icon,
     iconText: json.iconText,
+    iconBackground: json.iconBackground,
   };
 }

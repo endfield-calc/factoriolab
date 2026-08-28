@@ -1,0 +1,178 @@
+import {
+  CUSTOM_RECIPE_FORMAT,
+  CUSTOM_RECIPE_VERSION,
+  CustomRecipeValidationContext,
+} from '~/models/custom-recipe';
+
+import { CustomRecipeService } from './custom-recipe.service';
+import { CustomRecipeValidatorService } from './custom-recipe-validator.service';
+
+describe('CustomRecipeService', () => {
+  const context: CustomRecipeValidationContext = {
+    modId: 'aef',
+    recipeIds: new Set(['existing-recipe']),
+    itemIds: new Set(['input-item', 'output-item']),
+    machineIds: new Set(['machine-item']),
+    categoryIds: new Set(['material']),
+    locationIds: new Set(['tundra']),
+  };
+
+  function document(id = 'custom-recipe'): Record<string, unknown> {
+    return {
+      format: CUSTOM_RECIPE_FORMAT,
+      version: CUSTOM_RECIPE_VERSION,
+      modId: 'aef',
+      recipes: [
+        {
+          id,
+          name: 'Custom recipe',
+          category: 'material',
+          row: 999,
+          time: 2,
+          producers: ['machine-item'],
+          in: { 'input-item': 1 },
+          out: { 'output-item': 2 },
+          iconText: '自',
+        },
+      ],
+    };
+  }
+
+  function createService(): CustomRecipeService {
+    return new CustomRecipeService(new CustomRecipeValidatorService());
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('imports and replaces a source by file name', () => {
+    const service = createService();
+
+    const first = service.importDocument('recipes.json', document(), context);
+    const replacement = service.importDocument(
+      'recipes.json',
+      document('replacement-recipe'),
+      context,
+    );
+
+    expect(first.valid).toBeTrue();
+    expect(replacement.valid).toBeTrue();
+    expect(service.sourcesForMod('aef').length).toEqual(1);
+    expect(service.recipesForMod('aef').map((recipe) => recipe.id)).toEqual([
+      'replacement-recipe',
+    ]);
+  });
+
+  it('rejects recipe ids already provided by another source', () => {
+    const service = createService();
+
+    expect(
+      service.importDocument('one.json', document(), context).valid,
+    ).toBeTrue();
+    const result = service.importDocument('two.json', document(), context);
+
+    expect(result.valid).toBeFalse();
+    expect(result.issues.map((issue) => issue.path)).toEqual(['recipes[0].id']);
+  });
+
+  it('persists sources and removes them independently', () => {
+    const service = createService();
+    const result = service.importDocument('recipes.json', document(), context);
+    const sourceId = result.source?.id;
+
+    expect(sourceId).toBeDefined();
+    expect(localStorage.getItem('customRecipes')).toEqual(
+      JSON.stringify(service.state()),
+    );
+
+    const restored = createService();
+    expect(restored.recipesForMod('aef').map((recipe) => recipe.id)).toEqual([
+      'custom-recipe',
+    ]);
+
+    restored.removeSource('aef', sourceId ?? '');
+    expect(restored.sourcesForMod('aef')).toEqual([]);
+    expect(localStorage.getItem('customRecipes')).toBeNull();
+  });
+
+  it('imports multiple JSON files and reports malformed JSON', async () => {
+    const service = createService();
+    const results = await service.importFiles(
+      [
+        new File([JSON.stringify(document())], 'recipes.json'),
+        new File(['{'], 'broken.json'),
+      ],
+      context,
+    );
+
+    expect(results.map((result) => result.valid)).toEqual([true, false]);
+    expect(results[1].issues[0].message).toContain('Invalid JSON');
+  });
+
+  it('creates placeholder items for unknown recipe references', () => {
+    const service = createService();
+    const source = document();
+    const recipe = (source['recipes'] as Record<string, unknown>[])[0];
+    const result = service.importDocument(
+      'recipes.json',
+      {
+        ...source,
+        recipes: [
+          {
+            ...recipe,
+            in: { 'new-material': 1 },
+          },
+        ],
+      },
+      context,
+    );
+
+    expect(result.valid).toBeTrue();
+    expect(service.itemsForMod('aef')).toEqual([
+      jasmine.objectContaining({
+        id: 'new-material',
+        name: 'new-material',
+        iconText: 'n',
+      }),
+    ]);
+  });
+
+  it('allows a later source to define a generated item', () => {
+    const service = createService();
+    const source = document();
+    const recipe = (source['recipes'] as Record<string, unknown>[])[0];
+    const placeholder = service.importDocument(
+      'recipes.json',
+      {
+        ...source,
+        recipes: [
+          {
+            ...recipe,
+            in: { 'new-material': 1 },
+          },
+        ],
+      },
+      context,
+    );
+    const defined = service.importDocument(
+      'items.json',
+      {
+        format: CUSTOM_RECIPE_FORMAT,
+        version: CUSTOM_RECIPE_VERSION,
+        modId: 'aef',
+        items: [{ id: 'new-material', name: 'New material', iconText: '材' }],
+        recipes: [],
+      },
+      context,
+    );
+
+    expect(placeholder.valid).toBeTrue();
+    expect(defined.valid).toBeTrue();
+    expect(
+      service.itemsForMod('aef').find((item) => item.id === 'new-material'),
+    ).toEqual(
+      jasmine.objectContaining({ name: 'New material', iconText: '材' }),
+    );
+  });
+});

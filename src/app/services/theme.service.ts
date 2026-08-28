@@ -3,6 +3,7 @@ import { effect, inject, Injectable } from '@angular/core';
 import { ReplaySubject } from 'rxjs';
 
 import { fnPropsNotNullish } from '~/helpers';
+import { customRecipeTextColor } from '~/helpers/custom-recipe-icon';
 import { IconJson } from '~/models/data/icon';
 import { Theme } from '~/models/enum/theme';
 import { getStoredValue } from '~/models/stored-signal';
@@ -96,12 +97,28 @@ export class ThemeService {
       data.recipeIds
         .map((r) => data.recipeEntities[r])
         .filter(fnPropsNotNullish('icon'))
+        .filter((recipe) => !recipe.iconBackground)
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {
           const icon = data.iconEntities[recipe.icon];
           const selector = this.escapeSelector(recipe.id);
           css += `.${selector}.recipe::before { background-image: url("${data.iconFile}"); background-position: ${icon.position}; } `;
           css += this.appendLightStyle(icon, selector, '.recipe');
+        });
+      data.recipeIds
+        .map((r) => data.recipeEntities[r])
+        .filter(
+          (recipe) => recipe.iconBackground != null && recipe.iconText != null,
+        )
+        .filter((recipe) => !data.recipeQIds.has(recipe.id))
+        .forEach((recipe) => {
+          const selector = this.escapeSelector(recipe.id);
+          const text = JSON.stringify(recipe.iconText) ?? '""';
+          const background = recipe.iconBackground ?? '#64748b';
+          const textColor = customRecipeTextColor(background);
+          const iconText = recipe.iconText ?? '';
+          const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
+          css += `.${selector}.recipe::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
         });
       data.categoryIds
         .map((c) => data.categoryEntities[c])
@@ -123,6 +140,20 @@ export class ThemeService {
         });
       data.itemIds
         .map((i) => data.itemEntities[i])
+        .filter((item) => item.iconBackground != null && item.iconText != null)
+        .filter((item) => !data.itemQIds.has(item.id))
+        .forEach((item) => {
+          const selector = this.escapeSelector(item.id);
+          const text = JSON.stringify(item.iconText) ?? '""';
+          const background = item.iconBackground ?? '#64748b';
+          const textColor = customRecipeTextColor(background);
+          const iconText = item.iconText ?? '';
+          const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
+          css += `.${selector}.item::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
+        });
+      data.itemIds
+        .map((i) => data.itemEntities[i])
+        .filter((item) => !item.iconBackground)
         .filter(fnPropsNotNullish('iconText'))
         .filter((item) => !data.itemQIds.has(item.id))
         .forEach((item) => {
@@ -131,6 +162,7 @@ export class ThemeService {
         });
       data.recipeIds
         .map((i) => data.recipeEntities[i])
+        .filter((recipe) => !recipe.iconBackground)
         .filter(fnPropsNotNullish('iconText'))
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {

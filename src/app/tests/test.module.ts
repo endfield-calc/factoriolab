@@ -12,6 +12,7 @@ import {
 } from '~/services/translate.service';
 import { TestTranslateService } from '~/services/translate.service.spec';
 import { DatasetsService } from '~/store/datasets.service';
+import { PreferencesService } from '~/store/preferences.service';
 import { SettingsService } from '~/store/settings.service';
 
 import { Mocks } from '.';
@@ -22,10 +23,23 @@ import { Mocks } from '.';
     { provide: DEFAULT_LANGUAGE, useValue: 'en' },
     { provide: TranslateService, useClass: TestTranslateService },
     {
+      provide: PreferencesService,
+      useFactory: (): PreferencesService => {
+        const preferencesSvc = new PreferencesService();
+        preferencesSvc.apply({ language: Language.English });
+        return preferencesSvc;
+      },
+    },
+    {
       provide: DatasetsService,
       useFactory: (): DatasetsService => {
         const datasetsSvc = new DatasetsService();
         datasetsSvc.loadData('1.1', Mocks.modData, Mocks.modHash);
+        datasetsSvc.loadI18n('1.1', Language.English, {
+          categories: {},
+          items: {},
+          recipes: {},
+        });
         datasetsSvc.loadI18n('1.1', Language.Chinese, Mocks.modI18n);
         return datasetsSvc;
       },

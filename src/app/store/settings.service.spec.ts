@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { spread } from '~/helpers';
+import { CustomRecipeJson } from '~/models/custom-recipe';
 import { DisplayRate, displayRateInfo } from '~/models/enum/display-rate';
 import { EnergyType } from '~/models/enum/energy-type';
 import { Game } from '~/models/enum/game';
@@ -373,6 +374,95 @@ describe('SettingsService', () => {
       ).toEqual(ItemId.HeavyOil);
     });
 
+    it('should include custom recipes without inferring an image icon', () => {
+      const customRecipe: CustomRecipeJson = {
+        id: 'custom-recipe',
+        name: 'Custom recipe',
+        category: Mocks.mod.categories[0].id,
+        row: 999,
+        time: 2,
+        producers: [Mocks.mod.items.find((item) => item.machine)!.id],
+        in: {},
+        out: { [Mocks.mod.items[0].id]: 1 },
+        iconText: '自',
+        iconBackground: '#3b82f6',
+      };
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [customRecipe],
+      );
+      const recipe = result.recipeEntities[customRecipe.id];
+
+      expect(result.recipeIds).toContain(customRecipe.id);
+      expect(recipe.icon).toBeUndefined();
+      expect(recipe.iconText).toEqual('自');
+      expect(recipe.iconBackground).toEqual('#3b82f6');
+    });
+
+    it('should include custom items in the custom category', () => {
+      const customItem = {
+        id: 'v_custom_item',
+        name: 'Custom item',
+        type: 'solid' as const,
+        iconText: '自',
+        iconBackground: '#22c55e',
+      };
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [],
+        [customItem],
+      );
+
+      expect(result.itemEntities[customItem.id].category).toEqual(
+        '__custom_items',
+      );
+      expect(result.categoryEntities['__custom_items'].name).toEqual(
+        '自定义物品',
+      );
+      expect(result.categoryItemRows['__custom_items']).toEqual([
+        [customItem.id],
+      ]);
+      expect(result.itemEntities[customItem.id].stack?.toString()).toEqual(
+        '50',
+      );
+    });
+
+    it('should map custom item types to the transport model', () => {
+      const customItems = [
+        { id: 'v_solid', name: 'Solid', type: 'solid' as const },
+        { id: 'v_liquid', name: 'Liquid', type: 'liquid' as const },
+        { id: 'v_gas', name: 'Gas', type: 'gas' as const },
+        { id: 'legacy-solid', name: 'Legacy solid', stack: 80 },
+      ];
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [],
+        customItems,
+      );
+
+      expect(result.itemEntities['v_solid'].stack?.toString()).toEqual('50');
+      expect(result.itemEntities['v_liquid'].stack).toBeUndefined();
+      expect(result.itemEntities['v_gas'].stack).toBeUndefined();
+      expect(result.itemEntities['legacy-solid'].stack?.toString()).toEqual(
+        '80',
+      );
+    });
+
     it('should handle data not loaded yet', () => {
       spyOn(service, 'mod').and.returnValue(undefined);
       const result = service.dataset();
@@ -438,6 +528,26 @@ describe('SettingsService', () => {
   });
 
   describe('settings', () => {
+    it('excludes all custom recipes when the global switch is disabled', () => {
+      const customRecipe = {
+        id: 'custom-recipe',
+      } as CustomRecipeJson;
+      spyOn(service.customRecipeSvc, 'recipesForMod').and.returnValue([
+        customRecipe,
+      ]);
+      spyOn(service.customRecipeSvc, 'excludedRecipeIdsForMod').and.returnValue(
+        new Set(),
+      );
+      spyOn(service, 'state').and.returnValue(
+        spread(Mocks.settingsStateInitial, { customRecipesEnabled: false }),
+      );
+
+      const result = service.settings();
+
+      expect(result.customRecipesEnabled).toBeFalse();
+      expect(result.excludedRecipeIds.has('custom-recipe')).toBeTrue();
+    });
+
     it('should overwrite defaults when specified', () => {
       const value: any = {
         modId: '1.1',

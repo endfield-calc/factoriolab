@@ -72,7 +72,7 @@ if (environment.production) {
     // 2. 前缀匹配（如 'zh-CN' 匹配 'zh'）
     initialPreferencesState.language = langPrefix;
   }
-  // 都不匹配时保持默认English
+  // 都不匹配时保持默认中文
 }
 
 @Injectable({

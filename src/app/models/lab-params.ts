@@ -47,6 +47,8 @@ export interface LabParams {
   ist?: string;
   /** `Set` Excluded recipes */
   rex?: string;
+  /** `boolean` Custom recipes enabled */
+  rca?: string;
   /** `Set` Checked recipes */
   rch?: string;
   /** V10 Legacy excluded recipes */

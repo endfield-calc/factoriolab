@@ -1,0 +1,33 @@
+{
+  "format": "endfieldlab-custom-recipes",
+  "version": 1,
+  "modId": "aef",
+  "items": [
+    {
+      "id": "v_custom_material",
+      "name": "自定义材料",
+      "type": "solid",
+      "iconText": "材",
+      "iconBackground": "#22c55e"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "custom-example",
+      "name": "自定义配方",
+      "category": "material",
+      "row": 999,
+      "time": 2,
+      "producers": ["phase_trans_1"],
+      "in": {
+        "gas_copper": 1,
+        "v_custom_material": 1
+      },
+      "out": {
+        "liquid_copper": 2
+      },
+      "iconText": "自",
+      "iconBackground": "#3b82f6"
+    }
+  ]
+}

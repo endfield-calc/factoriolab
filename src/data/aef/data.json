@@ -1,6 +1,6 @@
 {
   "version": {
-    "arknights-endfield": "v1.4"
+    "arknights-endfield": "v1.5.3"
   },
   "icons": [
     {
@@ -24,1174 +24,1254 @@
       "color": "#777570"
     },
     {
-      "id": "activity",
+      "id": "activity_copper_poly_cmpt",
       "position": "-256px 0px",
-      "color": "#c9cec6"
+      "color": "#b99656"
+    },
+    {
+      "id": "activity_copper_poly_gas",
+      "position": "-320px 0px",
+      "color": "#c8a567"
+    },
+    {
+      "id": "activity_copper_poly_tool",
+      "position": "-384px 0px",
+      "color": "#4d7951"
+    },
+    {
+      "id": "activity_copper_poly",
+      "position": "-448px 0px",
+      "color": "#9ea486"
+    },
+    {
+      "id": "activity_copper_xiranite_tool",
+      "position": "-512px 0px",
+      "color": "#7c8282"
+    },
+    {
+      "id": "activity_xiranite_box",
+      "position": "-576px 0px",
+      "color": "#84b982"
+    },
+    {
+      "id": "activity_xiranite_enr_box",
+      "position": "-640px 0px",
+      "color": "#75a16d"
+    },
+    {
+      "id": "activity_xiranite_enr_lung",
+      "position": "-704px 0px",
+      "color": "#769f7a"
+    },
+    {
+      "id": "activity_xiranite_enr_nugget",
+      "position": "-768px 0px",
+      "color": "#49aa41"
+    },
+    {
+      "id": "activity_xiranite_lung",
+      "position": "-832px 0px",
+      "color": "#7ca98e"
+    },
+    {
+      "id": "activity_xiranite_nugget",
+      "position": "-896px 0px",
+      "color": "#3d9a31"
+    },
+    {
+      "id": "activity",
+      "position": "-960px 0px",
+      "color": "#cacec5"
     },
     {
       "id": "carbon_enr_powder",
-      "position": "-320px 0px",
-      "color": "#48494b"
+      "position": "0px -64px",
+      "color": "#494a49"
     },
     {
       "id": "carbon_enr",
-      "position": "-384px 0px",
-      "color": "#494951"
+      "position": "-64px -64px",
+      "color": "#494952"
     },
     {
       "id": "carbon_mtl",
-      "position": "-448px 0px",
-      "color": "#3e404a"
+      "position": "-128px -64px",
+      "color": "#3f4049"
     },
     {
       "id": "carbon_powder",
-      "position": "-512px 0px",
-      "color": "#4c4e4e"
+      "position": "-192px -64px",
+      "color": "#4e4d4c"
     },
     {
       "id": "copper_bottle",
-      "position": "-576px 0px",
-      "color": "#6c494a"
+      "position": "-256px -64px",
+      "color": "#6c4a4b"
     },
     {
       "id": "copper_cmpt",
-      "position": "-640px 0px",
-      "color": "#7d5149"
+      "position": "-320px -64px",
+      "color": "#7d514a"
     },
     {
       "id": "copper_enr_bottle",
-      "position": "-704px 0px",
-      "color": "#926b6e"
+      "position": "-384px -64px",
+      "color": "#906b6d"
     },
     {
       "id": "copper_enr_cmpt",
-      "position": "-768px 0px",
-      "color": "#b98271"
+      "position": "-448px -64px",
+      "color": "#ba8071"
     },
     {
       "id": "copper_enr",
-      "position": "-832px 0px",
-      "color": "#d89186"
+      "position": "-512px -64px",
+      "color": "#d99287"
     },
     {
       "id": "copper_enr2_cmpt",
-      "position": "-896px 0px",
-      "color": "#ad7261"
+      "position": "-576px -64px",
+      "color": "#ac7162"
     },
     {
       "id": "copper_enr2",
-      "position": "-960px 0px",
-      "color": "#e6a289"
+      "position": "-640px -64px",
+      "color": "#e4a388"
     },
     {
       "id": "copper_jar",
-      "position": "0px -64px",
-      "color": "#816665"
+      "position": "-704px -64px",
+      "color": "#826767"
     },
     {
       "id": "copper_nugget",
-      "position": "-64px -64px",
-      "color": "#893932"
+      "position": "-768px -64px",
+      "color": "#893a31"
     },
     {
       "id": "copper_ore",
-      "position": "-128px -64px",
-      "color": "#ab6861"
+      "position": "-832px -64px",
+      "color": "#aa6962"
     },
     {
       "id": "copper_powder",
-      "position": "-192px -64px",
-      "color": "#a25d50"
+      "position": "-896px -64px",
+      "color": "#a05d51"
     },
     {
       "id": "crystal_enr_powder",
-      "position": "-256px -64px",
-      "color": "#9c663b"
+      "position": "-960px -64px",
+      "color": "#9e643b"
     },
     {
       "id": "crystal_enr",
-      "position": "-320px -64px",
-      "color": "#756936"
+      "position": "0px -128px",
+      "color": "#756b35"
     },
     {
       "id": "crystal_powder",
-      "position": "-384px -64px",
-      "color": "#6c431d"
+      "position": "-64px -128px",
+      "color": "#6c411e"
     },
     {
       "id": "crystal_shell",
-      "position": "-448px -64px",
-      "color": "#967441"
+      "position": "-128px -128px",
+      "color": "#977741"
     },
     {
       "id": "filter_core",
-      "position": "-512px -64px",
-      "color": "#717273"
+      "position": "-192px -128px",
+      "color": "#737072"
     },
     {
       "id": "gas_acid",
-      "position": "-576px -64px",
-      "color": "#d8c59a"
+      "position": "-256px -128px",
+      "color": "#d9c69a"
     },
     {
       "id": "gas_copper_enr",
-      "position": "-640px -64px",
-      "color": "#d8bfb8"
+      "position": "-320px -128px",
+      "color": "#d9bdba"
     },
     {
       "id": "gas_copper_enr2",
-      "position": "-704px -64px",
-      "color": "#d6a78f"
+      "position": "-384px -128px",
+      "color": "#d7a78d"
     },
     {
       "id": "gas_copper",
-      "position": "-768px -64px",
-      "color": "#d99e95"
+      "position": "-448px -128px",
+      "color": "#da9f94"
     },
     {
       "id": "gas_inert",
-      "position": "-832px -64px",
-      "color": "#6aa5b6"
+      "position": "-512px -128px",
+      "color": "#69a6b4"
     },
     {
       "id": "gas_water",
-      "position": "-896px -64px",
-      "color": "#b4b9c1"
+      "position": "-576px -128px",
+      "color": "#b5b9c2"
     },
     {
       "id": "gas_xiranite_enr",
-      "position": "-960px -64px",
-      "color": "#bac88f"
+      "position": "-640px -128px",
+      "color": "#b8ca8c"
     },
     {
       "id": "gas_xiranite",
-      "position": "0px -128px",
-      "color": "#a9c3a1"
+      "position": "-704px -128px",
+      "color": "#aac2a1"
     },
     {
       "id": "glass_bottle",
-      "position": "-64px -128px",
-      "color": "#5c4d7e"
+      "position": "-768px -128px",
+      "color": "#5c4c7c"
     },
     {
       "id": "glass_cmpt",
-      "position": "-128px -128px",
-      "color": "#9397a1"
+      "position": "-832px -128px",
+      "color": "#9195a0"
     },
     {
       "id": "glass_enr_bottle",
-      "position": "-192px -128px",
-      "color": "#77748e"
+      "position": "-896px -128px",
+      "color": "#75778d"
     },
     {
       "id": "glass_enr_cmpt",
-      "position": "-256px -128px",
-      "color": "#95929a"
+      "position": "-960px -128px",
+      "color": "#969299"
     },
     {
       "id": "iron_bottle",
-      "position": "-320px -128px",
-      "color": "#39597a"
+      "position": "0px -192px",
+      "color": "#395b79"
     },
     {
       "id": "iron_cmpt",
-      "position": "-384px -128px",
-      "color": "#6f83a9"
+      "position": "-64px -192px",
+      "color": "#6c81aa"
     },
     {
       "id": "iron_enr_bottle",
-      "position": "-448px -128px",
-      "color": "#5a6f80"
+      "position": "-128px -192px",
+      "color": "#5a6c81"
     },
     {
       "id": "iron_enr_cmpt",
-      "position": "-512px -128px",
-      "color": "#5d768c"
+      "position": "-192px -192px",
+      "color": "#5f758d"
     },
     {
       "id": "iron_enr_powder",
-      "position": "-576px -128px",
-      "color": "#597d96"
+      "position": "-256px -192px",
+      "color": "#597e94"
     },
     {
       "id": "iron_enr",
-      "position": "-640px -128px",
-      "color": "#54829c"
+      "position": "-320px -192px",
+      "color": "#56809e"
     },
     {
       "id": "iron_nugget",
-      "position": "-704px -128px",
-      "color": "#628295"
+      "position": "-384px -192px",
+      "color": "#628095"
     },
     {
       "id": "iron_ore",
-      "position": "-768px -128px",
-      "color": "#58708c"
+      "position": "-448px -192px",
+      "color": "#5a718d"
     },
     {
       "id": "iron_powder",
-      "position": "-832px -128px",
-      "color": "#355168"
+      "position": "-512px -192px",
+      "color": "#35526b"
     },
     {
       "id": "liquid_acid",
-      "position": "-896px -128px",
-      "color": "#b99f65"
+      "position": "-576px -192px",
+      "color": "#ba9d66"
     },
     {
       "id": "liquid_copper_enr",
-      "position": "-960px -128px",
-      "color": "#eaaea1"
+      "position": "-640px -192px",
+      "color": "#e9aca1"
     },
     {
       "id": "liquid_copper",
-      "position": "0px -192px",
-      "color": "#b94b45"
+      "position": "-704px -192px",
+      "color": "#ba4946"
     },
     {
       "id": "liquid_plant_grass_1",
-      "position": "-64px -192px",
-      "color": "#e4f5e2"
+      "position": "-768px -192px",
+      "color": "#e5f6e2"
     },
     {
       "id": "liquid_plant_grass_2",
-      "position": "-128px -192px",
-      "color": "#c2ec7d"
+      "position": "-832px -192px",
+      "color": "#c1ed7e"
     },
     {
       "id": "liquid_sewage",
-      "position": "-192px -192px",
-      "color": "#636161"
+      "position": "-896px -192px",
+      "color": "#616161"
     },
     {
       "id": "liquid_water",
-      "position": "-256px -192px",
-      "color": "#59e6f8"
+      "position": "-960px -192px",
+      "color": "#5ae7f8"
     },
     {
       "id": "liquid_xiranite_enr",
-      "position": "-320px -192px",
-      "color": "#567852"
+      "position": "0px -256px",
+      "color": "#557a51"
     },
     {
       "id": "liquid_xiranite_lowpoly",
-      "position": "-384px -192px",
-      "color": "#265841"
+      "position": "-64px -256px",
+      "color": "#245842"
     },
     {
       "id": "liquid_xiranite_poly",
-      "position": "-448px -192px",
-      "color": "#3a6541"
+      "position": "-128px -256px",
+      "color": "#3b6541"
     },
     {
       "id": "liquid_xiranite",
-      "position": "-512px -192px",
-      "color": "#457a67"
+      "position": "-192px -256px",
+      "color": "#467867"
     },
     {
       "id": "originium_enr_powder",
-      "position": "-576px -192px",
-      "color": "#76512e"
+      "position": "-256px -256px",
+      "color": "#75522c"
     },
     {
       "id": "originium_ore",
-      "position": "-640px -192px",
-      "color": "#815c3d"
+      "position": "-320px -256px",
+      "color": "#815d3e"
     },
     {
       "id": "originium_powder",
-      "position": "-704px -192px",
-      "color": "#4e3d2a"
+      "position": "-384px -256px",
+      "color": "#4f3c29"
     },
     {
       "id": "plant_bbflower_1",
-      "position": "-768px -192px",
-      "color": "#615e3e"
+      "position": "-448px -256px",
+      "color": "#625c3f"
     },
     {
       "id": "plant_bbflower_powder_1",
-      "position": "-832px -192px",
-      "color": "#7d7536"
+      "position": "-512px -256px",
+      "color": "#7c7637"
     },
     {
       "id": "plant_bbflower_seed_1",
-      "position": "-896px -192px",
-      "color": "#ada169"
+      "position": "-576px -256px",
+      "color": "#afa16a"
     },
     {
       "id": "plant_grass_1",
-      "position": "-960px -192px",
-      "color": "#7a8760"
+      "position": "-640px -256px",
+      "color": "#798661"
     },
     {
       "id": "plant_grass_2",
-      "position": "0px -256px",
-      "color": "#5d5e49"
+      "position": "-704px -256px",
+      "color": "#5e5c49"
     },
     {
       "id": "plant_grass_powder_1",
-      "position": "-64px -256px",
-      "color": "#b8bca2"
+      "position": "-768px -256px",
+      "color": "#b9bea0"
     },
     {
       "id": "plant_grass_powder_2",
-      "position": "-128px -256px",
-      "color": "#b39179"
+      "position": "-832px -256px",
+      "color": "#b3917b"
     },
     {
       "id": "plant_grass_seed_1",
-      "position": "-192px -256px",
-      "color": "#969c77"
+      "position": "-896px -256px",
+      "color": "#959c75"
     },
     {
       "id": "plant_grass_seed_2",
-      "position": "-256px -256px",
-      "color": "#9d7e68"
+      "position": "-960px -256px",
+      "color": "#9e7f6b"
     },
     {
       "id": "plant_moss_1",
-      "position": "-320px -256px",
-      "color": "#615926"
+      "position": "0px -320px",
+      "color": "#615b24"
     },
     {
       "id": "plant_moss_2",
-      "position": "-384px -256px",
-      "color": "#67681d"
+      "position": "-64px -320px",
+      "color": "#66691e"
     },
     {
       "id": "plant_moss_3",
-      "position": "-448px -256px",
-      "color": "#92742b"
+      "position": "-128px -320px",
+      "color": "#927529"
     },
     {
       "id": "plant_moss_enr_powder_1",
-      "position": "-512px -256px",
-      "color": "#886263"
+      "position": "-192px -320px",
+      "color": "#8a6363"
     },
     {
       "id": "plant_moss_enr_powder_2",
-      "position": "-576px -256px",
-      "color": "#93855a"
+      "position": "-256px -320px",
+      "color": "#91865b"
     },
     {
       "id": "plant_moss_powder_1",
-      "position": "-640px -256px",
-      "color": "#ad6e65"
+      "position": "-320px -320px",
+      "color": "#ac6d66"
     },
     {
       "id": "plant_moss_powder_2",
-      "position": "-704px -256px",
-      "color": "#d6c075"
+      "position": "-384px -320px",
+      "color": "#d4c175"
     },
     {
       "id": "plant_moss_powder_3",
-      "position": "-768px -256px",
-      "color": "#9d7208"
+      "position": "-448px -320px",
+      "color": "#9e700a"
     },
     {
       "id": "plant_moss_seed_1",
-      "position": "-832px -256px",
-      "color": "#9f6147"
+      "position": "-512px -320px",
+      "color": "#9c6246"
     },
     {
       "id": "plant_moss_seed_2",
-      "position": "-896px -256px",
-      "color": "#918029"
+      "position": "-576px -320px",
+      "color": "#918028"
     },
     {
       "id": "plant_moss_seed_3",
-      "position": "-960px -256px",
-      "color": "#866b13"
+      "position": "-640px -320px",
+      "color": "#846911"
     },
     {
       "id": "quartz_enr_powder",
-      "position": "0px -320px",
-      "color": "#b1afc0"
+      "position": "-704px -320px",
+      "color": "#b0adc3"
     },
     {
       "id": "quartz_enr",
-      "position": "-64px -320px",
-      "color": "#9a99a6"
+      "position": "-768px -320px",
+      "color": "#999aa6"
     },
     {
       "id": "quartz_glass",
-      "position": "-128px -320px",
-      "color": "#725d91"
+      "position": "-832px -320px",
+      "color": "#715d93"
     },
     {
       "id": "quartz_powder",
-      "position": "-192px -320px",
-      "color": "#62537b"
+      "position": "-896px -320px",
+      "color": "#615079"
     },
     {
       "id": "quartz_sand",
-      "position": "-256px -320px",
-      "color": "#5d4a6f"
+      "position": "-960px -320px",
+      "color": "#5e4a6c"
     },
     {
       "id": "xiranite_enr_powder",
-      "position": "-320px -320px",
-      "color": "#34613a"
+      "position": "0px -384px",
+      "color": "#356339"
     },
     {
       "id": "xiranite_poly",
-      "position": "-384px -320px",
-      "color": "#38413d"
+      "position": "-64px -384px",
+      "color": "#39413e"
     },
     {
       "id": "xiranite_powder",
-      "position": "-448px -320px",
-      "color": "#325046"
+      "position": "-128px -384px",
+      "color": "#305244"
     },
     {
       "id": "bottled_food_1",
-      "position": "-512px -320px",
-      "color": "#7c867e"
+      "position": "-192px -384px",
+      "color": "#7e867c"
     },
     {
       "id": "bottled_food_2",
-      "position": "-576px -320px",
-      "color": "#858c68"
+      "position": "-256px -384px",
+      "color": "#858e69"
     },
     {
       "id": "bottled_food_3",
-      "position": "-640px -320px",
-      "color": "#808981"
+      "position": "-320px -384px",
+      "color": "#818982"
     },
     {
       "id": "bottled_food_4",
-      "position": "-704px -320px",
-      "color": "#506d73"
+      "position": "-384px -384px",
+      "color": "#536e71"
     },
     {
       "id": "bottled_food_5",
-      "position": "-768px -320px",
-      "color": "#59866a"
+      "position": "-448px -384px",
+      "color": "#5a8568"
     },
     {
       "id": "bottled_rec_hp_1",
-      "position": "-832px -320px",
-      "color": "#b19597"
+      "position": "-512px -384px",
+      "color": "#b19695"
     },
     {
       "id": "bottled_rec_hp_2",
-      "position": "-896px -320px",
-      "color": "#bda0a1"
+      "position": "-576px -384px",
+      "color": "#bea1a2"
     },
     {
       "id": "bottled_rec_hp_3",
-      "position": "-960px -320px",
-      "color": "#b6969c"
+      "position": "-640px -384px",
+      "color": "#b6959d"
     },
     {
       "id": "bottled_rec_hp_4",
-      "position": "0px -384px",
-      "color": "#a59791"
+      "position": "-704px -384px",
+      "color": "#a69591"
     },
     {
       "id": "bottled_rec_hp_5",
-      "position": "-64px -384px",
-      "color": "#9d8176"
+      "position": "-768px -384px",
+      "color": "#9d8277"
     },
     {
       "id": "equip_script_1",
-      "position": "-128px -384px",
-      "color": "#a0a2b0"
+      "position": "-832px -384px",
+      "color": "#a0a1b2"
     },
     {
       "id": "equip_script_2",
-      "position": "-192px -384px",
-      "color": "#8a9abc"
+      "position": "-896px -384px",
+      "color": "#8998bc"
     },
     {
       "id": "equip_script_3",
-      "position": "-256px -384px",
-      "color": "#a1a6b1"
+      "position": "-960px -384px",
+      "color": "#a2a7b1"
     },
     {
       "id": "equip_script_4_1",
-      "position": "-320px -384px",
-      "color": "#71413e"
+      "position": "0px -448px",
+      "color": "#71423c"
     },
     {
       "id": "equip_script_4_2",
-      "position": "-384px -384px",
-      "color": "#b3766d"
+      "position": "-64px -448px",
+      "color": "#b3756e"
     },
     {
       "id": "equip_script_4_3",
-      "position": "-448px -384px",
-      "color": "#be7d5c"
+      "position": "-128px -448px",
+      "color": "#bc7d5d"
     },
     {
       "id": "equip_script_4",
-      "position": "-512px -384px",
-      "color": "#5d5645"
+      "position": "-192px -448px",
+      "color": "#5e5744"
     },
     {
       "id": "product",
-      "position": "-576px -384px",
-      "color": "#967d7a"
+      "position": "-256px -448px",
+      "color": "#957e78"
     },
     {
       "id": "proc_battery_1",
-      "position": "-640px -384px",
-      "color": "#9e9d99"
+      "position": "-320px -448px",
+      "color": "#9f9c9a"
     },
     {
       "id": "proc_battery_2",
-      "position": "-704px -384px",
-      "color": "#9e999d"
+      "position": "-384px -448px",
+      "color": "#9f9b9d"
     },
     {
       "id": "proc_battery_3",
-      "position": "-768px -384px",
-      "color": "#9d9a9f"
+      "position": "-448px -448px",
+      "color": "#9e999e"
     },
     {
       "id": "proc_battery_4",
-      "position": "-832px -384px",
-      "color": "#688972"
+      "position": "-512px -448px",
+      "color": "#698a70"
     },
     {
       "id": "proc_battery_5",
-      "position": "-896px -384px",
-      "color": "#5d6854"
+      "position": "-576px -448px",
+      "color": "#5d6956"
     },
     {
       "id": "proc_bomb_1",
-      "position": "-960px -384px",
-      "color": "#8e7f79"
+      "position": "-640px -448px",
+      "color": "#8c7f79"
     },
     {
       "id": "jinlong_coupon",
-      "position": "0px -448px",
-      "color": "#8da2a0"
+      "position": "-704px -448px",
+      "color": "#8fa1a0"
     },
     {
       "id": "tundra_coupon",
-      "position": "-64px -448px",
-      "color": "#c7c9b6"
+      "position": "-768px -448px",
+      "color": "#c5cab7"
     },
     {
       "id": "jinlong",
-      "position": "-128px -448px",
-      "color": "#7c9995"
+      "position": "-832px -448px",
+      "color": "#7f9997"
     },
     {
       "id": "tundra",
-      "position": "-192px -448px",
-      "color": "#9eab78"
+      "position": "-896px -448px",
+      "color": "#9caa79"
     },
     {
       "id": "__domain_transfer",
-      "position": "-256px -448px",
-      "color": "#a1927c"
+      "position": "-960px -448px",
+      "color": "#a2927d"
     },
     {
       "id": "cmpt_mc_1",
-      "position": "-320px -448px",
-      "color": "#878482"
+      "position": "0px -512px",
+      "color": "#858683"
     },
     {
       "id": "dismantler_1",
-      "position": "-384px -448px",
-      "color": "#9b9b8d"
+      "position": "-64px -512px",
+      "color": "#9b998e"
     },
     {
       "id": "filling_pd_mc_1",
-      "position": "-448px -448px",
-      "color": "#828182"
+      "position": "-128px -512px",
+      "color": "#838081"
     },
     {
       "id": "furnance_1",
-      "position": "-512px -448px",
-      "color": "#a99e98"
+      "position": "-192px -512px",
+      "color": "#aa9c99"
     },
     {
       "id": "gas_pump_1",
-      "position": "-576px -448px",
-      "color": "#a5a5a2"
+      "position": "-256px -512px",
+      "color": "#a5a6a0"
     },
     {
       "id": "gas_reactor_1",
-      "position": "-640px -448px",
-      "color": "#909789"
+      "position": "-320px -512px",
+      "color": "#92948a"
     },
     {
       "id": "grinder_1",
-      "position": "-704px -448px",
-      "color": "#939598"
+      "position": "-384px -512px",
+      "color": "#929598"
     },
     {
       "id": "liquid_clean_gate",
-      "position": "-768px -448px",
-      "color": "#999a9b"
+      "position": "-448px -512px",
+      "color": "#989899"
     },
     {
       "id": "liquid_cleaner_1",
-      "position": "-832px -448px",
-      "color": "#7b7d7f"
+      "position": "-512px -512px",
+      "color": "#797c7d"
     },
     {
       "id": "liquid_purifier_1",
-      "position": "-896px -448px",
-      "color": "#8c9291"
+      "position": "-576px -512px",
+      "color": "#8f9192"
     },
     {
       "id": "miner_2",
-      "position": "-960px -448px",
-      "color": "#868685"
+      "position": "-640px -512px",
+      "color": "#868585"
     },
     {
       "id": "miner_3",
-      "position": "0px -512px",
-      "color": "#918a8b"
+      "position": "-704px -512px",
+      "color": "#938988"
     },
     {
       "id": "miner_4",
-      "position": "-64px -512px",
-      "color": "#8f8d8a"
+      "position": "-768px -512px",
+      "color": "#8d8e8a"
     },
     {
       "id": "mix_pool_1",
-      "position": "-128px -512px",
-      "color": "#8b888d"
+      "position": "-832px -512px",
+      "color": "#88898f"
     },
     {
       "id": "mix_pool_2",
-      "position": "-192px -512px",
-      "color": "#868479"
+      "position": "-896px -512px",
+      "color": "#858579"
     },
     {
       "id": "phase_trans_1",
-      "position": "-256px -512px",
-      "color": "#919690"
+      "position": "-960px -512px",
+      "color": "#929492"
     },
     {
       "id": "phase_trans_2",
-      "position": "-320px -512px",
-      "color": "#7e7c7e"
+      "position": "0px -576px",
+      "color": "#7c7e7e"
     },
     {
       "id": "planter_1",
-      "position": "-384px -512px",
-      "color": "#7e817c"
+      "position": "-64px -576px",
+      "color": "#7c817e"
     },
     {
       "id": "power_sta_1",
-      "position": "-448px -512px",
-      "color": "#909ca1"
+      "position": "-128px -576px",
+      "color": "#919da1"
     },
     {
       "id": "pump_1",
-      "position": "-512px -512px",
-      "color": "#8d8c85"
+      "position": "-192px -576px",
+      "color": "#8e8f86"
     },
     {
       "id": "pump_2",
-      "position": "-576px -512px",
-      "color": "#8b817a"
+      "position": "-256px -576px",
+      "color": "#898279"
     },
     {
       "id": "seedcol_1",
-      "position": "-640px -512px",
-      "color": "#767d75"
+      "position": "-320px -576px",
+      "color": "#747d76"
     },
     {
       "id": "shaper_1",
-      "position": "-704px -512px",
-      "color": "#939190"
+      "position": "-384px -576px",
+      "color": "#919291"
     },
     {
       "id": "thickener_1",
-      "position": "-768px -512px",
-      "color": "#898a8a"
+      "position": "-448px -576px",
+      "color": "#8a8a89"
     },
     {
       "id": "tools_asm_mc_1",
-      "position": "-832px -512px",
-      "color": "#84898b"
+      "position": "-512px -576px",
+      "color": "#858a89"
     },
     {
       "id": "winder_1",
-      "position": "-896px -512px",
-      "color": "#959591"
+      "position": "-576px -576px",
+      "color": "#959592"
     },
     {
       "id": "xiranite_oven_1",
-      "position": "-960px -512px",
-      "color": "#a2a49a"
+      "position": "-640px -576px",
+      "color": "#a3a499"
+    },
+    {
+      "id": "InN_zV0Bo",
+      "position": "-704px -576px",
+      "color": "#a2a9a4"
+    },
+    {
+      "id": "mokYxBo_D",
+      "position": "-768px -576px",
+      "color": "#a89a73"
+    },
+    {
+      "id": "hOwR0Jem2",
+      "position": "-832px -576px",
+      "color": "#8d957e"
     },
     {
       "id": "aNhoXNVVI",
-      "position": "0px -576px",
-      "color": "#484a4a"
+      "position": "-896px -576px",
+      "color": "#484b49"
     },
     {
       "id": "Z2IEDQBer",
-      "position": "-64px -576px",
-      "color": "#605152"
+      "position": "-960px -576px",
+      "color": "#625051"
     },
     {
       "id": "xFsOz8GXn",
-      "position": "-128px -576px",
-      "color": "#615d51"
+      "position": "0px -640px",
+      "color": "#615e53"
     },
     {
       "id": "xFMoNt_0-",
-      "position": "-192px -576px",
-      "color": "#4e534e"
+      "position": "-64px -640px",
+      "color": "#4c514e"
     },
     {
       "id": "tF0KCVMNv",
-      "position": "-256px -576px",
-      "color": "#454649"
+      "position": "-128px -640px",
+      "color": "#444748"
     },
     {
       "id": "lIwML7hJA",
-      "position": "-320px -576px",
-      "color": "#484542"
+      "position": "-192px -640px",
+      "color": "#4a4743"
     },
     {
       "id": "wSTIJRUt2",
-      "position": "-384px -576px",
+      "position": "-256px -640px",
       "color": "#494e41"
     },
     {
       "id": "8f-XntBAi",
-      "position": "-448px -576px",
-      "color": "#5a5245"
+      "position": "-320px -640px",
+      "color": "#5a5146"
     },
     {
       "id": "bfVwkel-1",
-      "position": "-512px -576px",
-      "color": "#494e4d"
+      "position": "-384px -640px",
+      "color": "#484d4d"
     },
     {
       "id": "UK3cw32jH",
-      "position": "-576px -576px",
-      "color": "#79796e"
+      "position": "-448px -640px",
+      "color": "#7a786f"
     },
     {
       "id": "EyVhscDqY",
-      "position": "-640px -576px",
-      "color": "#77645d"
+      "position": "-512px -640px",
+      "color": "#75675d"
     },
     {
       "id": "sJ497s081",
-      "position": "-704px -576px",
-      "color": "#725954"
+      "position": "-576px -640px",
+      "color": "#705956"
     },
     {
       "id": "EkYDieNFa",
-      "position": "-768px -576px",
-      "color": "#847e5b"
+      "position": "-640px -640px",
+      "color": "#877f59"
     },
     {
       "id": "-5xQnlo_H",
-      "position": "-832px -576px",
-      "color": "#655546"
+      "position": "-704px -640px",
+      "color": "#675446"
     },
     {
       "id": "g6eZC2ckR",
-      "position": "-896px -576px",
-      "color": "#948b81"
+      "position": "-768px -640px",
+      "color": "#958a82"
     },
     {
       "id": "QU3-0LfcJ",
-      "position": "-960px -576px",
-      "color": "#8a8459"
+      "position": "-832px -640px",
+      "color": "#89855a"
     },
     {
       "id": "1x5_iFxrl",
-      "position": "0px -640px",
-      "color": "#bd928b"
+      "position": "-896px -640px",
+      "color": "#bf9389"
     },
     {
       "id": "grKjDDYLU",
-      "position": "-64px -640px",
-      "color": "#c89986"
+      "position": "-960px -640px",
+      "color": "#ca9b84"
     },
     {
       "id": "TIRc8l-Ov",
-      "position": "-128px -640px",
-      "color": "#8c6358"
+      "position": "0px -704px",
+      "color": "#8d6258"
     },
     {
       "id": "pSkp8UtzR",
-      "position": "-192px -640px",
-      "color": "#a28383"
+      "position": "-64px -704px",
+      "color": "#a18182"
     },
     {
       "id": "-PLwC7rav",
-      "position": "-256px -640px",
-      "color": "#996235"
+      "position": "-128px -704px",
+      "color": "#986234"
     },
     {
       "id": "-IDibphrv",
-      "position": "-320px -640px",
-      "color": "#9e653a"
+      "position": "-192px -704px",
+      "color": "#9e6639"
     },
     {
       "id": "b06HlUyW9",
-      "position": "-384px -640px",
-      "color": "#78552d"
+      "position": "-256px -704px",
+      "color": "#78542c"
     },
     {
       "id": "j2R9Yyfk7",
-      "position": "-448px -640px",
-      "color": "#664023"
+      "position": "-320px -704px",
+      "color": "#654120"
     },
     {
       "id": "tVuwQqAnt",
-      "position": "-512px -640px",
+      "position": "-384px -704px",
       "color": "#8d6f3d"
     },
     {
       "id": "OIsG_0_gQ",
-      "position": "-576px -640px",
-      "color": "#8c6d42"
+      "position": "-448px -704px",
+      "color": "#8e6e41"
     },
     {
       "id": "BTDiP1-WN",
-      "position": "-640px -640px",
-      "color": "#c7bba1"
+      "position": "-512px -704px",
+      "color": "#c5bba1"
     },
     {
       "id": "LESvbc0cp",
-      "position": "-704px -640px",
-      "color": "#bbbcca"
+      "position": "-576px -704px",
+      "color": "#b8bdca"
     },
     {
       "id": "3nEkFN4v3",
-      "position": "-768px -640px",
-      "color": "#c1b6b2"
+      "position": "-640px -704px",
+      "color": "#c2b4b1"
     },
     {
       "id": "F26jLFsSM",
-      "position": "-832px -640px",
-      "color": "#bdadaa"
+      "position": "-704px -704px",
+      "color": "#bfada9"
     },
     {
       "id": "ynGeJZzIH",
-      "position": "-896px -640px",
-      "color": "#dfa779"
+      "position": "-768px -704px",
+      "color": "#dda678"
     },
     {
       "id": "ugzGGeljq",
-      "position": "-960px -640px",
-      "color": "#be9f8c"
+      "position": "-832px -704px",
+      "color": "#be9c8e"
     },
     {
       "id": "6cFT0YI85",
-      "position": "0px -704px",
-      "color": "#bda298"
+      "position": "-896px -704px",
+      "color": "#bea099"
     },
     {
       "id": "MzFhhwu9q",
-      "position": "-64px -704px",
-      "color": "#b59992"
+      "position": "-960px -704px",
+      "color": "#b69991"
     },
     {
       "id": "ngnifkfVC",
-      "position": "-128px -704px",
-      "color": "#acb2b0"
+      "position": "0px -768px",
+      "color": "#adb2b3"
     },
     {
       "id": "4N6PISlNQ",
-      "position": "-192px -704px",
-      "color": "#a2c6ad"
+      "position": "-64px -768px",
+      "color": "#a2c5ae"
     },
     {
       "id": "08QnmafUO",
-      "position": "-256px -704px",
-      "color": "#b0b894"
+      "position": "-128px -768px",
+      "color": "#b1b895"
     },
     {
       "id": "4uTTruYze",
-      "position": "-320px -704px",
-      "color": "#a9b58c"
+      "position": "-192px -768px",
+      "color": "#aab58e"
     },
     {
       "id": "VM4dhho2c",
-      "position": "-384px -704px",
-      "color": "#a5b7a1"
+      "position": "-256px -768px",
+      "color": "#a5b6a2"
     },
     {
       "id": "eAPSNjYPO",
-      "position": "-448px -704px",
-      "color": "#9eae99"
+      "position": "-320px -768px",
+      "color": "#9dad9a"
     },
     {
       "id": "7aWLncdum",
-      "position": "-512px -704px",
-      "color": "#799399"
+      "position": "-384px -768px",
+      "color": "#799199"
     },
     {
       "id": "zSG48A1GN",
-      "position": "-576px -704px",
-      "color": "#6c8d7a"
+      "position": "-448px -768px",
+      "color": "#6e8f78"
     },
     {
       "id": "YP_fqgPjK",
-      "position": "-640px -704px",
-      "color": "#668099"
+      "position": "-512px -768px",
+      "color": "#658299"
     },
     {
       "id": "rCPd1tfS9",
-      "position": "-704px -704px",
-      "color": "#5f7d91"
+      "position": "-576px -768px",
+      "color": "#5c7c92"
+    },
+    {
+      "id": "nvQgypPJO",
+      "position": "-640px -768px",
+      "color": "#93a59d"
+    },
+    {
+      "id": "DxQbkoaDm",
+      "position": "-704px -768px",
+      "color": "#92a4a3"
     },
     {
       "id": "TqWZWVpY3",
-      "position": "-768px -704px",
+      "position": "-768px -768px",
       "color": "#899e9c"
     },
     {
       "id": "qA-EMB1fs",
-      "position": "-832px -704px",
-      "color": "#8a9c9a"
+      "position": "-832px -768px",
+      "color": "#899d9a"
     },
     {
       "id": "Sjdqh9m2X",
-      "position": "-896px -704px",
-      "color": "#96a09d"
+      "position": "-896px -768px",
+      "color": "#97a09d"
     },
     {
       "id": "VqJ8q3DQp",
-      "position": "-960px -704px",
-      "color": "#969d9d"
+      "position": "-960px -768px",
+      "color": "#969c9f"
     },
     {
       "id": "fftXa_L3O",
-      "position": "0px -768px",
-      "color": "#919697"
+      "position": "0px -832px",
+      "color": "#909697"
     },
     {
       "id": "nL57eW-eu",
-      "position": "-64px -768px",
-      "color": "#a29d9a"
+      "position": "-64px -832px",
+      "color": "#a39d9a"
     },
     {
       "id": "lpxYv1B-a",
-      "position": "-128px -768px",
-      "color": "#a19895"
+      "position": "-128px -832px",
+      "color": "#a19a95"
     },
     {
       "id": "zbLLpntwq",
-      "position": "-192px -768px",
-      "color": "#8e999a"
+      "position": "-192px -832px",
+      "color": "#8e9899"
     },
     {
       "id": "vI10u14eE",
-      "position": "-256px -768px",
-      "color": "#8d9e9e"
+      "position": "-256px -832px",
+      "color": "#8d9e9c"
     },
     {
       "id": "e13iR_HPS",
-      "position": "-320px -768px",
-      "color": "#89999a"
+      "position": "-320px -832px",
+      "color": "#8b999b"
     },
     {
       "id": "TQnSxeYps",
-      "position": "-384px -768px",
-      "color": "#859991"
+      "position": "-384px -832px",
+      "color": "#859891"
     },
     {
       "id": "MN3RgE0QK",
-      "position": "-448px -768px",
-      "color": "#869b94"
+      "position": "-448px -832px",
+      "color": "#869b97"
     },
     {
       "id": "n1F3_H0xn",
-      "position": "-512px -768px",
-      "color": "#9d9281"
+      "position": "-512px -832px",
+      "color": "#9d9380"
     },
     {
       "id": "gMs3wV6Mc",
-      "position": "-576px -768px",
-      "color": "#78787e"
+      "position": "-576px -832px",
+      "color": "#7a797e"
     },
     {
       "id": "LIU8uRWtP",
-      "position": "-640px -768px",
-      "color": "#777979"
+      "position": "-640px -832px",
+      "color": "#767979"
     },
     {
       "id": "MZA0Aj7xM",
-      "position": "-704px -768px",
-      "color": "#767c7b"
+      "position": "-704px -832px",
+      "color": "#767f7b"
     },
     {
       "id": "21JXqNHcO",
-      "position": "-768px -768px",
-      "color": "#b19e94"
+      "position": "-768px -832px",
+      "color": "#b19e97"
     },
     {
       "id": "eNbizvaDC",
-      "position": "-832px -768px",
-      "color": "#a17d7a"
+      "position": "-832px -832px",
+      "color": "#a07d7a"
     },
     {
       "id": "RSg0ZawgK",
-      "position": "-896px -768px",
-      "color": "#777475"
+      "position": "-896px -832px",
+      "color": "#747575"
     },
     {
       "id": "tnHAWZomJ",
-      "position": "-960px -768px",
-      "color": "#7eb0bb"
+      "position": "-960px -832px",
+      "color": "#7eb0ba"
     },
     {
       "id": "eVII5GgNz",
-      "position": "0px -832px",
-      "color": "#748677"
+      "position": "0px -896px",
+      "color": "#748676"
     },
     {
       "id": "CZoh2vwOX",
-      "position": "-64px -832px",
-      "color": "#6b796a"
+      "position": "-64px -896px",
+      "color": "#697868"
     },
     {
       "id": "qUq983O5F",
-      "position": "-128px -832px",
-      "color": "#717e75"
+      "position": "-128px -896px",
+      "color": "#707d75"
     },
     {
       "id": "KsAbKo-kL",
-      "position": "-192px -832px",
-      "color": "#7a8881"
+      "position": "-192px -896px",
+      "color": "#788983"
     },
     {
       "id": "vzHASkcwW",
-      "position": "-256px -832px",
-      "color": "#919694"
+      "position": "-256px -896px",
+      "color": "#919696"
     },
     {
       "id": "DCZK3_Hum",
-      "position": "-320px -832px",
-      "color": "#9ba1a7"
+      "position": "-320px -896px",
+      "color": "#99a1a7"
     },
     {
       "id": "PZWgDQOzb",
-      "position": "-384px -832px",
+      "position": "-384px -896px",
       "color": "#99a0a5"
     },
     {
       "id": "YvRkgjni9",
-      "position": "-448px -832px",
-      "color": "#9aa3a7"
+      "position": "-448px -896px",
+      "color": "#9aa2a4"
     },
     {
       "id": "u_hgkzqGZ",
-      "position": "-512px -832px",
-      "color": "#919f9c"
+      "position": "-512px -896px",
+      "color": "#919f9d"
     },
     {
       "id": "uE4Xzd-Nt",
-      "position": "-576px -832px",
-      "color": "#8e999a"
+      "position": "-576px -896px",
+      "color": "#8d999a"
     },
     {
       "id": "5ReMJ-axh",
-      "position": "-640px -832px",
-      "color": "#6e5989"
+      "position": "-640px -896px",
+      "color": "#6c5a88"
     },
     {
       "id": "rNYknIToK",
-      "position": "-704px -832px",
-      "color": "#6a5787"
+      "position": "-704px -896px",
+      "color": "#6a5684"
     },
     {
       "id": "D87_y4QHp",
-      "position": "-768px -832px",
-      "color": "#bdbeaf"
+      "position": "-768px -896px",
+      "color": "#bdbead"
     },
     {
       "id": "LChCprdXR",
-      "position": "-832px -832px",
-      "color": "#bcbda6"
+      "position": "-832px -896px",
+      "color": "#bdbda6"
     },
     {
       "id": "lG5pYr6_F",
-      "position": "-896px -832px",
-      "color": "#b4b9a9"
+      "position": "-896px -896px",
+      "color": "#b7baa9"
     },
     {
       "id": "NXpQnBpZJ",
-      "position": "-960px -832px",
-      "color": "#c6c0b2"
+      "position": "-960px -896px",
+      "color": "#c6c1b0"
     },
     {
       "id": "B33Y1xtAN",
-      "position": "0px -896px",
-      "color": "#c8c2b6"
+      "position": "0px -960px",
+      "color": "#c9c2b5"
     },
     {
       "id": "Wy_OqDd79",
-      "position": "-64px -896px",
-      "color": "#c1b8ac"
+      "position": "-64px -960px",
+      "color": "#c2b9ae"
     },
     {
       "id": "FRZxbTuQP",
-      "position": "-128px -896px",
-      "color": "#bcb9a1"
+      "position": "-128px -960px",
+      "color": "#beb9a1"
     },
     {
       "id": "fpxipfxQ_",
-      "position": "-192px -896px",
-      "color": "#b4b9ab"
+      "position": "-192px -960px",
+      "color": "#b6b9a9"
     },
     {
       "id": "WqhucJQl5",
-      "position": "-256px -896px",
-      "color": "#bdc2b6"
+      "position": "-256px -960px",
+      "color": "#bdc2b7"
     },
     {
       "id": "0pLWUXtXS",
-      "position": "-320px -896px",
-      "color": "#b9bdb7"
+      "position": "-320px -960px",
+      "color": "#b8bdb6"
     },
     {
       "id": "PaI2yXcVi",
-      "position": "-384px -896px",
-      "color": "#b5b8b1"
+      "position": "-384px -960px",
+      "color": "#b5b8b0"
     },
     {
       "id": "be5cdHAfy",
-      "position": "-448px -896px",
-      "color": "#bec2ac"
+      "position": "-448px -960px",
+      "color": "#bec3ad"
     },
     {
       "id": "HsYpeEhwA",
-      "position": "-512px -896px",
-      "color": "#bdc3b1"
+      "position": "-512px -960px",
+      "color": "#bdc2b0"
     },
     {
       "id": "tcIJgshsc",
-      "position": "-576px -896px",
-      "color": "#bdc1ae"
+      "position": "-576px -960px",
+      "color": "#bfc1ae"
     },
     {
       "id": "o7qlvjIpX",
-      "position": "-640px -896px",
-      "color": "#586e58"
+      "position": "-640px -960px",
+      "color": "#586d59"
     },
     {
       "id": "5FnJGJYHD",
-      "position": "-704px -896px",
-      "color": "#3a5248"
+      "position": "-704px -960px",
+      "color": "#3a5348"
     },
     {
       "id": "tk28kQJ4M",
-      "position": "-768px -896px",
-      "color": "#357a91"
+      "position": "-768px -960px",
+      "color": "#357a90"
     },
     {
       "id": "D9uBSezBN",
-      "position": "-832px -896px",
-      "color": "#5d6962"
+      "position": "-832px -960px",
+      "color": "#5f6862"
     }
   ],
   "categories": [
@@ -2114,6 +2194,94 @@
       "category": "settlement",
       "row": 0,
       "icon": "jinlong_coupon"
+    },
+    {
+      "id": "activity_xiranite_lung",
+      "name": "息壤龙泡泡",
+      "stack": 50,
+      "category": "activity",
+      "row": 0,
+      "icon": "activity_xiranite_lung"
+    },
+    {
+      "id": "activity_xiranite_enr_lung",
+      "name": "重息壤龙泡泡",
+      "stack": 50,
+      "category": "activity",
+      "row": 0,
+      "icon": "activity_xiranite_enr_lung"
+    },
+    {
+      "id": "activity_xiranite_nugget",
+      "name": "实验息壤块",
+      "stack": 50,
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_xiranite_nugget"
+    },
+    {
+      "id": "activity_xiranite_box",
+      "name": "实验龙泡泡外壳",
+      "stack": 50,
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_xiranite_box"
+    },
+    {
+      "id": "activity_copper_xiranite_tool",
+      "name": "实验铜骨骼",
+      "stack": 50,
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_copper_xiranite_tool"
+    },
+    {
+      "id": "activity_copper_poly_gas",
+      "name": "实验息壤铜气",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly_gas"
+    },
+    {
+      "id": "activity_copper_poly",
+      "name": "实验息壤铜锭",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly"
+    },
+    {
+      "id": "activity_copper_poly_cmpt",
+      "name": "实验息壤铜零件",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly_cmpt"
+    },
+    {
+      "id": "activity_xiranite_enr_nugget",
+      "name": "实验重息壤块",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_xiranite_enr_nugget"
+    },
+    {
+      "id": "activity_copper_poly_tool",
+      "name": "实验息壤铜骨骼",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly_tool"
+    },
+    {
+      "id": "activity_xiranite_enr_box",
+      "name": "实验龙泡泡重壳",
+      "stack": 50,
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_xiranite_enr_box"
     },
     {
       "id": "domain_key_tundra",
@@ -5876,6 +6044,48 @@
       "icon": "nL57eW-eu"
     },
     {
+      "time": 10,
+      "in": {
+        "copper_enr2_cmpt": 1
+      },
+      "out": {
+        "jinlong_coupon": 70
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "cost": 30,
+      "id": "jinlong_coupon-copper_enr2_cmpt",
+      "name": "武陵调度券(灼铜零件)",
+      "category": "settlement",
+      "row": 1,
+      "icon": "lpxYv1B-a"
+    },
+    {
+      "time": 2,
+      "in": {
+        "filter_core": 1
+      },
+      "out": {
+        "jinlong_coupon": 1
+      },
+      "producers": [
+        "settlement-jinlong_coupon"
+      ],
+      "flags": [
+        "hideProducer"
+      ],
+      "cost": 150,
+      "id": "jinlong_coupon-filter_core",
+      "name": "武陵调度券(分离芯)",
+      "category": "settlement",
+      "row": 1,
+      "icon": "zbLLpntwq"
+    },
+    {
       "time": 2,
       "in": {
         "xiranite_powder": 1
@@ -6046,10 +6256,10 @@
     {
       "time": 10,
       "in": {
-        "copper_enr2_cmpt": 1
+        "activity_xiranite_lung": 1
       },
       "out": {
-        "jinlong_coupon": 70
+        "jinlong_coupon": 100
       },
       "producers": [
         "settlement-jinlong_coupon"
@@ -6058,19 +6268,19 @@
         "hideProducer"
       ],
       "cost": 30,
-      "id": "jinlong_coupon-copper_enr2_cmpt",
-      "name": "武陵调度券(灼铜零件)",
+      "id": "jinlong_coupon-activity_xiranite_lung",
+      "name": "武陵调度券(息壤龙泡泡)",
       "category": "settlement",
-      "row": 999,
-      "icon": "lpxYv1B-a"
+      "row": 4,
+      "icon": "DxQbkoaDm"
     },
     {
-      "time": 2,
+      "time": 10,
       "in": {
-        "filter_core": 1
+        "activity_xiranite_enr_lung": 1
       },
       "out": {
-        "jinlong_coupon": 1
+        "jinlong_coupon": 200
       },
       "producers": [
         "settlement-jinlong_coupon"
@@ -6078,12 +6288,227 @@
       "flags": [
         "hideProducer"
       ],
-      "cost": 150,
-      "id": "jinlong_coupon-filter_core",
-      "name": "武陵调度券(分离芯)",
+      "cost": 30,
+      "id": "jinlong_coupon-activity_xiranite_enr_lung",
+      "name": "武陵调度券(重息壤龙泡泡)",
       "category": "settlement",
-      "row": 999,
-      "icon": "zbLLpntwq"
+      "row": 4,
+      "icon": "nvQgypPJO"
+    },
+    {
+      "time": 10,
+      "in": {
+        "activity_xiranite_box": 5,
+        "activity_copper_xiranite_tool": 5
+      },
+      "out": {
+        "activity_xiranite_lung": 1
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "id": "activity_xiranite_lung",
+      "name": "息壤龙泡泡",
+      "category": "activity",
+      "row": 0,
+      "icon": "activity_xiranite_lung"
+    },
+    {
+      "time": 10,
+      "in": {
+        "activity_xiranite_enr_box": 1,
+        "activity_copper_poly_tool": 1
+      },
+      "out": {
+        "activity_xiranite_enr_lung": 1
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "id": "activity_xiranite_enr_lung",
+      "name": "重息壤龙泡泡",
+      "category": "activity",
+      "row": 0,
+      "icon": "activity_xiranite_enr_lung"
+    },
+    {
+      "time": 2,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "activity_xiranite_nugget": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "activity_xiranite_nugget",
+      "name": "实验息壤块",
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_xiranite_nugget"
+    },
+    {
+      "time": 2,
+      "in": {
+        "activity_xiranite_nugget": 1
+      },
+      "out": {
+        "activity_xiranite_box": 1
+      },
+      "producers": [
+        "shaper_1"
+      ],
+      "id": "activity_xiranite_box",
+      "name": "实验龙泡泡外壳",
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_xiranite_box"
+    },
+    {
+      "time": 2,
+      "in": {
+        "copper_cmpt": 4,
+        "xiranite_powder": 1
+      },
+      "out": {
+        "activity_copper_xiranite_tool": 1
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "id": "activity_copper_xiranite_tool",
+      "name": "实验铜骨骼",
+      "category": "activity",
+      "row": 1,
+      "icon": "activity_copper_xiranite_tool"
+    },
+    {
+      "time": 2,
+      "in": {
+        "gas_copper": 2,
+        "gas_xiranite": 1
+      },
+      "out": {
+        "activity_copper_poly_gas": 1
+      },
+      "producers": [
+        "gas_reactor_1"
+      ],
+      "id": "activity_copper_poly_gas",
+      "name": "实验息壤铜气",
+      "category": "activity",
+      "row": 2,
+      "icon": "InN_zV0Bo"
+    },
+    {
+      "time": 2,
+      "in": {
+        "activity_copper_poly": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "activity_copper_poly_gas": 1
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "id": "phase_trans_2-activity_copper_poly_gas",
+      "name": "实验息壤铜气(固气转化机)",
+      "category": "activity",
+      "row": 2,
+      "icon": "mokYxBo_D"
+    },
+    {
+      "time": 2,
+      "in": {
+        "activity_copper_poly_gas": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "activity_copper_poly": 1
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "id": "phase_trans_2-activity_copper_poly",
+      "name": "实验息壤铜锭(固气转化机)",
+      "category": "activity",
+      "row": 2,
+      "icon": "hOwR0Jem2"
+    },
+    {
+      "time": 10,
+      "in": {
+        "activity_copper_poly": 5
+      },
+      "out": {
+        "activity_copper_poly_cmpt": 1
+      },
+      "producers": [
+        "cmpt_mc_1"
+      ],
+      "id": "activity_copper_poly_cmpt",
+      "name": "实验息壤铜零件",
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly_cmpt"
+    },
+    {
+      "time": 10,
+      "in": {
+        "xiranite_enr_powder": 1
+      },
+      "out": {
+        "activity_xiranite_enr_nugget": 1
+      },
+      "producers": [
+        "furnance_1"
+      ],
+      "id": "activity_xiranite_enr_nugget",
+      "name": "实验重息壤块",
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_xiranite_enr_nugget"
+    },
+    {
+      "time": 10,
+      "in": {
+        "activity_copper_poly_cmpt": 1,
+        "xiranite_enr_powder": 1
+      },
+      "out": {
+        "activity_copper_poly_tool": 1
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "id": "activity_copper_poly_tool",
+      "name": "实验息壤铜骨骼",
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_copper_poly_tool"
+    },
+    {
+      "time": 10,
+      "in": {
+        "activity_xiranite_enr_nugget": 1,
+        "gas_inert": 5
+      },
+      "out": {
+        "activity_xiranite_enr_box": 1
+      },
+      "producers": [
+        "shaper_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "id": "activity_xiranite_enr_box",
+      "name": "实验龙泡泡重壳",
+      "category": "activity",
+      "row": 2,
+      "icon": "activity_xiranite_enr_box"
     },
     {
       "time": 3600,
@@ -7119,11 +7544,6 @@
       "icon": "jinlong"
     }
   ],
-  "limitations": {
-    "author": [
-      "https://github.com/endfield-calc/factoriolab/"
-    ]
-  },
   "defaults": {
     "locations": [
       "tundra",
@@ -7133,5 +7553,9 @@
     "maxBelt": "belt",
     "minPipe": "pipe",
     "maxPipe": "pipe"
+  },
+  "meta": {
+    "author": "https://github.com/endfield-calc/factoriolab/",
+    "game-data-source": "akedata"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "Arknights: Endfield",
   "version": {
-    "arknights-endfield": "v1.4"
+    "arknights-endfield": "v1.5.3"
   },
   "categories": {
     "activity": "Event",
@@ -11,6 +11,17 @@
     "gen-power": "Power"
   },
   "items": {
+    "activity_copper_poly": "Proto Xiran-Cuprium",
+    "activity_copper_poly_cmpt": "Proto Xiran-Cuprium Part",
+    "activity_copper_poly_gas": "Proto Xiran-Cuprium Gas",
+    "activity_copper_poly_tool": "Proto Xiran-Cuprium Frame",
+    "activity_copper_xiranite_tool": "Proto Cuprium Frame",
+    "activity_xiranite_box": "Proto Chubby Lung Shell",
+    "activity_xiranite_enr_box": "Proto Chubby Lung Heavy Shell",
+    "activity_xiranite_enr_lung": "Heavy Xiranite Chubby Lung",
+    "activity_xiranite_enr_nugget": "Proto Heavy Xiranite",
+    "activity_xiranite_lung": "Xiranite Chubby Lung",
+    "activity_xiranite_nugget": "Proto Xiranite",
     "carbon_enr": "Stabilized Carbon",
     "carbon_enr_powder": "Dense Carbon Powder",
     "carbon_mtl": "Carbon",
@@ -78,7 +89,7 @@
     "plant_grass_powder_1": "Jincao Powder",
     "plant_grass_powder_2": "Yazhen Powder",
     "plant_grass_seed_1": "Jincao Seed",
-    "plant_grass_seed_2": "Yazhen Seed",
+    "plant_grass_seed_2": "Yazhen Seeds",
     "plant_moss_1": "Buckflower",
     "plant_moss_2": "Citrome",
     "plant_moss_3": "Sandleaf",
@@ -163,6 +174,18 @@
     "pipe": "Pipe"
   },
   "recipes": {
+    "activity_copper_poly_cmpt": "Proto Xiran-Cuprium Part",
+    "activity_copper_poly_gas": "Proto Xiran-Cuprium Gas",
+    "activity_copper_poly_tool": "Proto Xiran-Cuprium Frame",
+    "activity_copper_xiranite_tool": "Proto Cuprium Frame",
+    "activity_xiranite_box": "Proto Chubby Lung Shell",
+    "activity_xiranite_enr_box": "Proto Chubby Lung Heavy Shell",
+    "activity_xiranite_enr_lung": "Heavy Xiranite Chubby Lung",
+    "activity_xiranite_enr_nugget": "Proto Heavy Xiranite",
+    "activity_xiranite_lung": "Xiranite Chubby Lung",
+    "activity_xiranite_nugget": "Proto Xiranite",
+    "phase_trans_2-activity_copper_poly": "Proto Xiran-Cuprium(Solid-Gas Transmuting Unit)",
+    "phase_trans_2-activity_copper_poly_gas": "Proto Xiran-Cuprium Gas(Solid-Gas Transmuting Unit)",
     "power_originium_ore": "Power(Originium Ore)",
     "power_proc_battery_1": "Power(LC Valley Battery)",
     "power_proc_battery_2": "Power(SC Valley Battery)",
@@ -273,7 +296,7 @@
     "plant_grass_powder_1": "Jincao Powder",
     "plant_grass_powder_2": "Yazhen Powder",
     "plant_grass_seed_1": "Jincao Seed",
-    "plant_grass_seed_2": "Yazhen Seed",
+    "plant_grass_seed_2": "Yazhen Seeds",
     "plant_moss_1": "Buckflower",
     "plant_moss_2": "Citrome",
     "plant_moss_3": "Sandleaf",
@@ -320,6 +343,8 @@
     "proc_battery_4": "LC Wuling Battery",
     "proc_battery_5": "SC Wuling Battery",
     "proc_bomb_1": "Industrial Explosive",
+    "jinlong_coupon-activity_xiranite_enr_lung": "Wuling Stock Bill(Heavy Xiranite Chubby Lung)",
+    "jinlong_coupon-activity_xiranite_lung": "Wuling Stock Bill(Xiranite Chubby Lung)",
     "jinlong_coupon-bottled_food_4": "Wuling Stock Bill(Jincao Drink)",
     "jinlong_coupon-bottled_food_5": "Wuling Stock Bill(Jincao Tea)",
     "jinlong_coupon-bottled_rec_hp_4": "Wuling Stock Bill(Yazhen Syringe [C])",
@@ -385,7 +410,7 @@
     "transfer_tundra_plant_grass_powder_1": "Jincao Powder",
     "transfer_tundra_plant_grass_powder_2": "Yazhen Powder",
     "transfer_tundra_plant_grass_seed_1": "Jincao Seed",
-    "transfer_tundra_plant_grass_seed_2": "Yazhen Seed",
+    "transfer_tundra_plant_grass_seed_2": "Yazhen Seeds",
     "transfer_tundra_plant_moss_1": "Buckflower",
     "transfer_tundra_plant_moss_2": "Citrome",
     "transfer_tundra_plant_moss_3": "Sandleaf",

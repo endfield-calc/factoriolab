@@ -1,7 +1,7 @@
 {
   "name": "Arknights: Endfield",
   "version": {
-    "arknights-endfield": "v1.4"
+    "arknights-endfield": "v1.5.3"
   },
   "categories": {
     "activity": "Событие",
@@ -11,6 +11,17 @@
     "gen-power": "Энергия"
   },
   "items": {
+    "activity_copper_poly": "Протоксиранокуприй",
+    "activity_copper_poly_cmpt": "Протоксиранокуприевая деталь",
+    "activity_copper_poly_gas": "Протоксиранокуприевый газ",
+    "activity_copper_poly_tool": "Протоксиранокуприевый каркас",
+    "activity_copper_xiranite_tool": "Протокуприевый каркас",
+    "activity_xiranite_box": "Протопанцирь пухлика-луна",
+    "activity_xiranite_enr_box": "Тяжелый протопанцирь пухлика-луна",
+    "activity_xiranite_enr_lung": "Пухлик-лун из тяжелого ксиранита",
+    "activity_xiranite_enr_nugget": "Тяжелый протоксиранит",
+    "activity_xiranite_lung": "Ксиранитовый пухлик-лун",
+    "activity_xiranite_nugget": "Протоксиранит",
     "carbon_enr": "Стабилизированный углерод",
     "carbon_enr_powder": "Мелкомолотый углерод",
     "carbon_mtl": "Углерод",
@@ -78,7 +89,7 @@
     "plant_grass_powder_1": "Молотый цзиньцао",
     "plant_grass_powder_2": "Молотый ячжэнь",
     "plant_grass_seed_1": "Семя цзиньцао",
-    "plant_grass_seed_2": "Семя ячжэня",
+    "plant_grass_seed_2": "Семена ячжэня",
     "plant_moss_1": "Гречецвет",
     "plant_moss_2": "Цитром",
     "plant_moss_3": "Песчанолист",
@@ -163,6 +174,18 @@
     "pipe": "Труба"
   },
   "recipes": {
+    "activity_copper_poly_cmpt": "Протоксиранокуприевая деталь",
+    "activity_copper_poly_gas": "Протоксиранокуприевый газ",
+    "activity_copper_poly_tool": "Протоксиранокуприевый каркас",
+    "activity_copper_xiranite_tool": "Протокуприевый каркас",
+    "activity_xiranite_box": "Протопанцирь пухлика-луна",
+    "activity_xiranite_enr_box": "Тяжелый протопанцирь пухлика-луна",
+    "activity_xiranite_enr_lung": "Пухлик-лун из тяжелого ксиранита",
+    "activity_xiranite_enr_nugget": "Тяжелый протоксиранит",
+    "activity_xiranite_lung": "Ксиранитовый пухлик-лун",
+    "activity_xiranite_nugget": "Протоксиранит",
+    "phase_trans_2-activity_copper_poly": "Протоксиранокуприй(Модуль твердотельно-газового видоизменения)",
+    "phase_trans_2-activity_copper_poly_gas": "Протоксиранокуприевый газ(Модуль твердотельно-газового видоизменения)",
     "power_originium_ore": "Энергия(Ориджиниевая руда)",
     "power_proc_battery_1": "Энергия(Батарея МЕ Долины)",
     "power_proc_battery_2": "Энергия(Батарея СЕ Долины)",
@@ -273,7 +296,7 @@
     "plant_grass_powder_1": "Молотый цзиньцао",
     "plant_grass_powder_2": "Молотый ячжэнь",
     "plant_grass_seed_1": "Семя цзиньцао",
-    "plant_grass_seed_2": "Семя ячжэня",
+    "plant_grass_seed_2": "Семена ячжэня",
     "plant_moss_1": "Гречецвет",
     "plant_moss_2": "Цитром",
     "plant_moss_3": "Песчанолист",
@@ -320,6 +343,8 @@
     "proc_battery_4": "Батарея МЕ Улина",
     "proc_battery_5": "Батарея СЕ Улина",
     "proc_bomb_1": "Промышленная взрывчатка",
+    "jinlong_coupon-activity_xiranite_enr_lung": "Облигация Улина(Пухлик-лун из тяжелого ксиранита)",
+    "jinlong_coupon-activity_xiranite_lung": "Облигация Улина(Ксиранитовый пухлик-лун)",
     "jinlong_coupon-bottled_food_4": "Облигация Улина(Напиток с цзиньцао)",
     "jinlong_coupon-bottled_food_5": "Облигация Улина(Чай с цзиньцао)",
     "jinlong_coupon-bottled_rec_hp_4": "Облигация Улина(Инъектор ячжэня [C])",
@@ -385,7 +410,7 @@
     "transfer_tundra_plant_grass_powder_1": "Молотый цзиньцао",
     "transfer_tundra_plant_grass_powder_2": "Молотый ячжэнь",
     "transfer_tundra_plant_grass_seed_1": "Семя цзиньцао",
-    "transfer_tundra_plant_grass_seed_2": "Семя ячжэня",
+    "transfer_tundra_plant_grass_seed_2": "Семена ячжэня",
     "transfer_tundra_plant_moss_1": "Гречецвет",
     "transfer_tundra_plant_moss_2": "Цитром",
     "transfer_tundra_plant_moss_3": "Песчанолист",

@@ -1,7 +1,7 @@
 {
   "name": "アークナイツ：エンドフィールド",
   "version": {
-    "arknights-endfield": "v1.4"
+    "arknights-endfield": "v1.5.3"
   },
   "categories": {
     "activity": "イベント",
@@ -11,6 +11,17 @@
     "gen-power": "発電"
   },
   "items": {
+    "activity_copper_poly": "実験用息壌銅塊",
+    "activity_copper_poly_cmpt": "実験用息壌銅部品",
+    "activity_copper_poly_gas": "実験用息壌銅ガス",
+    "activity_copper_poly_tool": "実験用息壌銅フレーム",
+    "activity_copper_xiranite_tool": "実験用銅フレーム",
+    "activity_xiranite_box": "実験用龍泡泡シェル",
+    "activity_xiranite_enr_box": "実験用龍泡泡ヘビーシェル",
+    "activity_xiranite_enr_lung": "重息壌龍泡泡",
+    "activity_xiranite_enr_nugget": "実験用重息壌ブロック",
+    "activity_xiranite_lung": "息壌龍泡泡",
+    "activity_xiranite_nugget": "実験用息壌ブロック",
     "carbon_enr": "安定炭塊",
     "carbon_enr_powder": "高密度炭塊粉末",
     "carbon_mtl": "炭塊",
@@ -163,6 +174,18 @@
     "pipe": "パイプ"
   },
   "recipes": {
+    "activity_copper_poly_cmpt": "実験用息壌銅部品",
+    "activity_copper_poly_gas": "実験用息壌銅ガス",
+    "activity_copper_poly_tool": "実験用息壌銅フレーム",
+    "activity_copper_xiranite_tool": "実験用銅フレーム",
+    "activity_xiranite_box": "実験用龍泡泡シェル",
+    "activity_xiranite_enr_box": "実験用龍泡泡ヘビーシェル",
+    "activity_xiranite_enr_lung": "重息壌龍泡泡",
+    "activity_xiranite_enr_nugget": "実験用重息壌ブロック",
+    "activity_xiranite_lung": "息壌龍泡泡",
+    "activity_xiranite_nugget": "実験用息壌ブロック",
+    "phase_trans_2-activity_copper_poly": "実験用息壌銅塊(ガス固体転換機)",
+    "phase_trans_2-activity_copper_poly_gas": "実験用息壌銅ガス(ガス固体転換機)",
     "power_originium_ore": "発電(源石鉱物)",
     "power_proc_battery_1": "発電(小容量谷地バッテリー)",
     "power_proc_battery_2": "発電(中容量谷地バッテリー)",
@@ -320,6 +343,8 @@
     "proc_battery_4": "小容量武陵バッテリー",
     "proc_battery_5": "中容量武陵バッテリー",
     "proc_bomb_1": "工業爆弾",
+    "jinlong_coupon-activity_xiranite_enr_lung": "武陵取引券(重息壌龍泡泡)",
+    "jinlong_coupon-activity_xiranite_lung": "武陵取引券(息壌龍泡泡)",
     "jinlong_coupon-bottled_food_4": "武陵取引券(錦草ソーダⅠ)",
     "jinlong_coupon-bottled_food_5": "武陵取引券(錦草ソーダⅡ)",
     "jinlong_coupon-bottled_rec_hp_4": "武陵取引券(芽針注射剤Ⅰ)",

@@ -1,7 +1,7 @@
 {
   "name": "明日方舟：终末地",
   "version": {
-    "arknights-endfield": "v1.4"
+    "arknights-endfield": "v1.5.3"
   },
   "categories": {
     "activity": "活动",
@@ -11,6 +11,17 @@
     "gen-power": "发电"
   },
   "items": {
+    "activity_copper_poly": "实验息壤铜锭",
+    "activity_copper_poly_cmpt": "实验息壤铜零件",
+    "activity_copper_poly_gas": "实验息壤铜气",
+    "activity_copper_poly_tool": "实验息壤铜骨骼",
+    "activity_copper_xiranite_tool": "实验铜骨骼",
+    "activity_xiranite_box": "实验龙泡泡外壳",
+    "activity_xiranite_enr_box": "实验龙泡泡重壳",
+    "activity_xiranite_enr_lung": "重息壤龙泡泡",
+    "activity_xiranite_enr_nugget": "实验重息壤块",
+    "activity_xiranite_lung": "息壤龙泡泡",
+    "activity_xiranite_nugget": "实验息壤块",
     "carbon_enr": "稳定碳块",
     "carbon_enr_powder": "致密碳粉末",
     "carbon_mtl": "碳块",
@@ -163,6 +174,18 @@
     "pipe": "管道"
   },
   "recipes": {
+    "activity_copper_poly_cmpt": "实验息壤铜零件",
+    "activity_copper_poly_gas": "实验息壤铜气",
+    "activity_copper_poly_tool": "实验息壤铜骨骼",
+    "activity_copper_xiranite_tool": "实验铜骨骼",
+    "activity_xiranite_box": "实验龙泡泡外壳",
+    "activity_xiranite_enr_box": "实验龙泡泡重壳",
+    "activity_xiranite_enr_lung": "重息壤龙泡泡",
+    "activity_xiranite_enr_nugget": "实验重息壤块",
+    "activity_xiranite_lung": "息壤龙泡泡",
+    "activity_xiranite_nugget": "实验息壤块",
+    "phase_trans_2-activity_copper_poly": "实验息壤铜锭(固气转化机)",
+    "phase_trans_2-activity_copper_poly_gas": "实验息壤铜气(固气转化机)",
     "power_originium_ore": "发电(源矿)",
     "power_proc_battery_1": "发电(低容谷地电池)",
     "power_proc_battery_2": "发电(中容谷地电池)",
@@ -320,6 +343,8 @@
     "proc_battery_4": "低容武陵电池",
     "proc_battery_5": "中容武陵电池",
     "proc_bomb_1": "工业爆炸物",
+    "jinlong_coupon-activity_xiranite_enr_lung": "武陵调度券(重息壤龙泡泡)",
+    "jinlong_coupon-activity_xiranite_lung": "武陵调度券(息壤龙泡泡)",
     "jinlong_coupon-bottled_food_4": "武陵调度券(锦草软饮)",
     "jinlong_coupon-bottled_food_5": "武陵调度券(优质锦草软饮)",
     "jinlong_coupon-bottled_rec_hp_4": "武陵调度券(芽针针剂)",

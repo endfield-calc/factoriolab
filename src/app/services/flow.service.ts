@@ -22,6 +22,7 @@ import {
 } from '../store/preferences.service';
 import { RecipesService } from '../store/recipes.service';
 import { SettingsService } from '../store/settings.service';
+import { CustomRecipeService } from './custom-recipe.service';
 import { ThemeService, ThemeValues } from './theme.service';
 import { TranslateService } from './translate.service';
 
@@ -35,6 +36,7 @@ export class FlowService {
   settingsSvc = inject(SettingsService);
   themeSvc = inject(ThemeService);
   translateSvc = inject(TranslateService);
+  customRecipeSvc = inject(CustomRecipeService);
 
   flowData$ = combineLatest({
     steps: toObservable(this.objectivesSvc.steps),
@@ -65,6 +67,11 @@ export class FlowService {
   ): FlowData {
     const itemPrec = preferences.columns.items.precision;
     const machinePrec = preferences.columns.machines.precision;
+    const customRecipes = new Map(
+      this.customRecipeSvc
+        .recipesForMod(data.modId)
+        .map((recipe) => [recipe.id, recipe]),
+    );
     const flow: FlowData = {
       nodes: [],
       links: [],
@@ -206,10 +213,11 @@ export class FlowService {
       if (step.recipeId && step.machines && step.recipeSettings?.machineId) {
         const recipe = data.recipeEntities[step.recipeId];
         const machine = data.itemEntities[step.recipeSettings?.machineId];
-        const icon = recipe.iconBackground
+        const customRecipe = customRecipes.get(recipe.id);
+        const icon = customRecipe?.iconBackground
           ? {
               id: recipe.id,
-              color: recipe.iconBackground,
+              color: customRecipe.iconBackground,
               position: '0 0',
             }
           : data.iconEntities[recipe.icon ?? recipe.id];
@@ -220,10 +228,10 @@ export class FlowService {
           text: `${step.machines.toString(machinePrec)} ${machine.name}`,
           color: icon.color,
           stepId: step.id,
-          href: recipe.iconBackground
+          href: customRecipe?.iconBackground
             ? customRecipeIconDataUri(
-                recipe.iconText ?? '',
-                recipe.iconBackground,
+                customRecipe.iconText,
+                customRecipe.iconBackground,
               )
             : data.iconFile,
           recipe,
@@ -310,18 +318,11 @@ export class FlowService {
     item: Item,
     data: AdjustedDataset,
   ): { icon: Icon; href: string } {
-    if (item.iconBackground != null && item.iconText != null)
-      return {
-        icon: {
-          id: item.id,
-          color: item.iconBackground,
-          position: '0 0',
-        },
-        href: customRecipeIconDataUri(item.iconText, item.iconBackground),
-      };
-
     return {
-      icon: data.iconEntities[item.icon ?? item.id],
+      icon:
+        data.iconEntities[item.icon ?? item.id] ??
+        data.iconEntities[item.category] ??
+        data.iconEntities[data.iconIds[0]],
       href: data.iconFile,
     };
   }

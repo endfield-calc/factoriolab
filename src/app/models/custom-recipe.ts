@@ -1,4 +1,3 @@
-import { ItemJson } from './data/item';
 import { ModuleEffect } from './data/module';
 import { RecipeFlag, RecipeJson } from './data/recipe';
 
@@ -6,34 +5,17 @@ export const CUSTOM_RECIPE_FORMAT = 'endfieldlab-custom-recipes';
 export const CUSTOM_RECIPE_VERSION = 1;
 export const DEFAULT_CUSTOM_RECIPE_BACKGROUND = '#64748b';
 export const DEFAULT_CUSTOM_RECIPE_ROW = 999;
-export const CUSTOM_ITEM_CATEGORY_ID = '__custom_items';
-export const CUSTOM_ITEM_CATEGORY_NAME = '自定义物品';
-export const DEFAULT_CUSTOM_ITEM_STACK = 50;
 export const CUSTOM_RECIPE_EXAMPLE_FILE_NAME = 'custom-recipes-example.json';
-
-export type CustomItemType = 'solid' | 'liquid' | 'gas';
-
-export type CustomItemJson = Pick<
-  ItemJson,
-  'id' | 'name' | 'iconText' | 'iconBackground'
-> & {
-  /** Required for newly saved items; omitted in legacy files. */
-  type?: CustomItemType;
-  /** Legacy field. It is read for compatibility and never exported by the editor. */
-  stack?: number;
-  category?: string;
-  row?: number;
-};
 
 export type CustomRecipeJson = Omit<RecipeJson, 'icon' | 'iconText'> & {
   iconText: string;
+  iconBackground?: string;
 };
 
 export interface CustomRecipeDocument {
   format: typeof CUSTOM_RECIPE_FORMAT;
   version: typeof CUSTOM_RECIPE_VERSION;
   modId: string;
-  items?: CustomItemJson[];
   recipes: CustomRecipeJson[];
 }
 
@@ -79,18 +61,10 @@ export interface CustomRecipeEntry {
   recipe: CustomRecipeJson;
 }
 
-export interface CustomItemEntry {
-  sourceId: string;
-  fileName: string;
-  item: CustomItemJson;
-  generated: boolean;
-}
-
 export interface CustomRecipeValidationContext {
   modId: string;
   recipeIds: ReadonlySet<string>;
   itemIds: ReadonlySet<string>;
-  itemConflictIds?: ReadonlySet<string>;
   machineIds: ReadonlySet<string>;
   categoryIds: ReadonlySet<string>;
   locationIds: ReadonlySet<string>;
@@ -103,7 +77,6 @@ export interface CustomRecipeValidationIssue {
 
 export interface CustomRecipeValidationResult {
   valid: boolean;
-  items?: CustomItemJson[];
   recipes?: CustomRecipeJson[];
   unknownItemIds: string[];
   issues: CustomRecipeValidationIssue[];

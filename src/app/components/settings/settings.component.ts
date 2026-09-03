@@ -152,10 +152,6 @@ export class SettingsComponent {
       0,
     ),
   );
-  customItemCount = computed(() => {
-    const modId = this.modId();
-    return modId == null ? 0 : this.customRecipeSvc.itemsForMod(modId).length;
-  });
   customRecipeImportResults = signal<CustomRecipeImportResult[]>([]);
 
   state = '';
@@ -376,10 +372,6 @@ export class SettingsComponent {
     });
   }
 
-  openCustomItems(): void {
-    this.customRecipesVisible = true;
-  }
-
   importCustomRecipes(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = input.files;
@@ -404,12 +396,5 @@ export class SettingsComponent {
     if (modId == null) return;
     this.customRecipesVisible = false;
     void this.router.navigate([modId, 'data', 'recipes', recipeId]);
-  }
-
-  openCustomItem(itemId: string): void {
-    const modId = this.modId();
-    if (modId == null) return;
-    this.customRecipesVisible = false;
-    void this.router.navigate([modId, 'data', 'items', itemId]);
   }
 }

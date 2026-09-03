@@ -287,19 +287,6 @@
               (click)="openCustomRecipes()"
             ></button>
           </div>
-          <div class="pt-3">
-            <button
-              pButton
-              pRipple
-              type="button"
-              class="p-button-rounded p-button-outlined w-100"
-              icon="fa-solid fa-cube"
-              [label]="
-                'settings.customItems' | translate: { count: customItemCount() }
-              "
-              (click)="openCustomItems()"
-            ></button>
-          </div>
         </div>
       </p-accordionTab>
       <p-accordionTab [selected]="true">
@@ -1492,8 +1479,7 @@
   [draggable]="false"
   [resizable]="false"
   [header]="
-    'settings.customContent'
-      | translate: { recipes: customRecipeCount(), items: customItemCount() }
+    'settings.customContent' | translate: { recipes: customRecipeCount() }
   "
   [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
 >
@@ -1542,24 +1528,6 @@
           (click)="removeCustomRecipeSource(source.id)"
         ></button>
       </div>
-      @for (item of source.document.items ?? []; track item.id) {
-        <button
-          pButton
-          pRipple
-          type="button"
-          class="custom-recipe-entry p-button-text w-100"
-          (click)="openCustomItem(item.id)"
-        >
-          <i [class]="item.id | iconSmClass"></i>
-          <span class="text-start text-truncate">{{ item.name }}</span>
-          @if (source.generatedItemIds?.includes(item.id)) {
-            <small class="text-muted">{{
-              'settings.autoItem' | translate
-            }}</small>
-          }
-          <small class="text-muted text-truncate">{{ item.id }}</small>
-        </button>
-      }
       @for (recipe of source.document.recipes; track recipe.id) {
         <button
           pButton

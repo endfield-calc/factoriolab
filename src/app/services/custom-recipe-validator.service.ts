@@ -3,11 +3,8 @@ import { Injectable } from '@angular/core';
 import { rational } from '~/models/rational';
 
 import {
-  CUSTOM_ITEM_CATEGORY_ID,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_VERSION,
-  CustomItemJson,
-  CustomItemType,
   CustomRecipeDocument,
   customRecipeEffects,
   customRecipeFlags,
@@ -25,7 +22,6 @@ const rationalPattern = new RegExp(
 );
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const colorPattern = /^#(?:[\da-f]{3}|[\da-f]{6})$/i;
-const customItemTypes = new Set<CustomItemType>(['solid', 'liquid', 'gas']);
 const recipeKeys = new Set([
   'id',
   'name',
@@ -42,16 +38,6 @@ const recipeKeys = new Set([
   'disallowedEffects',
   'locations',
   'flags',
-  'iconText',
-  'iconBackground',
-]);
-const itemKeys = new Set([
-  'id',
-  'name',
-  'category',
-  'row',
-  'type',
-  'stack',
   'iconText',
   'iconBackground',
 ]);
@@ -76,24 +62,6 @@ export class CustomRecipeValidatorService {
 
     this.validateDocumentHeader(value, context, issues);
 
-    const items = value['items'];
-    const itemIds = new Set(context.itemIds);
-    if (items !== undefined && !Array.isArray(items)) {
-      issues.push({ path: 'items', message: 'Must be an array' });
-    } else if (Array.isArray(items)) {
-      const seenItems = new Set<string>();
-      items.forEach((item, index) => {
-        this.validateItem(
-          item,
-          `items[${String(index)}]`,
-          context,
-          seenItems,
-          itemIds,
-          issues,
-        );
-      });
-    }
-
     const unknownItemIds = new Set<string>();
     const recipes = value['recipes'];
     if (!Array.isArray(recipes)) {
@@ -106,7 +74,7 @@ export class CustomRecipeValidatorService {
           `recipes[${String(index)}]`,
           context,
           seen,
-          itemIds,
+          context.itemIds,
           unknownItemIds,
           issues,
         );
@@ -115,8 +83,6 @@ export class CustomRecipeValidatorService {
 
     return {
       valid: issues.length === 0,
-      items:
-        issues.length === 0 ? ((items ?? []) as CustomItemJson[]) : undefined,
       recipes:
         issues.length === 0
           ? (value as unknown as CustomRecipeDocument).recipes
@@ -148,83 +114,9 @@ export class CustomRecipeValidatorService {
       });
 
     for (const key of Object.keys(value)) {
-      if (!['format', 'version', 'modId', 'items', 'recipes'].includes(key))
+      if (!['format', 'version', 'modId', 'recipes'].includes(key))
         issues.push({ path: key, message: 'Unknown field' });
     }
-  }
-
-  private validateItem(
-    value: unknown,
-    path: string,
-    context: CustomRecipeValidationContext,
-    seen: Set<string>,
-    itemIds: Set<string>,
-    issues: CustomRecipeValidationIssue[],
-  ): void {
-    if (!this.isObject(value)) {
-      issues.push({ path, message: 'Item must be an object' });
-      return;
-    }
-
-    for (const key of Object.keys(value)) {
-      if (!itemKeys.has(key))
-        issues.push({ path: `${path}.${key}`, message: 'Unknown field' });
-    }
-
-    for (const key of ['id', 'name']) {
-      if (value[key] === undefined)
-        issues.push({ path: `${path}.${key}`, message: 'Required field' });
-    }
-
-    const id = this.stringValue(value['id']);
-    if (id == null || !idPattern.test(id) || id.length > 80) {
-      issues.push({
-        path: `${path}.id`,
-        message: 'Must be 1-80 characters using letters, numbers, "_" or "-"',
-      });
-    } else if (seen.has(id) || context.itemConflictIds?.has(id) === true) {
-      issues.push({
-        path: `${path}.id`,
-        message: `Duplicate item id "${id}"`,
-      });
-    } else {
-      seen.add(id);
-      itemIds.add(id);
-    }
-
-    if (id != null && value['type'] !== undefined && !id.startsWith('v_'))
-      issues.push({
-        path: `${path}.id`,
-        message: 'New custom item ids must start with "v_"',
-      });
-
-    if (this.stringValue(value['name']) == null)
-      issues.push({
-        path: `${path}.name`,
-        message: 'Must be a non-empty string',
-      });
-    if (value['category'] !== undefined)
-      this.validateReference(
-        value['category'],
-        `${path}.category`,
-        new Set([...context.categoryIds, CUSTOM_ITEM_CATEGORY_ID]),
-        'category',
-        issues,
-      );
-    if (value['row'] !== undefined)
-      this.validateInteger(value['row'], `${path}.row`, issues);
-    if (
-      value['type'] !== undefined &&
-      (typeof value['type'] !== 'string' ||
-        !customItemTypes.has(value['type'] as CustomItemType))
-    )
-      issues.push({
-        path: `${path}.type`,
-        message: 'Must be "solid", "liquid" or "gas"',
-      });
-    if (value['stack'] !== undefined)
-      this.validateNumber(value['stack'], `${path}.stack`, 'positive', issues);
-    this.validateIcon(value, path, issues);
   }
 
   private validateRecipe(

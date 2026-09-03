@@ -401,21 +401,9 @@ describe('SettingsService', () => {
       expect(result.recipeIds).toContain(customRecipe.id);
       expect(recipe.icon).toBeUndefined();
       expect(recipe.iconText).toEqual('自');
-      expect(recipe.iconBackground).toEqual('#3b82f6');
     });
 
-    it('should include custom items in the custom category', () => {
-      const customItem = {
-        id: 'v_custom_item',
-        name: 'Custom item',
-        category: '__custom_items',
-        row: 999,
-        stack: 50,
-        type: 'solid' as const,
-        iconText: '自',
-        iconBackground: '#22c55e',
-      };
-
+    it('should include generated items in the dataset', () => {
       const result = service.computeDataset(
         Mocks.mod,
         Mocks.modHash,
@@ -423,69 +411,18 @@ describe('SettingsService', () => {
         Game.Factorio,
         undefined,
         [],
-        [customItem],
+        [
+          {
+            id: 'v_custom_item',
+            name: 'Custom item',
+            category: 'activity',
+            row: 999,
+            iconText: '自',
+          },
+        ],
       );
 
-      expect(result.itemEntities[customItem.id].category).toEqual(
-        '__custom_items',
-      );
-      expect(result.categoryEntities['__custom_items'].name).toEqual(
-        '自定义物品',
-      );
-      expect(result.categoryItemRows['__custom_items']).toEqual([
-        [customItem.id],
-      ]);
-      expect(result.itemEntities[customItem.id].stack?.toString()).toEqual(
-        '50',
-      );
-    });
-
-    it('should map custom item types to the transport model', () => {
-      const customItems = [
-        {
-          id: 'v_solid',
-          name: 'Solid',
-          category: '__custom_items',
-          row: 999,
-          stack: 50,
-        },
-        {
-          id: 'v_liquid',
-          name: 'Liquid',
-          category: '__custom_items',
-          row: 999,
-        },
-        {
-          id: 'v_gas',
-          name: 'Gas',
-          category: '__custom_items',
-          row: 999,
-        },
-        {
-          id: 'legacy-solid',
-          name: 'Legacy solid',
-          category: '__custom_items',
-          row: 999,
-          stack: 80,
-        },
-      ];
-
-      const result = service.computeDataset(
-        Mocks.mod,
-        Mocks.modHash,
-        undefined,
-        Game.Factorio,
-        undefined,
-        [],
-        customItems,
-      );
-
-      expect(result.itemEntities['v_solid'].stack?.toString()).toEqual('50');
-      expect(result.itemEntities['v_liquid'].stack).toBeUndefined();
-      expect(result.itemEntities['v_gas'].stack).toBeUndefined();
-      expect(result.itemEntities['legacy-solid'].stack?.toString()).toEqual(
-        '80',
-      );
+      expect(result.itemEntities['v_custom_item'].category).toEqual('activity');
     });
 
     it('should handle data not loaded yet', () => {

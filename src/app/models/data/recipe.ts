@@ -34,8 +34,6 @@ export interface RecipeJson {
   icon?: string;
   /** Used to add extra text to an already defined icon */
   iconText?: string;
-  /** Used to render a character icon with a custom background color */
-  iconBackground?: string;
   /** Used to override the machine's usage for this recipe */
   usage?: number | string;
   disallowedEffects?: ModuleEffect[];
@@ -61,8 +59,6 @@ export interface Recipe {
   icon?: string;
   /** Used to add extra text to an already defined icon */
   iconText?: string;
-  /** Used to render a character icon with a custom background color */
-  iconBackground?: string;
   usage?: Rational;
   drain?: Rational;
   consumption?: Rational;
@@ -88,7 +84,6 @@ export function parseRecipe(json: RecipeJson): Recipe {
     part: json.part,
     icon: json.icon,
     iconText: json.iconText,
-    iconBackground: json.iconBackground,
     usage: rational(json.usage),
     disallowedEffects: json.disallowedEffects,
     locations: json.locations,

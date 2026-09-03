@@ -4,21 +4,16 @@ import { getStoredValue, storeValue } from '~/models/stored-signal';
 import { Entities } from '~/models/utils';
 
 import {
-  CUSTOM_ITEM_CATEGORY_ID,
   CUSTOM_RECIPE_EXAMPLE_DOCUMENT,
   CUSTOM_RECIPE_EXAMPLE_FILE_NAME,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_VERSION,
-  CustomItemEntry,
-  CustomItemJson,
-  CustomItemType,
   CustomRecipeDocument,
   CustomRecipeEntry,
   CustomRecipeImportResult,
   CustomRecipeJson,
   CustomRecipeSource,
   CustomRecipeValidationContext,
-  DEFAULT_CUSTOM_ITEM_STACK,
   DEFAULT_CUSTOM_RECIPE_BACKGROUND,
   DEFAULT_CUSTOM_RECIPE_ROW,
 } from '../models/custom-recipe';
@@ -28,13 +23,6 @@ import { CustomRecipeValidatorService } from './custom-recipe-validator.service'
 const CUSTOM_RECIPE_STORAGE_KEY = 'customRecipes';
 
 export type CustomRecipeState = Entities<CustomRecipeSource[]>;
-type NormalizedCustomItemJson = CustomItemJson &
-  Required<
-    Pick<
-      CustomItemJson,
-      'type' | 'category' | 'row' | 'iconText' | 'iconBackground'
-    >
-  >;
 
 @Injectable({
   providedIn: 'root',
@@ -71,48 +59,27 @@ export class CustomRecipeService {
     const sourceId = this.sourceId(context.modId, fileName);
     const existingSources = this.stateSignal()[context.modId] ?? [];
     const recipeIds = new Set(context.recipeIds);
-    const existingExplicitItemIds = new Set<string>();
-    const existingGeneratedItemIds = new Set<string>();
     const knownItemIds = new Set(context.itemIds);
 
     for (const source of existingSources) {
       if (source.id === sourceId) continue;
       for (const recipe of source.document.recipes) recipeIds.add(recipe.id);
-      for (const item of source.document.items ?? []) {
-        knownItemIds.add(item.id);
-        if (source.generatedItemIds?.includes(item.id))
-          existingGeneratedItemIds.add(item.id);
-        else existingExplicitItemIds.add(item.id);
-      }
+      for (const itemId of source.generatedItemIds ?? [])
+        knownItemIds.add(itemId);
     }
 
     const validation = this.validator.validate(value, {
       ...context,
       recipeIds,
       itemIds: knownItemIds,
-      itemConflictIds: new Set([
-        ...context.itemIds,
-        ...existingExplicitItemIds,
-      ]),
     });
-    if (
-      !validation.valid ||
-      validation.recipes == null ||
-      validation.items == null
-    )
+    if (!validation.valid || validation.recipes == null)
       return {
         valid: false,
         fileName,
         issues: validation.issues,
       };
 
-    const generatedItems = validation.unknownItemIds
-      .filter((id) => !existingExplicitItemIds.has(id))
-      .map((id) => this.createGeneratedItem(id));
-    const items = [
-      ...validation.items.map((item) => this.normalizeItem(item)),
-      ...generatedItems,
-    ];
     const recipes = validation.recipes.map((recipe) =>
       this.normalizeRecipe(recipe),
     );
@@ -124,19 +91,13 @@ export class CustomRecipeService {
       format: CUSTOM_RECIPE_FORMAT,
       version: CUSTOM_RECIPE_VERSION,
       modId: context.modId,
-      items,
       recipes,
     };
     const source: CustomRecipeSource = {
       id: sourceId,
       fileName,
       document,
-      generatedItemIds: [
-        ...generatedItems.map((item) => item.id),
-        ...validation.unknownItemIds.filter((id) =>
-          existingGeneratedItemIds.has(id),
-        ),
-      ],
+      generatedItemIds: validation.unknownItemIds,
       enabled: previousSource?.enabled ?? true,
       disabledRecipeIds: (previousSource?.disabledRecipeIds ?? []).filter(
         (id) => recipeIdSet.has(id),
@@ -189,38 +150,11 @@ export class CustomRecipeService {
     );
   }
 
-  itemsForMod(modId: string): CustomItemJson[] {
-    const items = new Map<string, CustomItemJson>();
+  generatedItemsForMod(modId: string): ItemJson[] {
+    const itemIds = new Set<string>();
     for (const source of this.sourcesForMod(modId))
-      for (const item of source.document.items ?? []) items.set(item.id, item);
-    return [...items.values()];
-  }
-
-  itemsForDataset(modId: string): ItemJson[] {
-    return this.itemsForMod(modId).map((item) => {
-      const normalized = this.normalizeItem(item);
-      return {
-        id: normalized.id,
-        name: normalized.name,
-        category: normalized.category,
-        row: normalized.row,
-        stack:
-          normalized.type === 'solid' ? DEFAULT_CUSTOM_ITEM_STACK : undefined,
-        iconText: normalized.iconText,
-        iconBackground: normalized.iconBackground,
-      };
-    });
-  }
-
-  itemEntriesForMod(modId: string): CustomItemEntry[] {
-    return this.sourcesForMod(modId).flatMap((source) =>
-      (source.document.items ?? []).map((item) => ({
-        sourceId: source.id,
-        fileName: source.fileName,
-        item,
-        generated: source.generatedItemIds?.includes(item.id) ?? false,
-      })),
-    );
+      for (const itemId of source.generatedItemIds ?? []) itemIds.add(itemId);
+    return [...itemIds].map((id) => this.createGeneratedItem(id));
   }
 
   entriesForMod(modId: string): CustomRecipeEntry[] {
@@ -357,9 +291,6 @@ export class CustomRecipeService {
             ...source,
             document: {
               ...source.document,
-              items: (source.document.items ?? []).map((item) =>
-                this.normalizeItem(item),
-              ),
               recipes: source.document.recipes.map((recipe) =>
                 this.normalizeRecipe(recipe),
               ),
@@ -396,7 +327,6 @@ export class CustomRecipeService {
       document['version'] === CUSTOM_RECIPE_VERSION &&
       document['modId'] === modId &&
       Array.isArray(document['recipes']) &&
-      (document['items'] === undefined || Array.isArray(document['items'])) &&
       (value['generatedItemIds'] === undefined ||
         Array.isArray(value['generatedItemIds'])) &&
       (value['enabled'] === undefined ||
@@ -407,18 +337,6 @@ export class CustomRecipeService {
     );
   }
 
-  private normalizeItem(item: CustomItemJson): NormalizedCustomItemJson {
-    const { stack: _legacyStack, ...itemWithoutStack } = item;
-    return {
-      ...itemWithoutStack,
-      type: item.type ?? this.inferItemType(item),
-      category: item.category ?? CUSTOM_ITEM_CATEGORY_ID,
-      row: item.row ?? DEFAULT_CUSTOM_RECIPE_ROW,
-      iconText: item.iconText ?? this.firstCharacter(item.id),
-      iconBackground: item.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
-    };
-  }
-
   private normalizeRecipe(recipe: CustomRecipeJson): CustomRecipeJson {
     return {
       ...recipe,
@@ -426,22 +344,14 @@ export class CustomRecipeService {
     };
   }
 
-  private createGeneratedItem(id: string): CustomItemJson {
-    return this.normalizeItem({ id, name: id });
-  }
-
-  private inferItemType(item: CustomItemJson): CustomItemType {
-    if (item.stack != null) return 'solid';
-
-    const id = item.id.toLocaleLowerCase();
-    const name = item.name;
-    if (
-      id.startsWith('gas_') ||
-      id.endsWith('_gas') ||
-      /气体|气态|气$/u.test(name)
-    )
-      return 'gas';
-    return 'liquid';
+  private createGeneratedItem(id: string): ItemJson {
+    return {
+      id,
+      name: id,
+      category: 'activity',
+      row: DEFAULT_CUSTOM_RECIPE_ROW,
+      iconText: this.firstCharacter(id),
+    };
   }
 
   private firstCharacter(value: string): string {

@@ -132,18 +132,6 @@
   min-width: min(24rem, 100%);
 }
 
-.editor-tabs {
-  display: flex;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--surface-border);
-}
-
-.editor-tabs .p-button.active {
-  border-bottom: 2px solid var(--primary-color);
-  border-radius: 0;
-  color: var(--primary-color);
-}
-
 .entity-layout {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);

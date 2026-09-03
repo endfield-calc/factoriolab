@@ -339,8 +339,8 @@ export class RouterService {
       this.dataSvc.requestData(modId ?? DEFAULT_MOD),
     );
 
-    const customItemIds = this.customRecipeSvc
-      .itemsForMod(modId ?? DEFAULT_MOD)
+    const generatedItemIds = this.customRecipeSvc
+      .generatedItemsForMod(modId ?? DEFAULT_MOD)
       .map((item) => item.id);
     const customRecipeIds = this.customRecipeSvc
       .recipesForMod(modId ?? DEFAULT_MOD)
@@ -350,7 +350,7 @@ export class RouterService {
       : spread(modHash, {
           items: [
             ...modHash.items,
-            ...customItemIds.filter((id) => !modHash.items.includes(id)),
+            ...generatedItemIds.filter((id) => !modHash.items.includes(id)),
           ],
           recipes: [
             ...modHash.recipes,

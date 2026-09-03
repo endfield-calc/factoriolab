@@ -176,7 +176,7 @@ describe('CustomRecipeService', () => {
     );
 
     expect(result.valid).toBeTrue();
-    expect(service.itemsForMod('aef')).toEqual([
+    expect(service.generatedItemsForMod('aef')).toEqual([
       jasmine.objectContaining({
         id: 'new-material',
         name: 'new-material',
@@ -185,87 +185,27 @@ describe('CustomRecipeService', () => {
     ]);
   });
 
-  it('allows a later source to define a generated item', () => {
+  it('generates activity items for unknown recipe references', () => {
     const service = createService();
     const source = document();
     const recipe = (source['recipes'] as Record<string, unknown>[])[0];
-    const placeholder = service.importDocument(
-      'recipes.json',
-      {
-        ...source,
-        recipes: [
-          {
-            ...recipe,
-            in: { 'new-material': 1 },
-          },
-        ],
-      },
-      context,
-    );
-    const defined = service.importDocument(
-      'items.json',
-      {
-        format: CUSTOM_RECIPE_FORMAT,
-        version: CUSTOM_RECIPE_VERSION,
-        modId: 'aef',
-        items: [{ id: 'new-material', name: 'New material', iconText: '材' }],
-        recipes: [],
-      },
-      context,
-    );
-
-    expect(placeholder.valid).toBeTrue();
-    expect(defined.valid).toBeTrue();
-    expect(
-      service.itemsForMod('aef').find((item) => item.id === 'new-material'),
-    ).toEqual(
-      jasmine.objectContaining({ name: 'New material', iconText: '材' }),
-    );
-  });
-
-  it('normalizes legacy stack fields into solid, liquid, and gas types', () => {
-    const service = createService();
-    const result = service.importDocument(
-      'items.json',
-      {
-        format: CUSTOM_RECIPE_FORMAT,
-        version: CUSTOM_RECIPE_VERSION,
-        modId: 'aef',
-        items: [
-          { id: 'v_solid', name: 'Solid', stack: 50 },
-          { id: 'v_liquid', name: 'Liquid' },
-          { id: 'v_gas', name: 'Gas', iconText: '气' },
-        ],
-        recipes: [],
-      },
-      context,
-    );
-
-    expect(result.valid).toBeTrue();
-    expect(service.itemsForMod('aef')).toEqual([
-      jasmine.objectContaining({ id: 'v_solid', type: 'solid' }),
-      jasmine.objectContaining({ id: 'v_liquid', type: 'liquid' }),
-      jasmine.objectContaining({ id: 'v_gas', type: 'gas' }),
-    ]);
-    for (const item of service.itemsForMod('aef'))
-      expect(item.stack).toBeUndefined();
 
     expect(
-      service.itemsForDataset('aef').map(({ id, category, row, stack }) => ({
-        id,
-        category,
-        row,
-        stack,
-      })),
-    ).toEqual([
-      { id: 'v_solid', category: '__custom_items', row: 999, stack: 50 },
-      {
-        id: 'v_liquid',
-        category: '__custom_items',
+      service.importDocument(
+        'recipes.json',
+        {
+          ...source,
+          recipes: [{ ...recipe, in: { 'new-material': 1 } }],
+        },
+        context,
+      ).valid,
+    ).toBeTrue();
+    expect(service.generatedItemsForMod('aef')).toEqual([
+      jasmine.objectContaining({
+        id: 'new-material',
+        category: 'activity',
         row: 999,
-        stack: undefined,
-      },
-      { id: 'v_gas', category: '__custom_items', row: 999, stack: undefined },
+      }),
     ]);
   });
 });

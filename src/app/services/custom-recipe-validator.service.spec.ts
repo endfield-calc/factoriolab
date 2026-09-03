@@ -155,7 +155,7 @@ describe('CustomRecipeValidatorService', () => {
     expect(result.valid).toBeTrue();
   });
 
-  it('accepts item definitions without a category or icon', () => {
+  it('rejects the removed custom item field', () => {
     const result = service.validate(
       {
         ...document(),
@@ -164,52 +164,7 @@ describe('CustomRecipeValidatorService', () => {
       context,
     );
 
-    expect(result.valid).toBeTrue();
-    expect(result.items).toEqual([
-      { id: 'new-material', name: 'New material' },
-    ]);
-  });
-
-  it('accepts typed custom items with v_ ids', () => {
-    const result = service.validate(
-      {
-        ...document(),
-        items: [
-          { id: 'v_solid', name: 'Solid', type: 'solid' },
-          { id: 'v_liquid', name: 'Liquid', type: 'liquid' },
-          { id: 'v_gas', name: 'Gas', type: 'gas' },
-        ],
-      },
-      context,
-    );
-
-    expect(result.valid).toBeTrue();
-    expect(result.issues).toEqual([]);
-  });
-
-  it('rejects typed custom items without a v_ id', () => {
-    const result = service.validate(
-      {
-        ...document(),
-        items: [{ id: 'solid', name: 'Solid', type: 'solid' }],
-      },
-      context,
-    );
-
     expect(result.valid).toBeFalse();
-    expect(result.issues.map((issue) => issue.path)).toEqual(['items[0].id']);
-  });
-
-  it('rejects unsupported custom item types', () => {
-    const result = service.validate(
-      {
-        ...document(),
-        items: [{ id: 'v_item', name: 'Item', type: 'powder' }],
-      },
-      context,
-    );
-
-    expect(result.valid).toBeFalse();
-    expect(result.issues.map((issue) => issue.path)).toEqual(['items[0].type']);
+    expect(result.issues.map((issue) => issue.path)).toEqual(['items']);
   });
 });

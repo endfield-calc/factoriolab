@@ -12,8 +12,6 @@ import {
 } from '~/helpers';
 import { DEFAULT_MOD } from '~/models/constants';
 import {
-  CUSTOM_ITEM_CATEGORY_ID,
-  CUSTOM_ITEM_CATEGORY_NAME,
   CustomRecipeJson,
   CustomRecipeValidationContext,
 } from '~/models/custom-recipe';
@@ -173,8 +171,8 @@ export class SettingsService extends Store<SettingsState> {
     const datasets = this.datasetsSvc.state();
     const hash = datasets[modId]?.hash;
     if (hash == null) return;
-    const customItemIds = this.customRecipeSvc
-      .itemsForMod(modId)
+    const generatedItemIds = this.customRecipeSvc
+      .generatedItemsForMod(modId)
       .map((item) => item.id);
     const customRecipeIds = this.customRecipeSvc
       .recipesForMod(modId)
@@ -182,7 +180,7 @@ export class SettingsService extends Store<SettingsState> {
     return spread(hash, {
       items: [
         ...hash.items,
-        ...customItemIds.filter((id) => !hash.items.includes(id)),
+        ...generatedItemIds.filter((id) => !hash.items.includes(id)),
       ],
       recipes: [
         ...hash.recipes,
@@ -217,9 +215,11 @@ export class SettingsService extends Store<SettingsState> {
     return modId == null ? [] : this.customRecipeSvc.recipesForMod(modId);
   });
 
-  customItems = computed<ItemJson[]>(() => {
+  generatedItems = computed<ItemJson[]>(() => {
     const modId = this.modId();
-    return modId == null ? [] : this.customRecipeSvc.itemsForDataset(modId);
+    return modId == null
+      ? []
+      : this.customRecipeSvc.generatedItemsForMod(modId);
   });
 
   i18n = computed(() => {
@@ -284,7 +284,7 @@ export class SettingsService extends Store<SettingsState> {
       this.game(),
       this.defaults(),
       this.customRecipes(),
-      this.customItems(),
+      this.generatedItems(),
     ),
   );
 
@@ -538,19 +538,10 @@ export class SettingsService extends Store<SettingsState> {
     game: Game,
     defaults: Optional<Defaults>,
     customRecipes: CustomRecipeJson[] = [],
-    customItems: ItemJson[] = [],
+    generatedItems: ItemJson[] = [],
   ): Dataset {
     // Map out entities with mods
     const categories = [...coalesce(mod?.categories, [])];
-    if (
-      customItems.length &&
-      !categories.some((category) => category.id === CUSTOM_ITEM_CATEGORY_ID)
-    )
-      categories.push({
-        id: CUSTOM_ITEM_CATEGORY_ID,
-        name: CUSTOM_ITEM_CATEGORY_NAME,
-        iconText: '?',
-      });
     const categoryEntities = toEntities(categories, environment.debug);
     const iconFile = `data/${coalesce(mod?.id, DEFAULT_MOD)}/icons.webp`;
     const iconEntities = toEntities(
@@ -558,7 +549,7 @@ export class SettingsService extends Store<SettingsState> {
       environment.debug,
     );
     const itemData = toEntities<ItemJson>(
-      [...coalesce(mod?.items, []), ...customItems],
+      [...coalesce(mod?.items, []), ...generatedItems],
       environment.debug,
     );
     const recipeData = toEntities(
@@ -611,8 +602,11 @@ export class SettingsService extends Store<SettingsState> {
 
     // Calculate missing implicit recipe icons
     // For recipes with no icon, use icon of first output item
+    const customRecipeIds = new Set(customRecipes.map((recipe) => recipe.id));
     recipes
-      .filter((r) => !r.iconBackground && !iconEntities[r.id] && !r.icon)
+      .filter(
+        (r) => !customRecipeIds.has(r.id) && !iconEntities[r.id] && !r.icon,
+      )
       .forEach((r) => {
         const firstOutId = Object.keys(r.out)[0];
         const firstOutItem = itemData[firstOutId];

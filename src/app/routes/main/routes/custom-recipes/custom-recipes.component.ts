@@ -6,7 +6,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { saveAs } from 'file-saver';
@@ -26,12 +25,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { customRecipeTextColor } from '~/helpers/custom-recipe-icon';
 import {
-  CUSTOM_ITEM_CATEGORY_ID,
-  CUSTOM_ITEM_CATEGORY_NAME,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_VERSION,
-  CustomItemJson,
-  CustomItemType,
   CustomRecipeDocument,
   customRecipeEffects,
   customRecipeFlags,
@@ -45,22 +40,11 @@ import { ModuleEffect } from '~/models/data/module';
 import { RecipeFlag } from '~/models/data/recipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { CustomRecipeService } from '~/services/custom-recipe.service';
-import { TranslateService } from '~/services/translate.service';
 import { SettingsService } from '~/store/settings.service';
 
 interface AmountForm {
   id: string;
   amount: string;
-}
-
-interface ItemForm {
-  id: string;
-  name: string;
-  category: string;
-  row: number;
-  type: CustomItemType;
-  iconText: string;
-  iconBackground: string;
 }
 
 type RecipeTimePreset = '1' | '2' | '10' | '20' | 'custom';
@@ -86,8 +70,6 @@ interface RecipeForm {
   iconBackground: string;
 }
 
-type EditorMode = 'items' | 'recipes';
-
 @Component({
   selector: 'lab-custom-recipes',
   standalone: true,
@@ -112,7 +94,6 @@ export class CustomRecipesComponent {
   router = inject(Router);
   customRecipeSvc = inject(CustomRecipeService);
   settingsSvc = inject(SettingsService);
-  translateSvc = inject(TranslateService);
 
   modId = this.settingsSvc.modId;
   data = this.settingsSvc.dataset;
@@ -142,53 +123,21 @@ export class CustomRecipesComponent {
       : 0;
     return { enabled, total };
   });
-  selectedItemIndex = signal(0);
   selectedRecipeIndex = signal(0);
   importResults = signal<CustomRecipeImportResult[]>([]);
   saveResult = signal<CustomRecipeImportResult | undefined>(undefined);
 
-  editorMode: EditorMode = 'recipes';
   showAdvanced = false;
   fileName = 'custom-recipes.json';
-  items: ItemForm[] = [];
   recipes: RecipeForm[] = [];
   itemSuggestions: SelectItem<string>[] = [];
   readonly timePresets: RecipeTimePreset[] = ['1', '2', '10', '20', 'custom'];
-  itemTypeLabels = toSignal(
-    this.translateSvc.multi([
-      'customRecipeEditor.solid',
-      'customRecipeEditor.liquid',
-      'customRecipeEditor.gas',
-    ]),
-    { initialValue: ['固体', '液体', '气体'] },
-  );
-  itemTypeOptions = computed<SelectItem<CustomItemType>[]>(() => {
-    const labels = this.itemTypeLabels();
-    return [
-      { label: labels[0], value: 'solid' },
-      { label: labels[1], value: 'liquid' },
-      { label: labels[2], value: 'gas' },
-    ];
-  });
-
-  itemCategoryOptions = computed<SelectItem<string>[]>(() => {
+  recipeCategoryOptions = computed<SelectItem<string>[]>(() => {
     const data = this.data();
-    const options = data.categoryIds.map((id) => ({
+    return data.categoryIds.map((id) => ({
       label: data.categoryEntities[id].name,
       value: id,
     }));
-    if (!options.some((option) => option.value === CUSTOM_ITEM_CATEGORY_ID))
-      options.push({
-        label: CUSTOM_ITEM_CATEGORY_NAME,
-        value: CUSTOM_ITEM_CATEGORY_ID,
-      });
-    return options;
-  });
-  recipeCategoryOptions = computed<SelectItem<string>[]>(() => {
-    const data = this.data();
-    return data.categoryIds
-      .filter((id) => id !== CUSTOM_ITEM_CATEGORY_ID)
-      .map((id) => ({ label: data.categoryEntities[id].name, value: id }));
   });
   machineOptions = computed<SelectItem<string>[]>(() => {
     const data = this.data();
@@ -245,10 +194,6 @@ export class CustomRecipesComponent {
     );
   }
 
-  get selectedItem(): ItemForm | undefined {
-    return this.items[this.selectedItemIndex()];
-  }
-
   get selectedRecipe(): RecipeForm | undefined {
     return this.recipes[this.selectedRecipeIndex()];
   }
@@ -275,14 +220,6 @@ export class CustomRecipesComponent {
     if (preset !== 'custom') recipe.time = preset;
   }
 
-  itemIdSuffix(item: ItemForm): string {
-    return item.id.startsWith('v_') ? item.id.slice(2) : item.id;
-  }
-
-  setItemIdSuffix(item: ItemForm, event: Event): void {
-    item.id = `v_${(event.target as HTMLInputElement).value}`;
-  }
-
   selectSource(sourceId: string): void {
     const source = this.sources().find((entry) => entry.id === sourceId);
     if (!source) return;
@@ -296,12 +233,9 @@ export class CustomRecipesComponent {
   startNewDocument(): void {
     this.selectedSourceId.set(null);
     this.fileName = this.nextFileName();
-    this.items = [];
     this.recipes = [];
     this.itemSuggestions = this.itemOptions();
-    this.selectedItemIndex.set(0);
     this.selectedRecipeIndex.set(0);
-    this.editorMode = 'recipes';
     this.showAdvanced = false;
     this.saveResult.set(undefined);
   }
@@ -412,22 +346,8 @@ export class CustomRecipesComponent {
       this.customRecipeSvc.setRecipeEnabled(modId, sourceId, recipeId, enabled);
   }
 
-  addItem(): void {
-    this.items.push(this.createItem(this.items.length));
-    this.editorMode = 'items';
-    this.selectedItemIndex.set(this.items.length - 1);
-  }
-
-  removeItem(index: number): void {
-    this.items.splice(index, 1);
-    this.selectedItemIndex.set(
-      Math.max(0, Math.min(index, this.items.length - 1)),
-    );
-  }
-
   addRecipe(): void {
     this.recipes.push(this.createRecipe(this.recipes.length));
-    this.editorMode = 'recipes';
     this.selectedRecipeIndex.set(this.recipes.length - 1);
   }
 
@@ -454,28 +374,14 @@ export class CustomRecipesComponent {
     return this.isColor(value) ? customRecipeTextColor(value) : '#fff';
   }
 
-  setColor(target: ItemForm | RecipeForm, event: Event): void {
+  setColor(target: RecipeForm, event: Event): void {
     target.iconBackground = (event.target as HTMLInputElement).value;
   }
 
   private loadDocument(document: CustomRecipeDocument): void {
-    this.items = (document.items ?? []).map((item) => this.toItemForm(item));
     this.recipes = document.recipes.map((recipe) => this.toRecipeForm(recipe));
     this.itemSuggestions = this.itemOptions();
-    this.selectedItemIndex.set(0);
     this.selectedRecipeIndex.set(0);
-  }
-
-  private toItemForm(item: CustomItemJson): ItemForm {
-    return {
-      id: item.id,
-      name: item.name,
-      category: item.category ?? CUSTOM_ITEM_CATEGORY_ID,
-      row: item.row ?? DEFAULT_CUSTOM_RECIPE_ROW,
-      type: item.type ?? this.inferItemType(item),
-      iconText: item.iconText ?? this.firstCharacter(item.id),
-      iconBackground: item.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
-    };
   }
 
   private toRecipeForm(recipe: CustomRecipeJson): RecipeForm {
@@ -511,19 +417,6 @@ export class CustomRecipesComponent {
     return rows.length ? rows : [{ id: '', amount: '1' }];
   }
 
-  private createItem(index: number): ItemForm {
-    const id = `v_custom_item_${String(index + 1)}`;
-    return {
-      id,
-      name: '',
-      category: CUSTOM_ITEM_CATEGORY_ID,
-      row: DEFAULT_CUSTOM_RECIPE_ROW,
-      type: 'solid',
-      iconText: this.firstCharacter(id),
-      iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
-    };
-  }
-
   private createRecipe(index: number): RecipeForm {
     const id = `custom-recipe-${String(index + 1)}`;
     return {
@@ -537,7 +430,7 @@ export class CustomRecipesComponent {
         ? [this.machineOptions()[0].value]
         : [],
       inputs: [{ id: '', amount: '1' }],
-      outputs: [{ id: this.items[0]?.id ?? '', amount: '1' }],
+      outputs: [{ id: '', amount: '1' }],
       catalyst: [{ id: '', amount: '1' }],
       cost: '',
       part: '',
@@ -555,22 +448,8 @@ export class CustomRecipesComponent {
       format: CUSTOM_RECIPE_FORMAT,
       version: CUSTOM_RECIPE_VERSION,
       modId,
-      items: this.items.map((item) => this.toItemJson(item)),
       recipes: this.recipes.map((recipe) => this.toRecipeJson(recipe)),
     };
-  }
-
-  private toItemJson(item: ItemForm): CustomItemJson {
-    const result: CustomItemJson = {
-      id: item.id.trim(),
-      name: item.name.trim(),
-      row: Number.isFinite(item.row) ? item.row : DEFAULT_CUSTOM_RECIPE_ROW,
-      iconText: item.iconText.trim() || '?',
-      iconBackground: this.colorValue(item.iconBackground),
-    };
-    if (item.category) result.category = item.category;
-    if (result.id.startsWith('v_')) result.type = item.type;
-    return result;
   }
 
   private toRecipeJson(recipe: RecipeForm): CustomRecipeJson {
@@ -632,18 +511,6 @@ export class CustomRecipesComponent {
 
   private firstCharacter(value: string): string {
     return Array.from(value)[0] ?? '?';
-  }
-
-  private inferItemType(item: CustomItemJson): CustomItemType {
-    if (item.stack != null) return 'solid';
-    const id = item.id.toLocaleLowerCase();
-    if (
-      id.startsWith('gas_') ||
-      id.endsWith('_gas') ||
-      /气体|气态|气$/u.test(item.name)
-    )
-      return 'gas';
-    return 'liquid';
   }
 
   private isColor(value: string): boolean {

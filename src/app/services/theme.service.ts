@@ -14,6 +14,7 @@ import {
   PreferencesState,
 } from '../store/preferences.service';
 import { SettingsService } from '../store/settings.service';
+import { CustomRecipeService } from './custom-recipe.service';
 
 const LAB_ICON_STYLE_ID = 'lab-icon-css';
 const LAB_THEME_STYLE_ID = 'lab-theme-css';
@@ -33,6 +34,7 @@ export class ThemeService {
   document = inject(DOCUMENT);
   preferencesSvc = inject(PreferencesService);
   settingsSvc = inject(SettingsService);
+  customRecipeSvc = inject(CustomRecipeService);
 
   themeValues$ = new ReplaySubject<ThemeValues>(1);
   head = this.document.getElementsByTagName('head')[0];
@@ -70,6 +72,11 @@ export class ThemeService {
 
     effect(() => {
       const data = this.settingsSvc.dataset();
+      const customRecipes = new Map(
+        this.customRecipeSvc
+          .recipesForMod(data.modId)
+          .map((recipe) => [recipe.id, recipe]),
+      );
 
       // Generate .lab-icon::before css rules stylesheet
       const old = this.document.getElementById(LAB_ICON_STYLE_ID);
@@ -97,7 +104,7 @@ export class ThemeService {
       data.recipeIds
         .map((r) => data.recipeEntities[r])
         .filter(fnPropsNotNullish('icon'))
-        .filter((recipe) => !recipe.iconBackground)
+        .filter((recipe) => !customRecipes.has(recipe.id))
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {
           const icon = data.iconEntities[recipe.icon];
@@ -105,21 +112,16 @@ export class ThemeService {
           css += `.${selector}.recipe::before { background-image: url("${data.iconFile}"); background-position: ${icon.position}; } `;
           css += this.appendLightStyle(icon, selector, '.recipe');
         });
-      data.recipeIds
-        .map((r) => data.recipeEntities[r])
-        .filter(
-          (recipe) => recipe.iconBackground != null && recipe.iconText != null,
-        )
-        .filter((recipe) => !data.recipeQIds.has(recipe.id))
-        .forEach((recipe) => {
-          const selector = this.escapeSelector(recipe.id);
-          const text = JSON.stringify(recipe.iconText) ?? '""';
-          const background = recipe.iconBackground ?? '#64748b';
-          const textColor = customRecipeTextColor(background);
-          const iconText = recipe.iconText ?? '';
-          const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
-          css += `.${selector}.recipe::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
-        });
+      for (const recipe of customRecipes.values()) {
+        if (data.recipeQIds.has(recipe.id)) continue;
+        const selector = this.escapeSelector(recipe.id);
+        const text = JSON.stringify(recipe.iconText) ?? '""';
+        const background = recipe.iconBackground ?? '#64748b';
+        const textColor = customRecipeTextColor(background);
+        const iconText = recipe.iconText ?? '';
+        const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
+        css += `.${selector}.recipe::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
+      }
       data.categoryIds
         .map((c) => data.categoryEntities[c])
         .filter(fnPropsNotNullish('icon'))
@@ -140,20 +142,6 @@ export class ThemeService {
         });
       data.itemIds
         .map((i) => data.itemEntities[i])
-        .filter((item) => item.iconBackground != null && item.iconText != null)
-        .filter((item) => !data.itemQIds.has(item.id))
-        .forEach((item) => {
-          const selector = this.escapeSelector(item.id);
-          const text = JSON.stringify(item.iconText) ?? '""';
-          const background = item.iconBackground ?? '#64748b';
-          const textColor = customRecipeTextColor(background);
-          const iconText = item.iconText ?? '';
-          const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
-          css += `.${selector}.item::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
-        });
-      data.itemIds
-        .map((i) => data.itemEntities[i])
-        .filter((item) => !item.iconBackground)
         .filter(fnPropsNotNullish('iconText'))
         .filter((item) => !data.itemQIds.has(item.id))
         .forEach((item) => {
@@ -162,7 +150,7 @@ export class ThemeService {
         });
       data.recipeIds
         .map((i) => data.recipeEntities[i])
-        .filter((recipe) => !recipe.iconBackground)
+        .filter((recipe) => !customRecipes.has(recipe.id))
         .filter(fnPropsNotNullish('iconText'))
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {

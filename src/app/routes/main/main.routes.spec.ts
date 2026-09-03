@@ -1,4 +1,5 @@
 import { routes } from './main.routes';
+import { CustomRecipesComponent } from './routes/custom-recipes/custom-recipes.component';
 import { routes as dataRoutes } from './routes/data/data.routes';
 import { FlowComponent } from './routes/flow/flow.component';
 import { ListComponent } from './routes/list/list.component';
@@ -9,8 +10,11 @@ describe('Main Routes', () => {
       ListComponent,
     );
     expect(await routes[0].children![1].loadComponent!()).toEqual(
+      CustomRecipesComponent,
+    );
+    expect(await routes[0].children![2].loadComponent!()).toEqual(
       FlowComponent,
     );
-    expect(await routes[0].children![2].loadChildren!()).toEqual(dataRoutes);
+    expect(await routes[0].children![3].loadChildren!()).toEqual(dataRoutes);
   });
 });

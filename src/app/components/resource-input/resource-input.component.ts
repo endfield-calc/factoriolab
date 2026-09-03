@@ -25,7 +25,7 @@ import { InputNumberComponent } from '~/components/input-number/input-number.com
 import { NoDragDirective } from '~/directives/no-drag.directive';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
-import { ObjectiveBase, ObjectiveSettings } from '~/models/objective';
+import { ObjectiveBase } from '~/models/objective';
 import { fromNumber, Rational, rational } from '~/models/rational';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';

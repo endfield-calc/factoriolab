@@ -2,8 +2,10 @@ import { inject, Injectable } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, map, switchMap } from 'rxjs';
 
+import { customRecipeIconDataUri } from '~/helpers/custom-recipe-icon';
 import { MIN_LINK_VALUE } from '~/models/constants';
 import { Icon } from '~/models/data/icon';
+import { Item } from '~/models/data/item';
 import { AdjustedDataset } from '~/models/dataset';
 import { LinkValue } from '~/models/enum/link-value';
 import { FlowData } from '~/models/flow';
@@ -20,6 +22,7 @@ import {
 } from '../store/preferences.service';
 import { RecipesService } from '../store/recipes.service';
 import { SettingsService } from '../store/settings.service';
+import { CustomRecipeService } from './custom-recipe.service';
 import { ThemeService, ThemeValues } from './theme.service';
 import { TranslateService } from './translate.service';
 
@@ -33,6 +36,7 @@ export class FlowService {
   settingsSvc = inject(SettingsService);
   themeSvc = inject(ThemeService);
   translateSvc = inject(TranslateService);
+  customRecipeSvc = inject(CustomRecipeService);
 
   flowData$ = combineLatest({
     steps: toObservable(this.objectivesSvc.steps),
@@ -63,6 +67,11 @@ export class FlowService {
   ): FlowData {
     const itemPrec = preferences.columns.items.precision;
     const machinePrec = preferences.columns.machines.precision;
+    const customRecipes = new Map(
+      this.customRecipeSvc
+        .recipesForMod(data.modId)
+        .map((recipe) => [recipe.id, recipe]),
+    );
     const flow: FlowData = {
       nodes: [],
       links: [],
@@ -93,16 +102,16 @@ export class FlowService {
           !settings.excludedItemIds.has(step.itemId))
       ) {
         const item = data.itemEntities[step.itemId];
-        const icon = data.iconEntities[item.icon ?? item.id];
+        const itemIcon = this.itemIcon(item, data);
         const id = `i|${step.itemId}`;
         flow.nodes.push({
           id,
           name: item.name,
           text: `${step.items.toString(itemPrec)}${suffix}`,
-          color: icon.color,
+          color: itemIcon.icon.color,
           stepId: step.id,
-          href: data.iconFile,
-          ...this.positionProps(icon),
+          href: itemIcon.href,
+          ...this.positionProps(itemIcon.icon),
         });
 
         if (step.parents) {
@@ -123,7 +132,7 @@ export class FlowService {
                 preferences.columns,
                 suffix,
               ),
-              color: icon.color,
+              color: itemIcon.icon.color,
               value: this.linkSize(
                 stepValue[step.id],
                 step.parents[stepId],
@@ -143,8 +152,8 @@ export class FlowService {
             text: `${step.surplus.toString(itemPrec)}${suffix}`,
             color: themeValues.dangerBackground,
             stepId: step.id,
-            href: data.iconFile,
-            ...this.positionProps(icon),
+            href: itemIcon.href,
+            ...this.positionProps(itemIcon.icon),
           });
           flow.links.push({
             source: id,
@@ -157,7 +166,7 @@ export class FlowService {
               preferences.columns,
               suffix,
             ),
-            color: icon.color,
+            color: itemIcon.icon.color,
             value: this.linkSize(
               stepValue[step.id],
               percent,
@@ -176,8 +185,8 @@ export class FlowService {
             text: `${step.output.toString(itemPrec)}${suffix}`,
             color: themeValues.successBackground,
             stepId: step.id,
-            href: data.iconFile,
-            ...this.positionProps(icon),
+            href: itemIcon.href,
+            ...this.positionProps(itemIcon.icon),
           });
           flow.links.push({
             source: id,
@@ -190,7 +199,7 @@ export class FlowService {
               preferences.columns,
               suffix,
             ),
-            color: icon.color,
+            color: itemIcon.icon.color,
             value: this.linkSize(
               stepValue[step.id],
               percent,
@@ -204,7 +213,14 @@ export class FlowService {
       if (step.recipeId && step.machines && step.recipeSettings?.machineId) {
         const recipe = data.recipeEntities[step.recipeId];
         const machine = data.itemEntities[step.recipeSettings?.machineId];
-        const icon = data.iconEntities[recipe.icon ?? recipe.id];
+        const customRecipe = customRecipes.get(recipe.id);
+        const icon = customRecipe?.customRecipe.iconBackground
+          ? {
+              id: recipe.id,
+              color: customRecipe.customRecipe.iconBackground,
+              position: '0 0',
+            }
+          : data.iconEntities[recipe.icon ?? recipe.id];
         const id = `${this.recipeStepNodeType(step)}|${step.recipeId}`;
         flow.nodes.push({
           id,
@@ -212,7 +228,12 @@ export class FlowService {
           text: `${step.machines.toString(machinePrec)} ${machine.name}`,
           color: icon.color,
           stepId: step.id,
-          href: data.iconFile,
+          href: customRecipe?.customRecipe.iconBackground
+            ? customRecipeIconDataUri(
+                customRecipe.customRecipe.iconText,
+                customRecipe.customRecipe.iconBackground,
+              )
+            : data.iconFile,
           recipe,
           ...this.positionProps(icon),
         });
@@ -225,7 +246,7 @@ export class FlowService {
           )) {
             const itemStep = stepItemMap[itemId];
             const item = data.itemEntities[itemId];
-            const icon = data.iconEntities[item.icon ?? item.id];
+            const itemIcon = this.itemIcon(item, data);
             flow.links.push({
               source: id,
               target: `i|${itemId}`,
@@ -237,7 +258,7 @@ export class FlowService {
                 preferences.columns,
                 suffix,
               ),
-              color: icon.color,
+              color: itemIcon.icon.color,
               value: this.linkSize(
                 stepValue[itemStep.id],
                 step.outputs[itemId],
@@ -291,6 +312,19 @@ export class FlowService {
     const [posX, posY] = icon.position.split(' ');
     const viewBox = `${icon.position.replace(/px/g, '').replace(/-/g, '')} 64 64`;
     return { posX, posY, viewBox };
+  }
+
+  private itemIcon(
+    item: Item,
+    data: AdjustedDataset,
+  ): { icon: Icon; href: string } {
+    return {
+      icon:
+        data.iconEntities[item.icon ?? item.id] ??
+        data.iconEntities[item.category] ??
+        data.iconEntities[data.iconIds[0]],
+      href: data.iconFile,
+    };
   }
 
   linkSize(

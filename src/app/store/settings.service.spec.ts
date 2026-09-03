@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { spread } from '~/helpers';
+import { CustomRecipeJson } from '~/models/custom-recipe';
 import { DisplayRate, displayRateInfo } from '~/models/enum/display-rate';
 import { EnergyType } from '~/models/enum/energy-type';
 import { Game } from '~/models/enum/game';
@@ -373,6 +374,59 @@ describe('SettingsService', () => {
       ).toEqual(ItemId.HeavyOil);
     });
 
+    it('should include custom recipes without inferring an image icon', () => {
+      const customRecipe: CustomRecipeJson = {
+        id: 'custom-recipe',
+        name: 'Custom recipe',
+        category: Mocks.mod.categories[0].id,
+        row: 999,
+        time: 2,
+        producers: [Mocks.mod.items.find((item) => item.machine)!.id],
+        in: {},
+        out: { [Mocks.mod.items[0].id]: 1 },
+        customRecipe: {
+          iconText: '自',
+          iconBackground: '#3b82f6',
+        },
+      };
+
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [customRecipe],
+      );
+      const recipe = result.recipeEntities[customRecipe.id];
+
+      expect(result.recipeIds).toContain(customRecipe.id);
+      expect(recipe.icon).toBeUndefined();
+      expect(recipe.iconText).toBeUndefined();
+    });
+
+    it('should include generated items in the dataset', () => {
+      const result = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [],
+        [
+          {
+            id: 'v_custom_item',
+            name: 'Custom item',
+            category: 'activity',
+            row: 999,
+            iconText: '自',
+          },
+        ],
+      );
+
+      expect(result.itemEntities['v_custom_item'].category).toEqual('activity');
+    });
+
     it('should handle data not loaded yet', () => {
       spyOn(service, 'mod').and.returnValue(undefined);
       const result = service.dataset();
@@ -438,6 +492,26 @@ describe('SettingsService', () => {
   });
 
   describe('settings', () => {
+    it('excludes all custom recipes when the global switch is disabled', () => {
+      const customRecipe = {
+        id: 'custom-recipe',
+      } as CustomRecipeJson;
+      spyOn(service.customRecipeSvc, 'recipesForMod').and.returnValue([
+        customRecipe,
+      ]);
+      spyOn(service.customRecipeSvc, 'excludedRecipeIdsForMod').and.returnValue(
+        new Set(),
+      );
+      spyOn(service, 'state').and.returnValue(
+        spread(Mocks.settingsStateInitial, { customRecipesEnabled: false }),
+      );
+
+      const result = service.settings();
+
+      expect(result.customRecipesEnabled).toBeFalse();
+      expect(result.excludedRecipeIds.has('custom-recipe')).toBeTrue();
+    });
+
     it('should overwrite defaults when specified', () => {
       const value: any = {
         modId: '1.1',

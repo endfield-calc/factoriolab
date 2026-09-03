@@ -1,0 +1,752 @@
+<div class="custom-editor">
+  <div class="editor-toolbar">
+    <div class="d-flex align-items-center min-w-0">
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-text p-button-secondary me-2"
+        icon="fa-solid fa-arrow-left"
+        [label]="'customRecipeEditor.back' | translate"
+        (click)="backToCalculator()"
+      ></button>
+      <div class="min-w-0">
+        <h1 class="editor-title">
+          {{ 'customRecipeEditor.title' | translate }}
+        </h1>
+      </div>
+    </div>
+    <div class="editor-actions">
+      <input
+        #recipeFiles
+        class="d-none"
+        type="file"
+        accept=".json,application/json"
+        multiple
+        (change)="importFiles($event)"
+      />
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-outlined"
+        icon="fa-solid fa-plus"
+        [label]="'customRecipeEditor.newFile' | translate"
+        (click)="newDocument()"
+      ></button>
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-outlined"
+        icon="fa-solid fa-file-import"
+        [label]="'customRecipeEditor.import' | translate"
+        [disabled]="context() == null"
+        (click)="recipeFiles.click()"
+      ></button>
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-outlined"
+        icon="fa-solid fa-floppy-disk"
+        [label]="'customRecipeEditor.save' | translate"
+        [disabled]="context() == null"
+        (click)="save()"
+      ></button>
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-outlined"
+        icon="fa-solid fa-download"
+        [label]="'customRecipeEditor.download' | translate"
+        [disabled]="context() == null"
+        (click)="download()"
+      ></button>
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <p-checkbox
+      inputId="custom-recipes-enabled"
+      [binary]="true"
+      [ngModel]="customRecipesEnabled()"
+      (onChange)="setCustomRecipesEnabled($event.checked)"
+    ></p-checkbox>
+    <div class="d-flex flex-column">
+      <label for="custom-recipes-enabled">
+        {{ 'customRecipeEditor.enableAll' | translate }}
+      </label>
+      <small class="text-muted">
+        {{ customRecipeStats().enabled }} / {{ customRecipeStats().total }}
+        {{ 'customRecipeEditor.enabled' | translate }}
+      </small>
+    </div>
+  </div>
+
+  @for (result of importResults(); track $index) {
+    <div
+      class="editor-feedback"
+      [class.text-danger]="!result.valid"
+      [class.text-success]="result.valid"
+    >
+      <i
+        class="me-2"
+        [class.fa-solid]="true"
+        [class.fa-circle-check]="result.valid"
+        [class.fa-circle-exclamation]="!result.valid"
+      ></i>
+      <strong>{{ result.fileName }}</strong>
+      @if (result.valid) {
+        <span class="ms-2">{{
+          'customRecipeEditor.imported' | translate
+        }}</span>
+      } @else {
+        @for (issue of result.issues; track $index) {
+          <span class="ms-2">{{ issue.path }} {{ issue.message }}</span>
+        }
+      }
+    </div>
+  }
+
+  @if (saveResult(); as result) {
+    <div
+      class="editor-feedback"
+      [class.text-danger]="!result.valid"
+      [class.text-success]="result.valid"
+    >
+      <i
+        class="fa-solid me-2"
+        [class.fa-circle-check]="result.valid"
+        [class.fa-circle-exclamation]="!result.valid"
+      ></i>
+      @if (result.valid) {
+        {{ 'customRecipeEditor.saved' | translate }}
+      } @else {
+        @for (issue of result.issues; track $index) {
+          <span class="ms-2">{{ issue.path }} {{ issue.message }}</span>
+        }
+      }
+    </div>
+  }
+
+  <div class="editor-layout">
+    <aside class="source-pane">
+      <div class="pane-heading">
+        <span>{{ 'customRecipeEditor.files' | translate }}</span>
+        <span class="text-muted">{{ sources().length }}</span>
+      </div>
+      @for (source of sources(); track source.id) {
+        <div class="d-flex align-items-center min-w-0">
+          <button
+            pButton
+            pRipple
+            type="button"
+            class="source-entry p-button-text"
+            [class.active]="selectedSourceId() === source.id"
+            (click)="selectSource(source.id)"
+          >
+            <i class="fa-solid fa-file-lines"></i>
+            <span class="source-copy">
+              <strong class="text-truncate">{{ source.fileName }}</strong>
+              <small class="text-muted">
+                {{ source.document.recipes.length }}
+                {{ 'customRecipeEditor.recipes' | translate }} ·
+                {{ enabledRecipeCount(source) }}/{{
+                  source.document.recipes.length
+                }}
+                {{ 'customRecipeEditor.enabled' | translate }}
+              </small>
+            </span>
+          </button>
+          <p-checkbox
+            class="ms-2 flex-shrink-0"
+            [inputId]="'custom-source-enabled-' + source.id"
+            [binary]="true"
+            [ngModel]="sourceEnabled(source)"
+            [disabled]="!customRecipesEnabled()"
+            [pTooltip]="'customRecipeEditor.toggleFile' | translate"
+            (click)="$event.stopPropagation()"
+            (onChange)="setSourceEnabled(source.id, $event.checked)"
+          ></p-checkbox>
+        </div>
+      } @empty {
+        <div class="empty-copy">
+          {{ 'customRecipeEditor.noFiles' | translate }}
+        </div>
+      }
+      @if (selectedSourceId()) {
+        <button
+          pButton
+          pRipple
+          type="button"
+          class="p-button-text p-button-danger w-100 source-remove"
+          icon="fa-solid fa-trash"
+          [label]="'customRecipeEditor.removeFile' | translate"
+          (click)="removeSelectedSource()"
+        ></button>
+      }
+    </aside>
+
+    <section class="workspace-pane">
+      <div class="file-toolbar">
+        <div class="file-name-field">
+          <label for="custom-recipe-file-name">
+            {{ 'customRecipeEditor.fileName' | translate }}
+          </label>
+          <input
+            id="custom-recipe-file-name"
+            pInputText
+            type="text"
+            [(ngModel)]="fileName"
+            [readonly]="selectedSourceId() !== null"
+          />
+        </div>
+        <div class="file-stats text-muted">
+          <span
+            >{{ recipes.length }}
+            {{ 'customRecipeEditor.recipes' | translate }}</span
+          >
+        </div>
+      </div>
+
+      <div class="entity-layout">
+        <div class="entity-list">
+          <div class="entity-list-heading">
+            <span>{{ 'customRecipeEditor.recipeList' | translate }}</span>
+            <button
+              pButton
+              pRipple
+              type="button"
+              class="p-button-rounded p-button-text"
+              icon="fa-solid fa-plus"
+              [pTooltip]="'customRecipeEditor.addRecipe' | translate"
+              (click)="addRecipe()"
+            ></button>
+          </div>
+          @for (recipe of recipes; track $index; let index = $index) {
+            <div class="d-flex align-items-center min-w-0">
+              <button
+                pButton
+                pRipple
+                type="button"
+                class="entity-entry p-button-text"
+                [class.active]="selectedRecipeIndex() === index"
+                (click)="selectedRecipeIndex.set(index)"
+              >
+                <span
+                  class="editor-icon editor-icon-sm"
+                  [style.backgroundColor]="
+                    colorValue(recipe.customRecipe.iconBackground)
+                  "
+                  [style.color]="textColor(recipe.customRecipe.iconBackground)"
+                  >{{ recipe.customRecipe.iconText || '?' }}</span
+                >
+                <span class="entity-entry-copy">
+                  <strong class="text-truncate">{{
+                    recipe.name || recipe.id
+                  }}</strong>
+                  <small class="text-muted text-truncate">{{
+                    recipe.id
+                  }}</small>
+                  @if (!recipeEnabled(recipe.id)) {
+                    <small class="text-muted text-truncate">{{
+                      'customRecipeEditor.disabled' | translate
+                    }}</small>
+                  }
+                </span>
+              </button>
+              <p-checkbox
+                class="ms-2 flex-shrink-0"
+                [inputId]="'custom-recipe-enabled-' + recipe.id"
+                [binary]="true"
+                [ngModel]="recipeEnabled(recipe.id)"
+                [disabled]="!customRecipesEnabled() || !selectedSourceEnabled()"
+                [pTooltip]="'customRecipeEditor.toggleRecipe' | translate"
+                (click)="$event.stopPropagation()"
+                (onChange)="setRecipeEnabled(recipe.id, $event.checked)"
+              ></p-checkbox>
+            </div>
+          } @empty {
+            <div class="empty-copy">
+              {{ 'customRecipeEditor.noRecipes' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="entity-form">
+          @if (selectedRecipe; as recipe) {
+            <div class="form-heading">
+              <div>
+                <h2>{{ 'customRecipeEditor.recipeDetails' | translate }}</h2>
+                <small class="text-muted">{{ recipe.id }}</small>
+              </div>
+              <button
+                pButton
+                pRipple
+                type="button"
+                class="p-button-rounded p-button-text p-button-danger"
+                icon="fa-solid fa-trash"
+                [pTooltip]="'customRecipeEditor.removeRecipe' | translate"
+                (click)="removeRecipe(selectedRecipeIndex())"
+              ></button>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="recipe-id">{{
+                  'customRecipeEditor.id' | translate
+                }}</label>
+                <input
+                  id="recipe-id"
+                  pInputText
+                  type="text"
+                  [(ngModel)]="recipe.id"
+                />
+              </div>
+              <div class="field">
+                <label for="recipe-name">{{
+                  'customRecipeEditor.name' | translate
+                }}</label>
+                <input
+                  id="recipe-name"
+                  pInputText
+                  type="text"
+                  [(ngModel)]="recipe.name"
+                />
+              </div>
+              <div class="field">
+                <label id="recipe-category-label" for="recipe-category">{{
+                  'customRecipeEditor.category' | translate
+                }}</label>
+                <p-selectButton
+                  id="recipe-category"
+                  styleClass="w-100"
+                  [options]="recipeCategoryOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [allowEmpty]="false"
+                  ariaLabelledBy="recipe-category-label"
+                  [(ngModel)]="recipe.category"
+                ></p-selectButton>
+              </div>
+              <div class="field field-wide">
+                <label id="recipe-time-label" for="recipe-time">{{
+                  'customRecipeEditor.time' | translate
+                }}</label>
+                <div
+                  class="d-flex flex-wrap"
+                  role="radiogroup"
+                  aria-labelledby="recipe-time-label"
+                >
+                  @for (preset of timePresets; track preset) {
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      class="time-option"
+                      [class.p-button-outlined]="recipe.timePreset !== preset"
+                      [class.p-button-primary]="recipe.timePreset === preset"
+                      [attr.aria-checked]="recipe.timePreset === preset"
+                      role="radio"
+                      (click)="setTimePreset(recipe, preset)"
+                    >
+                      @if (preset === 'custom') {
+                        {{ 'customRecipeEditor.customTime' | translate }}
+                      } @else {
+                        {{ preset }}s
+                      }
+                    </button>
+                  }
+                </div>
+                @if (recipe.timePreset === 'custom') {
+                  <input
+                    id="recipe-time"
+                    pInputText
+                    type="text"
+                    class="custom-time-input"
+                    [placeholder]="'customRecipeEditor.timeValue' | translate"
+                    [attr.aria-label]="
+                      'customRecipeEditor.timeValue' | translate
+                    "
+                    [(ngModel)]="recipe.time"
+                  />
+                }
+              </div>
+              <div class="field field-wide">
+                <label id="recipe-producers-label" for="recipe-producers">{{
+                  'customRecipeEditor.producers' | translate
+                }}</label>
+                <p-dropdown
+                  inputId="recipe-producers"
+                  class="w-100"
+                  [options]="machineOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="false"
+                  [disabled]="machineOptions().length === 0"
+                  [placeholder]="'customRecipeEditor.selectMachine' | translate"
+                  [ngModel]="recipe.producers[0]"
+                  (onChange)="setProducer(recipe, $event.value)"
+                ></p-dropdown>
+                @if (recipe.producers.length > 1) {
+                  <small class="legacy-warning">
+                    <i class="fa-solid fa-circle-info me-1"></i
+                    >{{
+                      'customRecipeEditor.multipleProducersWarning' | translate
+                    }}
+                  </small>
+                }
+              </div>
+            </div>
+
+            <div class="io-grid">
+              <section class="amount-section">
+                <div class="section-heading">
+                  <span>{{ 'customRecipeEditor.inputs' | translate }}</span>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    class="p-button-rounded p-button-text"
+                    icon="fa-solid fa-plus"
+                    [pTooltip]="'customRecipeEditor.addInput' | translate"
+                    (click)="addAmount(recipe.inputs)"
+                  ></button>
+                </div>
+                @for (
+                  entry of recipe.inputs;
+                  track $index;
+                  let index = $index
+                ) {
+                  <div class="amount-row">
+                    <p-autoComplete
+                      class="item-autocomplete w-100"
+                      styleClass="w-100"
+                      [style.width]="'100%'"
+                      [style.min-width]="'0'"
+                      [inputId]="'recipe-input-' + index"
+                      [suggestions]="itemSuggestions"
+                      [optionLabel]="'label'"
+                      [optionValue]="'value'"
+                      [dropdown]="true"
+                      [completeOnFocus]="true"
+                      [forceSelection]="false"
+                      [showClear]="true"
+                      scrollHeight="240px"
+                      [placeholder]="
+                        'customRecipeEditor.itemSearch' | translate
+                      "
+                      [(ngModel)]="entry.id"
+                      (completeMethod)="searchItems($event)"
+                      (onDropdownClick)="searchItems($event)"
+                    ></p-autoComplete>
+                    <input
+                      pInputText
+                      type="text"
+                      class="amount-input"
+                      [placeholder]="'customRecipeEditor.amount' | translate"
+                      [(ngModel)]="entry.amount"
+                    />
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      class="p-button-rounded p-button-text p-button-danger"
+                      icon="fa-solid fa-xmark"
+                      [pTooltip]="'customRecipeEditor.removeRow' | translate"
+                      (click)="removeAmount(recipe.inputs, index)"
+                    ></button>
+                  </div>
+                }
+              </section>
+              <section class="amount-section">
+                <div class="section-heading">
+                  <span>{{ 'customRecipeEditor.outputs' | translate }}</span>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    class="p-button-rounded p-button-text"
+                    icon="fa-solid fa-plus"
+                    [pTooltip]="'customRecipeEditor.addOutput' | translate"
+                    (click)="addAmount(recipe.outputs)"
+                  ></button>
+                </div>
+                @for (
+                  entry of recipe.outputs;
+                  track $index;
+                  let index = $index
+                ) {
+                  <div class="amount-row">
+                    <p-autoComplete
+                      class="item-autocomplete w-100"
+                      styleClass="w-100"
+                      [style.width]="'100%'"
+                      [style.min-width]="'0'"
+                      [inputId]="'recipe-output-' + index"
+                      [suggestions]="itemSuggestions"
+                      [optionLabel]="'label'"
+                      [optionValue]="'value'"
+                      [dropdown]="true"
+                      [completeOnFocus]="true"
+                      [forceSelection]="false"
+                      [showClear]="true"
+                      scrollHeight="240px"
+                      [placeholder]="
+                        'customRecipeEditor.itemSearch' | translate
+                      "
+                      [(ngModel)]="entry.id"
+                      (completeMethod)="searchItems($event)"
+                      (onDropdownClick)="searchItems($event)"
+                    ></p-autoComplete>
+                    <input
+                      pInputText
+                      type="text"
+                      class="amount-input"
+                      [placeholder]="'customRecipeEditor.amount' | translate"
+                      [(ngModel)]="entry.amount"
+                    />
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      class="p-button-rounded p-button-text p-button-danger"
+                      icon="fa-solid fa-xmark"
+                      [pTooltip]="'customRecipeEditor.removeRow' | translate"
+                      (click)="removeAmount(recipe.outputs, index)"
+                    ></button>
+                  </div>
+                }
+              </section>
+            </div>
+
+            <button
+              pButton
+              pRipple
+              type="button"
+              class="p-button-text advanced-toggle"
+              [icon]="
+                showAdvanced
+                  ? 'fa-solid fa-chevron-up'
+                  : 'fa-solid fa-chevron-down'
+              "
+              [label]="'customRecipeEditor.advanced' | translate"
+              (click)="showAdvanced = !showAdvanced"
+            ></button>
+            @if (showAdvanced) {
+              <div class="advanced-fields">
+                <section class="amount-section field-wide">
+                  <div class="section-heading">
+                    <span>{{ 'customRecipeEditor.catalyst' | translate }}</span>
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      class="p-button-rounded p-button-text"
+                      icon="fa-solid fa-plus"
+                      [pTooltip]="'customRecipeEditor.addCatalyst' | translate"
+                      (click)="addAmount(recipe.catalyst)"
+                    ></button>
+                  </div>
+                  @for (
+                    entry of recipe.catalyst;
+                    track $index;
+                    let index = $index
+                  ) {
+                    <div class="amount-row">
+                      <p-autoComplete
+                        class="item-autocomplete w-100"
+                        styleClass="w-100"
+                        [style.width]="'100%'"
+                        [style.min-width]="'0'"
+                        [inputId]="'recipe-catalyst-' + index"
+                        [suggestions]="itemSuggestions"
+                        [optionLabel]="'label'"
+                        [optionValue]="'value'"
+                        [dropdown]="true"
+                        [completeOnFocus]="true"
+                        [forceSelection]="false"
+                        [showClear]="true"
+                        scrollHeight="240px"
+                        [placeholder]="
+                          'customRecipeEditor.itemSearch' | translate
+                        "
+                        [(ngModel)]="entry.id"
+                        (completeMethod)="searchItems($event)"
+                        (onDropdownClick)="searchItems($event)"
+                      ></p-autoComplete>
+                      <input
+                        pInputText
+                        type="text"
+                        class="amount-input"
+                        [placeholder]="'customRecipeEditor.amount' | translate"
+                        [(ngModel)]="entry.amount"
+                      />
+                      <button
+                        pButton
+                        pRipple
+                        type="button"
+                        class="p-button-rounded p-button-text p-button-danger"
+                        icon="fa-solid fa-xmark"
+                        (click)="removeAmount(recipe.catalyst, index)"
+                      ></button>
+                    </div>
+                  }
+                </section>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="recipe-cost">{{
+                      'customRecipeEditor.cost' | translate
+                    }}</label>
+                    <input
+                      id="recipe-cost"
+                      pInputText
+                      type="text"
+                      [(ngModel)]="recipe.cost"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="recipe-usage">{{
+                      'customRecipeEditor.usage' | translate
+                    }}</label>
+                    <input
+                      id="recipe-usage"
+                      pInputText
+                      type="text"
+                      [(ngModel)]="recipe.usage"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="recipe-part">{{
+                      'customRecipeEditor.part' | translate
+                    }}</label>
+                    <p-autoComplete
+                      class="item-autocomplete w-100"
+                      styleClass="w-100"
+                      [style.width]="'100%'"
+                      [style.min-width]="'0'"
+                      id="recipe-part"
+                      [suggestions]="itemSuggestions"
+                      [optionLabel]="'label'"
+                      [optionValue]="'value'"
+                      [dropdown]="true"
+                      [completeOnFocus]="true"
+                      [forceSelection]="false"
+                      [showClear]="true"
+                      scrollHeight="240px"
+                      [placeholder]="
+                        'customRecipeEditor.itemSearch' | translate
+                      "
+                      [(ngModel)]="recipe.part"
+                      (completeMethod)="searchItems($event)"
+                      (onDropdownClick)="searchItems($event)"
+                    ></p-autoComplete>
+                  </div>
+                  <div class="field field-wide">
+                    <label for="recipe-locations">{{
+                      'customRecipeEditor.locations' | translate
+                    }}</label>
+                    <p-multiSelect
+                      inputId="recipe-locations"
+                      class="w-100"
+                      [options]="locationOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      display="chip"
+                      [(ngModel)]="recipe.locations"
+                    ></p-multiSelect>
+                  </div>
+                  <div class="field field-wide">
+                    <label for="recipe-flags">{{
+                      'customRecipeEditor.flags' | translate
+                    }}</label>
+                    <p-multiSelect
+                      inputId="recipe-flags"
+                      class="w-100"
+                      [options]="flagOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      display="chip"
+                      [(ngModel)]="recipe.flags"
+                    ></p-multiSelect>
+                  </div>
+                  <div class="field field-wide">
+                    <label for="recipe-effects">{{
+                      'customRecipeEditor.disallowedEffects' | translate
+                    }}</label>
+                    <p-multiSelect
+                      inputId="recipe-effects"
+                      class="w-100"
+                      [options]="effectOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      display="chip"
+                      [(ngModel)]="recipe.disallowedEffects"
+                    ></p-multiSelect>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="icon-editor">
+              <div
+                class="editor-icon editor-icon-lg"
+                [style.backgroundColor]="
+                  colorValue(recipe.customRecipe.iconBackground)
+                "
+                [style.color]="textColor(recipe.customRecipe.iconBackground)"
+              >
+                {{ recipe.customRecipe.iconText || '?' }}
+              </div>
+              <div class="icon-fields">
+                <div class="field">
+                  <label for="recipe-icon-text">{{
+                    'customRecipeEditor.iconText' | translate
+                  }}</label>
+                  <input
+                    id="recipe-icon-text"
+                    pInputText
+                    type="text"
+                    maxlength="2"
+                    [(ngModel)]="recipe.customRecipe.iconText"
+                  />
+                </div>
+                <div class="color-fields">
+                  <input
+                    class="editor-color"
+                    type="color"
+                    [value]="colorValue(recipe.customRecipe.iconBackground)"
+                    (input)="setColor(recipe, $event)"
+                  />
+                  <input
+                    pInputText
+                    type="text"
+                    [placeholder]="'#64748b'"
+                    [(ngModel)]="recipe.customRecipe.iconBackground"
+                  />
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="empty-form">
+              <i class="fa-solid fa-flask-vial"></i>
+              <span>{{ 'customRecipeEditor.selectRecipe' | translate }}</span>
+              <button
+                pButton
+                pRipple
+                type="button"
+                class="p-button-outlined"
+                icon="fa-solid fa-plus"
+                [label]="'customRecipeEditor.addRecipe' | translate"
+                (click)="addRecipe()"
+              ></button>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

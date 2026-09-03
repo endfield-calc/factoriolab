@@ -18,14 +18,23 @@ import {
   CustomRecipeJson,
   CustomRecipeSource,
   CustomRecipeValidationContext,
+  DEFAULT_CUSTOM_ITEM_STACK,
   DEFAULT_CUSTOM_RECIPE_BACKGROUND,
   DEFAULT_CUSTOM_RECIPE_ROW,
 } from '../models/custom-recipe';
+import { ItemJson } from '../models/data/item';
 import { CustomRecipeValidatorService } from './custom-recipe-validator.service';
 
 const CUSTOM_RECIPE_STORAGE_KEY = 'customRecipes';
 
 export type CustomRecipeState = Entities<CustomRecipeSource[]>;
+type NormalizedCustomItemJson = CustomItemJson &
+  Required<
+    Pick<
+      CustomItemJson,
+      'type' | 'category' | 'row' | 'iconText' | 'iconBackground'
+    >
+  >;
 
 @Injectable({
   providedIn: 'root',
@@ -104,10 +113,9 @@ export class CustomRecipeService {
       ...validation.items.map((item) => this.normalizeItem(item)),
       ...generatedItems,
     ];
-    const recipes = validation.recipes.map((recipe) => ({
-      ...recipe,
-      iconBackground: recipe.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
-    }));
+    const recipes = validation.recipes.map((recipe) =>
+      this.normalizeRecipe(recipe),
+    );
     const previousSource = existingSources.find(
       (source) => source.id === sourceId,
     );
@@ -186,6 +194,22 @@ export class CustomRecipeService {
     for (const source of this.sourcesForMod(modId))
       for (const item of source.document.items ?? []) items.set(item.id, item);
     return [...items.values()];
+  }
+
+  itemsForDataset(modId: string): ItemJson[] {
+    return this.itemsForMod(modId).map((item) => {
+      const normalized = this.normalizeItem(item);
+      return {
+        id: normalized.id,
+        name: normalized.name,
+        category: normalized.category,
+        row: normalized.row,
+        stack:
+          normalized.type === 'solid' ? DEFAULT_CUSTOM_ITEM_STACK : undefined,
+        iconText: normalized.iconText,
+        iconBackground: normalized.iconBackground,
+      };
+    });
   }
 
   itemEntriesForMod(modId: string): CustomItemEntry[] {
@@ -336,6 +360,9 @@ export class CustomRecipeService {
               items: (source.document.items ?? []).map((item) =>
                 this.normalizeItem(item),
               ),
+              recipes: source.document.recipes.map((recipe) =>
+                this.normalizeRecipe(recipe),
+              ),
             },
             generatedItemIds: source.generatedItemIds ?? [],
             enabled: source.enabled !== false,
@@ -380,7 +407,7 @@ export class CustomRecipeService {
     );
   }
 
-  private normalizeItem(item: CustomItemJson): CustomItemJson {
+  private normalizeItem(item: CustomItemJson): NormalizedCustomItemJson {
     const { stack: _legacyStack, ...itemWithoutStack } = item;
     return {
       ...itemWithoutStack,
@@ -389,6 +416,13 @@ export class CustomRecipeService {
       row: item.row ?? DEFAULT_CUSTOM_RECIPE_ROW,
       iconText: item.iconText ?? this.firstCharacter(item.id),
       iconBackground: item.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+    };
+  }
+
+  private normalizeRecipe(recipe: CustomRecipeJson): CustomRecipeJson {
+    return {
+      ...recipe,
+      iconBackground: recipe.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
     };
   }
 

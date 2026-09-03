@@ -249,5 +249,23 @@ describe('CustomRecipeService', () => {
     ]);
     for (const item of service.itemsForMod('aef'))
       expect(item.stack).toBeUndefined();
+
+    expect(
+      service.itemsForDataset('aef').map(({ id, category, row, stack }) => ({
+        id,
+        category,
+        row,
+        stack,
+      })),
+    ).toEqual([
+      { id: 'v_solid', category: '__custom_items', row: 999, stack: 50 },
+      {
+        id: 'v_liquid',
+        category: '__custom_items',
+        row: 999,
+        stack: undefined,
+      },
+      { id: 'v_gas', category: '__custom_items', row: 999, stack: undefined },
+    ]);
   });
 });

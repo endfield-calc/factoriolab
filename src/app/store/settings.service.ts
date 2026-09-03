@@ -14,11 +14,8 @@ import { DEFAULT_MOD } from '~/models/constants';
 import {
   CUSTOM_ITEM_CATEGORY_ID,
   CUSTOM_ITEM_CATEGORY_NAME,
-  CustomItemJson,
   CustomRecipeJson,
   CustomRecipeValidationContext,
-  DEFAULT_CUSTOM_ITEM_STACK,
-  DEFAULT_CUSTOM_RECIPE_ROW,
 } from '~/models/custom-recipe';
 import { Beacon } from '~/models/data/beacon';
 import { Belt } from '~/models/data/belt';
@@ -220,9 +217,9 @@ export class SettingsService extends Store<SettingsState> {
     return modId == null ? [] : this.customRecipeSvc.recipesForMod(modId);
   });
 
-  customItems = computed<CustomItemJson[]>(() => {
+  customItems = computed<ItemJson[]>(() => {
     const modId = this.modId();
-    return modId == null ? [] : this.customRecipeSvc.itemsForMod(modId);
+    return modId == null ? [] : this.customRecipeSvc.itemsForDataset(modId);
   });
 
   i18n = computed(() => {
@@ -541,7 +538,7 @@ export class SettingsService extends Store<SettingsState> {
     game: Game,
     defaults: Optional<Defaults>,
     customRecipes: CustomRecipeJson[] = [],
-    customItems: CustomItemJson[] = [],
+    customItems: ItemJson[] = [],
   ): Dataset {
     // Map out entities with mods
     const categories = [...coalesce(mod?.categories, [])];
@@ -561,22 +558,7 @@ export class SettingsService extends Store<SettingsState> {
       environment.debug,
     );
     const itemData = toEntities<ItemJson>(
-      [
-        ...coalesce(mod?.items, []),
-        ...customItems.map(
-          (item): ItemJson => ({
-            ...item,
-            category: item.category ?? CUSTOM_ITEM_CATEGORY_ID,
-            row: item.row ?? DEFAULT_CUSTOM_RECIPE_ROW,
-            stack:
-              item.type === 'solid'
-                ? DEFAULT_CUSTOM_ITEM_STACK
-                : item.type == null
-                  ? item.stack
-                  : undefined,
-          }),
-        ),
-      ],
+      [...coalesce(mod?.items, []), ...customItems],
       environment.debug,
     );
     const recipeData = toEntities(
@@ -1073,14 +1055,15 @@ export class SettingsService extends Store<SettingsState> {
         .filter((b) => b.id);
     }
     const defaultExcludedRecipeIds = new Set(defaults?.excludedRecipeIds);
-    const customRecipesEnabled = state.customRecipesEnabled ?? true;
+    const customRecipesEnabled = state.customRecipesEnabled;
     const excludedRecipeIds = new Set(
       coalesce(state.excludedRecipeIds, defaultExcludedRecipeIds),
     );
-    this.customRecipeSvc
-      .excludedRecipeIdsForMod(data.modId)
-      .forEach((id) => excludedRecipeIds.add(id));
-    if (!customRecipesEnabled) {
+    if (customRecipesEnabled) {
+      this.customRecipeSvc
+        .excludedRecipeIdsForMod(data.modId)
+        .forEach((id) => excludedRecipeIds.add(id));
+    } else {
       this.customRecipeSvc
         .recipesForMod(data.modId)
         .forEach((recipe) => excludedRecipeIds.add(recipe.id));

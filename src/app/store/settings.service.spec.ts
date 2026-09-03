@@ -408,6 +408,9 @@ describe('SettingsService', () => {
       const customItem = {
         id: 'v_custom_item',
         name: 'Custom item',
+        category: '__custom_items',
+        row: 999,
+        stack: 50,
         type: 'solid' as const,
         iconText: '自',
         iconBackground: '#22c55e',
@@ -439,10 +442,32 @@ describe('SettingsService', () => {
 
     it('should map custom item types to the transport model', () => {
       const customItems = [
-        { id: 'v_solid', name: 'Solid', type: 'solid' as const },
-        { id: 'v_liquid', name: 'Liquid', type: 'liquid' as const },
-        { id: 'v_gas', name: 'Gas', type: 'gas' as const },
-        { id: 'legacy-solid', name: 'Legacy solid', stack: 80 },
+        {
+          id: 'v_solid',
+          name: 'Solid',
+          category: '__custom_items',
+          row: 999,
+          stack: 50,
+        },
+        {
+          id: 'v_liquid',
+          name: 'Liquid',
+          category: '__custom_items',
+          row: 999,
+        },
+        {
+          id: 'v_gas',
+          name: 'Gas',
+          category: '__custom_items',
+          row: 999,
+        },
+        {
+          id: 'legacy-solid',
+          name: 'Legacy solid',
+          category: '__custom_items',
+          row: 999,
+          stack: 80,
+        },
       ];
 
       const result = service.computeDataset(

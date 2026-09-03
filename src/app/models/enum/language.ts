@@ -18,4 +18,4 @@ export const languageOptions: SelectItem<Language>[] = [
   { label: '日本語 (Japanese)', value: Language.Japanese },
 ];
 
-export const DEFAULT_LANGUAGE = Language.Chinese;
+export const DEFAULT_LANGUAGE = Language.English;

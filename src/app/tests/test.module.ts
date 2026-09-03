@@ -12,7 +12,6 @@ import {
 } from '~/services/translate.service';
 import { TestTranslateService } from '~/services/translate.service.spec';
 import { DatasetsService } from '~/store/datasets.service';
-import { PreferencesService } from '~/store/preferences.service';
 import { SettingsService } from '~/store/settings.service';
 
 import { Mocks } from '.';
@@ -22,14 +21,6 @@ import { Mocks } from '.';
   providers: [
     { provide: DEFAULT_LANGUAGE, useValue: 'en' },
     { provide: TranslateService, useClass: TestTranslateService },
-    {
-      provide: PreferencesService,
-      useFactory: (): PreferencesService => {
-        const preferencesSvc = new PreferencesService();
-        preferencesSvc.apply({ language: Language.English });
-        return preferencesSvc;
-      },
-    },
     {
       provide: DatasetsService,
       useFactory: (): DatasetsService => {

@@ -32,7 +32,7 @@ describe('CustomRecipeService', () => {
           producers: ['machine-item'],
           in: { 'input-item': 1 },
           out: { 'output-item': 2 },
-          iconText: '自',
+          customRecipe: { iconText: '自' },
         },
       ],
     };

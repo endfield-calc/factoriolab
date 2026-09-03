@@ -237,9 +237,11 @@
               >
                 <span
                   class="editor-icon editor-icon-sm"
-                  [style.backgroundColor]="colorValue(recipe.iconBackground)"
-                  [style.color]="textColor(recipe.iconBackground)"
-                  >{{ recipe.iconText || '?' }}</span
+                  [style.backgroundColor]="
+                    colorValue(recipe.customRecipe.iconBackground)
+                  "
+                  [style.color]="textColor(recipe.customRecipe.iconBackground)"
+                  >{{ recipe.customRecipe.iconText || '?' }}</span
                 >
                 <span class="entity-entry-copy">
                   <strong class="text-truncate">{{
@@ -692,10 +694,12 @@
             <div class="icon-editor">
               <div
                 class="editor-icon editor-icon-lg"
-                [style.backgroundColor]="colorValue(recipe.iconBackground)"
-                [style.color]="textColor(recipe.iconBackground)"
+                [style.backgroundColor]="
+                  colorValue(recipe.customRecipe.iconBackground)
+                "
+                [style.color]="textColor(recipe.customRecipe.iconBackground)"
               >
-                {{ recipe.iconText || '?' }}
+                {{ recipe.customRecipe.iconText || '?' }}
               </div>
               <div class="icon-fields">
                 <div class="field">
@@ -707,21 +711,21 @@
                     pInputText
                     type="text"
                     maxlength="2"
-                    [(ngModel)]="recipe.iconText"
+                    [(ngModel)]="recipe.customRecipe.iconText"
                   />
                 </div>
                 <div class="color-fields">
                   <input
                     class="editor-color"
                     type="color"
-                    [value]="colorValue(recipe.iconBackground)"
+                    [value]="colorValue(recipe.customRecipe.iconBackground)"
                     (input)="setColor(recipe, $event)"
                   />
                   <input
                     pInputText
                     type="text"
                     [placeholder]="'#64748b'"
-                    [(ngModel)]="recipe.iconBackground"
+                    [(ngModel)]="recipe.customRecipe.iconBackground"
                   />
                 </div>
               </div>

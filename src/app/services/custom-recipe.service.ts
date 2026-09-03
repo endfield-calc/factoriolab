@@ -327,6 +327,7 @@ export class CustomRecipeService {
       document['version'] === CUSTOM_RECIPE_VERSION &&
       document['modId'] === modId &&
       Array.isArray(document['recipes']) &&
+      document['recipes'].every((recipe) => this.isStoredRecipe(recipe)) &&
       (value['generatedItemIds'] === undefined ||
         Array.isArray(value['generatedItemIds'])) &&
       (value['enabled'] === undefined ||
@@ -337,10 +338,25 @@ export class CustomRecipeService {
     );
   }
 
+  private isStoredRecipe(value: unknown): value is CustomRecipeJson {
+    if (!this.isObject(value) || !this.isObject(value['customRecipe']))
+      return false;
+    return (
+      typeof value['customRecipe']['iconText'] === 'string' &&
+      (value['customRecipe']['iconBackground'] === undefined ||
+        typeof value['customRecipe']['iconBackground'] === 'string')
+    );
+  }
+
   private normalizeRecipe(recipe: CustomRecipeJson): CustomRecipeJson {
     return {
       ...recipe,
-      iconBackground: recipe.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      customRecipe: {
+        ...recipe.customRecipe,
+        iconBackground:
+          recipe.customRecipe.iconBackground ??
+          DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      },
     };
   }
 

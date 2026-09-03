@@ -2,15 +2,6 @@
   "format": "endfieldlab-custom-recipes",
   "version": 1,
   "modId": "aef",
-  "items": [
-    {
-      "id": "v_custom_material",
-      "name": "自定义材料",
-      "type": "solid",
-      "iconText": "材",
-      "iconBackground": "#22c55e"
-    }
-  ],
   "recipes": [
     {
       "id": "custom-example",
@@ -26,8 +17,10 @@
       "out": {
         "liquid_copper": 2
       },
-      "iconText": "自",
-      "iconBackground": "#3b82f6"
+      "customRecipe": {
+        "iconText": "自",
+        "iconBackground": "#3b82f6"
+      }
     }
   ]
 }

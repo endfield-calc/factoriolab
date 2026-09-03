@@ -47,6 +47,11 @@ interface AmountForm {
   amount: string;
 }
 
+interface CustomRecipeFormData {
+  iconText: string;
+  iconBackground: string;
+}
+
 type RecipeTimePreset = '1' | '2' | '10' | '20' | 'custom';
 
 interface RecipeForm {
@@ -66,8 +71,7 @@ interface RecipeForm {
   locations: string[];
   flags: RecipeFlag[];
   disallowedEffects: ModuleEffect[];
-  iconText: string;
-  iconBackground: string;
+  customRecipe: CustomRecipeFormData;
 }
 
 @Component({
@@ -375,7 +379,9 @@ export class CustomRecipesComponent {
   }
 
   setColor(target: RecipeForm, event: Event): void {
-    target.iconBackground = (event.target as HTMLInputElement).value;
+    target.customRecipe.iconBackground = (
+      event.target as HTMLInputElement
+    ).value;
   }
 
   private loadDocument(document: CustomRecipeDocument): void {
@@ -402,8 +408,12 @@ export class CustomRecipesComponent {
       locations: [...(recipe.locations ?? [])],
       flags: [...(recipe.flags ?? [])],
       disallowedEffects: [...(recipe.disallowedEffects ?? [])],
-      iconText: recipe.iconText,
-      iconBackground: recipe.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      customRecipe: {
+        iconText: recipe.customRecipe.iconText,
+        iconBackground:
+          recipe.customRecipe.iconBackground ??
+          DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      },
     };
   }
 
@@ -438,8 +448,10 @@ export class CustomRecipesComponent {
       locations: [],
       flags: [],
       disallowedEffects: [],
-      iconText: this.firstCharacter(id),
-      iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      customRecipe: {
+        iconText: this.firstCharacter(id),
+        iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      },
     };
   }
 
@@ -462,8 +474,10 @@ export class CustomRecipesComponent {
       producers: [...recipe.producers],
       in: this.toEntityMap(recipe.inputs),
       out: this.toEntityMap(recipe.outputs),
-      iconText: recipe.iconText.trim() || '?',
-      iconBackground: this.colorValue(recipe.iconBackground),
+      customRecipe: {
+        iconText: recipe.customRecipe.iconText.trim() || '?',
+        iconBackground: this.colorValue(recipe.customRecipe.iconBackground),
+      },
     };
     const catalyst = this.toEntityMap(recipe.catalyst);
     if (Object.keys(catalyst).length) result.catalyst = catalyst;

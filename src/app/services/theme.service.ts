@@ -115,10 +115,10 @@ export class ThemeService {
       for (const recipe of customRecipes.values()) {
         if (data.recipeQIds.has(recipe.id)) continue;
         const selector = this.escapeSelector(recipe.id);
-        const text = JSON.stringify(recipe.iconText) ?? '""';
-        const background = recipe.iconBackground ?? '#64748b';
+        const text = JSON.stringify(recipe.customRecipe.iconText) ?? '""';
+        const background = recipe.customRecipe.iconBackground ?? '#64748b';
         const textColor = customRecipeTextColor(background);
-        const iconText = recipe.iconText ?? '';
+        const iconText = recipe.customRecipe.iconText;
         const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
         css += `.${selector}.recipe::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
       }

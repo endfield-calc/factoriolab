@@ -7,9 +7,13 @@ export const DEFAULT_CUSTOM_RECIPE_BACKGROUND = '#64748b';
 export const DEFAULT_CUSTOM_RECIPE_ROW = 999;
 export const CUSTOM_RECIPE_EXAMPLE_FILE_NAME = 'custom-recipes-example.json';
 
-export type CustomRecipeJson = Omit<RecipeJson, 'icon' | 'iconText'> & {
+export interface CustomRecipeData {
   iconText: string;
   iconBackground?: string;
+}
+
+export type CustomRecipeJson = Omit<RecipeJson, 'icon' | 'iconText'> & {
+  customRecipe: CustomRecipeData;
 };
 
 export interface CustomRecipeDocument {
@@ -38,8 +42,10 @@ export const CUSTOM_RECIPE_EXAMPLE_DOCUMENT: CustomRecipeDocument = {
       out: {
         originium_enr_powder: 1,
       },
-      iconText: '示',
-      iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      customRecipe: {
+        iconText: '示',
+        iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      },
     },
   ],
 };

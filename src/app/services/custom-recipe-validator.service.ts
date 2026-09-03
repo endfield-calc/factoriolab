@@ -38,8 +38,7 @@ const recipeKeys = new Set([
   'disallowedEffects',
   'locations',
   'flags',
-  'iconText',
-  'iconBackground',
+  'customRecipe',
 ]);
 
 @Injectable({
@@ -139,7 +138,7 @@ export class CustomRecipeValidatorService {
           path: `${path}.${key}`,
           message:
             key === 'icon'
-              ? 'Image icons are not supported; use iconText instead'
+              ? 'Image icons are not supported; use customRecipe.iconText instead'
               : 'Unknown field',
         });
       }
@@ -154,7 +153,7 @@ export class CustomRecipeValidatorService {
       'producers',
       'in',
       'out',
-      'iconText',
+      'customRecipe',
     ];
     for (const key of required) {
       if (value[key] === undefined)
@@ -263,7 +262,7 @@ export class CustomRecipeValidatorService {
         issues,
       );
 
-    this.validateIcon(value, path, issues);
+    this.validateCustomRecipeData(value, path, issues);
   }
 
   private validateEntityMap(
@@ -304,13 +303,36 @@ export class CustomRecipeValidatorService {
     }
   }
 
-  private validateIcon(
+  private validateCustomRecipeData(
     value: JsonObject,
     path: string,
     issues: CustomRecipeValidationIssue[],
   ): void {
-    if (value['iconText'] !== undefined) {
-      const iconText = this.stringValue(value['iconText']);
+    const customRecipe = value['customRecipe'];
+    if (customRecipe === undefined) return;
+    if (!this.isObject(customRecipe)) {
+      issues.push({
+        path: `${path}.customRecipe`,
+        message: 'Must be an object',
+      });
+      return;
+    }
+
+    for (const key of Object.keys(customRecipe)) {
+      if (!['iconText', 'iconBackground'].includes(key))
+        issues.push({
+          path: `${path}.customRecipe.${key}`,
+          message: 'Unknown field',
+        });
+    }
+
+    if (customRecipe['iconText'] === undefined)
+      issues.push({
+        path: `${path}.customRecipe.iconText`,
+        message: 'Required field',
+      });
+    else {
+      const iconText = this.stringValue(customRecipe['iconText']);
       if (
         iconText == null ||
         iconText.trim() !== iconText ||
@@ -319,16 +341,16 @@ export class CustomRecipeValidatorService {
         Array.from(iconText).length > 2
       )
         issues.push({
-          path: `${path}.iconText`,
+          path: `${path}.customRecipe.iconText`,
           message: 'Must contain one or two visible characters',
         });
     }
 
-    if (value['iconBackground'] !== undefined) {
-      const color = this.stringValue(value['iconBackground']);
+    if (customRecipe['iconBackground'] !== undefined) {
+      const color = this.stringValue(customRecipe['iconBackground']);
       if (color == null || !colorPattern.test(color))
         issues.push({
-          path: `${path}.iconBackground`,
+          path: `${path}.customRecipe.iconBackground`,
           message: 'Must be a #RGB or #RRGGBB color',
         });
     }

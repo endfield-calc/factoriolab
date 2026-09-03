@@ -384,8 +384,10 @@ describe('SettingsService', () => {
         producers: [Mocks.mod.items.find((item) => item.machine)!.id],
         in: {},
         out: { [Mocks.mod.items[0].id]: 1 },
-        iconText: '自',
-        iconBackground: '#3b82f6',
+        customRecipe: {
+          iconText: '自',
+          iconBackground: '#3b82f6',
+        },
       };
 
       const result = service.computeDataset(
@@ -400,7 +402,7 @@ describe('SettingsService', () => {
 
       expect(result.recipeIds).toContain(customRecipe.id);
       expect(recipe.icon).toBeUndefined();
-      expect(recipe.iconText).toEqual('自');
+      expect(recipe.iconText).toBeUndefined();
     });
 
     it('should include generated items in the dataset', () => {

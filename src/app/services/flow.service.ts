@@ -214,10 +214,10 @@ export class FlowService {
         const recipe = data.recipeEntities[step.recipeId];
         const machine = data.itemEntities[step.recipeSettings?.machineId];
         const customRecipe = customRecipes.get(recipe.id);
-        const icon = customRecipe?.iconBackground
+        const icon = customRecipe?.customRecipe.iconBackground
           ? {
               id: recipe.id,
-              color: customRecipe.iconBackground,
+              color: customRecipe.customRecipe.iconBackground,
               position: '0 0',
             }
           : data.iconEntities[recipe.icon ?? recipe.id];
@@ -228,10 +228,10 @@ export class FlowService {
           text: `${step.machines.toString(machinePrec)} ${machine.name}`,
           color: icon.color,
           stepId: step.id,
-          href: customRecipe?.iconBackground
+          href: customRecipe?.customRecipe.iconBackground
             ? customRecipeIconDataUri(
-                customRecipe.iconText,
-                customRecipe.iconBackground,
+                customRecipe.customRecipe.iconText,
+                customRecipe.customRecipe.iconBackground,
               )
             : data.iconFile,
           recipe,

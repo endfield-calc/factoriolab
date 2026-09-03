@@ -34,8 +34,10 @@ describe('CustomRecipeValidatorService', () => {
           producers: ['machine-item'],
           in: { 'input-item': 1 },
           out: { 'output-item': 2 },
-          iconText: '自',
-          iconBackground: '#3b82f6',
+          customRecipe: {
+            iconText: '自',
+            iconBackground: '#3b82f6',
+          },
           ...recipe,
         },
       ],
@@ -58,7 +60,7 @@ describe('CustomRecipeValidatorService', () => {
 
     expect(result.valid).toBeTrue();
     expect(result.issues).toEqual([]);
-    expect(result.recipes?.[0].iconBackground).toEqual('#3b82f6');
+    expect(result.recipes?.[0].customRecipe.iconBackground).toEqual('#3b82f6');
   });
 
   it('rejects mismatched document metadata', () => {
@@ -105,8 +107,10 @@ describe('CustomRecipeValidatorService', () => {
     const result = service.validate(
       document({
         icon: 'output-item',
-        iconText: 'ABC',
-        iconBackground: 'red',
+        customRecipe: {
+          iconText: 'ABC',
+          iconBackground: 'red',
+        },
       }),
       context,
     );
@@ -114,8 +118,8 @@ describe('CustomRecipeValidatorService', () => {
     expect(result.valid).toBeFalse();
     expect(result.issues.map((issue) => issue.path)).toEqual([
       'recipes[0].icon',
-      'recipes[0].iconText',
-      'recipes[0].iconBackground',
+      'recipes[0].customRecipe.iconText',
+      'recipes[0].customRecipe.iconBackground',
     ]);
   });
 
@@ -150,9 +154,21 @@ describe('CustomRecipeValidatorService', () => {
   });
 
   it('accepts one or two icon characters', () => {
-    const result = service.validate(document({ iconText: 'AB' }), context);
+    const result = service.validate(
+      document({ customRecipe: { iconText: 'AB' } }),
+      context,
+    );
 
     expect(result.valid).toBeTrue();
+  });
+
+  it('rejects the generic recipe icon text field', () => {
+    const result = service.validate(document({ iconText: '自' }), context);
+
+    expect(result.valid).toBeFalse();
+    expect(result.issues.map((issue) => issue.path)).toEqual([
+      'recipes[0].iconText',
+    ]);
   });
 
   it('rejects the removed custom item field', () => {

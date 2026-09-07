@@ -126,8 +126,6 @@ jobs:
           git-config-email: '41898282+github-actions[bot]@users.noreply.github.com'
           folder: dist/browser
           clean: true
-          clean-exclude: |
-            advance/
 
   deploy-yituliu:
     needs: build

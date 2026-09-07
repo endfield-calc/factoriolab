@@ -1,0 +1,56 @@
+name: Deploy Advance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [advance]
+
+concurrency:
+  group: deploy-advance
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build -- -c=advance
+
+      - name: Prepare static files
+        run: |
+          cp dist/browser/index.html dist/browser/404.html
+          cp resource/webmanifest/site.webmanifest dist/browser/site.webmanifest
+
+      - name: Write release info
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ./scripts/write-release-info.sh \
+            "advance-${COMMIT_SHA:0:7}" \
+            "advance" \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            "unused-tag"
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.PUBLISH_TOKEN }}
+          repository-name: endfield-calc/endfield-calc.github.io
+          branch: master
+          folder: dist/browser
+          target-folder: advance
+          clean: true
+          git-config-name: 'github-actions[bot]'
+          git-config-email: '41898282+github-actions[bot]@users.noreply.github.com'

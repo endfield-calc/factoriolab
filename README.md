@@ -7,6 +7,7 @@
 ## 相关链接
 
 - 正式版网站：[EndfieldLab](https://factory.ef.yituliu.cn)
+- 先行版网站：[EndfieldLab Advance](https://endfield-calc.github.io/advance/)
 - 开发仓库：[endfield-calc/factoriolab](https://github.com/endfield-calc/factoriolab)
 - 问题反馈：[GitHub Issues](https://github.com/endfield-calc/factoriolab/issues)
 - QQ 群：`1071155059`

@@ -47,10 +47,9 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           token: ${{ secrets.PUBLISH_TOKEN }}
-          repository-name: endfield-calc/endfield-calc.github.io
-          branch: master
+          repository-name: endfield-calc/advance
+          branch: main
           folder: dist/browser
-          target-folder: advance
           clean: true
           git-config-name: 'github-actions[bot]'
           git-config-email: '41898282+github-actions[bot]@users.noreply.github.com'

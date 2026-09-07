@@ -16,7 +16,7 @@ on:
   push:
     branches: [ark-endfield-3rd-test]
     paths:
-      - "src/**"
+      - 'src/**'
 
 jobs:
   build:
@@ -122,10 +122,12 @@ jobs:
           token: ${{ secrets.PUBLISH_TOKEN }}
           repository-name: endfield-calc/endfield-calc.github.io
           branch: master
-          git-config-name: "github-actions[bot]"
-          git-config-email: "41898282+github-actions[bot]@users.noreply.github.com"
+          git-config-name: 'github-actions[bot]'
+          git-config-email: '41898282+github-actions[bot]@users.noreply.github.com'
           folder: dist/browser
           clean: true
+          clean-exclude: |
+            advance/
 
   deploy-yituliu:
     needs: build
@@ -199,4 +201,3 @@ jobs:
               repo: context.repo.repo,
               artifact_id: process.env.ARTIFACT_ID_ZH
             });
-

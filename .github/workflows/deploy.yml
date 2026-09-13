@@ -17,6 +17,10 @@ on:
     branches: [ark-endfield-3rd-test]
     paths:
       - "src/**"
+      - "angular.json"
+      - "ngsw-config.json"
+      - "scripts/write-release-info.sh"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   build:
@@ -55,6 +59,7 @@ jobs:
               'ark-endfield',
               (new Date()).toISOString(),
               'unused-tag',
+              '/',
             ]);
             if (exitCode) {
               core.setFailed('Write release info exit code: ' + exitCode);

@@ -41,7 +41,8 @@ jobs:
             "1.5a" \
             "advance" \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            "unused-tag"
+            "unused-tag" \
+            "/advance/"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

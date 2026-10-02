@@ -213,28 +213,6 @@
     "discord": "Discord",
     "support": "支持"
   },
-  "landing": {
-    "welcome": "欢迎来到 <b>终末地量化计算器</b>! 让我们开始吧。",
-    "addItems": "添加物品",
-    "addMachines": "添加设备",
-    "selectAnItem": "选择一个物品",
-    "selectARecipe": "选择一个配方",
-    "loadSavedState": "加载保存的状态",
-    "loadLastState": "加载最近保存的状态",
-    "help": "如何使用",
-    "skip": "跳过",
-    "bypass": "不再显示该页面"
-  },
-  "wizard": {
-    "back": "返回",
-    "objectiveType": "你的目标是什么？",
-    "produceItems": "我要生产物品或进行研究",
-    "produceItemsButton": "选择物品",
-    "runMachines": "我要运行一些设备",
-    "runMachinesButton": "选择配方",
-    "itemObjectiveItems": "你要制造多少？",
-    "recipeObjectiveMachines": "你要运行多少设备？"
-  },
   "settings": {
     "header": "设置",
     "reset": "重置所有设置",
@@ -338,7 +316,6 @@
     "maximizeTypeTooltip": "选择最大化目标数值类型",
     "openCosts": "打开权重设置",
     "openCustomRecipeEditor": "打开自定义配方编辑器",
-    "bypassLanding": "总是跳过欢迎页面",
     "hideDuplicateIcons": "隐藏重复图标",
     "disablePaginator": "禁用列表分页",
     "netProductionOnly": "仅显示净产量",

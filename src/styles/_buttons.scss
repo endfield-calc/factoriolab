@@ -55,6 +55,20 @@
   margin: 0 6px;
 }
 
+// Give item picker buttons more room for their icons.
+.picker-dialog .p-button-icon.lab-icon.item,
+.picker-dialog .p-button-icon.lab-icon.recipe {
+  width: 40px;
+  height: 40px;
+
+  &::before,
+  &::after {
+    top: 0;
+    left: 0;
+    transform: scale(0.625);
+  }
+}
+
 // Adjust opacity for light mode
 body.light .p-button.hover-action.hover-active .p-button-icon {
   opacity: 0.6;

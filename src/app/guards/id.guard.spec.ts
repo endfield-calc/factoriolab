@@ -36,6 +36,11 @@ describe('canActivateId', () => {
     expect(router.url).toEqual('/1.1/list?v=11&o=coal*0.5&odr=0');
   });
 
+  it('should redirect the old wizard route to the list', async () => {
+    await RouterTestingHarness.create('/wizard?p=coal*0.5&s=**0&v=10');
+    expect(router.url).toEqual('/1.1/list?v=11&o=coal*0.5&odr=0');
+  });
+
   it('should migrate old zip states', async () => {
     await RouterTestingHarness.create(
       '/list?z=eJxFkctuwjAURP8mi1lUcUiALliQp3FKIRIBqZur0idVKQUKhS749t6RAkjx0dj3NXa-iwqh7y1DzKWtK0AtLV0GU-FXC2ZiIsy8FyO-IBJ0NNhF7M3H3uITRtKVonhW5GvFfUC8KcpfRTZVxNzGMbeMJjkraqpCMeI27rLVrcJVjA6JkhixbMLkd8WA0aTDACuSNgf9MRCygSUcMWCrCMbbFF.MpstyrqgOwAo-fCmfABg9sjfAUYYPlBHrdk2xOPp1bO2OxJ44EBzsaMG1CFpw7OV4a0eDlgHLWtvRQcHJp48lfdCmG1OVlxtvNMc.cV6xvUjbV9k6hZIdG1GchRs1InfnUHQWP9d5u4tMP4BUqoleX.IFsAZPbdw8QpZcMrPsKvOrLK6tHvnifJGMf9XSSg-BVAGYI3YM9MVWwFKqP54Z77WHu1ONUEbSRxstSb2tOkDp7Y3.D1ymp-M_&v=10',

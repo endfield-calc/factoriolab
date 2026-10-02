@@ -20,6 +20,7 @@ import { PrimeNGConfig } from 'primeng/api';
 import { environment } from 'src/environments';
 
 import { routes } from './app.routes';
+import { Language } from './models/enum/language';
 import { ErrorService } from './services/error.service';
 import { ThemeService } from './services/theme.service';
 import {
@@ -43,7 +44,7 @@ function initializeApp(primengConfig: PrimeNGConfig): () => Promise<unknown> {
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: APP_BASE_HREF, useValue: environment.baseHref },
-    { provide: DEFAULT_LANGUAGE, useValue: 'en' },
+    { provide: DEFAULT_LANGUAGE, useValue: Language.Chinese },
     { provide: ErrorHandler, useClass: ErrorService },
     {
       provide: APP_INITIALIZER,

@@ -1,21 +1,26 @@
 import { routes } from './app.routes';
+import { DEFAULT_MOD } from './models/constants';
 import { IdComponent } from './routes/id.component';
-import { LandingComponent } from './routes/landing/landing.component';
 import { routes as mainRoutes } from './routes/main/main.routes';
-import { WizardComponent } from './routes/wizard/wizard.component';
 
 describe('App Routes', () => {
+  const idRoute = routes.find((route) => route.path === ':id');
+
   it('should load id route', async () => {
-    expect(await routes[0].loadComponent!()).toEqual(IdComponent);
+    expect(await idRoute?.loadComponent!()).toEqual(IdComponent);
   });
 
   it('should load child routes', async () => {
-    expect(await routes[0].children![0].loadComponent!()).toEqual(
-      WizardComponent,
-    );
-    expect(await routes[0].children![2].loadComponent!()).toEqual(
-      LandingComponent,
-    );
-    expect(await routes[0].children![3].loadChildren!()).toEqual(mainRoutes);
+    expect(idRoute?.children?.[0].path).toEqual('ratio');
+    expect(idRoute?.children?.[1].redirectTo).toEqual('list');
+    expect(await idRoute?.children?.[2].loadChildren!()).toEqual(mainRoutes);
+  });
+
+  it('should redirect the root to the default list route', () => {
+    expect(routes[0]).toEqual({
+      path: '',
+      pathMatch: 'full',
+      redirectTo: `${DEFAULT_MOD}/list`,
+    });
   });
 });

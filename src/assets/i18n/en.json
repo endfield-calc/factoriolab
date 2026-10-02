@@ -210,28 +210,6 @@
     "discord": "Discord",
     "support": "Support"
   },
-  "landing": {
-    "welcome": "Welcome to <b>EndfieldLab</b>! Let's get to work.",
-    "addItems": "Add items",
-    "addMachines": "Add machines",
-    "selectAnItem": "Select an item",
-    "selectARecipe": "Select a recipe",
-    "loadSavedState": "Load a saved state",
-    "loadLastState": "Load last state",
-    "help": "Help me get started",
-    "skip": "Skip",
-    "bypass": "Don't show this screen again"
-  },
-  "wizard": {
-    "back": "Back",
-    "objectiveType": "What is your objective?",
-    "produceItems": "I want to produce items or research",
-    "produceItemsButton": "Choose which item",
-    "runMachines": "I want to run a number of machines",
-    "runMachinesButton": "Choose which recipe",
-    "itemObjectiveItems": "How much do you want to produce?",
-    "recipeObjectiveMachines": "How many machines do you want to run?"
-  },
   "settings": {
     "header": "Settings",
     "reset": "Reset all settings",
@@ -335,7 +313,6 @@
     "maximizeTypeTooltip": "Select maximize objective value type",
     "openCosts": "Open cost settings",
     "openCustomRecipeEditor": "Open custom recipe editor",
-    "bypassLanding": "Always skip landing page",
     "hideDuplicateIcons": "Hide duplicate icons",
     "disablePaginator": "Disable list paginator",
     "netProductionOnly": "Net production only",

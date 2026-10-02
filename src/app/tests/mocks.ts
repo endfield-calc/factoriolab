@@ -220,7 +220,6 @@ export const preferencesState: PreferencesState = {
   powerUnit: PowerUnit.Auto,
   language: Language.English,
   theme: Theme.Dark,
-  bypassLanding: false,
   showTechLabels: false,
   hideDuplicateIcons: false,
   paused: false,

@@ -17,7 +17,6 @@ import { Entities } from '~/models/utils';
 import { AnalyticsService } from '~/services/analytics.service';
 import { TranslateService } from '~/services/translate.service';
 
-import { environment } from '../../environments';
 import { Store } from './store';
 
 export interface PreferencesState {
@@ -26,7 +25,6 @@ export interface PreferencesState {
   language: Language;
   powerUnit: PowerUnit;
   theme: Theme;
-  bypassLanding: boolean;
   showTechLabels: boolean;
   hideDuplicateIcons: boolean;
   rows: number;
@@ -42,7 +40,6 @@ export const initialPreferencesState: PreferencesState = {
   language: DEFAULT_LANGUAGE,
   powerUnit: PowerUnit.kW,
   theme: Theme.Light,
-  bypassLanding: false,
   showTechLabels: false,
   hideDuplicateIcons: true,
   rows: 50,
@@ -57,24 +54,6 @@ export const initialPreferencesState: PreferencesState = {
     hideExcluded: false,
   },
 };
-// istanbul ignore if: Don't test auto change default language
-if (environment.production) {
-  const supportedLangs = Object.values(Language) as string[];
-  function isSupportedLanguage(value: string): value is Language {
-    return supportedLangs.includes(value);
-  }
-  const userLang = navigator.language.toLowerCase();
-  const langPrefix = userLang.split('-')[0];
-  if (isSupportedLanguage(userLang)) {
-    // 1. 精确匹配（如 'en' 或 'zh'）
-    initialPreferencesState.language = userLang;
-  } else if (isSupportedLanguage(langPrefix)) {
-    // 2. 前缀匹配（如 'zh-CN' 匹配 'zh'）
-    initialPreferencesState.language = langPrefix;
-  }
-  // 都不匹配时保持默认English
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -84,7 +63,6 @@ export class PreferencesService extends Store<PreferencesState> {
 
   stored = storedSignal('preferences');
 
-  bypassLanding = this.select('bypassLanding');
   columns = this.select('columns');
   convertObjectiveValues = this.select('convertObjectiveValues');
   flowSettings = this.select('flowSettings');
@@ -100,7 +78,10 @@ export class PreferencesService extends Store<PreferencesState> {
     const stored = this.stored();
     if (stored) {
       try {
-        const storedState = JSON.parse(stored) as PreferencesState;
+        const storedState = JSON.parse(stored) as Partial<PreferencesState> & {
+          bypassLanding?: boolean;
+        };
+        delete storedState.bypassLanding;
         this.load(storedState);
       } catch (ex) {
         console.warn('Failed to parse stored preferences', ex);

@@ -1365,16 +1365,6 @@
           </div>
           <div class="pb-3">
             <p-checkbox
-              [binary]="true"
-              [label]="'settings.bypassLanding' | translate"
-              [ngModel]="preferences().bypassLanding"
-              (onChange)="
-                preferencesSvc.apply({ bypassLanding: $event.checked })
-              "
-            ></p-checkbox>
-          </div>
-          <div class="pb-3">
-            <p-checkbox
               [ngModel]="preferences().hideDuplicateIcons"
               [binary]="true"
               [label]="'settings.hideDuplicateIcons' | translate"

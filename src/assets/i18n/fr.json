@@ -229,28 +229,6 @@
     "discord": "Discord",
     "support": "Support"
   },
-  "landing": {
-    "welcome": "Bienvenue sur <b>EndfieldLab</b>! Mettons-nous au travail.",
-    "addItems": "Ajouter des Articles",
-    "addMachines": "Ajouter des Machines",
-    "selectAnItem": "Selectioner un article",
-    "selectARecipe": "Selectioner une recette",
-    "loadSavedState": "Charger un état sauvegardé",
-    "loadLastState": "Charger la derniere sauvegarde",
-    "help": "Aide moi a commencer",
-    "skip": "Passer",
-    "bypass": "Ne plus afficher cet écran"
-  },
-  "wizard": {
-    "back": "Retour",
-    "objectiveType": "Quel est votre objectif?",
-    "produceItems": "Je veux produire des articles ou de la recherce",
-    "produceItemsButton": "Selectioner quel article",
-    "runMachines": "Je veux utiliser un nombre de machines",
-    "runMachinesButton": "Choisir quelle recette",
-    "itemObjectiveItems": "Quel quantité voulez vous produire?",
-    "recipeObjectiveMachines": "Combien de machine voulez vous utiliser?"
-  },
   "settings": {
     "header": "Paramètres",
     "reset": "Réinitialiser tout les paramètres",

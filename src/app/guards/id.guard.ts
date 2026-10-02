@@ -37,11 +37,12 @@ export const canActivateId: CanActivateFn = (
     case 'wizard':
     case 'flow':
     case 'data': {
+      const targetPath = id === 'wizard' ? 'list' : id;
       return from(routerSvc.unzipQueryParams(route.queryParams)).pipe(
         map((queryParams) => migrationSvc.migrate(undefined, queryParams)),
         switchMap(async ({ modId, params }) => {
           if (params.z) params = await routerSvc.getHashParams(params);
-          return router.createUrlTree([coalesce(modId, '1.1'), id], {
+          return router.createUrlTree([coalesce(modId, '1.1'), targetPath], {
             queryParams: params,
           });
         }),

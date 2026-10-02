@@ -1,23 +1,21 @@
 import { Routes } from '@angular/router';
 
 import { canActivateId } from './guards/id.guard';
-import { canActivateLanding } from './guards/landing.guard';
 import { canActivateRatio } from './guards/ratio.guard';
+import { DEFAULT_MOD } from './models/constants';
 
 export const routes: Routes = [
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: `${DEFAULT_MOD}/list`,
+  },
   {
     path: ':id',
     canActivate: [canActivateId],
     loadComponent: () =>
       import('./routes/id.component').then((c) => c.IdComponent),
     children: [
-      {
-        path: 'wizard',
-        loadComponent: () =>
-          import('./routes/wizard/wizard.component').then(
-            (c) => c.WizardComponent,
-          ),
-      },
       {
         path: 'ratio',
         canActivate: [canActivateRatio],
@@ -26,11 +24,7 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        canActivate: [canActivateLanding],
-        loadComponent: () =>
-          import('./routes/landing/landing.component').then(
-            (c) => c.LandingComponent,
-          ),
+        redirectTo: 'list',
       },
       {
         path: '',
@@ -41,7 +35,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    canActivate: [canActivateLanding],
-    children: [],
+    redirectTo: `${DEFAULT_MOD}/list`,
   },
 ];

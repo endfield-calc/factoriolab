@@ -1,45 +1,55 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  HostListener,
   inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { saveAs } from 'file-saver';
-import { SelectItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
 import {
   AutoCompleteCompleteEvent,
   AutoCompleteDropdownClickEvent,
 } from 'primeng/autocomplete';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { Menu, MenuModule } from 'primeng/menu';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
+import { combineLatest, first } from 'rxjs';
 
 import { customRecipeTextColor } from '~/helpers/custom-recipe-icon';
 import {
   CUSTOM_RECIPE_FORMAT,
+  CUSTOM_RECIPE_LIBRARY_FORMAT,
   CUSTOM_RECIPE_VERSION,
   CustomRecipeDocument,
-  customRecipeEffects,
   customRecipeFlags,
   CustomRecipeImportResult,
   CustomRecipeJson,
+  CustomRecipeLibraryDocument,
   CustomRecipeSource,
+  CustomRecipeValidationIssue,
   DEFAULT_CUSTOM_RECIPE_BACKGROUND,
   DEFAULT_CUSTOM_RECIPE_ROW,
 } from '~/models/custom-recipe';
 import { ModuleEffect } from '~/models/data/module';
 import { RecipeFlag } from '~/models/data/recipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
+import { ContentService } from '~/services/content.service';
 import { CustomRecipeService } from '~/services/custom-recipe.service';
+import { ExportService } from '~/services/export.service';
+import { TranslateService } from '~/services/translate.service';
 import { SettingsService } from '~/store/settings.service';
 
 interface AmountForm {
@@ -53,6 +63,7 @@ interface CustomRecipeFormData {
 }
 
 type RecipeTimePreset = '1' | '2' | '10' | '20' | 'custom';
+type EditorMode = 'form' | 'text';
 
 interface RecipeForm {
   id: string;
@@ -79,12 +90,16 @@ interface RecipeForm {
   standalone: true,
   host: { class: 'd-block' },
   imports: [
+    NgTemplateOutlet,
     FormsModule,
     AutoCompleteModule,
     ButtonModule,
+    CardModule,
     CheckboxModule,
     DropdownModule,
     InputTextModule,
+    InputTextareaModule,
+    MenuModule,
     MultiSelectModule,
     SelectButtonModule,
     TooltipModule,
@@ -97,7 +112,10 @@ interface RecipeForm {
 export class CustomRecipesComponent {
   router = inject(Router);
   customRecipeSvc = inject(CustomRecipeService);
+  exportSvc = inject(ExportService);
   settingsSvc = inject(SettingsService);
+  contentSvc = inject(ContentService);
+  translateSvc = inject(TranslateService);
 
   modId = this.settingsSvc.modId;
   data = this.settingsSvc.dataset;
@@ -106,6 +124,12 @@ export class CustomRecipesComponent {
     const modId = this.modId();
     return modId == null ? [] : this.customRecipeSvc.sourcesForMod(modId);
   });
+  displayedSources = computed(() =>
+    [...this.sources()].sort(
+      (left, right) =>
+        Number(right.starred === true) - Number(left.starred === true),
+    ),
+  );
   selectedSourceId = signal<string | null>(null);
   selectedSource = computed(() => {
     const sourceId = this.selectedSourceId();
@@ -130,12 +154,29 @@ export class CustomRecipesComponent {
   selectedRecipeIndex = signal(0);
   importResults = signal<CustomRecipeImportResult[]>([]);
   saveResult = signal<CustomRecipeImportResult | undefined>(undefined);
+  textIssues = signal<CustomRecipeValidationIssue[]>([]);
+  copyResult = signal<'copied' | 'failed' | undefined>(undefined);
+  copyFallbackText = signal('');
 
+  editorMode: EditorMode = 'form';
+  jsonText = '';
   showAdvanced = false;
   fileName = 'custom-recipes.json';
   recipes: RecipeForm[] = [];
+  recipeMenuTarget: RecipeForm | undefined;
+  recipeMenuItems: MenuItem[] = [
+    {
+      label: 'customRecipeEditor.removeAction',
+      icon: 'fa-solid fa-trash',
+      command: (): void => {
+        const index = this.recipes.findIndex(
+          (recipe) => recipe === this.recipeMenuTarget,
+        );
+        if (index !== -1) this.removeRecipe(index);
+      },
+    },
+  ];
   itemSuggestions: SelectItem<string>[] = [];
-  readonly timePresets: RecipeTimePreset[] = ['1', '2', '10', '20', 'custom'];
   recipeCategoryOptions = computed<SelectItem<string>[]>(() => {
     const data = this.data();
     return data.categoryIds.map((id) => ({
@@ -172,14 +213,10 @@ export class CustomRecipesComponent {
       value,
     }),
   );
-  effectOptions: SelectItem<ModuleEffect>[] = [...customRecipeEffects].map(
-    (value) => ({
-      label: value,
-      value,
-    }),
-  );
-
   private initializedModId: string | undefined;
+  private savedFormText = '';
+  private savedFileName = '';
+  private libraryBaseline = '';
 
   constructor() {
     effect(
@@ -202,6 +239,21 @@ export class CustomRecipesComponent {
     return this.recipes[this.selectedRecipeIndex()];
   }
 
+  get fileNameBase(): string {
+    return this.fileName.toLowerCase().endsWith('.json')
+      ? this.fileName.slice(0, -5)
+      : this.fileName;
+  }
+
+  setFileNameBase(value: string): void {
+    const name = value.trim();
+    const base = name.toLowerCase().endsWith('.json')
+      ? name.slice(0, -5)
+      : name;
+    this.fileName = base ? `${base}.json` : '';
+    this.onFormChange();
+  }
+
   searchItems(
     event: AutoCompleteCompleteEvent | AutoCompleteDropdownClickEvent,
   ): void {
@@ -217,21 +269,24 @@ export class CustomRecipesComponent {
 
   setProducer(recipe: RecipeForm, producer: string | undefined): void {
     recipe.producers = producer ? [producer] : [];
+    this.onFormChange();
   }
 
   setTimePreset(recipe: RecipeForm, preset: RecipeTimePreset): void {
     recipe.timePreset = preset;
     if (preset !== 'custom') recipe.time = preset;
+    this.onFormChange();
   }
 
   selectSource(sourceId: string): void {
     const source = this.sources().find((entry) => entry.id === sourceId);
     if (!source) return;
 
-    this.selectedSourceId.set(source.id);
-    this.fileName = source.fileName;
-    this.saveResult.set(undefined);
-    this.loadDocument(source.document);
+    this.confirmDiscard(() => {
+      this.selectedSourceId.set(source.id);
+      this.fileName = source.fileName;
+      this.resetDraft(source.document);
+    });
   }
 
   startNewDocument(): void {
@@ -241,67 +296,143 @@ export class CustomRecipesComponent {
     this.itemSuggestions = this.itemOptions();
     this.selectedRecipeIndex.set(0);
     this.showAdvanced = false;
-    this.saveResult.set(undefined);
+    const modId = this.modId();
+    if (modId != null) this.resetDraft(this.buildDocument(modId));
   }
 
   newDocument(): void {
-    this.importResults.set([]);
-    this.startNewDocument();
+    this.confirmDiscard(() => {
+      this.importResults.set([]);
+      this.startNewDocument();
+    });
   }
 
-  importFiles(event: Event): void {
+  async importFiles(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const files = input.files;
     const context = this.context();
     if (!files?.length || context == null) return;
 
-    void this.customRecipeSvc
-      .importFiles(Array.from(files), context)
-      .then((results) => {
-        this.importResults.set(results);
-        const imported = results.find(
-          (result) => result.valid && result.source != null,
-        );
-        if (imported?.source) this.selectSource(imported.source.id);
-        input.value = '';
-      });
+    const selectedFiles = Array.from(files);
+    input.value = '';
+    if (!(await this.canDeactivate())) return;
+    this.reloadSavedForm();
+    if (selectedFiles.length === 1) {
+      try {
+        const text = await selectedFiles[0].text();
+        const value: unknown = JSON.parse(text);
+        if (this.isLibrary(value)) {
+          this.enterLibraryEditor();
+          this.updateJsonText(text);
+          return;
+        }
+      } catch {
+        // The file importer reports parsing errors alongside per-file results.
+      }
+    }
+    const results = await this.customRecipeSvc.importFiles(
+      selectedFiles,
+      context,
+    );
+    this.importResults.set(results);
+    const imported = results.find(
+      (result) => result.valid && result.source != null,
+    );
+    if (imported?.source) {
+      this.selectedSourceId.set(imported.source.id);
+      this.fileName = imported.source.fileName;
+      this.resetDraft(imported.source.document);
+    }
   }
 
   save(): void {
+    if (this.editorMode === 'text') this.saveLibrary();
+  }
+
+  onFormChange(): void {
+    if (this.editorMode !== 'form') return;
+    this.clearFeedback();
+    if (!this.hasUnsavedChanges) return;
     const context = this.context();
     if (context == null) return;
 
     const name = this.jsonFileName(this.fileName);
+    const document = this.editorDocument();
+    if (!document) return;
     const result = this.customRecipeSvc.importDocument(
       name,
-      this.buildDocument(context.modId),
+      document,
       context,
+      false,
+      this.selectedSourceId() ?? undefined,
     );
     this.saveResult.set(result);
     if (result.valid && result.source) {
       this.selectedSourceId.set(result.source.id);
       this.fileName = result.source.fileName;
-      this.loadDocument(result.source.document);
+      // Keep form objects and selection stable while the user is typing.
+      this.savedFileName = this.fileName;
+      this.savedFormText = JSON.stringify(this.buildDocument(context.modId));
     }
   }
 
   download(): void {
-    const context = this.context();
-    if (context == null) return;
-
-    const blob = new Blob(
-      [JSON.stringify(this.buildDocument(context.modId), null, 2)],
-      { type: 'application/json' },
+    if (this.editorMode !== 'text') return;
+    const document = this.libraryDocument();
+    if (!document) return;
+    this.exportSvc.saveAsJson(
+      JSON.stringify(document, null, 2),
+      'custom-recipe-library',
     );
-    saveAs(blob, this.jsonFileName(this.fileName));
   }
 
-  removeSelectedSource(): void {
+  downloadSource(sourceId: string): void {
+    const source = this.sources().find((entry) => entry.id === sourceId);
+    if (!source) return;
+    this.exportSvc.saveAsJson(
+      JSON.stringify(source.document, null, 2),
+      this.jsonFileName(source.fileName).slice(0, -5),
+    );
+  }
+
+  removeSource(sourceId: string): void {
     const modId = this.modId();
-    const sourceId = this.selectedSourceId();
-    if (modId == null || sourceId == null) return;
-    this.customRecipeSvc.removeSource(modId, sourceId);
-    this.startNewDocument();
+    const source = this.sources().find((entry) => entry.id === sourceId);
+    if (modId == null || !source) return;
+    const warningKey =
+      this.selectedSourceId() === sourceId && this.hasUnsavedChanges
+        ? 'customRecipeEditor.removeUnsavedFileWarning'
+        : 'customRecipeEditor.removeFileWarning';
+    combineLatest([
+      this.translateSvc.get('customRecipeEditor.removeFile', {
+        fileName: source.fileName,
+      }),
+      this.translateSvc.multi([
+        warningKey,
+        'customRecipeEditor.removeAction',
+        'cancel',
+      ]),
+    ])
+      .pipe(first())
+      .subscribe(([header, [message, acceptLabel, rejectLabel]]) => {
+        this.contentSvc.confirm({
+          header,
+          message,
+          acceptLabel,
+          rejectLabel,
+          acceptButtonStyleClass: 'p-button-danger',
+          defaultFocus: 'reject',
+          accept: () => {
+            if (
+              this.modId() !== modId ||
+              !this.sources().some((entry) => entry.id === sourceId)
+            )
+              return;
+            this.customRecipeSvc.removeSource(modId, sourceId);
+            if (this.selectedSourceId() === sourceId) this.startNewDocument();
+          },
+        });
+      });
   }
 
   backToCalculator(): void {
@@ -310,6 +441,347 @@ export class CustomRecipesComponent {
       void this.router.navigate([modId, 'list'], {
         queryParamsHandling: 'preserve',
       });
+  }
+
+  enterLibraryEditor(): void {
+    if (this.editorMode === 'text') return;
+    const modId = this.modId();
+    if (modId == null) return;
+    this.confirmDiscard(() => {
+      this.reloadSavedForm();
+      const document = this.customRecipeSvc.exportLibrary(
+        modId,
+        this.customRecipesEnabled(),
+      );
+      this.libraryBaseline = JSON.stringify(document, null, 2);
+      this.jsonText = this.libraryBaseline;
+      this.editorMode = 'text';
+      this.importResults.set([]);
+      this.clearFeedback();
+    });
+  }
+
+  switchEditorMode(mode: EditorMode): void {
+    if (mode === this.editorMode || this.context() == null) return;
+    if (mode === 'text') this.enterLibraryEditor();
+    else this.closeLibraryEditor();
+  }
+
+  exitWithoutSaving(): void {
+    this.editorMode = 'form';
+    this.jsonText = '';
+    this.libraryBaseline = '';
+    this.reloadSavedForm();
+  }
+
+  closeLibraryEditor(): void {
+    this.confirmDiscard(() => {
+      this.exitWithoutSaving();
+    });
+  }
+
+  resetLibrary(): void {
+    const modId = this.modId();
+    if (modId == null || this.editorMode !== 'text') return;
+    this.confirmDiscard(() => {
+      this.updateJsonText(
+        JSON.stringify(this.customRecipeSvc.defaultLibrary(modId), null, 2),
+      );
+    });
+  }
+
+  clearLibrary(): void {
+    const modId = this.modId();
+    if (modId == null || this.editorMode !== 'text') return;
+    this.confirmDiscard(() => {
+      this.updateJsonText(
+        JSON.stringify(
+          {
+            format: CUSTOM_RECIPE_LIBRARY_FORMAT,
+            version: CUSTOM_RECIPE_VERSION,
+            modId,
+            enabled: this.customRecipesEnabled(),
+            sources: [],
+          },
+          null,
+          2,
+        ),
+      );
+    });
+  }
+
+  updateJsonText(text: string): void {
+    this.jsonText = text;
+    this.clearFeedback();
+  }
+
+  formatJson(): void {
+    if (this.editorMode !== 'text') return;
+    try {
+      this.updateJsonText(JSON.stringify(JSON.parse(this.jsonText), null, 2));
+    } catch (error) {
+      this.clearFeedback();
+      this.textIssues.set([
+        {
+          path: '',
+          message: `Invalid JSON: ${error instanceof Error ? error.message : 'Invalid JSON'}`,
+        },
+      ]);
+    }
+  }
+
+  async copyLibrary(): Promise<void> {
+    await this.copyText(this.jsonText);
+  }
+
+  get hasUnsavedChanges(): boolean {
+    const modId = this.modId();
+    if (modId == null || !this.savedFormText) return false;
+    return this.editorMode === 'text'
+      ? this.jsonText !== this.libraryBaseline
+      : this.fileName !== this.savedFileName ||
+          JSON.stringify(this.buildDocument(modId)) !== this.savedFormText;
+  }
+
+  async loadLibraryFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      if (this.editorMode !== 'text') return;
+      this.confirmDiscard(() => {
+        this.updateJsonText(text);
+      });
+    } catch (error) {
+      this.textIssues.set([
+        {
+          path: '',
+          message:
+            error instanceof Error ? error.message : 'Unable to read file',
+        },
+      ]);
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.hasUnsavedChanges) return true;
+    return new Promise((resolve) => {
+      this.confirmDiscard(
+        () => {
+          resolve(true);
+        },
+        () => {
+          resolve(false);
+        },
+      );
+    });
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  private libraryDocument(): CustomRecipeLibraryDocument | undefined {
+    const context = this.context();
+    if (context == null) return;
+    try {
+      const result = this.customRecipeSvc.validateLibrary(
+        JSON.parse(this.jsonText),
+        context,
+        this.customRecipesEnabled(),
+      );
+      this.textIssues.set(result.issues);
+      return result.document;
+    } catch (error) {
+      this.textIssues.set([
+        {
+          path: '',
+          message: `Invalid JSON: ${error instanceof Error ? error.message : 'Invalid JSON'}`,
+        },
+      ]);
+      return;
+    }
+  }
+
+  private saveLibrary(): void {
+    const document = this.libraryDocument();
+    if (!document) return;
+    const apply = (): void => {
+      const context = this.context();
+      if (context == null || context.modId !== document.modId) return;
+      const result = this.customRecipeSvc.replaceLibrary(document, context);
+      this.textIssues.set(result.issues);
+      if (!result.valid || !result.document) return;
+      this.settingsSvc.apply({ customRecipesEnabled: result.document.enabled });
+      this.jsonText = JSON.stringify(result.document, null, 2);
+      this.libraryBaseline = this.jsonText;
+      this.reloadSavedForm();
+      this.saveResult.set({ valid: true, issues: [] });
+    };
+    const names = new Set(document.sources.map((source) => source.fileName));
+    const ids = new Set(
+      document.sources.flatMap((source) =>
+        source.recipes.map((recipe) => recipe.id),
+      ),
+    );
+    const removesData = this.sources().some(
+      (source) =>
+        !names.has(source.fileName) ||
+        source.document.recipes.some((recipe) => !ids.has(recipe.id)),
+    );
+    if (!removesData) {
+      apply();
+      return;
+    }
+    this.translateSvc
+      .multi([
+        'customRecipeEditor.replaceTitle',
+        'customRecipeEditor.replaceWarning',
+        'yes',
+        'cancel',
+      ])
+      .pipe(first())
+      .subscribe(([header, message, acceptLabel, rejectLabel]) => {
+        this.contentSvc.confirm({
+          header,
+          message,
+          acceptLabel,
+          rejectLabel,
+          accept: apply,
+        });
+      });
+  }
+
+  private reloadSavedForm(): void {
+    const source = this.selectedSource() ?? this.sources()[0];
+    if (source) {
+      this.selectedSourceId.set(source.id);
+      this.fileName = source.fileName;
+      this.resetDraft(source.document);
+    } else this.startNewDocument();
+  }
+
+  private isLibrary(value: unknown): boolean {
+    return (
+      typeof value === 'object' &&
+      value != null &&
+      'format' in value &&
+      value.format === CUSTOM_RECIPE_LIBRARY_FORMAT
+    );
+  }
+
+  private editorDocument(): CustomRecipeDocument | undefined {
+    const context = this.context();
+    if (context == null) return;
+    if (!this.fileName.trim()) {
+      this.textIssues.set([
+        { path: 'fileName', message: 'File name cannot be empty.' },
+      ]);
+      return;
+    }
+    const fileName = this.jsonFileName(this.fileName);
+    if (
+      this.sources().some(
+        (source) =>
+          source.id !== this.selectedSourceId() && source.fileName === fileName,
+      )
+    ) {
+      this.textIssues.set([
+        { path: 'fileName', message: 'A file with this name already exists.' },
+      ]);
+      return;
+    }
+    const value = this.buildDocument(context.modId);
+    const validation = this.customRecipeSvc.validateDocument(
+      fileName,
+      value,
+      context,
+      false,
+      this.selectedSourceId() ?? undefined,
+    );
+    this.textIssues.set(validation.issues);
+    if (validation.valid) return value;
+    return;
+  }
+
+  private resetDraft(document: CustomRecipeDocument): void {
+    this.loadDocument(document);
+    this.savedFileName = this.fileName;
+    this.savedFormText = JSON.stringify(this.buildDocument(document.modId));
+    this.clearFeedback();
+  }
+
+  private clearFeedback(): void {
+    this.saveResult.set(undefined);
+    this.textIssues.set([]);
+    this.copyResult.set(undefined);
+    this.copyFallbackText.set('');
+  }
+
+  private confirmDiscard(action: () => void, reject?: () => void): void {
+    if (!this.hasUnsavedChanges) {
+      action();
+      return;
+    }
+    this.translateSvc
+      .multi([
+        'customRecipeEditor.unsavedTitle',
+        'customRecipeEditor.unsavedWarning',
+        'customRecipeEditor.discardChanges',
+        'customRecipeEditor.continueEditing',
+      ])
+      .pipe(first())
+      .subscribe(([header, message, acceptLabel, rejectLabel]) => {
+        this.contentSvc.confirm({
+          header,
+          message,
+          acceptLabel,
+          rejectLabel,
+          accept: action,
+          reject,
+          closeOnEscape: false,
+          dismissableMask: false,
+        });
+      });
+  }
+
+  private async copyText(text: string): Promise<void> {
+    this.copyResult.set(undefined);
+    this.copyFallbackText.set('');
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        this.copyResult.set('copied');
+        return;
+      }
+    } catch {
+      // HTTP origins and denied clipboard permissions use the synchronous fallback.
+    }
+    const activeElement = window.document.activeElement;
+    const textarea = window.document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    window.document.body.appendChild(textarea);
+    let copied = false;
+    try {
+      textarea.focus();
+      textarea.select();
+      copied = window.document.execCommand('copy');
+    } catch {
+      copied = false;
+    } finally {
+      textarea.remove();
+      if (activeElement instanceof HTMLElement) activeElement.focus();
+    }
+    this.copyResult.set(copied ? 'copied' : 'failed');
+    if (!copied) this.copyFallbackText.set(text);
   }
 
   setCustomRecipesEnabled(enabled: boolean): void {
@@ -335,6 +807,12 @@ export class CustomRecipesComponent {
       this.customRecipeSvc.setSourceEnabled(modId, sourceId, enabled);
   }
 
+  setSourceStarred(sourceId: string, starred: boolean): void {
+    const modId = this.modId();
+    if (modId != null)
+      this.customRecipeSvc.setSourceStarred(modId, sourceId, starred);
+  }
+
   recipeEnabled(recipeId: string): boolean {
     if (!this.customRecipesEnabled()) return false;
     const source = this.selectedSource();
@@ -353,21 +831,43 @@ export class CustomRecipesComponent {
   addRecipe(): void {
     this.recipes.push(this.createRecipe(this.recipes.length));
     this.selectedRecipeIndex.set(this.recipes.length - 1);
+    this.onFormChange();
+  }
+
+  openRecipeMenu(event: Event, recipe: RecipeForm, menu: Menu): void {
+    if (menu.visible && this.recipeMenuTarget === recipe) {
+      menu.toggle(event);
+      return;
+    }
+    const wasVisible = menu.visible;
+    this.recipeMenuTarget = recipe;
+    menu.show(event);
+    if (wasVisible) menu.alignOverlay();
   }
 
   removeRecipe(index: number): void {
+    const selectedIndex = this.selectedRecipeIndex();
     this.recipes.splice(index, 1);
     this.selectedRecipeIndex.set(
-      Math.max(0, Math.min(index, this.recipes.length - 1)),
+      Math.max(
+        0,
+        Math.min(
+          index < selectedIndex ? selectedIndex - 1 : selectedIndex,
+          this.recipes.length - 1,
+        ),
+      ),
     );
+    this.onFormChange();
   }
 
   addAmount(rows: AmountForm[]): void {
     rows.push({ id: '', amount: '1' });
+    this.onFormChange();
   }
 
   removeAmount(rows: AmountForm[], index: number): void {
     rows.splice(index, 1);
+    this.onFormChange();
   }
 
   colorValue(value: string): string {
@@ -382,6 +882,7 @@ export class CustomRecipesComponent {
     target.customRecipe.iconBackground = (
       event.target as HTMLInputElement
     ).value;
+    this.onFormChange();
   }
 
   private loadDocument(document: CustomRecipeDocument): void {
@@ -475,8 +976,8 @@ export class CustomRecipesComponent {
       in: this.toEntityMap(recipe.inputs),
       out: this.toEntityMap(recipe.outputs),
       customRecipe: {
-        iconText: recipe.customRecipe.iconText.trim() || '?',
-        iconBackground: this.colorValue(recipe.customRecipe.iconBackground),
+        iconText: recipe.customRecipe.iconText.trim(),
+        iconBackground: recipe.customRecipe.iconBackground.trim(),
       },
     };
     const catalyst = this.toEntityMap(recipe.catalyst);

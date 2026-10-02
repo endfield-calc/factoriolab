@@ -3,6 +3,7 @@ import { RecipeFlag, RecipeJson } from './data/recipe';
 
 export const CUSTOM_RECIPE_FORMAT = 'endfieldlab-custom-recipes';
 export const CUSTOM_RECIPE_VERSION = 1;
+export const CUSTOM_RECIPE_LIBRARY_FORMAT = 'endfieldlab-custom-recipe-library';
 export const DEFAULT_CUSTOM_RECIPE_BACKGROUND = '#64748b';
 export const DEFAULT_CUSTOM_RECIPE_ROW = 999;
 export const CUSTOM_RECIPE_EXAMPLE_FILE_NAME = 'custom-recipes-example.json';
@@ -21,6 +22,29 @@ export interface CustomRecipeDocument {
   version: typeof CUSTOM_RECIPE_VERSION;
   modId: string;
   recipes: CustomRecipeJson[];
+}
+
+export interface CustomRecipeLibrarySource {
+  fileName: string;
+  starred?: boolean;
+  enabled: boolean;
+  disabledRecipeIds: string[];
+  recipes: CustomRecipeJson[];
+}
+
+export interface CustomRecipeLibraryDocument {
+  format: typeof CUSTOM_RECIPE_LIBRARY_FORMAT;
+  version: typeof CUSTOM_RECIPE_VERSION;
+  modId: string;
+  enabled: boolean;
+  sources: CustomRecipeLibrarySource[];
+}
+
+export interface CustomRecipeLibraryValidationResult {
+  valid: boolean;
+  issues: CustomRecipeValidationIssue[];
+  document?: CustomRecipeLibraryDocument;
+  sources?: CustomRecipeSource[];
 }
 
 export const CUSTOM_RECIPE_EXAMPLE_DOCUMENT: CustomRecipeDocument = {
@@ -53,6 +77,8 @@ export const CUSTOM_RECIPE_EXAMPLE_DOCUMENT: CustomRecipeDocument = {
 export interface CustomRecipeSource {
   id: string;
   fileName: string;
+  /** Pins the source in the editor list without changing calculation order. */
+  starred?: boolean;
   document: CustomRecipeDocument;
   generatedItemIds: string[];
   /** Whether all recipes from this source are enabled. Defaults to true. */
@@ -93,6 +119,7 @@ export interface CustomRecipeImportResult {
   fileName?: string;
   source?: CustomRecipeSource;
   issues: CustomRecipeValidationIssue[];
+  skippedRecipeIds?: string[];
 }
 
 export const customRecipeFlags = new Set<RecipeFlag>([

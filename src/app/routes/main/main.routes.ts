@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { MainComponent } from './main.component';
+import type { CustomRecipesComponent } from './routes/custom-recipes/custom-recipes.component';
 
 export const routes: Routes = [
   {
@@ -14,6 +15,10 @@ export const routes: Routes = [
       },
       {
         path: 'custom-recipes',
+        canDeactivate: [
+          (component: CustomRecipesComponent): boolean | Promise<boolean> =>
+            component.canDeactivate(),
+        ],
         loadComponent: () =>
           import('./routes/custom-recipes/custom-recipes.component').then(
             (c) => c.CustomRecipesComponent,

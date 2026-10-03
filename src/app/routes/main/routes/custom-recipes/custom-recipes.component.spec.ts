@@ -47,6 +47,7 @@ describe('CustomRecipesComponent global library editing', () => {
     machineIds: new Set(['machine-item', 'thickener_1']),
     categoryIds: new Set(['material', 'product']),
     locationIds: new Set(),
+    iconIds: new Set(['output-icon', 'machine-icon']),
   };
 
   function document(id = 'first'): CustomRecipeDocument {
@@ -116,8 +117,26 @@ describe('CustomRecipesComponent global library editing', () => {
                 product: { name: 'Product' },
               },
               machineIds: ['machine-item'],
-              itemIds: [],
-              itemEntities: { 'machine-item': { name: 'Machine' } },
+              itemIds: ['machine-item', 'output-item'],
+              itemEntities: {
+                'machine-item': { name: 'Machine', icon: 'machine-icon' },
+                'output-item': { name: 'Output', icon: 'output-icon' },
+              },
+              recipeIds: [],
+              recipeEntities: {},
+              iconIds: ['output-icon', 'machine-icon'],
+              iconEntities: {
+                'output-icon': {
+                  id: 'output-icon',
+                  position: '-64px 0px',
+                  color: '#123456',
+                },
+                'machine-icon': {
+                  id: 'machine-icon',
+                  position: '0px -64px',
+                  color: '#abcdef',
+                },
+              },
               locationIds: [],
               locationEntities: {},
             }),
@@ -1040,6 +1059,238 @@ describe('CustomRecipesComponent global library editing', () => {
   });
 
   describe('recipe detail controls', () => {
+    it('separates item and machine icons without losing icons shared by both', () => {
+      expect(
+        component.builtInItemIconOptions().map((option) => option.value),
+      ).toEqual(['output-icon']);
+      expect(
+        component.builtInMachineIconOptions().map((option) => option.value),
+      ).toEqual(['machine-icon']);
+      const data = settings.dataset as WritableSignal<
+        ReturnType<SettingsService['dataset']>
+      >;
+      data.update((current) => ({
+        ...current,
+        itemIds: [...current.itemIds, 'shared-item'],
+        itemEntities: {
+          ...current.itemEntities,
+          'shared-item': {
+            id: 'shared-item',
+            name: 'Shared item',
+            category: 'material',
+            row: 0,
+            icon: 'machine-icon',
+          },
+        },
+      }));
+      expect(
+        component.builtInItemIconOptions().map((option) => option.value),
+      ).toEqual(['output-icon', 'machine-icon']);
+      expect(
+        component.builtInMachineIconOptions().map((option) => option.value),
+      ).toEqual(['machine-icon']);
+    });
+
+    it('remembers selections independently when switching between icon categories', () => {
+      const recipe = component.selectedRecipe!;
+      component.setIconMode(recipe, 'item');
+      expect(
+        component.iconOptions(recipe).map((option) => option.value),
+      ).toEqual(['output-icon']);
+      expect(recipe.customRecipe.iconId).toEqual('output-icon');
+      component.setIconMode(recipe, 'machine');
+      expect(
+        component.iconOptions(recipe).map((option) => option.value),
+      ).toEqual(['machine-icon']);
+      expect(recipe.customRecipe.iconId).toEqual('machine-icon');
+      component.setIconMode(recipe, 'item');
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'output-icon',
+      );
+      component.setIconMode(recipe, 'text');
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.iconId,
+      ).toBeUndefined();
+      component.setIconMode(recipe, 'machine');
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'machine-icon',
+      );
+      expect(component.hasUnsavedChanges).toBeFalse();
+    });
+
+    it('preserves saved icons outside the item and machine catalogs', () => {
+      const recipe = component.selectedRecipe!;
+      component.setIconMode(recipe, 'item');
+      const data = settings.dataset as WritableSignal<
+        ReturnType<SettingsService['dataset']>
+      >;
+      data.update((current) => ({
+        ...current,
+        itemIds: current.itemIds.filter((id) => id !== 'output-item'),
+      }));
+      expect(component.builtInItemIconOptions()).toEqual([]);
+      expect(
+        component.iconOptions(recipe).map((option) => option.value),
+      ).toEqual(['output-icon']);
+      component.onFormChange();
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'output-icon',
+      );
+      component.selectSource('aef:two.json');
+      component.selectSource('aef:one.json');
+      expect(component.selectedRecipe!.iconMode).toEqual('item');
+      expect(component.selectedRecipe!.customRecipe.iconId).toEqual(
+        'output-icon',
+      );
+    });
+
+    it('keeps existing recipes in text icon mode without adding an icon reference', () => {
+      const element = fixture.nativeElement as HTMLElement;
+      expect(component.selectedRecipe!.iconMode).toEqual('text');
+      expect(element.querySelector('#recipe-icon-text')).not.toBeNull();
+      expect(
+        element.querySelector('label[for="recipe-icon-background"]'),
+      ).not.toBeNull();
+      expect(
+        element.querySelectorAll('#recipe-icon-mode .p-button').length,
+      ).toEqual(3);
+      expect(element.querySelector('.builtin-icon-select')).toBeNull();
+      expect(
+        element.querySelector('.icon-preview')!.textContent?.trim(),
+      ).toEqual('R');
+      component.selectedRecipe!.name = 'Updated';
+      component.onFormChange();
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.iconId,
+      ).toBeUndefined();
+    });
+
+    it('autosaves built-in icon selection and restores the text fallback on mode switches', async () => {
+      const element = fixture.nativeElement as HTMLElement;
+      const recipe = component.selectedRecipe!;
+      const mode = element.querySelectorAll<HTMLElement>(
+        '#recipe-icon-mode .p-button',
+      );
+      mode[1].click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(recipe.iconMode).toEqual('item');
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'output-icon',
+      );
+      expect(
+        element.querySelector('.icon-preview .output-icon'),
+      ).not.toBeNull();
+      expect(
+        element.querySelector('.entity-entry .output-icon'),
+      ).not.toBeNull();
+      expect(element.querySelector('#recipe-icon-text')).toBeNull();
+      expect(component.hasUnsavedChanges).toBeFalse();
+
+      mode[2].click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(recipe.iconMode).toEqual('machine');
+      element
+        .querySelector<HTMLElement>('.builtin-icon-select .p-dropdown-trigger')!
+        .click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      const panel =
+        window.document.querySelector<HTMLElement>('.p-dropdown-panel')!;
+      const filter =
+        panel.querySelector<HTMLInputElement>('.p-dropdown-filter')!;
+      filter.value = 'Machine';
+      filter.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(panel.querySelectorAll('.p-dropdown-item').length).toEqual(1);
+      expect(panel.querySelector('.machine-icon')).not.toBeNull();
+      panel.querySelector<HTMLElement>('.p-dropdown-item')!.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'machine-icon',
+      );
+      expect(
+        element.querySelector('.icon-preview .machine-icon'),
+      ).not.toBeNull();
+
+      mode[0].click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.iconId,
+      ).toBeUndefined();
+      expect(recipe.customRecipe.iconText).toEqual('R');
+      expect(
+        element.querySelector<HTMLInputElement>('#recipe-icon-text')!.value,
+      ).toEqual('R');
+      mode[2].click();
+      fixture.detectChanges();
+      expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+        'machine-icon',
+      );
+      expect(component.hasUnsavedChanges).toBeFalse();
+    });
+
+    it('preserves selected icons across file downloads, text editing and form reloads', () => {
+      const recipe = component.selectedRecipe!;
+      component.setIconMode(recipe, 'item');
+      component.downloadSource('aef:one.json');
+      const file = JSON.parse(
+        saveAsJson.calls.mostRecent().args[0],
+      ) as CustomRecipeDocument;
+      expect(file.recipes[0].customRecipe.iconId).toEqual('output-icon');
+      component.enterLibraryEditor();
+      const library = draft();
+      expect(library.sources[0].recipes[0].customRecipe.iconId).toEqual(
+        'output-icon',
+      );
+      library.sources[0].recipes[0].customRecipe.iconId = 'machine-icon';
+      component.updateJsonText(JSON.stringify(library));
+      component.save();
+      component.switchEditorMode('form');
+      fixture.detectChanges();
+      expect(component.selectedRecipe!.iconMode).toEqual('machine');
+      expect(component.selectedRecipe!.customRecipe.iconId).toEqual(
+        'machine-icon',
+      );
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector(
+          '.icon-preview .machine-icon',
+        ),
+      ).not.toBeNull();
+    });
+
+    it('shows a text fallback and rejects an unknown icon without overwriting saved data', () => {
+      const before = localStorage.getItem('customRecipes');
+      const recipe = component.selectedRecipe!;
+      recipe.customRecipe.iconId = 'removed-icon';
+      component.setIconMode(recipe, 'item');
+      fixture.detectChanges();
+      const element = fixture.nativeElement as HTMLElement;
+      expect(
+        element.querySelector('.icon-preview')!.textContent?.trim(),
+      ).toEqual('R');
+      expect(
+        element
+          .querySelector('.builtin-icon-field .legacy-warning')!
+          .textContent?.trim(),
+      ).toEqual('customRecipeEditor.iconUnavailable');
+      expect(
+        component.textIssues().some((issue) => issue.path.endsWith('iconId')),
+      ).toBeTrue();
+      expect(localStorage.getItem('customRecipes')).toEqual(before);
+      expect(component.hasUnsavedChanges).toBeTrue();
+      component.setIconMode(recipe, 'text');
+      expect(component.hasUnsavedChanges).toBeFalse();
+    });
+
     it('places collapsed advanced fields last with a persistent caution hint', () => {
       const details = (fixture.nativeElement as HTMLElement).querySelector(
         '.entity-form',

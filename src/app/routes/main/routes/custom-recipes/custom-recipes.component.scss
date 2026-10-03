@@ -483,10 +483,22 @@
 }
 
 .icon-editor {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+  min-width: 0;
+}
+
+.icon-config {
   display: flex;
   gap: 1rem;
-  align-items: flex-end;
-  margin-top: 1.25rem;
+  align-items: center;
+  min-width: 0;
+}
+
+:host ::ng-deep .icon-mode-options.p-selectbutton .p-button {
+  flex-basis: 12rem;
+  min-height: 44px;
 }
 
 .icon-fields {
@@ -494,12 +506,74 @@
   flex-grow: 1;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.icon-preview {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+}
+
+.builtin-icon-field {
+  width: 26rem;
+  max-width: 100%;
+}
+
+:host ::ng-deep .builtin-icon-select {
+  width: 100%;
+
+  .p-dropdown-label {
+    min-width: 0;
+  }
+}
+
+.builtin-icon-option {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+  min-height: 2.5rem;
+}
+
+.builtin-icon-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+
+  small {
+    color: var(--text-color-secondary);
+  }
+}
+
+:host ::ng-deep .recipe-builtin-icon {
+  margin: 0;
+  width: 30px;
+  height: 30px;
+
+  &::before {
+    transform: scale(calc(30 / 64));
+  }
+
+  &.lg {
+    width: 64px;
+    height: 64px;
+
+    &::before {
+      transform: none;
+    }
+  }
 }
 
 .color-fields {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr);
   gap: 0.35rem;
+  align-items: center;
 }
 
 .editor-color {
@@ -508,7 +582,8 @@
   background: transparent;
   cursor: pointer;
   width: 40px;
-  height: 36px;
+  height: 100%;
+  min-height: 36px;
 }
 
 .editor-icon {

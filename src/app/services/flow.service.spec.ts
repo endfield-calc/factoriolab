@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 
 import { spread } from '~/helpers';
 import { MIN_LINK_VALUE } from '~/models/constants';
+import {
+  CustomRecipeJson,
+  DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+} from '~/models/custom-recipe';
 import { LinkValue } from '~/models/enum/link-value';
 import { rational } from '~/models/rational';
 import { Step } from '~/models/step';
@@ -39,6 +43,50 @@ describe('FlowService', () => {
   });
 
   describe('buildGraph', () => {
+    for (const iconId of ['coal', 'removed-icon', undefined]) {
+      it(`uses ${iconId ?? 'text icons without an explicit background'} for custom recipe nodes`, () => {
+        const step = Mocks.lightOilSteps[0];
+        const customRecipe: CustomRecipeJson = {
+          id: step.recipeId!,
+          name: 'Custom recipe',
+          category: 'material',
+          row: 999,
+          time: 2,
+          producers: [step.recipeSettings!.machineId!],
+          in: {},
+          out: {},
+          customRecipe: { iconId, iconText: 'AB' },
+        };
+        spyOn(service.customRecipeSvc, 'recipesForMod').and.returnValue([
+          customRecipe,
+        ]);
+        const data = Mocks.getAdjustedDataset();
+        const result = service.buildGraph(
+          Mocks.lightOilSteps,
+          '/m',
+          Mocks.settingsStateInitial,
+          Mocks.preferencesState,
+          data,
+          Mocks.themeValues,
+        );
+        const node = result.nodes.find(
+          (entry) => entry.recipe?.id === step.recipeId,
+        )!;
+        expect(node).toBeDefined();
+        if (iconId === 'coal') {
+          const icon = data.iconEntities['coal'];
+          expect(node.href).toEqual(data.iconFile);
+          expect(node.color).toEqual(icon.color);
+          expect(node.viewBox).toEqual(service.positionProps(icon).viewBox);
+        } else {
+          expect(node.href).toMatch(/^data:image\/svg\+xml/);
+          expect(decodeURIComponent(node.href)).toContain('>AB</text>');
+          expect(node.color).toEqual(DEFAULT_CUSTOM_RECIPE_BACKGROUND);
+          expect(node.viewBox).toEqual('0 0 64 64');
+        }
+      });
+    }
+
     it('should handle various link and node types', () => {
       const result = service.buildGraph(
         Mocks.lightOilSteps,

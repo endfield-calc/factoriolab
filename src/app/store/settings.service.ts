@@ -206,6 +206,7 @@ export class SettingsService extends Store<SettingsState> {
         locationIds: new Set(
           (mod.locations ?? []).map((location) => location.id),
         ),
+        iconIds: new Set(mod.icons.map((icon) => icon.id)),
       };
     },
   );
@@ -553,7 +554,17 @@ export class SettingsService extends Store<SettingsState> {
       environment.debug,
     );
     const recipeData = toEntities(
-      [...coalesce(mod?.recipes, []), ...customRecipes],
+      [
+        ...coalesce(mod?.recipes, []),
+        ...customRecipes.map((recipe) => ({
+          ...recipe,
+          icon:
+            recipe.customRecipe.iconId &&
+            iconEntities[recipe.customRecipe.iconId]
+              ? recipe.customRecipe.iconId
+              : undefined,
+        })),
+      ],
       environment.debug,
     );
     const limitations = reduceEntities(coalesce(mod?.limitations, {}));

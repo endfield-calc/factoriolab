@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { CustomRecipeJson } from '~/models/custom-recipe';
 import { Theme } from '~/models/enum/theme';
 import { CategoryId, ItemId, Mocks, RecipeId, TestModule } from '~/tests';
 
@@ -27,6 +28,46 @@ describe('ThemeService', () => {
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
+
+  for (const iconId of ['coal', 'removed-icon', undefined]) {
+    it(`renders custom recipe icons using ${iconId ?? 'the legacy text fallback'}`, () => {
+      const recipe: CustomRecipeJson = {
+        id: 'custom-icon-recipe',
+        name: 'Custom recipe',
+        category: 'material',
+        row: 999,
+        time: 2,
+        producers: [],
+        in: {},
+        out: {},
+        customRecipe: { iconId, iconText: 'AB' },
+      };
+      spyOn(service.customRecipeSvc, 'recipesForMod').and.returnValue([recipe]);
+      service.document = window.document.implementation.createHTMLDocument('');
+      service.head = service.document.head;
+      TestBed.flushEffects();
+      const css = service.document.getElementById('lab-icon-css')!.innerText;
+      const rule = /\.custom-icon-recipe\.recipe::before \{[^}]+\}/.exec(
+        css,
+      )![0];
+      if (iconId === 'coal') {
+        const data = service.settingsSvc.dataset();
+        expect(rule).toContain(`background-image: url("${data.iconFile}")`);
+        expect(rule).toContain(
+          `background-position: ${data.iconEntities['coal'].position}`,
+        );
+        expect(rule).toContain('content: ""');
+        expect(rule).not.toContain('background-color:');
+        expect(css).toContain(
+          'body.light .custom-icon-recipe.recipe::before { filter: invert(1); }',
+        );
+      } else {
+        expect(rule).toContain('background-image: none');
+        expect(rule).toContain('background-color: #64748b');
+        expect(rule).toContain('content: "AB"');
+      }
+    });
+  }
 
   it('should set the theme css href', () => {
     const themeLink = { href: '' };

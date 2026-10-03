@@ -138,7 +138,7 @@ export class CustomRecipeValidatorService {
           path: `${path}.${key}`,
           message:
             key === 'icon'
-              ? 'Image icons are not supported; use customRecipe.iconText instead'
+              ? 'Use customRecipe.iconId for built-in icons or customRecipe.iconText for text icons'
               : 'Unknown field',
         });
       }
@@ -262,7 +262,7 @@ export class CustomRecipeValidatorService {
         issues,
       );
 
-    this.validateCustomRecipeData(value, path, issues);
+    this.validateCustomRecipeData(value, path, context.iconIds, issues);
   }
 
   private validateEntityMap(
@@ -306,6 +306,7 @@ export class CustomRecipeValidatorService {
   private validateCustomRecipeData(
     value: JsonObject,
     path: string,
+    iconIds: ReadonlySet<string>,
     issues: CustomRecipeValidationIssue[],
   ): void {
     const customRecipe = value['customRecipe'];
@@ -319,12 +320,21 @@ export class CustomRecipeValidatorService {
     }
 
     for (const key of Object.keys(customRecipe)) {
-      if (!['iconText', 'iconBackground'].includes(key))
+      if (!['iconText', 'iconBackground', 'iconId'].includes(key))
         issues.push({
           path: `${path}.customRecipe.${key}`,
           message: 'Unknown field',
         });
     }
+
+    if (customRecipe['iconId'] !== undefined)
+      this.validateReference(
+        customRecipe['iconId'],
+        `${path}.customRecipe.iconId`,
+        iconIds,
+        'built-in icon',
+        issues,
+      );
 
     if (customRecipe['iconText'] === undefined)
       issues.push({

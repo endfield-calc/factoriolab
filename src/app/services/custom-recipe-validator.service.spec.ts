@@ -15,6 +15,7 @@ describe('CustomRecipeValidatorService', () => {
     machineIds: new Set(['machine-item']),
     categoryIds: new Set(['material']),
     locationIds: new Set(['tundra']),
+    iconIds: new Set(['output-icon', 'machine-icon']),
   };
 
   function document(
@@ -160,6 +161,56 @@ describe('CustomRecipeValidatorService', () => {
     );
 
     expect(result.valid).toBeTrue();
+  });
+
+  it('accepts built-in icon references alongside the text fallback without changing the format version', () => {
+    const result = service.validate(
+      document({
+        customRecipe: {
+          iconId: 'output-icon',
+          iconText: 'AB',
+          iconBackground: '#abc',
+        },
+      }),
+      context,
+    );
+    expect(result.valid).toBeTrue();
+    expect(result.recipes![0].customRecipe).toEqual({
+      iconId: 'output-icon',
+      iconText: 'AB',
+      iconBackground: '#abc',
+    });
+  });
+
+  for (const iconId of [
+    '',
+    'unknown-icon',
+    'https://example.com/icon.png',
+    '../icons.webp',
+    1,
+    null,
+  ]) {
+    it(`rejects invalid built-in icon reference ${JSON.stringify(iconId)}`, () => {
+      const result = service.validate(
+        document({ customRecipe: { iconId, iconText: 'AB' } }),
+        context,
+      );
+      expect(result.valid).toBeFalse();
+      expect(result.issues.map((issue) => issue.path)).toEqual([
+        'recipes[0].customRecipe.iconId',
+      ]);
+    });
+  }
+
+  it('still requires a valid text fallback for built-in icons', () => {
+    const result = service.validate(
+      document({ customRecipe: { iconId: 'output-icon' } }),
+      context,
+    );
+    expect(result.valid).toBeFalse();
+    expect(result.issues.map((issue) => issue.path)).toEqual([
+      'recipes[0].customRecipe.iconText',
+    ]);
   });
 
   it('rejects the generic recipe icon text field', () => {

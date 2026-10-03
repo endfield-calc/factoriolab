@@ -689,7 +689,9 @@ export class CustomRecipeService {
     return (
       typeof value['customRecipe']['iconText'] === 'string' &&
       (value['customRecipe']['iconBackground'] === undefined ||
-        typeof value['customRecipe']['iconBackground'] === 'string')
+        typeof value['customRecipe']['iconBackground'] === 'string') &&
+      (value['customRecipe']['iconId'] === undefined ||
+        typeof value['customRecipe']['iconId'] === 'string')
     );
   }
 

@@ -11,6 +11,7 @@ export const CUSTOM_RECIPE_EXAMPLE_FILE_NAME = 'custom-recipes-example.json';
 export interface CustomRecipeData {
   iconText: string;
   iconBackground?: string;
+  iconId?: string;
 }
 
 export type CustomRecipeJson = Omit<RecipeJson, 'icon' | 'iconText'> & {
@@ -100,6 +101,7 @@ export interface CustomRecipeValidationContext {
   machineIds: ReadonlySet<string>;
   categoryIds: ReadonlySet<string>;
   locationIds: ReadonlySet<string>;
+  iconIds: ReadonlySet<string>;
 }
 
 export interface CustomRecipeValidationIssue {

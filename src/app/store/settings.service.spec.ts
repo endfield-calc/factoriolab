@@ -374,7 +374,7 @@ describe('SettingsService', () => {
       ).toEqual(ItemId.HeavyOil);
     });
 
-    it('should include custom recipes without inferring an image icon', () => {
+    it('should use only explicitly selected built-in icons for custom recipes', () => {
       const customRecipe: CustomRecipeJson = {
         id: 'custom-recipe',
         name: 'Custom recipe',
@@ -403,6 +403,39 @@ describe('SettingsService', () => {
       expect(result.recipeIds).toContain(customRecipe.id);
       expect(recipe.icon).toBeUndefined();
       expect(recipe.iconText).toBeUndefined();
+
+      const iconId = Mocks.mod.icons[0].id;
+      customRecipe.customRecipe.iconId = iconId;
+      const withIcon = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [customRecipe],
+      );
+      expect(withIcon.recipeEntities[customRecipe.id].icon).toEqual(iconId);
+      expect(withIcon.recipeEntities[customRecipe.id].out).toEqual(recipe.out);
+      expect(withIcon.recipeEntities[customRecipe.id].time).toEqual(
+        recipe.time,
+      );
+
+      customRecipe.customRecipe.iconId = 'removed-icon';
+      const missingIcon = service.computeDataset(
+        Mocks.mod,
+        Mocks.modHash,
+        undefined,
+        Game.Factorio,
+        undefined,
+        [customRecipe],
+      );
+      expect(missingIcon.recipeEntities[customRecipe.id].icon).toBeUndefined();
+    });
+
+    it('includes the current mod built-in icons in the custom recipe validation context', () => {
+      expect(service.customRecipeContext()!.iconIds).toEqual(
+        new Set(Mocks.mod.icons.map((icon) => icon.id)),
+      );
     });
 
     it('should include generated items in the dataset', () => {

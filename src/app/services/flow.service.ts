@@ -4,6 +4,7 @@ import { combineLatest, map, switchMap } from 'rxjs';
 
 import { customRecipeIconDataUri } from '~/helpers/custom-recipe-icon';
 import { MIN_LINK_VALUE } from '~/models/constants';
+import { DEFAULT_CUSTOM_RECIPE_BACKGROUND } from '~/models/custom-recipe';
 import { Icon } from '~/models/data/icon';
 import { Item } from '~/models/data/item';
 import { AdjustedDataset } from '~/models/dataset';
@@ -214,13 +215,17 @@ export class FlowService {
         const recipe = data.recipeEntities[step.recipeId];
         const machine = data.itemEntities[step.recipeSettings?.machineId];
         const customRecipe = customRecipes.get(recipe.id);
-        const icon = customRecipe?.customRecipe.iconBackground
-          ? {
-              id: recipe.id,
-              color: customRecipe.customRecipe.iconBackground,
-              position: '0 0',
-            }
-          : data.iconEntities[recipe.icon ?? recipe.id];
+        const builtInIcon = customRecipe?.customRecipe.iconId
+          ? data.iconEntities[customRecipe.customRecipe.iconId]
+          : undefined;
+        const background =
+          customRecipe?.customRecipe.iconBackground ??
+          DEFAULT_CUSTOM_RECIPE_BACKGROUND;
+        const icon =
+          builtInIcon ??
+          (customRecipe
+            ? { id: recipe.id, color: background, position: '0 0' }
+            : data.iconEntities[recipe.icon ?? recipe.id]);
         const id = `${this.recipeStepNodeType(step)}|${step.recipeId}`;
         flow.nodes.push({
           id,
@@ -228,12 +233,13 @@ export class FlowService {
           text: `${step.machines.toString(machinePrec)} ${machine.name}`,
           color: icon.color,
           stepId: step.id,
-          href: customRecipe?.customRecipe.iconBackground
-            ? customRecipeIconDataUri(
-                customRecipe.customRecipe.iconText,
-                customRecipe.customRecipe.iconBackground,
-              )
-            : data.iconFile,
+          href:
+            customRecipe && !builtInIcon
+              ? customRecipeIconDataUri(
+                  customRecipe.customRecipe.iconText,
+                  background,
+                )
+              : data.iconFile,
           recipe,
           ...this.positionProps(icon),
         });

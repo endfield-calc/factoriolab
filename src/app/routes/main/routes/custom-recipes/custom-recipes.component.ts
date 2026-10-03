@@ -60,10 +60,17 @@ interface AmountForm {
 interface CustomRecipeFormData {
   iconText: string;
   iconBackground: string;
+  iconId: string;
+}
+
+interface BuiltInIconOption extends SelectItem<string> {
+  searchText: string;
 }
 
 type RecipeTimePreset = '1' | '2' | '10' | '20' | 'custom';
 type EditorMode = 'form' | 'text';
+type BuiltInIconMode = 'item' | 'machine';
+type RecipeIconMode = 'text' | BuiltInIconMode;
 
 interface RecipeForm {
   id: string;
@@ -82,6 +89,8 @@ interface RecipeForm {
   locations: string[];
   flags: RecipeFlag[];
   disallowedEffects: ModuleEffect[];
+  iconMode: RecipeIconMode;
+  iconChoices: Partial<Record<BuiltInIconMode, string>>;
   customRecipe: CustomRecipeFormData;
 }
 
@@ -200,6 +209,83 @@ export class CustomRecipesComponent {
       value: id,
     }));
   });
+  builtInIconOptions = computed<BuiltInIconOption[]>(() => {
+    const data = this.data();
+    const names = new Map<string, Set<string>>();
+    const addName = (iconId: string, name: string): void => {
+      if (!data.iconEntities[iconId]) return;
+      const labels = names.get(iconId) ?? new Set<string>();
+      labels.add(name);
+      names.set(iconId, labels);
+    };
+    for (const id of data.itemIds) {
+      const item = data.itemEntities[id];
+      addName(item.icon ?? id, item.name);
+    }
+    for (const id of data.recipeIds) {
+      if (!this.context()?.recipeIds.has(id)) continue;
+      const recipe = data.recipeEntities[id];
+      addName(recipe.icon ?? id, recipe.name);
+    }
+    for (const id of data.categoryIds) {
+      const category = data.categoryEntities[id];
+      addName(category.icon ?? id, category.name);
+    }
+    for (const id of data.locationIds) {
+      const location = data.locationEntities[id];
+      addName(location.icon ?? id, location.name);
+    }
+    return data.iconIds.map((id) => {
+      const labels = [...(names.get(id) ?? [])];
+      return {
+        label: labels[0] ?? id,
+        value: id,
+        searchText: [id, ...labels].join(' '),
+      };
+    });
+  });
+  private machineItemIds = computed(() => {
+    const data = this.data();
+    const machineIds = new Set(data.machineIds);
+    return new Set(
+      data.itemIds.filter((id) => {
+        const item = data.itemEntities[id];
+        return (
+          machineIds.has(id) ||
+          item.belt ||
+          item.pipe ||
+          item.beacon ||
+          item.cargoWagon ||
+          item.fluidWagon
+        );
+      }),
+    );
+  });
+  private machineIconIds = computed(() => {
+    const data = this.data();
+    return new Set(
+      [...this.machineItemIds()].map((id) => data.itemEntities[id].icon ?? id),
+    );
+  });
+  private itemIconIds = computed(() => {
+    const data = this.data();
+    const machineItems = this.machineItemIds();
+    return new Set(
+      data.itemIds
+        .filter((id) => !machineItems.has(id))
+        .map((id) => data.itemEntities[id].icon ?? id),
+    );
+  });
+  builtInItemIconOptions = computed(() =>
+    this.builtInIconOptions().filter((option) =>
+      this.itemIconIds().has(option.value),
+    ),
+  );
+  builtInMachineIconOptions = computed(() =>
+    this.builtInIconOptions().filter((option) =>
+      this.machineIconIds().has(option.value),
+    ),
+  );
   locationOptions = computed<SelectItem<string>[]>(() => {
     const data = this.data();
     return data.locationIds.map((id) => ({
@@ -275,6 +361,58 @@ export class CustomRecipesComponent {
   setTimePreset(recipe: RecipeForm, preset: RecipeTimePreset): void {
     recipe.timePreset = preset;
     if (preset !== 'custom') recipe.time = preset;
+    this.onFormChange();
+  }
+
+  recipeIconId(recipe: RecipeForm): string | undefined {
+    const id = recipe.iconMode !== 'text' ? recipe.customRecipe.iconId : '';
+    return id && this.data().iconEntities[id] ? id : undefined;
+  }
+
+  iconOptions(recipe: RecipeForm): BuiltInIconOption[] {
+    const options =
+      recipe.iconMode === 'machine'
+        ? this.builtInMachineIconOptions()
+        : this.builtInItemIconOptions();
+    const iconId = recipe.customRecipe.iconId;
+    if (options.some((option) => option.value === iconId)) return options;
+    const selected = this.builtInIconOptions().find(
+      (option) => option.value === iconId,
+    );
+    // Keep legacy selections outside the item/device catalogs editable.
+    return selected && this.iconModeForId(iconId) === recipe.iconMode
+      ? [selected, ...options]
+      : options;
+  }
+
+  private iconModeForId(iconId: string): BuiltInIconMode {
+    return this.machineIconIds().has(iconId) && !this.itemIconIds().has(iconId)
+      ? 'machine'
+      : 'item';
+  }
+
+  setIconMode(recipe: RecipeForm, mode: RecipeIconMode): void {
+    if (recipe.iconMode !== 'text')
+      recipe.iconChoices[recipe.iconMode] = recipe.customRecipe.iconId;
+    else if (recipe.customRecipe.iconId)
+      recipe.iconChoices[this.iconModeForId(recipe.customRecipe.iconId)] ??=
+        recipe.customRecipe.iconId;
+    recipe.iconMode = mode;
+    if (mode !== 'text') {
+      const entityId =
+        mode === 'machine'
+          ? recipe.producers[0]
+          : recipe.outputs.find((output) => output.id)?.id;
+      const iconId = entityId
+        ? (this.data().itemEntities[entityId]?.icon ?? entityId)
+        : undefined;
+      const options = this.iconOptions(recipe);
+      recipe.customRecipe.iconId =
+        recipe.iconChoices[mode] ??
+        (iconId && options.some((option) => option.value === iconId)
+          ? iconId
+          : (options[0]?.value ?? ''));
+    }
     this.onFormChange();
   }
 
@@ -892,6 +1030,8 @@ export class CustomRecipesComponent {
   }
 
   private toRecipeForm(recipe: CustomRecipeJson): RecipeForm {
+    const iconId = recipe.customRecipe.iconId;
+    const iconMode = iconId ? this.iconModeForId(iconId) : 'text';
     return {
       id: recipe.id,
       name: recipe.name,
@@ -909,8 +1049,11 @@ export class CustomRecipesComponent {
       locations: [...(recipe.locations ?? [])],
       flags: [...(recipe.flags ?? [])],
       disallowedEffects: [...(recipe.disallowedEffects ?? [])],
+      iconMode,
+      iconChoices: iconId ? { [iconMode]: iconId } : {},
       customRecipe: {
         iconText: recipe.customRecipe.iconText,
+        iconId: recipe.customRecipe.iconId ?? '',
         iconBackground:
           recipe.customRecipe.iconBackground ??
           DEFAULT_CUSTOM_RECIPE_BACKGROUND,
@@ -949,8 +1092,11 @@ export class CustomRecipesComponent {
       locations: [],
       flags: [],
       disallowedEffects: [],
+      iconMode: 'text',
+      iconChoices: {},
       customRecipe: {
         iconText: this.firstCharacter(id),
+        iconId: '',
         iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
       },
     };
@@ -980,6 +1126,8 @@ export class CustomRecipesComponent {
         iconBackground: recipe.customRecipe.iconBackground.trim(),
       },
     };
+    if (recipe.iconMode !== 'text')
+      result.customRecipe.iconId = recipe.customRecipe.iconId;
     const catalyst = this.toEntityMap(recipe.catalyst);
     if (Object.keys(catalyst).length) result.catalyst = catalyst;
     if (recipe.cost.trim()) result.cost = recipe.cost.trim();

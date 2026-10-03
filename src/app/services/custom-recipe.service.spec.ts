@@ -18,6 +18,7 @@ describe('CustomRecipeService', () => {
     machineIds: new Set(['machine-item']),
     categoryIds: new Set(['material']),
     locationIds: new Set(['tundra']),
+    iconIds: new Set(['output-icon']),
   };
 
   function document(id = 'custom-recipe'): Record<string, unknown> {
@@ -135,6 +136,38 @@ describe('CustomRecipeService', () => {
     expect(restored.sourcesForMod('aef')).toEqual(service.sourcesForMod('aef'));
     restored.setSourceStarred('aef', 'aef:two.json', false);
     expect(createService().sourcesForMod('aef')[1].starred).toBeFalse();
+  });
+
+  it('round-trips built-in icon references through storage, file export and whole-library replacement', () => {
+    const service = createService();
+    const input = document();
+    const recipe = (input['recipes'] as Record<string, unknown>[])[0];
+    recipe['customRecipe'] = {
+      iconId: 'output-icon',
+      iconText: 'AB',
+      iconBackground: '#abc',
+    };
+    expect(
+      service.importDocument('icons.json', input, context).valid,
+    ).toBeTrue();
+    service.setSourceEnabled('aef', 'aef:icons.json', false);
+    service.setSourceStarred('aef', 'aef:icons.json', true);
+    const exported = service.exportDocument('aef');
+    expect(exported.recipes[0].customRecipe).toEqual({
+      iconId: 'output-icon',
+      iconText: 'AB',
+      iconBackground: '#abc',
+    });
+    expect(createService().exportDocument('aef')).toEqual(exported);
+    const library = JSON.parse(
+      JSON.stringify(service.exportLibrary('aef', false)),
+    ) as CustomRecipeLibraryDocument;
+    expect(service.replaceLibrary(library, context).valid).toBeTrue();
+    expect(createService().exportLibrary('aef', false)).toEqual(library);
+    const before = localStorage.getItem('customRecipes');
+    library.sources[0].recipes[0].customRecipe.iconId = 'unknown-icon';
+    expect(service.replaceLibrary(library, context).valid).toBeFalse();
+    expect(localStorage.getItem('customRecipes')).toEqual(before);
   });
 
   it('does not write storage when starring a missing file or keeping its current star', () => {

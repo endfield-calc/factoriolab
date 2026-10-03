@@ -115,6 +115,14 @@ export class ThemeService {
       for (const recipe of customRecipes.values()) {
         if (data.recipeQIds.has(recipe.id)) continue;
         const selector = this.escapeSelector(recipe.id);
+        const icon = recipe.customRecipe.iconId
+          ? data.iconEntities[recipe.customRecipe.iconId]
+          : undefined;
+        if (icon) {
+          css += `.${selector}.recipe::before { background-image: url("${data.iconFile}"); background-position: ${icon.position}; content: ""; } `;
+          css += this.appendLightStyle(icon, selector, '.recipe');
+          continue;
+        }
         const text = JSON.stringify(recipe.customRecipe.iconText) ?? '""';
         const background = recipe.customRecipe.iconBackground ?? '#64748b';
         const textColor = customRecipeTextColor(background);

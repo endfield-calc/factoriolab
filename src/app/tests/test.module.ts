@@ -26,6 +26,11 @@ import { Mocks } from '.';
       useFactory: (): DatasetsService => {
         const datasetsSvc = new DatasetsService();
         datasetsSvc.loadData('1.1', Mocks.modData, Mocks.modHash);
+        datasetsSvc.loadI18n('1.1', Language.English, {
+          categories: {},
+          items: {},
+          recipes: {},
+        });
         datasetsSvc.loadI18n('1.1', Language.Chinese, Mocks.modI18n);
         return datasetsSvc;
       },

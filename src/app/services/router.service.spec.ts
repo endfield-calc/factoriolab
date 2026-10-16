@@ -77,6 +77,7 @@ const mockSettingsState: SettingsState = {
   cargoWagonId: ItemId.CargoWagon,
   fluidWagonId: ItemId.FluidWagon,
   flowRate: rational(1200n),
+  customRecipesEnabled: true,
   excludedRecipeIds: new Set([RecipeId.SteelChest]),
   checkedRecipeIds: new Set([RecipeId.SteelChest]),
   netProductionOnly: true,
@@ -417,6 +418,7 @@ describe('RouterService', () => {
       }),
     });
     delete mockStateV10.settingsState?.requireMachinesOutput;
+    delete mockStateV10.settingsState?.customRecipesEnabled;
     delete mockStateV10.settingsState?.costs?.footprint;
     delete mockStateV10.settingsState?.costs?.recycling;
     delete mockStateV10.settingsState?.costs?.electric;

@@ -13,6 +13,13 @@ export const routes: Routes = [
           import('./routes/list/list.component').then((c) => c.ListComponent),
       },
       {
+        path: 'custom-recipes',
+        loadComponent: () =>
+          import('./routes/custom-recipes/custom-recipes.component').then(
+            (c) => c.CustomRecipesComponent,
+          ),
+      },
+      {
         path: 'flow',
         loadComponent: () =>
           import('./routes/flow/flow.component').then((c) => c.FlowComponent),

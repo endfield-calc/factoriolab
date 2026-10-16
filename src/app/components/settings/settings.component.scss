@@ -63,3 +63,16 @@
     font-size: 14px;
   }
 }
+
+.custom-recipe-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  text-align: left;
+
+  small {
+    margin-left: auto;
+    max-width: 35%;
+  }
+}

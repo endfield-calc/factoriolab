@@ -11,6 +11,10 @@ import {
   toEntities,
 } from '~/helpers';
 import { DEFAULT_MOD } from '~/models/constants';
+import {
+  CustomRecipeJson,
+  CustomRecipeValidationContext,
+} from '~/models/custom-recipe';
 import { Beacon } from '~/models/data/beacon';
 import { Belt } from '~/models/data/belt';
 import { CargoWagon } from '~/models/data/cargo-wagon';
@@ -59,6 +63,7 @@ import { ModuleSettings } from '~/models/settings/module-settings';
 import { Settings } from '~/models/settings/settings';
 import { Entities, Optional } from '~/models/utils';
 import { AnalyticsService } from '~/services/analytics.service';
+import { CustomRecipeService } from '~/services/custom-recipe.service';
 import { RecipeService } from '~/services/recipe.service';
 
 import { DatasetsService } from './datasets.service';
@@ -80,6 +85,7 @@ export interface SettingsState {
   flowRate: Rational;
   stack?: Rational;
   excludedRecipeIds?: Set<string>;
+  customRecipesEnabled: boolean;
   checkedRecipeIds: Set<string>;
   netProductionOnly: boolean;
   preset: number;
@@ -112,6 +118,7 @@ export const initialSettingsState: SettingsState = {
   excludedItemIds: new Set(),
   checkedItemIds: new Set(),
   flowRate: rational(1200n),
+  customRecipesEnabled: true,
   checkedRecipeIds: new Set(),
   netProductionOnly: false,
   proliferatorSprayId: ItemId.Module,
@@ -137,6 +144,7 @@ export const initialSettingsState: SettingsState = {
 })
 export class SettingsService extends Store<SettingsState> {
   analyticsSvc = inject(AnalyticsService);
+  customRecipeSvc = inject(CustomRecipeService);
   datasetsSvc = inject(DatasetsService);
   preferencesSvc = inject(PreferencesService);
   recipeSvc = inject(RecipeService);
@@ -146,6 +154,7 @@ export class SettingsService extends Store<SettingsState> {
   maximizeType = this.select('maximizeType');
   modId = this.select('modId');
   preset = this.select('preset');
+  customRecipesEnabled = this.select('customRecipesEnabled');
   excludedRecipeIds = this.select('excludedRecipeIds');
   researchedTechnologyIds = this.select('researchedTechnologyIds');
 
@@ -160,7 +169,57 @@ export class SettingsService extends Store<SettingsState> {
     const modId = this.modId();
     if (modId == null) return undefined;
     const datasets = this.datasetsSvc.state();
-    return datasets[modId]?.hash;
+    const hash = datasets[modId]?.hash;
+    if (hash == null) return;
+    const generatedItemIds = this.customRecipeSvc
+      .generatedItemsForMod(modId)
+      .map((item) => item.id);
+    const customRecipeIds = this.customRecipeSvc
+      .recipesForMod(modId)
+      .map((recipe) => recipe.id);
+    return spread(hash, {
+      items: [
+        ...hash.items,
+        ...generatedItemIds.filter((id) => !hash.items.includes(id)),
+      ],
+      recipes: [
+        ...hash.recipes,
+        ...customRecipeIds.filter((id) => !hash.recipes.includes(id)),
+      ],
+    });
+  });
+
+  customRecipeContext = computed<CustomRecipeValidationContext | undefined>(
+    () => {
+      const mod = this.mod();
+      if (mod == null) return;
+      return {
+        modId: mod.id,
+        recipeIds: new Set(mod.recipes.map((recipe) => recipe.id)),
+        itemIds: new Set(mod.items.map((item) => item.id)),
+        machineIds: new Set(
+          mod.items
+            .filter((item) => item.machine != null)
+            .map((item) => item.id),
+        ),
+        categoryIds: new Set(mod.categories.map((category) => category.id)),
+        locationIds: new Set(
+          (mod.locations ?? []).map((location) => location.id),
+        ),
+      };
+    },
+  );
+
+  customRecipes = computed<CustomRecipeJson[]>(() => {
+    const modId = this.modId();
+    return modId == null ? [] : this.customRecipeSvc.recipesForMod(modId);
+  });
+
+  generatedItems = computed<ItemJson[]>(() => {
+    const modId = this.modId();
+    return modId == null
+      ? []
+      : this.customRecipeSvc.generatedItemsForMod(modId);
   });
 
   i18n = computed(() => {
@@ -224,6 +283,8 @@ export class SettingsService extends Store<SettingsState> {
       this.i18nWithDefault(),
       this.game(),
       this.defaults(),
+      this.customRecipes(),
+      this.generatedItems(),
     ),
   );
 
@@ -476,20 +537,23 @@ export class SettingsService extends Store<SettingsState> {
     i18n: Optional<ModI18n>,
     game: Game,
     defaults: Optional<Defaults>,
+    customRecipes: CustomRecipeJson[] = [],
+    generatedItems: ItemJson[] = [],
   ): Dataset {
     // Map out entities with mods
-    const categoryEntities = toEntities(
-      coalesce(mod?.categories, []),
-      environment.debug,
-    );
+    const categories = [...coalesce(mod?.categories, [])];
+    const categoryEntities = toEntities(categories, environment.debug);
     const iconFile = `data/${coalesce(mod?.id, DEFAULT_MOD)}/icons.webp`;
     const iconEntities = toEntities(
       coalesce(mod?.icons, []),
       environment.debug,
     );
-    const itemData = toEntities(coalesce(mod?.items, []), environment.debug);
+    const itemData = toEntities<ItemJson>(
+      [...coalesce(mod?.items, []), ...generatedItems],
+      environment.debug,
+    );
     const recipeData = toEntities(
-      coalesce(mod?.recipes, []),
+      [...coalesce(mod?.recipes, []), ...customRecipes],
       environment.debug,
     );
     const limitations = reduceEntities(coalesce(mod?.limitations, {}));
@@ -538,8 +602,11 @@ export class SettingsService extends Store<SettingsState> {
 
     // Calculate missing implicit recipe icons
     // For recipes with no icon, use icon of first output item
+    const customRecipeIds = new Set(customRecipes.map((recipe) => recipe.id));
     recipes
-      .filter((r) => !iconEntities[r.id] && !r.icon)
+      .filter(
+        (r) => !customRecipeIds.has(r.id) && !iconEntities[r.id] && !r.icon,
+      )
       .forEach((r) => {
         const firstOutId = Object.keys(r.out)[0];
         const firstOutItem = itemData[firstOutId];
@@ -982,10 +1049,19 @@ export class SettingsService extends Store<SettingsState> {
         .filter((b) => b.id);
     }
     const defaultExcludedRecipeIds = new Set(defaults?.excludedRecipeIds);
-    const excludedRecipeIds = coalesce(
-      state.excludedRecipeIds,
-      defaultExcludedRecipeIds,
+    const customRecipesEnabled = state.customRecipesEnabled;
+    const excludedRecipeIds = new Set(
+      coalesce(state.excludedRecipeIds, defaultExcludedRecipeIds),
     );
+    if (customRecipesEnabled) {
+      this.customRecipeSvc
+        .excludedRecipeIdsForMod(data.modId)
+        .forEach((id) => excludedRecipeIds.add(id));
+    } else {
+      this.customRecipeSvc
+        .recipesForMod(data.modId)
+        .forEach((recipe) => excludedRecipeIds.add(recipe.id));
+    }
 
     return spread(state as Settings, {
       beltId,
@@ -998,6 +1074,7 @@ export class SettingsService extends Store<SettingsState> {
       fluidWagonId,
       defaultFluidWagonId,
       excludedRecipeIds,
+      customRecipesEnabled,
       defaultExcludedRecipeIds,
       machineRankIds,
       defaultMachineRankIds,

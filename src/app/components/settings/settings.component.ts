@@ -7,6 +7,7 @@ import {
   HostBinding,
   inject,
   Input,
+  signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -30,6 +31,7 @@ import { DropdownBaseDirective } from '~/directives/dropdown-base.directive';
 import { DropdownTranslateDirective } from '~/directives/dropdown-translate.directive';
 import { NoDragDirective } from '~/directives/no-drag.directive';
 import { coalesce } from '~/helpers';
+import { CustomRecipeImportResult } from '~/models/custom-recipe';
 import { displayRateOptions } from '~/models/enum/display-rate';
 import { Game, gameOptions } from '~/models/enum/game';
 import { inserterCapacityOptions } from '~/models/enum/inserter-capacity';
@@ -51,6 +53,7 @@ import { IconClassPipe, IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { ToArrayPipe } from '~/pipes/to-array.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
+import { CustomRecipeService } from '~/services/custom-recipe.service';
 import { RecipeService } from '~/services/recipe.service';
 import { RouterService } from '~/services/router.service';
 import { TranslateService } from '~/services/translate.service';
@@ -112,6 +115,7 @@ import { TooltipComponent } from '../tooltip/tooltip.component';
 export class SettingsComponent {
   router = inject(Router);
   contentSvc = inject(ContentService);
+  customRecipeSvc = inject(CustomRecipeService);
   datasetsSvc = inject(DatasetsService);
   machinesSvc = inject(MachinesService);
   preferencesSvc = inject(PreferencesService);
@@ -138,6 +142,17 @@ export class SettingsComponent {
   preferences = this.preferencesSvc.state;
   machinesState = this.machinesSvc.settings;
   machineIds = computed(() => [...this.settings().machineRankIds]);
+  customRecipeSources = computed(() => {
+    const modId = this.modId();
+    return modId == null ? [] : this.customRecipeSvc.sourcesForMod(modId);
+  });
+  customRecipeCount = computed(() =>
+    this.customRecipeSources().reduce(
+      (count, source) => count + source.document.recipes.length,
+      0,
+    ),
+  );
+  customRecipeImportResults = signal<CustomRecipeImportResult[]>([]);
 
   state = '';
   editValue = '';
@@ -180,6 +195,7 @@ export class SettingsComponent {
   ];
   versionsVisible = false;
   recipeProdVisible = false;
+  customRecipesVisible = false;
 
   displayRateOptions = displayRateOptions;
   gameOptions = gameOptions;
@@ -341,5 +357,44 @@ export class SettingsComponent {
       ids,
       this.settings().defaultMachineRankIds,
     );
+  }
+
+  openCustomRecipes(): void {
+    this.customRecipesVisible = true;
+  }
+
+  openCustomRecipeEditor(): void {
+    const modId = this.modId();
+    if (modId == null) return;
+    if (this.contentSvc.settingsActive()) this.contentSvc.toggleSettings();
+    void this.router.navigate([modId, 'custom-recipes'], {
+      queryParamsHandling: 'preserve',
+    });
+  }
+
+  importCustomRecipes(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    const context = this.settingsSvc.customRecipeContext();
+    if (!files?.length || context == null) return;
+
+    void this.customRecipeSvc
+      .importFiles(Array.from(files), context)
+      .then((results) => {
+        this.customRecipeImportResults.set(results);
+        input.value = '';
+      });
+  }
+
+  removeCustomRecipeSource(sourceId: string): void {
+    const modId = this.modId();
+    if (modId != null) this.customRecipeSvc.removeSource(modId, sourceId);
+  }
+
+  openCustomRecipe(recipeId: string): void {
+    const modId = this.modId();
+    if (modId == null) return;
+    this.customRecipesVisible = false;
+    void this.router.navigate([modId, 'data', 'recipes', recipeId]);
   }
 }

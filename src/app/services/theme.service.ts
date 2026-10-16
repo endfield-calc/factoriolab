@@ -3,6 +3,7 @@ import { effect, inject, Injectable } from '@angular/core';
 import { ReplaySubject } from 'rxjs';
 
 import { fnPropsNotNullish } from '~/helpers';
+import { customRecipeTextColor } from '~/helpers/custom-recipe-icon';
 import { IconJson } from '~/models/data/icon';
 import { Theme } from '~/models/enum/theme';
 import { getStoredValue } from '~/models/stored-signal';
@@ -13,6 +14,7 @@ import {
   PreferencesState,
 } from '../store/preferences.service';
 import { SettingsService } from '../store/settings.service';
+import { CustomRecipeService } from './custom-recipe.service';
 
 const LAB_ICON_STYLE_ID = 'lab-icon-css';
 const LAB_THEME_STYLE_ID = 'lab-theme-css';
@@ -32,6 +34,7 @@ export class ThemeService {
   document = inject(DOCUMENT);
   preferencesSvc = inject(PreferencesService);
   settingsSvc = inject(SettingsService);
+  customRecipeSvc = inject(CustomRecipeService);
 
   themeValues$ = new ReplaySubject<ThemeValues>(1);
   head = this.document.getElementsByTagName('head')[0];
@@ -69,6 +72,11 @@ export class ThemeService {
 
     effect(() => {
       const data = this.settingsSvc.dataset();
+      const customRecipes = new Map(
+        this.customRecipeSvc
+          .recipesForMod(data.modId)
+          .map((recipe) => [recipe.id, recipe]),
+      );
 
       // Generate .lab-icon::before css rules stylesheet
       const old = this.document.getElementById(LAB_ICON_STYLE_ID);
@@ -96,6 +104,7 @@ export class ThemeService {
       data.recipeIds
         .map((r) => data.recipeEntities[r])
         .filter(fnPropsNotNullish('icon'))
+        .filter((recipe) => !customRecipes.has(recipe.id))
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {
           const icon = data.iconEntities[recipe.icon];
@@ -103,6 +112,16 @@ export class ThemeService {
           css += `.${selector}.recipe::before { background-image: url("${data.iconFile}"); background-position: ${icon.position}; } `;
           css += this.appendLightStyle(icon, selector, '.recipe');
         });
+      for (const recipe of customRecipes.values()) {
+        if (data.recipeQIds.has(recipe.id)) continue;
+        const selector = this.escapeSelector(recipe.id);
+        const text = JSON.stringify(recipe.customRecipe.iconText) ?? '""';
+        const background = recipe.customRecipe.iconBackground ?? '#64748b';
+        const textColor = customRecipeTextColor(background);
+        const iconText = recipe.customRecipe.iconText;
+        const fontSize = Array.from(iconText).length > 1 ? 28 : 40;
+        css += `.${selector}.recipe::before { background-image: none; background-color: ${background}; color: ${textColor}; content: ${text}; text-align: center; text-shadow: none; line-height: 64px; font-size: ${fontSize.toString()}px; } `;
+      }
       data.categoryIds
         .map((c) => data.categoryEntities[c])
         .filter(fnPropsNotNullish('icon'))
@@ -131,6 +150,7 @@ export class ThemeService {
         });
       data.recipeIds
         .map((i) => data.recipeEntities[i])
+        .filter((recipe) => !customRecipes.has(recipe.id))
         .filter(fnPropsNotNullish('iconText'))
         .filter((recipe) => !data.recipeQIds.has(recipe.id))
         .forEach((recipe) => {

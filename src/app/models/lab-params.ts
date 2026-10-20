@@ -1,6 +1,8 @@
 export type Params = Partial<Record<string, string | string[]>>;
 
 export interface LabParams {
+  /** Flow partitions: core materials, view mode and custom section names. */
+  fpt?: string;
   /** `object[]` Objectives */
   o?: string[];
   /** `Entities` Item settings */

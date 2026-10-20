@@ -3,12 +3,18 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, map, switchMap } from 'rxjs';
 
 import { customRecipeIconDataUri } from '~/helpers/custom-recipe-icon';
+import {
+  buildFlowFocusPaths,
+  flowFocusTargets,
+  flowLinkId,
+} from '~/helpers/flow-focus';
 import { MIN_LINK_VALUE } from '~/models/constants';
 import { DEFAULT_CUSTOM_RECIPE_BACKGROUND } from '~/models/custom-recipe';
 import { Icon } from '~/models/data/icon';
 import { Item } from '~/models/data/item';
 import { AdjustedDataset } from '~/models/dataset';
 import { LinkValue } from '~/models/enum/link-value';
+import { Theme } from '~/models/enum/theme';
 import { FlowData } from '~/models/flow';
 import { Rational, rational } from '~/models/rational';
 import { ColumnsState } from '~/models/settings/column-settings';
@@ -24,6 +30,7 @@ import {
 import { RecipesService } from '../store/recipes.service';
 import { SettingsService } from '../store/settings.service';
 import { CustomRecipeService } from './custom-recipe.service';
+import { CustomRecipeIconService } from './custom-recipe-icon.service';
 import { ThemeService, ThemeValues } from './theme.service';
 import { TranslateService } from './translate.service';
 
@@ -38,6 +45,7 @@ export class FlowService {
   themeSvc = inject(ThemeService);
   translateSvc = inject(TranslateService);
   customRecipeSvc = inject(CustomRecipeService);
+  customIconSvc = inject(CustomRecipeIconService);
 
   flowData$ = combineLatest({
     steps: toObservable(this.objectivesSvc.steps),
@@ -48,6 +56,7 @@ export class FlowService {
     preferences: toObservable(this.preferencesSvc.state),
     data: toObservable(this.recipesSvc.adjustedDataset),
     themeValues: this.themeSvc.themeValues$,
+    customIcons: toObservable(this.customIconSvc.images),
   }).pipe(
     map(({ steps, suffix, settings, preferences, data, themeValues }) =>
       this.buildGraph(steps, suffix, settings, preferences, data, themeValues),
@@ -76,6 +85,18 @@ export class FlowService {
     const flow: FlowData = {
       nodes: [],
       links: [],
+      modId: data.modId,
+      rateSuffix: suffix,
+      extractionItemIds: [
+        ...new Set(
+          Object.values(data.recipeEntities).flatMap((recipe) => {
+            return recipe.flags.has('mining') &&
+              Object.keys(recipe.in).length === 0
+              ? Object.keys(recipe.out)
+              : [];
+          }),
+        ),
+      ],
     };
 
     const stepItemMap: Entities<Step> = {};
@@ -108,6 +129,7 @@ export class FlowService {
         flow.nodes.push({
           id,
           name: item.name,
+          amount: step.items.toFraction(false),
           text: `${step.items.toString(itemPrec)}${suffix}`,
           color: itemIcon.icon.color,
           stepId: step.id,
@@ -125,6 +147,7 @@ export class FlowService {
             flow.links.push({
               source: id,
               target: `${this.recipeStepNodeType(parent)}|${parent.recipeId}`,
+              amount: step.items.mul(step.parents[stepId]).toFraction(false),
               name: item.name,
               text: this.linkText(
                 stepText[step.id],
@@ -159,6 +182,7 @@ export class FlowService {
           flow.links.push({
             source: id,
             target: surplusId,
+            amount: step.surplus.toFraction(false),
             name: item.name,
             text: this.linkText(
               stepText[step.id],
@@ -192,6 +216,7 @@ export class FlowService {
           flow.links.push({
             source: id,
             target: outputId,
+            amount: step.output.toFraction(false),
             name: item.name,
             text: this.linkText(
               stepText[step.id],
@@ -215,8 +240,26 @@ export class FlowService {
         const recipe = data.recipeEntities[step.recipeId];
         const machine = data.itemEntities[step.recipeSettings?.machineId];
         const customRecipe = customRecipes.get(recipe.id);
+        // Endfield's built-in recipe IDs identify the main output. Unknown
+        // and custom recipes keep all outputs equal rather than guessing.
+        const mainOutputs =
+          data.modId === 'aef' && !customRecipe
+            ? Object.keys(recipe.out).filter(
+                (itemId) =>
+                  recipe.id === itemId ||
+                  recipe.id.startsWith(`${itemId}-`) ||
+                  recipe.id.endsWith(`-${itemId}`),
+              )
+            : [];
         const builtInIcon = customRecipe?.customRecipe.iconId
           ? data.iconEntities[customRecipe.customRecipe.iconId]
+          : undefined;
+        const composite = customRecipe
+          ? this.customIconSvc.resolve(
+              customRecipe.customRecipe,
+              data,
+              preferences.theme === Theme.Light,
+            )
           : undefined;
         const background =
           customRecipe?.customRecipe.iconBackground ??
@@ -234,14 +277,17 @@ export class FlowService {
           color: icon.color,
           stepId: step.id,
           href:
-            customRecipe && !builtInIcon
+            composite ??
+            (customRecipe && !builtInIcon
               ? customRecipeIconDataUri(
                   customRecipe.customRecipe.iconText,
                   background,
                 )
-              : data.iconFile,
+              : data.iconFile),
           recipe,
-          ...this.positionProps(icon),
+          ...this.positionProps(
+            composite ? { ...icon, position: '0 0' } : icon,
+          ),
         });
 
         if (step.outputs) {
@@ -256,6 +302,12 @@ export class FlowService {
             flow.links.push({
               source: id,
               target: `i|${itemId}`,
+              amount: itemStep.items
+                ?.mul(step.outputs[itemId])
+                .toFraction(false),
+              ...(mainOutputs.length === 1 && mainOutputs[0] !== itemId
+                ? { byproduct: true }
+                : {}),
               name: item.name,
               text: this.linkText(
                 stepText[itemStep.id],
@@ -277,22 +329,109 @@ export class FlowService {
       }
     }
 
+    flow.links.forEach((link, index) => (link.id = flowLinkId(link, index)));
+    const focusTargets = flowFocusTargets(flow);
+    const focusPaths = buildFlowFocusPaths(flow);
+
     // Remove unnecessary item nodes
     const removeNodes = new Map<string, string>();
     for (const node of flow.nodes) {
       if (node.id.startsWith('i')) {
         const links = flow.links.filter((l) => l.target === node.id);
-        if (links.length === 1) {
+        const primaryOutputs =
+          links.length === 1
+            ? flow.links.filter(
+                (link) => link.source === links[0].source && !link.byproduct,
+              )
+            : [];
+        if (
+          links.length === 1 &&
+          !links[0].byproduct &&
+          primaryOutputs.length === 1
+        ) {
           const link = links[0];
           removeNodes.set(link.target, link.source);
         }
       }
     }
 
+    flow.focusTargets = focusTargets.map((target) => {
+      const nodeId = removeNodes.get(target.id) ?? target.id;
+      return {
+        ...target,
+        nodeId,
+        ...(nodeId !== target.id
+          ? {
+              link: flow.links.find((link) => link.target === target.id),
+              outgoingLinkIds: flow.links
+                .filter((link) => link.source === target.id)
+                .map(flowLinkId),
+            }
+          : {}),
+      };
+    });
+
+    flow.focusGraph = {
+      nodes: flow.nodes,
+      links: flow.links.map((link) => ({ ...link })),
+      nodeAliases: Object.fromEntries(removeNodes),
+      paths: Object.fromEntries(
+        Object.entries(focusPaths).map(([id, path]) => [
+          id,
+          {
+            nodeIds: path.mainNodeIds ?? path.nodeIds,
+            linkIds: path.mainLinkIds ?? path.linkIds,
+          },
+        ]),
+      ),
+    };
+
     flow.nodes = flow.nodes.filter((n) => !removeNodes.has(n.id));
     flow.links = flow.links.filter((l) => !removeNodes.has(l.target));
     flow.links.forEach(
       (l) => (l.source = removeNodes.get(l.source) ?? l.source),
+    );
+
+    const visibleLinks = new Set(flow.links.map((link) => link.id));
+    const linkById = new Map(flow.links.map((link) => [link.id, link]));
+    flow.focusPaths = Object.fromEntries(
+      Object.entries(focusPaths).map(([id, path]) => {
+        const mainRawNodes = new Set(path.mainNodeIds);
+        const mainNodeIds = [
+          ...new Set(
+            [...mainRawNodes].flatMap((nodeId) => {
+              const producerId = removeNodes.get(nodeId);
+              // A merged recovery-only material must not promote its producer.
+              return producerId
+                ? mainRawNodes.has(producerId)
+                  ? [producerId]
+                  : []
+                : [nodeId];
+            }),
+          ),
+        ];
+        const mainNodes = new Set(mainNodeIds);
+        return [
+          id,
+          {
+            nodeIds: [
+              ...new Set(
+                path.nodeIds.map((nodeId) => removeNodes.get(nodeId) ?? nodeId),
+              ),
+            ],
+            linkIds: path.linkIds.filter((linkId) => visibleLinks.has(linkId)),
+            mainNodeIds,
+            mainLinkIds: path.mainLinkIds?.filter((linkId) => {
+              const link = linkById.get(linkId);
+              return (
+                link != null &&
+                mainNodes.has(link.source) &&
+                mainNodes.has(link.target)
+              );
+            }),
+          },
+        ];
+      }),
     );
 
     return flow;

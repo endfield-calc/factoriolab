@@ -55,17 +55,37 @@
   margin: 0 6px;
 }
 
-// Give item picker buttons more room for their icons.
+// Use the same icon size in item and recipe pickers.
 .picker-dialog .p-button-icon.lab-icon.item,
 .picker-dialog .p-button-icon.lab-icon.recipe {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 
   &::before,
   &::after {
     top: 0;
     left: 0;
-    transform: scale(0.625);
+    transform: scale(0.75);
+  }
+}
+
+.picker-dialog .p-button.picker-option {
+  &.p-button-icon-only {
+    flex: 0 0 64px;
+    padding: 7px;
+    width: 64px;
+    height: 64px;
+  }
+
+  &.recipe-excluded {
+    border-color: #64748b;
+    background-color: #101820;
+    color: #f1f5f9;
+
+    .hover-icon {
+      text-shadow: none;
+      color: #e2e8f0;
+    }
   }
 }
 

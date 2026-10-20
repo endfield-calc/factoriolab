@@ -8,12 +8,14 @@ import { Game } from '~/models/enum/game';
 import { Language } from '~/models/enum/language';
 import { Preset } from '~/models/enum/preset';
 import { Quality } from '~/models/enum/quality';
+import { SimplexResultType } from '~/models/enum/simplex-result-type';
 import { flags } from '~/models/flags';
 import { gameInfo } from '~/models/game-info';
 import { rational } from '~/models/rational';
 import { Settings } from '~/models/settings/settings';
 import { assert, ItemId, Mocks, RecipeId, TestModule } from '~/tests';
 
+import { ObjectivesService } from './objectives.service';
 import { SettingsService } from './settings.service';
 
 describe('SettingsService', () => {
@@ -26,6 +28,30 @@ describe('SettingsService', () => {
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('preserves calculation settings when only base definitions change', () => {
+    const objectives = TestBed.inject(ObjectivesService);
+    const solve = spyOn(objectives.simplexSvc, 'solve').and.returnValue({
+      steps: [],
+      resultType: SimplexResultType.Skipped,
+    });
+    objectives.matrixResult();
+    const settings = service.settings();
+    service.apply({
+      flowPartition: {
+        bases: [{ id: 'base:a', name: 'A', outputItemIds: [ItemId.IronPlate] }],
+      },
+    });
+    expect(service.settings()).toBe(settings);
+    objectives.matrixResult();
+    expect(solve).toHaveBeenCalledTimes(1);
+    service.apply({ flowPartition: { bases: [] } });
+    expect(service.settings()).toBe(settings);
+    objectives.matrixResult();
+    expect(solve).toHaveBeenCalledTimes(1);
+    service.apply({ displayRate: DisplayRate.PerSecond });
+    expect(service.settings()).not.toBe(settings);
   });
 
   describe('mod', () => {

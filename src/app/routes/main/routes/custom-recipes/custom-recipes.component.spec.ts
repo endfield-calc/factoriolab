@@ -8,6 +8,7 @@ import {
   CUSTOM_RECIPE_EXAMPLE_FILE_NAME,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_LIBRARY_FORMAT,
+  CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
   CUSTOM_RECIPE_VERSION,
   CustomRecipeDocument,
   CustomRecipeLibraryDocument,
@@ -44,10 +45,21 @@ describe('CustomRecipesComponent global library editing', () => {
     modId: 'aef',
     recipeIds: new Set(),
     itemIds: new Set(['input-item', 'output-item']),
-    machineIds: new Set(['machine-item', 'thickener_1']),
+    machineIds: new Set([
+      'machine-item',
+      'thickener_1',
+      'xiranite_oven_1',
+      'tools_asm_mc_1',
+    ]),
     categoryIds: new Set(['material', 'product']),
-    locationIds: new Set(),
-    iconIds: new Set(['output-icon', 'machine-icon']),
+    locationIds: new Set(['jinlong']),
+    iconIds: new Set([
+      'output-icon',
+      'machine-icon',
+      'xiranite_powder',
+      'proc_battery_5',
+      'filter_core',
+    ]),
   };
 
   function document(id = 'first'): CustomRecipeDocument {
@@ -163,6 +175,8 @@ describe('CustomRecipesComponent global library editing', () => {
     service.importDocument('two.json', document('second'), context);
     service.setSourceEnabled('aef', 'aef:one.json', false);
     service.setRecipeEnabled('aef', 'aef:two.json', 'second', false);
+    // The fixture is a deliberately imported library rather than a legacy library.
+    service.replaceLibrary(service.exportLibrary('aef'), context);
     fixture = TestBed.createComponent(CustomRecipesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -404,19 +418,23 @@ describe('CustomRecipesComponent global library editing', () => {
     expect(draft().sources).toEqual([]);
   });
 
-  it('restores the disabled default example only after saving', () => {
+  it('restores both disabled built-in files only after saving', () => {
     const before = localStorage.getItem('customRecipes');
     component.enterLibraryEditor();
     component.resetLibrary();
-    expect(draft().sources.length).toEqual(1);
+    expect(draft().sources.length).toEqual(2);
     expect(draft().sources[0].fileName).toEqual(
       CUSTOM_RECIPE_EXAMPLE_FILE_NAME,
     );
     expect(draft().sources[0].enabled).toBeFalse();
+    expect(draft().sources[1].fileName).toEqual(
+      CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
+    );
+    expect(draft().sources[1].enabled).toBeFalse();
     expect(localStorage.getItem('customRecipes')).toEqual(before);
     component.save();
     confirm.calls.mostRecent().args[0].accept();
-    expect(service.sourcesForMod('aef').length).toEqual(1);
+    expect(service.sourcesForMod('aef').length).toEqual(2);
     expect(service.sourcesForMod('aef')[0].enabled).toBeFalse();
     component.exitWithoutSaving();
     expect(component.selectedSource()!.fileName).toEqual(
@@ -435,7 +453,7 @@ describe('CustomRecipesComponent global library editing', () => {
       expect(localStorage.getItem('customRecipes')).toEqual(before);
       confirm.calls.mostRecent().args[0].accept();
       if (action === 'resetLibrary') {
-        expect(draft().sources.length).toEqual(1);
+        expect(draft().sources.length).toEqual(2);
         expect(draft().sources[0].fileName).toEqual(
           CUSTOM_RECIPE_EXAMPLE_FILE_NAME,
         );
@@ -1059,6 +1077,141 @@ describe('CustomRecipesComponent global library editing', () => {
   });
 
   describe('recipe detail controls', () => {
+    it('defaults to no secondary icon and offers four modes without changing old recipes', () => {
+      const element = fixture.nativeElement as HTMLElement;
+      expect(component.selectedRecipe!.secondaryIcon.iconMode).toEqual('none');
+      expect(
+        element.querySelectorAll('#recipe-secondary-icon-mode .p-button')
+          .length,
+      ).toEqual(4);
+      expect(element.querySelector('#recipe-secondary-icon-text')).toBeNull();
+      expect(element.querySelector('.recipe-secondary-icon')).toBeNull();
+      component.selectedRecipe!.name = 'Changed';
+      component.onFormChange();
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.secondaryIcon,
+      ).toBeUndefined();
+    });
+
+    it('autosaves secondary text and built-in choices independently of the main icon', async () => {
+      const element = fixture.nativeElement as HTMLElement;
+      const recipe = component.selectedRecipe!;
+      component.setIconMode(recipe, 'item');
+      fixture.detectChanges();
+      const modes = element.querySelectorAll<HTMLElement>(
+        '#recipe-secondary-icon-mode .p-button',
+      );
+      modes[1].click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const text = element.querySelector<HTMLInputElement>(
+        '#recipe-secondary-icon-text',
+      )!;
+      text.value = 'B';
+      text.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const background = element.querySelector<HTMLInputElement>(
+        '#recipe-secondary-icon-background',
+      )!;
+      background.value = '#abc';
+      background.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.secondaryIcon,
+      ).toEqual({ iconText: 'B', iconBackground: '#abc' });
+      expect(
+        element
+          .querySelector('.icon-preview .recipe-secondary-icon')!
+          .textContent?.trim(),
+      ).toEqual('B');
+      expect(
+        element
+          .querySelector('.entity-entry .recipe-secondary-icon')!
+          .textContent?.trim(),
+      ).toEqual('B');
+      for (const index of [2, 3, 2]) {
+        modes[index].click();
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const expected = index === 2 ? 'output-icon' : 'machine-icon';
+        expect(
+          service.recipesForMod('aef')[0].customRecipe.secondaryIcon?.iconId,
+        ).toEqual(expected);
+        expect(
+          element.querySelector(
+            `.icon-preview .recipe-secondary-icon .${expected}`,
+          ),
+        ).not.toBeNull();
+        expect(service.recipesForMod('aef')[0].customRecipe.iconId).toEqual(
+          'output-icon',
+        );
+      }
+      modes[0].click();
+      fixture.detectChanges();
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.secondaryIcon,
+      ).toBeUndefined();
+      expect(element.querySelector('.recipe-secondary-icon')).toBeNull();
+      modes[3].click();
+      fixture.detectChanges();
+      expect(recipe.secondaryIcon.customRecipe.iconId).toEqual('machine-icon');
+      expect(recipe.secondaryIcon.customRecipe.iconText).toEqual('B');
+      expect(recipe.secondaryIcon.customRecipe.iconBackground).toEqual('#abc');
+      component.setIconMode(recipe, 'text');
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.secondaryIcon?.iconId,
+      ).toEqual('machine-icon');
+      expect(component.hasUnsavedChanges).toBeFalse();
+    });
+
+    it('round-trips the badge through file download and text editing, and blocks invalid autosaves', () => {
+      const recipe = component.selectedRecipe!;
+      component.setSecondaryIconMode(recipe, 'item');
+      component.downloadSource('aef:one.json');
+      const file = JSON.parse(
+        saveAsJson.calls.mostRecent().args[0],
+      ) as CustomRecipeDocument;
+      expect(file.recipes[0].customRecipe.secondaryIcon?.iconId).toEqual(
+        'output-icon',
+      );
+      component.enterLibraryEditor();
+      const library = draft();
+      library.sources[0].recipes[0].customRecipe.secondaryIcon = {
+        iconText: 'B',
+        iconId: 'machine-icon',
+        iconBackground: '#abc',
+      };
+      component.updateJsonText(JSON.stringify(library));
+      component.save();
+      component.switchEditorMode('form');
+      fixture.detectChanges();
+      const restored = component.selectedRecipe!;
+      expect(restored.secondaryIcon.iconMode).toEqual('machine');
+      expect(restored.secondaryIcon.customRecipe.iconBackground).toEqual(
+        '#abc',
+      );
+      const before = localStorage.getItem('customRecipes');
+      component.setSecondaryIconMode(restored, 'text');
+      const textSaved = localStorage.getItem('customRecipes');
+      expect(textSaved).not.toEqual(before);
+      restored.secondaryIcon.customRecipe.iconText = '';
+      component.onFormChange();
+      expect(localStorage.getItem('customRecipes')).toEqual(textSaved);
+      expect(
+        component
+          .textIssues()
+          .some((issue) => issue.path.endsWith('secondaryIcon.iconText')),
+      ).toBeTrue();
+      expect(component.hasUnsavedChanges).toBeTrue();
+      component.setSecondaryIconMode(restored, 'none');
+      expect(
+        service.recipesForMod('aef')[0].customRecipe.secondaryIcon,
+      ).toBeUndefined();
+      expect(component.hasUnsavedChanges).toBeFalse();
+    });
+
     it('separates item and machine icons without losing icons shared by both', () => {
       expect(
         component.builtInItemIconOptions().map((option) => option.value),
@@ -1299,9 +1452,7 @@ describe('CustomRecipesComponent global library editing', () => {
       const toggle =
         advanced.querySelector<HTMLButtonElement>('.advanced-toggle')!;
       expect(details.lastElementChild).toBe(advanced);
-      expect(advanced.previousElementSibling!.classList).toContain(
-        'icon-editor',
-      );
+      expect(advanced.previousElementSibling!.classList).toContain('io-grid');
       expect(
         advanced.querySelector('.advanced-hint')!.textContent?.trim(),
       ).toEqual('customRecipeEditor.advancedHint');

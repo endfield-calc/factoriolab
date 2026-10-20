@@ -319,10 +319,41 @@ export class CustomRecipeValidatorService {
       return;
     }
 
+    this.validateIconData(
+      customRecipe,
+      `${path}.customRecipe`,
+      iconIds,
+      issues,
+      true,
+    );
+    if (customRecipe['secondaryIcon'] !== undefined) {
+      const secondaryPath = `${path}.customRecipe.secondaryIcon`;
+      if (!this.isObject(customRecipe['secondaryIcon']))
+        issues.push({ path: secondaryPath, message: 'Must be an object' });
+      else
+        this.validateIconData(
+          customRecipe['secondaryIcon'],
+          secondaryPath,
+          iconIds,
+          issues,
+        );
+    }
+  }
+
+  private validateIconData(
+    customRecipe: JsonObject,
+    path: string,
+    iconIds: ReadonlySet<string>,
+    issues: CustomRecipeValidationIssue[],
+    allowSecondary = false,
+  ): void {
     for (const key of Object.keys(customRecipe)) {
-      if (!['iconText', 'iconBackground', 'iconId'].includes(key))
+      if (
+        !['iconText', 'iconBackground', 'iconId'].includes(key) &&
+        !(allowSecondary && key === 'secondaryIcon')
+      )
         issues.push({
-          path: `${path}.customRecipe.${key}`,
+          path: `${path}.${key}`,
           message: 'Unknown field',
         });
     }
@@ -330,7 +361,7 @@ export class CustomRecipeValidatorService {
     if (customRecipe['iconId'] !== undefined)
       this.validateReference(
         customRecipe['iconId'],
-        `${path}.customRecipe.iconId`,
+        `${path}.iconId`,
         iconIds,
         'built-in icon',
         issues,
@@ -338,7 +369,7 @@ export class CustomRecipeValidatorService {
 
     if (customRecipe['iconText'] === undefined)
       issues.push({
-        path: `${path}.customRecipe.iconText`,
+        path: `${path}.iconText`,
         message: 'Required field',
       });
     else {
@@ -351,7 +382,7 @@ export class CustomRecipeValidatorService {
         Array.from(iconText).length > 2
       )
         issues.push({
-          path: `${path}.customRecipe.iconText`,
+          path: `${path}.iconText`,
           message: 'Must contain one or two visible characters',
         });
     }
@@ -360,7 +391,7 @@ export class CustomRecipeValidatorService {
       const color = this.stringValue(customRecipe['iconBackground']);
       if (color == null || !colorPattern.test(color))
         issues.push({
-          path: `${path}.customRecipe.iconBackground`,
+          path: `${path}.iconBackground`,
           message: 'Must be a #RGB or #RRGGBB color',
         });
     }

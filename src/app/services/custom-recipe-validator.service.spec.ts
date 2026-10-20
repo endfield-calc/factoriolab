@@ -213,6 +213,46 @@ describe('CustomRecipeValidatorService', () => {
     ]);
   });
 
+  it('accepts text and built-in secondary icons while preserving the existing format', () => {
+    for (const secondaryIcon of [
+      { iconText: '副', iconBackground: '#abc' },
+      { iconText: 'B', iconId: 'machine-icon' },
+    ]) {
+      const result = service.validate(
+        document({ customRecipe: { iconText: '主', secondaryIcon } }),
+        context,
+      );
+      expect(result.valid).toBeTrue();
+      expect(result.recipes![0].customRecipe.secondaryIcon).toEqual(
+        secondaryIcon,
+      );
+    }
+  });
+
+  it('rejects invalid secondary icons, including nested badges and external image references', () => {
+    for (const secondaryIcon of [
+      null,
+      [],
+      {},
+      { iconText: '' },
+      { iconText: 'ABC' },
+      { iconText: 'A', iconBackground: 'red' },
+      { iconText: 'A', iconId: 'https://example.com/icon.png' },
+      { iconText: 'A', secondaryIcon: { iconText: 'B' } },
+    ]) {
+      const result = service.validate(
+        document({ customRecipe: { iconText: '主', secondaryIcon } }),
+        context,
+      );
+      expect(result.valid).toBeFalse();
+      expect(
+        result.issues.every((issue) =>
+          issue.path.startsWith('recipes[0].customRecipe.secondaryIcon'),
+        ),
+      ).toBeTrue();
+    }
+  });
+
   it('rejects the generic recipe icon text field', () => {
     const result = service.validate(document({ iconText: '自' }), context);
 

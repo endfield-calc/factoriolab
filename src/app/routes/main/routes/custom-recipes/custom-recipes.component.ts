@@ -19,6 +19,7 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
@@ -35,6 +36,7 @@ import {
   CUSTOM_RECIPE_VERSION,
   CustomRecipeDocument,
   customRecipeFlags,
+  CustomRecipeIconData,
   CustomRecipeImportResult,
   CustomRecipeJson,
   CustomRecipeLibraryDocument,
@@ -45,6 +47,7 @@ import {
 } from '~/models/custom-recipe';
 import { ModuleEffect } from '~/models/data/module';
 import { RecipeFlag } from '~/models/data/recipe';
+import { Rational, rational } from '~/models/rational';
 import { TranslatePipe } from '~/pipes/translate.pipe';
 import { ContentService } from '~/services/content.service';
 import { CustomRecipeService } from '~/services/custom-recipe.service';
@@ -55,6 +58,17 @@ import { SettingsService } from '~/store/settings.service';
 interface AmountForm {
   id: string;
   amount: string;
+}
+
+interface ManagedRecipe {
+  id: string;
+  name: string;
+  sourceId?: string;
+  fileName?: string;
+  otherOutputs: string[];
+  included: boolean;
+  locked: boolean;
+  inactiveReason?: string;
 }
 
 interface CustomRecipeFormData {
@@ -71,6 +85,12 @@ type RecipeTimePreset = '1' | '2' | '10' | '20' | 'custom';
 type EditorMode = 'form' | 'text';
 type BuiltInIconMode = 'item' | 'machine';
 type RecipeIconMode = 'text' | BuiltInIconMode;
+
+interface IconForm {
+  iconMode: RecipeIconMode | 'none';
+  iconChoices: Partial<Record<BuiltInIconMode, string>>;
+  customRecipe: CustomRecipeFormData;
+}
 
 interface RecipeForm {
   id: string;
@@ -92,6 +112,7 @@ interface RecipeForm {
   iconMode: RecipeIconMode;
   iconChoices: Partial<Record<BuiltInIconMode, string>>;
   customRecipe: CustomRecipeFormData;
+  secondaryIcon: IconForm;
 }
 
 @Component({
@@ -105,6 +126,7 @@ interface RecipeForm {
     ButtonModule,
     CardModule,
     CheckboxModule,
+    DialogModule,
     DropdownModule,
     InputTextModule,
     InputTextareaModule,
@@ -166,6 +188,95 @@ export class CustomRecipesComponent {
   textIssues = signal<CustomRecipeValidationIssue[]>([]);
   copyResult = signal<'copied' | 'failed' | undefined>(undefined);
   copyFallbackText = signal('');
+  recipeManagementVisible = false;
+  managedItemId = signal<string | null>(null);
+  managedRecipeId = signal<string | null>(null);
+  private managedModId = signal<string | null>(null);
+  managedItemName = computed(() => {
+    const id = this.managedItemId();
+    return id ? (this.data().itemEntities[id]?.name ?? id) : '';
+  });
+  managedRecipes = computed<ManagedRecipe[]>(() => {
+    const itemId = this.managedItemId();
+    const modId = this.modId();
+    if (!itemId || !modId || modId !== this.managedModId()) return [];
+    const data = this.data();
+    const settings = this.settingsSvc.settings();
+    const entries = this.customRecipeSvc.entriesForMod(modId);
+    const customEntries = new Map(
+      entries.map((entry) => [entry.recipe.id, entry]),
+    );
+    const sources = new Map(
+      this.sources().map((source) => [source.id, source]),
+    );
+    // Stored entries include files and recipes that are currently disabled.
+    const ids = new Set([...data.recipeIds, ...customEntries.keys()]);
+    return [...ids]
+      .flatMap((id) => {
+        const entry = customEntries.get(id);
+        const recipe = entry?.recipe ?? data.recipeEntities[id];
+        if (!recipe) return [];
+        const amount = recipe.out[itemId] ?? 0;
+        if (
+          !(amount instanceof Rational ? amount : rational(amount)).gt(
+            rational.zero,
+          )
+        )
+          return [];
+        const source = entry ? sources.get(entry.sourceId) : undefined;
+        let inactiveReason: string | undefined;
+        let locked = false;
+        if (entry && !this.customRecipesEnabled()) {
+          inactiveReason = 'customRecipeEditor.customRecipesDisabled';
+          locked = true;
+        } else if (source && !this.sourceEnabled(source)) {
+          inactiveReason = 'customRecipeEditor.fileDisabled';
+          locked = true;
+        } else if (source && !this.customRecipeSvc.recipeEnabled(source, id)) {
+          inactiveReason = 'customRecipeEditor.disabled';
+        }
+        return [
+          {
+            id,
+            name: data.recipeEntities[id]?.name ?? recipe.name,
+            sourceId: entry?.sourceId,
+            fileName: entry?.fileName,
+            otherOutputs: Object.keys(recipe.out)
+              .filter((output) => {
+                const amount = recipe.out[output];
+                return (
+                  output !== itemId &&
+                  (amount instanceof Rational ? amount : rational(amount)).gt(
+                    rational.zero,
+                  )
+                );
+              })
+              .map((output) => data.itemEntities[output]?.name ?? output),
+            included: !inactiveReason && !settings.excludedRecipeIds.has(id),
+            locked,
+            inactiveReason,
+          },
+        ];
+      })
+      .sort((left, right) => {
+        const currentId = this.managedRecipeId();
+        return (
+          Number(right.id === currentId) - Number(left.id === currentId) ||
+          Number(!!right.sourceId) - Number(!!left.sourceId) ||
+          left.name.localeCompare(right.name) ||
+          left.id.localeCompare(right.id)
+        );
+      });
+  });
+  canBlockOtherRecipes = computed(() => {
+    const current = this.managedRecipes().find(
+      (recipe) => recipe.id === this.managedRecipeId(),
+    );
+    return !!current && !current.inactiveReason;
+  });
+  managedIncludedCount = computed(
+    () => this.managedRecipes().filter((recipe) => recipe.included).length,
+  );
 
   editorMode: EditorMode = 'form';
   jsonText = '';
@@ -308,11 +419,13 @@ export class CustomRecipesComponent {
     effect(
       () => {
         const modId = this.modId();
+        if (this.managedModId() && this.managedModId() !== modId)
+          this.recipeManagementVisible = false;
         const context = this.context();
         if (modId == null || context == null || this.initializedModId === modId)
           return;
         this.initializedModId = modId;
-        this.customRecipeSvc.ensureBuiltInExample(context);
+        this.customRecipeSvc.ensureBuiltInDefaults(context);
         const source = this.sources()[0];
         if (source) this.selectSource(source.id);
         else this.startNewDocument();
@@ -364,12 +477,15 @@ export class CustomRecipesComponent {
     this.onFormChange();
   }
 
-  recipeIconId(recipe: RecipeForm): string | undefined {
-    const id = recipe.iconMode !== 'text' ? recipe.customRecipe.iconId : '';
+  recipeIconId(recipe: IconForm): string | undefined {
+    const id =
+      recipe.iconMode !== 'text' && recipe.iconMode !== 'none'
+        ? recipe.customRecipe.iconId
+        : '';
     return id && this.data().iconEntities[id] ? id : undefined;
   }
 
-  iconOptions(recipe: RecipeForm): BuiltInIconOption[] {
+  iconOptions(recipe: IconForm): BuiltInIconOption[] {
     const options =
       recipe.iconMode === 'machine'
         ? this.builtInMachineIconOptions()
@@ -392,13 +508,28 @@ export class CustomRecipesComponent {
   }
 
   setIconMode(recipe: RecipeForm, mode: RecipeIconMode): void {
-    if (recipe.iconMode !== 'text')
-      recipe.iconChoices[recipe.iconMode] = recipe.customRecipe.iconId;
-    else if (recipe.customRecipe.iconId)
-      recipe.iconChoices[this.iconModeForId(recipe.customRecipe.iconId)] ??=
-        recipe.customRecipe.iconId;
-    recipe.iconMode = mode;
-    if (mode !== 'text') {
+    this.setFormIconMode(recipe, mode, recipe);
+  }
+
+  setSecondaryIconMode(
+    recipe: RecipeForm,
+    mode: RecipeIconMode | 'none',
+  ): void {
+    this.setFormIconMode(recipe.secondaryIcon, mode, recipe);
+  }
+
+  private setFormIconMode(
+    icon: IconForm,
+    mode: RecipeIconMode | 'none',
+    recipe: RecipeForm,
+  ): void {
+    if (icon.iconMode === 'item' || icon.iconMode === 'machine')
+      icon.iconChoices[icon.iconMode] = icon.customRecipe.iconId;
+    else if (icon.customRecipe.iconId)
+      icon.iconChoices[this.iconModeForId(icon.customRecipe.iconId)] ??=
+        icon.customRecipe.iconId;
+    icon.iconMode = mode;
+    if (mode === 'item' || mode === 'machine') {
       const entityId =
         mode === 'machine'
           ? recipe.producers[0]
@@ -406,9 +537,9 @@ export class CustomRecipesComponent {
       const iconId = entityId
         ? (this.data().itemEntities[entityId]?.icon ?? entityId)
         : undefined;
-      const options = this.iconOptions(recipe);
-      recipe.customRecipe.iconId =
-        recipe.iconChoices[mode] ??
+      const options = this.iconOptions(icon);
+      icon.customRecipe.iconId =
+        icon.iconChoices[mode] ??
         (iconId && options.some((option) => option.value === iconId)
           ? iconId
           : (options[0]?.value ?? ''));
@@ -966,6 +1097,62 @@ export class CustomRecipesComponent {
       this.customRecipeSvc.setRecipeEnabled(modId, sourceId, recipeId, enabled);
   }
 
+  openRecipeManagement(itemId: string, recipeId: string): void {
+    const modId = this.modId();
+    const id = itemId.trim();
+    if (!id || !modId) return;
+    this.managedModId.set(modId);
+    this.managedItemId.set(id);
+    this.managedRecipeId.set(recipeId);
+    this.recipeManagementVisible = true;
+  }
+
+  setManagedRecipeIncluded(recipeId: string, included: boolean): void {
+    const recipe = this.managedRecipes().find((entry) => entry.id === recipeId);
+    const modId = this.modId();
+    if (!recipe || recipe.locked || !modId || modId !== this.managedModId())
+      return;
+    // Clone explicit exclusions, not computed exclusions: the latter also
+    // include temporary file/global disablement and must not become permanent.
+    const exclusions = this.explicitRecipeExclusions();
+    if (included) exclusions.delete(recipeId);
+    else exclusions.add(recipeId);
+    if (recipe.sourceId)
+      this.customRecipeSvc.setRecipeEnabled(
+        modId,
+        recipe.sourceId,
+        recipeId,
+        included,
+      );
+    this.applyRecipeExclusions(exclusions);
+  }
+
+  blockOtherProductRecipes(): void {
+    if (!this.canBlockOtherRecipes()) return;
+    const exclusions = this.explicitRecipeExclusions();
+    const currentId = this.managedRecipeId();
+    for (const recipe of this.managedRecipes()) {
+      if (recipe.id === currentId) exclusions.delete(recipe.id);
+      else exclusions.add(recipe.id);
+    }
+    this.applyRecipeExclusions(exclusions);
+  }
+
+  private explicitRecipeExclusions(): Set<string> {
+    return new Set(
+      this.settingsSvc.state().excludedRecipeIds ??
+        this.settingsSvc.settings().defaultExcludedRecipeIds,
+    );
+  }
+
+  private applyRecipeExclusions(excludedRecipeIds: Set<string>): void {
+    this.settingsSvc.updateField(
+      'excludedRecipeIds',
+      excludedRecipeIds,
+      this.settingsSvc.settings().defaultExcludedRecipeIds,
+    );
+  }
+
   addRecipe(): void {
     this.recipes.push(this.createRecipe(this.recipes.length));
     this.selectedRecipeIndex.set(this.recipes.length - 1);
@@ -1016,7 +1203,7 @@ export class CustomRecipesComponent {
     return this.isColor(value) ? customRecipeTextColor(value) : '#fff';
   }
 
-  setColor(target: RecipeForm, event: Event): void {
+  setColor(target: IconForm, event: Event): void {
     target.customRecipe.iconBackground = (
       event.target as HTMLInputElement
     ).value;
@@ -1057,6 +1244,27 @@ export class CustomRecipesComponent {
         iconBackground:
           recipe.customRecipe.iconBackground ??
           DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+      },
+      secondaryIcon: this.toSecondaryIconForm(
+        recipe.customRecipe.secondaryIcon,
+      ),
+    };
+  }
+
+  private toSecondaryIconForm(icon?: CustomRecipeIconData): IconForm {
+    const mode = icon
+      ? icon.iconId
+        ? this.iconModeForId(icon.iconId)
+        : 'text'
+      : 'none';
+    return {
+      iconMode: mode,
+      iconChoices: icon?.iconId ? { [mode]: icon.iconId } : {},
+      customRecipe: {
+        iconId: icon?.iconId ?? '',
+        iconText: icon?.iconText ?? '副',
+        iconBackground:
+          icon?.iconBackground ?? DEFAULT_CUSTOM_RECIPE_BACKGROUND,
       },
     };
   }
@@ -1099,6 +1307,7 @@ export class CustomRecipesComponent {
         iconId: '',
         iconBackground: DEFAULT_CUSTOM_RECIPE_BACKGROUND,
       },
+      secondaryIcon: this.toSecondaryIconForm(),
     };
   }
 
@@ -1128,6 +1337,16 @@ export class CustomRecipesComponent {
     };
     if (recipe.iconMode !== 'text')
       result.customRecipe.iconId = recipe.customRecipe.iconId;
+    if (recipe.secondaryIcon.iconMode !== 'none') {
+      const secondary = recipe.secondaryIcon;
+      result.customRecipe.secondaryIcon = {
+        iconText: secondary.customRecipe.iconText.trim(),
+        iconBackground: secondary.customRecipe.iconBackground.trim(),
+        ...(secondary.iconMode !== 'text'
+          ? { iconId: secondary.customRecipe.iconId }
+          : {}),
+      };
+    }
     const catalyst = this.toEntityMap(recipe.catalyst);
     if (Object.keys(catalyst).length) result.catalyst = catalyst;
     if (recipe.cost.trim()) result.cost = recipe.cost.trim();

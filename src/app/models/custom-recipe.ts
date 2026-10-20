@@ -1,3 +1,5 @@
+import simplifiedRecipes from 'src/data/aef/simplified-recipes.json';
+
 import { ModuleEffect } from './data/module';
 import { RecipeFlag, RecipeJson } from './data/recipe';
 
@@ -7,11 +9,16 @@ export const CUSTOM_RECIPE_LIBRARY_FORMAT = 'endfieldlab-custom-recipe-library';
 export const DEFAULT_CUSTOM_RECIPE_BACKGROUND = '#64748b';
 export const DEFAULT_CUSTOM_RECIPE_ROW = 999;
 export const CUSTOM_RECIPE_EXAMPLE_FILE_NAME = 'custom-recipes-example.json';
+export const CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME = '简化配方.json';
 
-export interface CustomRecipeData {
+export interface CustomRecipeIconData {
   iconText: string;
   iconBackground?: string;
   iconId?: string;
+}
+
+export interface CustomRecipeData extends CustomRecipeIconData {
+  secondaryIcon?: CustomRecipeIconData;
 }
 
 export type CustomRecipeJson = Omit<RecipeJson, 'icon' | 'iconText'> & {
@@ -47,6 +54,9 @@ export interface CustomRecipeLibraryValidationResult {
   document?: CustomRecipeLibraryDocument;
   sources?: CustomRecipeSource[];
 }
+
+export const CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT =
+  simplifiedRecipes as unknown as CustomRecipeDocument;
 
 export const CUSTOM_RECIPE_EXAMPLE_DOCUMENT: CustomRecipeDocument = {
   format: CUSTOM_RECIPE_FORMAT,

@@ -8,4 +8,6 @@ export interface FlowSettings {
   linkText: LinkValue;
   sankeyAlign: SankeyAlign;
   hideExcluded: boolean;
+  localizePublicSupplies: boolean;
+  publicSupplyItemIds: string[];
 }

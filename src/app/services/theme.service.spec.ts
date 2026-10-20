@@ -90,6 +90,41 @@ describe('ThemeService', () => {
     expect(themeLink.href).toEqual('theme-dark.css');
   });
 
+  it('uses the shared composite image for custom recipe icons', () => {
+    const recipe: CustomRecipeJson = {
+      id: 'custom-composite',
+      name: 'Composite',
+      category: 'material',
+      row: 999,
+      time: 2,
+      producers: [],
+      in: {},
+      out: {},
+      customRecipe: {
+        iconText: 'A',
+        iconId: 'coal',
+        secondaryIcon: { iconText: 'B' },
+      },
+    };
+    spyOn(service.customRecipeSvc, 'recipesForMod').and.returnValue([recipe]);
+    const composite = spyOn(service.customIconSvc, 'resolve').and.returnValue(
+      'data:image/png;base64,composite',
+    );
+    service.document = window.document.implementation.createHTMLDocument('');
+    service.head = service.document.head;
+    service.preferencesSvc.apply({ theme: Theme.Light });
+    TestBed.flushEffects();
+    const css = service.document.getElementById('lab-icon-css')!.innerText;
+    expect(css).toContain(
+      '.custom-composite.recipe::before { background-image: url("data:image/png;base64,composite"); background-position: 0 0; content: ""; filter: none; }',
+    );
+    expect(composite).toHaveBeenCalledWith(
+      recipe.customRecipe,
+      service.settingsSvc.dataset(),
+      true,
+    );
+  });
+
   it('should update theme values on initial pass', () => {
     spyOn(service, 'updateThemeValues');
     const themeLink = { href: 'theme-black.css' };

@@ -26,6 +26,7 @@ import { isRecipeObjective, ObjectiveState } from '~/models/objective';
 import { rational } from '~/models/rational';
 import { BeaconSettings } from '~/models/settings/beacon-settings';
 import { CostSettings } from '~/models/settings/cost-settings';
+import { parseFlowPartitionSettings } from '~/models/settings/flow-partition-settings';
 import { ItemState } from '~/models/settings/item-settings';
 import { MachineState } from '~/models/settings/machine-settings';
 import { ModuleSettings } from '~/models/settings/module-settings';
@@ -184,8 +185,9 @@ export class RouterService {
     this.navigating$.next(false);
     const url = this.router.url;
     const path = url.split('?')[0];
-    // Only cache list / flow routes
-    if (path.endsWith('list') || path.endsWith('flow')) this.stored.set(url);
+    // Only cache calculator result routes
+    if (['list', 'flow', 'flow-preview'].includes(path.split('/').pop() ?? ''))
+      this.stored.set(url);
   }
 
   zipState(state: ZipState): ZipData {
@@ -879,6 +881,12 @@ export class RouterService {
   ): void {
     const init = initialSettingsState;
 
+    if (state.flowPartition) {
+      const value = encodeURIComponent(JSON.stringify(state.flowPartition));
+      zData.config.bare.fpt = value;
+      zData.config.hash.fpt = value;
+    }
+
     // Set up shorthand functions to zip state
     const set = this.zipSvc.set(zData.config, state, init);
     const sub = set(this.zipSvc.zipDiffSubset.bind(this.zipSvc));
@@ -957,6 +965,7 @@ export class RouterService {
 
     const obj: PartialSettingsState = {
       modId,
+      flowPartition: parseFlowPartitionSettings(params.fpt),
       checkedObjectiveIds: sub('och', objectiveIds),
       maximizeType: num('omt'),
       requireMachinesOutput: bln('orm'),

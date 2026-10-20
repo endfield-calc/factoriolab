@@ -1,0 +1,76 @@
+{
+  "format": "endfieldlab-custom-recipes",
+  "version": 1,
+  "modId": "aef",
+  "recipes": [
+    {
+      "id": "v_recipe_simplified_xiranite",
+      "name": "简化息壤",
+      "category": "material",
+      "row": 999,
+      "time": 2,
+      "producers": ["xiranite_oven_1"],
+      "in": {
+        "liquid_water": "3/2"
+      },
+      "out": {
+        "xiranite_powder": 1
+      },
+      "usage": "135/2",
+      "locations": ["jinlong"],
+      "customRecipe": {
+        "iconText": "简",
+        "iconId": "xiranite_powder",
+        "iconBackground": "#64748b"
+      }
+    },
+    {
+      "id": "v_recipe_simplified_wuling_battery",
+      "name": "简化中容武陵电池",
+      "category": "product",
+      "row": 999,
+      "time": 10,
+      "producers": ["tools_asm_mc_1"],
+      "in": {
+        "xiranite_powder": 8,
+        "iron_ore": 5,
+        "originium_ore": 40,
+        "liquid_water": 6,
+        "liquid_sewage": 3
+      },
+      "out": {
+        "proc_battery_5": 1
+      },
+      "usage": "1720/3",
+      "locations": ["jinlong"],
+      "customRecipe": {
+        "iconText": "简",
+        "iconId": "proc_battery_5",
+        "iconBackground": "#64748b"
+      }
+    },
+    {
+      "id": "v_recipe_simplified_filter_core",
+      "name": "简化分离芯",
+      "category": "material",
+      "row": 999,
+      "time": 2,
+      "producers": ["tools_asm_mc_1"],
+      "in": {
+        "copper_nugget": 2,
+        "xiranite_powder": 1,
+        "gas_inert": 1
+      },
+      "out": {
+        "filter_core": 2
+      },
+      "usage": 30,
+      "locations": ["jinlong"],
+      "customRecipe": {
+        "iconText": "简",
+        "iconId": "filter_core",
+        "iconBackground": "#64748b"
+      }
+    }
+  ]
+}

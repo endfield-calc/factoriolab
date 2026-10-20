@@ -209,6 +209,8 @@ export const flowSettings: FlowSettings = {
   linkText: LinkValue.Items,
   sankeyAlign: SankeyAlign.Justify,
   hideExcluded: true,
+  localizePublicSupplies: true,
+  publicSupplyItemIds: ['liquid_water'],
 };
 export const preferencesState: PreferencesState = {
   states: {

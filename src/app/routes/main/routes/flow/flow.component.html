@@ -3,41 +3,408 @@
     <p-progressSpinner></p-progressSpinner>
   </div>
 }
-@if (flowSvc.flowData$ | async; as flowData) {
-  <div class="d-flex gap-2 py-2">
-    <button
-      pButton
-      pRipple
-      type="button"
-      class="p-button-outlined"
-      icon="fa-solid fa-gear"
-      [label]="'flow.flowSettings' | translate"
-      (click)="flowSettingsDlg.open(flowSettings())"
-    ></button>
-    @if (cy) {
+@if (flowData(); as flowData) {
+  <div class="flow-toolbar">
+    <div class="flow-actions">
+      @if (partitionPreview()) {
+        <button
+          pButton
+          type="button"
+          class="p-button-outlined"
+          icon="fa-solid fa-plus"
+          [label]="'flow.newBase' | translate"
+          (click)="openBaseEditor()"
+        ></button>
+      }
       <button
         pButton
         pRipple
         type="button"
         class="p-button-outlined"
-        icon="fa-solid fa-file-image"
-        [label]="'flow.downloadAsPng' | translate"
-        (click)="saveCytoscapePng(cy)"
+        icon="fa-solid fa-gear"
+        [label]="'flow.flowSettings' | translate"
+        (click)="flowSettingsDlg.open(flowSettings())"
       ></button>
-    }
-    @if (flowData.nodes.length) {
-      <button
-        pButton
-        pRipple
-        type="button"
-        class="p-button-outlined"
-        icon="fa-solid fa-file-code"
-        [label]="'flow.downloadAsJson' | translate"
-        (click)="exportSvc.flowToJson(flowData)"
-      ></button>
-    }
+      @if (cy) {
+        <button
+          pButton
+          pRipple
+          type="button"
+          class="p-button-outlined"
+          icon="fa-solid fa-file-image"
+          [label]="'flow.downloadAsPng' | translate"
+          (click)="saveCytoscapePng(cy)"
+        ></button>
+      }
+      @if (flowData.nodes.length) {
+        <button
+          pButton
+          pRipple
+          type="button"
+          class="p-button-outlined"
+          icon="fa-solid fa-file-code"
+          [label]="'flow.downloadAsJson' | translate"
+          (click)="exportSvc.flowToJson(displayedFlow())"
+        ></button>
+      }
+    </div>
+    <div class="flow-focus-controls">
+      <span class="p-float-label">
+        <p-dropdown
+          inputId="flow-focus-target"
+          styleClass="flow-focus-target"
+          appendTo="body"
+          [options]="focusTargets()"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          filterBy="name"
+          [showClear]="true"
+          [disabled]="focusTargets().length === 0"
+          [ariaLabel]="'flow.focusTarget' | translate"
+          [pTooltip]="'flow.focusTotalsTooltip' | translate"
+          [ngModel]="focusTargetId()"
+          (ngModelChange)="setFocusTarget($event)"
+        >
+          <ng-template pTemplate="item" let-target>
+            <div class="flow-focus-option">
+              <span>{{ target.name }}</span>
+              <small>{{ target.text }}</small>
+            </div>
+          </ng-template>
+        </p-dropdown>
+        <label for="flow-focus-target">{{
+          'flow.selectFocusTarget' | translate
+        }}</label>
+      </span>
+      @if (focusTargetId()) {
+        <span class="flow-focus-depth-control">
+          <label for="flow-focus-depth">{{
+            'flow.focusDepth' | translate
+          }}</label>
+          <p-inputNumber
+            inputId="flow-focus-depth"
+            styleClass="flow-focus-depth"
+            buttonLayout="horizontal"
+            decrementButtonIcon="fa-solid fa-minus"
+            incrementButtonIcon="fa-solid fa-plus"
+            decrementButtonClass="p-button-outlined"
+            incrementButtonClass="p-button-outlined"
+            [showButtons]="true"
+            [min]="0"
+            [maxFractionDigits]="0"
+            [useGrouping]="false"
+            [pTooltip]="'flow.focusDepthTooltip' | translate"
+            [ngModel]="focusDepth()"
+            (ngModelChange)="setFocusDepth($event)"
+          ></p-inputNumber>
+        </span>
+        <p-checkbox
+          inputId="flow-trace-inputs"
+          [binary]="true"
+          [label]="'flow.traceOtherInputs' | translate"
+          [pTooltip]="'flow.traceOtherInputsTooltip' | translate"
+          [ngModel]="traceOtherInputs()"
+          (ngModelChange)="setTraceOtherInputs($event)"
+        ></p-checkbox>
+        <p-checkbox
+          inputId="flow-hide-unfocused"
+          [binary]="true"
+          [label]="'flow.hideUnfocused' | translate"
+          [pTooltip]="'flow.hideUnfocusedTooltip' | translate"
+          [ngModel]="hideUnfocused()"
+          (ngModelChange)="setHideUnfocused($event)"
+        ></p-checkbox>
+      }
+    </div>
   </div>
+  @if (partitionPreview() && !splitView()) {
+    <p class="flow-partition-hint">{{ 'flow.baseEmpty' | translate }}</p>
+  }
+  @if (splitView()) {
+    <div
+      class="flow-section-tabs"
+      role="group"
+      [attr.aria-label]="'flow.sections' | translate"
+    >
+      @for (section of sections(); track section.id) {
+        <button
+          pButton
+          type="button"
+          [class.p-button-outlined]="
+            (activeSectionId() ?? MAIN_BASE_ID) !== section.id
+          "
+          [attr.aria-pressed]="
+            (activeSectionId() ?? MAIN_BASE_ID) === section.id
+          "
+          [class.flow-section-focused]="sectionIsFocused(section.id)"
+          [label]="section.name"
+          [icon]="sectionIsFocused(section.id) ? 'fa-solid fa-circle-dot' : ''"
+          (click)="
+            switchSection(section.id === MAIN_BASE_ID ? null : section.id)
+          "
+        ></button>
+      }
+    </div>
+    @if (activeSection(); as section) {
+      <div class="flow-section-heading">
+        <strong>{{ section.name }}</strong>
+        <span
+          >{{ 'flow.processCount' | translate }}：{{
+            section.recipeNodeIds.length
+          }}</span
+        >
+        @if (section.id !== MAIN_BASE_ID) {
+          <button
+            pButton
+            type="button"
+            class="p-button-outlined p-button-sm"
+            icon="fa-solid fa-pen"
+            [label]="'flow.editBase' | translate"
+            (click)="openBaseEditor(section.id)"
+          ></button>
+          <button
+            pButton
+            type="button"
+            class="p-button-text p-button-danger p-button-sm"
+            icon="fa-solid fa-trash"
+            [label]="'flow.deleteBase' | translate"
+            (click)="deletingBaseId = section.id"
+          ></button>
+        }
+      </div>
+      @if (section.outputItemIds.length) {
+        <div class="flow-base-outputs">
+          <span>{{ 'flow.baseOutputs' | translate }}：</span>
+          @for (id of section.outputItemIds; track id) {
+            <span class="flow-base-output"
+              ><i [class]="id | iconSmClass"></i>{{ itemName(id) }}</span
+            >
+          }
+        </div>
+      }
+      @for (
+        shared of section.sharedOutputs;
+        track shared.itemId + shared.baseId
+      ) {
+        <p class="flow-partition-hint">
+          {{
+            'flow.baseSharedOutput'
+              | translate
+                : {
+                    item: itemName(shared.itemId),
+                    base: baseName(shared.baseId),
+                  }
+          }}
+        </p>
+      }
+      @if (
+        section.id !== MAIN_BASE_ID &&
+        !section.recipeNodeIds.length &&
+        !section.sharedOutputs.length
+      ) {
+        <p class="flow-partition-hint">
+          {{ 'flow.baseNoProduction' | translate }}
+        </p>
+      }
+    }
+    <p class="flow-partition-hint">{{ 'flow.partitionHint' | translate }}</p>
+    @if (activeSection(); as section) {
+      @if (
+        hideUnfocused() && fullFocusPath() && !sectionIsFocused(section.id)
+      ) {
+        <p class="flow-partition-hint">
+          {{ 'flow.sectionOutsideFocus' | translate }}
+        </p>
+      }
+    }
+  }
 }
 <div [class.invisible]="loading()" id="lab-flow-svg" #svg></div>
 <lab-steps [focus]="true" [selectedId]="selectedId()"></lab-steps>
 <lab-flow-settings #flowSettingsDlg></lab-flow-settings>
+<p-dialog
+  [(visible)]="baseDialogVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="(editingBaseId() ? 'flow.editBase' : 'flow.newBase') | translate"
+  [style]="{ width: '40rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  <p class="flow-partition-hint">{{ 'flow.baseEditorHint' | translate }}</p>
+  <div class="flow-base-field">
+    <label for="flow-base-name">{{ 'flow.baseName' | translate }}</label>
+    <input
+      pInputText
+      id="flow-base-name"
+      type="text"
+      [(ngModel)]="baseNameDraft"
+      [placeholder]="'flow.baseNamePlaceholder' | translate"
+    />
+  </div>
+  <div class="flow-base-field">
+    <label for="flow-base-outputs">{{ 'flow.baseOutputs' | translate }}</label>
+    <p-multiSelect
+      inputId="flow-base-outputs"
+      styleClass="flow-base-select"
+      [options]="baseOptions()"
+      optionLabel="name"
+      optionValue="id"
+      optionDisabled="disabled"
+      [filter]="true"
+      filterBy="name"
+      [showToggleAll]="false"
+      display="chip"
+      appendTo="body"
+      [ariaLabel]="'flow.baseOutputs' | translate"
+      [placeholder]="'flow.selectBaseOutputs' | translate"
+      [(ngModel)]="baseOutputsDraft"
+    >
+      <ng-template pTemplate="item" let-item>
+        <span class="flow-material-option"
+          ><i [class]="item.id | iconSmClass"></i>{{ item.name }}</span
+        >
+      </ng-template>
+    </p-multiSelect>
+  </div>
+  @if (baseError) {
+    <p class="flow-base-error" role="alert">{{ baseError | translate }}</p>
+  }
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      class="p-button-outlined"
+      [label]="'cancel' | translate"
+      (click)="baseDialogVisible = false"
+    ></button>
+    <button
+      pButton
+      type="button"
+      [label]="'flow.saveBase' | translate"
+      (click)="saveBase()"
+    ></button>
+  </ng-template>
+</p-dialog>
+<p-dialog
+  [visible]="deletingBaseId !== null"
+  (visibleChange)="!$event && (deletingBaseId = null)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="'flow.deleteBase' | translate"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  <p>{{ 'flow.deleteBaseConfirm' | translate }}</p>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      class="p-button-outlined"
+      [label]="'cancel' | translate"
+      (click)="deletingBaseId = null"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="p-button-danger"
+      [label]="'flow.deleteBase' | translate"
+      (click)="removeBase()"
+    ></button>
+  </ng-template>
+</p-dialog>
+<p-dialog
+  [(visible)]="warehouseVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="warehouseNode()?.name ?? ''"
+  [style]="{ width: '44rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  @if (warehouseNode()?.warehouse; as port) {
+    <p>
+      {{
+        (port.direction === 'input'
+          ? 'flow.warehouseInput'
+          : 'flow.warehouseOutput'
+        ) | translate
+      }}：{{ formatAmount(port.amount) }}
+    </p>
+  }
+  @if (warehouseSummary(); as summary) {
+    <div class="flow-warehouse-totals">
+      <div>
+        <small>{{ 'flow.totalSupply' | translate }}</small
+        ><strong>{{ formatAmount(summary.supply) }}</strong>
+      </div>
+      <div>
+        <small>{{ 'flow.totalConsumption' | translate }}</small
+        ><strong>{{ formatAmount(summary.consumption) }}</strong>
+      </div>
+      <div>
+        <small>{{ 'flow.targetOutput' | translate }}</small
+        ><strong>{{ formatAmount(summary.output) }}</strong>
+      </div>
+      <div>
+        <small>{{ 'flow.surplus' | translate }}</small
+        ><strong>{{ formatAmount(summary.surplus) }}</strong>
+      </div>
+    </div>
+    <p class="flow-partition-hint mt-3">
+      {{ 'flow.warehouseTotalsHint' | translate }}
+    </p>
+    <div class="flow-warehouse-lines">
+      @for (
+        entry of warehouseSections();
+        track entry.sectionId + entry.port.direction
+      ) {
+        <button
+          type="button"
+          class="flow-warehouse-line"
+          (click)="jumpToSection(entry.sectionId)"
+        >
+          <span>{{ entry.name }}</span
+          ><span
+            >{{
+              (entry.port.direction === 'input'
+                ? 'flow.warehouseInput'
+                : 'flow.warehouseOutput'
+              ) | translate
+            }}
+            {{ formatAmount(entry.port.amount) }}
+            <i class="fa-solid fa-arrow-right"></i
+          ></span>
+        </button>
+      }
+    </div>
+  }
+</p-dialog>
+<p-dialog
+  [(visible)]="publicSupplyVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="publicSupplyNode()?.name ?? ''"
+  [style]="{ width: '28rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  @if (publicSupplyNode()?.publicSupply; as supply) {
+    <p>
+      {{ 'flow.localSupplyConsumption' | translate }}：{{
+        formatAmount(supply.amount)
+      }}
+    </p>
+    <p>
+      {{ 'flow.globalSupplyConsumption' | translate }}：{{
+        formatAmount(publicSupplyTotal())
+      }}
+    </p>
+    <p class="flow-partition-hint">{{ 'flow.publicSupplyHint' | translate }}</p>
+  }
+</p-dialog>

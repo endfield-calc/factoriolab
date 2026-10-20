@@ -1,7 +1,11 @@
+import endfieldJson from 'src/data/aef/data.json';
+
 import {
   CUSTOM_RECIPE_EXAMPLE_DOCUMENT,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_LIBRARY_FORMAT,
+  CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT,
+  CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
   CUSTOM_RECIPE_VERSION,
   CustomRecipeLibraryDocument,
   CustomRecipeValidationContext,
@@ -11,6 +15,21 @@ import { CustomRecipeService } from './custom-recipe.service';
 import { CustomRecipeValidatorService } from './custom-recipe-validator.service';
 
 describe('CustomRecipeService', () => {
+  const endfieldContext: CustomRecipeValidationContext = {
+    modId: 'aef',
+    recipeIds: new Set(endfieldJson.recipes.map((recipe) => recipe.id)),
+    itemIds: new Set(endfieldJson.items.map((item) => item.id)),
+    machineIds: new Set(
+      endfieldJson.items
+        .filter((item) => 'machine' in item)
+        .map((item) => item.id),
+    ),
+    categoryIds: new Set(
+      endfieldJson.categories.map((category) => category.id),
+    ),
+    locationIds: new Set(endfieldJson.locations.map((location) => location.id)),
+    iconIds: new Set(endfieldJson.icons.map((icon) => icon.id)),
+  };
   const context: CustomRecipeValidationContext = {
     modId: 'aef',
     recipeIds: new Set(['existing-recipe']),
@@ -180,6 +199,41 @@ describe('CustomRecipeService', () => {
     service.setSourceStarred('aef', 'aef:one.json', false);
     expect(service.state()).toBe(state);
     expect(localStorage.getItem('customRecipes')).toEqual(before);
+  });
+
+  it('preserves secondary icons through storage, file export and library replacement', () => {
+    for (const secondaryIcon of [
+      { iconText: '副', iconBackground: '#abc' },
+      { iconText: 'B', iconId: 'output-icon', iconBackground: '#123456' },
+    ]) {
+      const service = createService();
+      const input = document();
+      (input['recipes'] as Record<string, unknown>[])[0]['customRecipe'] = {
+        iconText: '主',
+        iconBackground: '#64748b',
+        secondaryIcon,
+      };
+      expect(
+        service.importDocument('secondary.json', input, context).valid,
+      ).toBeTrue();
+      const library = service.exportLibrary('aef', true);
+      expect(library.sources[0].recipes[0].customRecipe.secondaryIcon).toEqual(
+        secondaryIcon,
+      );
+      expect(
+        createService().exportDocument('aef').recipes[0].customRecipe
+          .secondaryIcon,
+      ).toEqual(secondaryIcon);
+      expect(service.replaceLibrary(library, context).valid).toBeTrue();
+      expect(createService().exportLibrary('aef', true)).toEqual(library);
+      const before = localStorage.getItem('customRecipes');
+      library.sources[0].recipes[0].customRecipe.secondaryIcon = {
+        iconText: 'B',
+        iconId: 'missing',
+      };
+      expect(service.replaceLibrary(library, context).valid).toBeFalse();
+      expect(localStorage.getItem('customRecipes')).toEqual(before);
+    }
   });
 
   it('loads older stored files without stars as unstarred without losing their data', () => {
@@ -712,7 +766,7 @@ describe('CustomRecipeService', () => {
       shared.sources = [];
       service.replaceLibrary(shared, context);
       const restored = createService();
-      restored.ensureBuiltInExample({
+      restored.ensureBuiltInDefaults({
         ...context,
         machineIds: new Set(['thickener_1']),
       });
@@ -720,27 +774,36 @@ describe('CustomRecipeService', () => {
       expect(restored.state()['aef']).toEqual([]);
     });
 
-    it('creates defaults once and keeps the default example disabled', () => {
+    it('creates defaults once and keeps both built-in files disabled', () => {
       const service = createService();
-      const exampleContext = {
-        ...context,
-        machineIds: new Set(['thickener_1']),
-      };
       const defaults = service.defaultLibrary('aef');
       expect(defaults.sources[0].recipes).toEqual(
         CUSTOM_RECIPE_EXAMPLE_DOCUMENT.recipes,
       );
       expect(defaults.sources[0].enabled).toBeFalse();
       expect(defaults.sources[0].starred).toBeFalse();
-      service.ensureBuiltInExample(exampleContext);
-      expect(service.sourcesForMod('aef').length).toEqual(1);
-      const source = service.sourcesForMod('aef')[0];
-      service.removeSource('aef', source.id);
+      expect(defaults.sources[1].fileName).toEqual(
+        CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
+      );
+      expect(defaults.sources[1].recipes).toEqual(
+        CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT.recipes,
+      );
+      expect(defaults.sources[1].enabled).toBeFalse();
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(service.sourcesForMod('aef').length).toEqual(2);
+      expect(
+        service
+          .sourcesForMod('aef')
+          .every((source) => !service.sourceEnabled(source)),
+      ).toBeTrue();
+      expect(service.generatedItemsForMod('aef')).toEqual([]);
+      for (const source of service.sourcesForMod('aef'))
+        service.removeSource('aef', source.id);
       const restored = createService();
-      restored.ensureBuiltInExample(exampleContext);
+      restored.ensureBuiltInDefaults(endfieldContext);
       expect(restored.sourcesForMod('aef')).toEqual([]);
       expect(
-        service.validateLibrary(defaults, exampleContext).valid,
+        service.validateLibrary(defaults, endfieldContext).valid,
       ).toBeTrue();
     });
 
@@ -757,6 +820,105 @@ describe('CustomRecipeService', () => {
       expect(service.recipesForMod('other').map((recipe) => recipe.id)).toEqual(
         ['other-recipe'],
       );
+    });
+  });
+
+  describe('simplified recipe defaults', () => {
+    it('appends the new disabled file to existing libraries once without changing user data', () => {
+      const service = createService();
+      service.importDocument('user.json', document(), context);
+      service.setSourceEnabled('aef', 'aef:user.json', false);
+      service.setSourceStarred('aef', 'aef:user.json', true);
+      service.setRecipeEnabled('aef', 'aef:user.json', 'custom-recipe', false);
+      const original = structuredClone(service.sourcesForMod('aef')[0]);
+
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(
+        service.sourcesForMod('aef').map((source) => source.fileName),
+      ).toEqual(['user.json', CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME]);
+      expect(service.sourcesForMod('aef')[0]).toEqual(original);
+      const preset = service.sourcesForMod('aef')[1];
+      expect(preset.enabled).toBeFalse();
+      expect(preset.generatedItemIds).toEqual([]);
+      expect(preset.document.recipes.map((recipe) => recipe.name)).toEqual([
+        '简化息壤',
+        '简化中容武陵电池',
+        '简化分离芯',
+      ]);
+      const restored = createService();
+      restored.ensureBuiltInDefaults(endfieldContext);
+      expect(restored.sourcesForMod('aef')).toEqual(
+        service.sourcesForMod('aef'),
+      );
+    });
+
+    it('does not recreate a deleted preset on reload', () => {
+      const service = createService();
+      service.importDocument('user.json', document(), context);
+      service.ensureBuiltInDefaults(endfieldContext);
+      service.removeSource('aef', `aef:${CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME}`);
+      const restored = createService();
+      restored.ensureBuiltInDefaults(endfieldContext);
+      expect(
+        restored.sourcesForMod('aef').map((source) => source.fileName),
+      ).toEqual(['user.json']);
+    });
+
+    it('preserves an explicitly empty legacy library', () => {
+      localStorage.setItem('customRecipes', JSON.stringify({ aef: [] }));
+      const service = createService();
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(service.sourcesForMod('aef')).toEqual([]);
+    });
+
+    it('does not append defaults after a deliberate whole-library replacement', () => {
+      const service = createService();
+      service.importDocument('user.json', document(), context);
+      service.replaceLibrary(service.exportLibrary('aef'), context);
+      const restored = createService();
+      restored.ensureBuiltInDefaults(endfieldContext);
+      expect(
+        restored.sourcesForMod('aef').map((source) => source.fileName),
+      ).toEqual(['user.json']);
+    });
+
+    it('does not overwrite a file with the preset name', () => {
+      const service = createService();
+      service.importDocument(
+        CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
+        document(),
+        context,
+      );
+      const original = service.exportLibrary('aef');
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(service.exportLibrary('aef')).toEqual(original);
+    });
+
+    it('preserves a renamed and edited preset without duplicating recipe ids', () => {
+      const service = createService();
+      const edited = structuredClone(CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT);
+      edited.recipes[0].name = 'Edited preset';
+      service.importDocument('renamed.json', edited, endfieldContext);
+      const original = service.exportLibrary('aef');
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(service.exportLibrary('aef')).toEqual(original);
+    });
+
+    it('retries initialization when required data was unavailable', () => {
+      const service = createService();
+      service.importDocument('user.json', document(), context);
+      service.ensureBuiltInDefaults(context);
+      expect(service.sourcesForMod('aef').length).toEqual(1);
+      service.ensureBuiltInDefaults(endfieldContext);
+      expect(service.sourcesForMod('aef').length).toEqual(2);
+    });
+
+    it('does not install Endfield presets in other mods', () => {
+      const service = createService();
+      service.ensureBuiltInDefaults({ ...context, modId: 'other' });
+      expect(service.defaultLibrary('other').sources).toEqual([]);
+      expect(service.sourcesForMod('other')).toEqual([]);
+      expect(localStorage.getItem('customRecipeDefaults')).toBeNull();
     });
   });
 });

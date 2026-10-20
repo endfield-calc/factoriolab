@@ -34,6 +34,20 @@ describe('FlowSettingsComponent', () => {
   });
 
   describe('open', () => {
+    it('isolates selected materials so cancel and reset cannot mutate saved preferences', () => {
+      component.open(Mocks.flowSettings);
+      component.editValue.publicSupplyItemIds.push('other');
+      component.hide(true);
+      expect(Mocks.flowSettings.publicSupplyItemIds).toEqual(['liquid_water']);
+      component.reset();
+      expect(component.modified).toBeFalse();
+      component.editValue.publicSupplyItemIds.push('other');
+      expect(initialPreferencesState.flowSettings.publicSupplyItemIds).toEqual([
+        'liquid_water',
+      ]);
+      expect(component.modified).toBeTrue();
+    });
+
     it('should set up the editValue and show the dialog', () => {
       spyOn(component, 'show');
       component.editValue = null as any;

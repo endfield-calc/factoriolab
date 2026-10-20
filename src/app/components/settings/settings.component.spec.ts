@@ -6,7 +6,10 @@ import {
 } from '@angular/core/testing';
 import { Confirmation } from 'primeng/api';
 
+import { DisplayRate } from '~/models/enum/display-rate';
 import { Game } from '~/models/enum/game';
+import { MaximizeType } from '~/models/enum/maximize-type';
+import { Theme } from '~/models/enum/theme';
 import { rational } from '~/models/rational';
 import { assert, ItemId, Mocks, TestModule } from '~/tests';
 
@@ -30,6 +33,107 @@ describe('SettingsComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('section preferences', () => {
+    const headers = (): HTMLElement[] =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          '.p-accordion-header-link',
+        ),
+      );
+
+    it('should initially expand archive and recipe settings', () => {
+      expect(
+        headers().map((header) => header.getAttribute('aria-expanded')),
+      ).toEqual(['true', 'true', 'false', 'false']);
+    });
+
+    it('should remember independent section choices when the sidebar is recreated', () => {
+      headers()[3].click();
+      headers()[1].click();
+      fixture.detectChanges();
+
+      expect(component.preferences().settingsSections).toEqual({
+        saved: true,
+        recipes: false,
+        other: true,
+      });
+
+      fixture.destroy();
+      fixture = TestBed.createComponent(SettingsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(
+        headers().map((header) => header.getAttribute('aria-expanded')),
+      ).toEqual(['true', 'false', 'false', 'true']);
+    });
+  });
+
+  describe('setting button groups', () => {
+    beforeEach(() => {
+      component.setSectionExpanded('display', true);
+      fixture.detectChanges();
+    });
+
+    const buttons = (selector: string): HTMLElement[] =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          selector,
+        ),
+      );
+
+    it('should update the rate without allowing the selection to be cleared', () => {
+      buttons('#display-rate [role="radio"]')[0].click();
+      fixture.detectChanges();
+      expect(component.settings().displayRate).toEqual(DisplayRate.PerSecond);
+
+      buttons('#display-rate [role="radio"]')[0].click();
+      fixture.detectChanges();
+      expect(component.settings().displayRate).toEqual(DisplayRate.PerSecond);
+    });
+
+    it('should apply the maximize and theme choices', () => {
+      component.setSectionExpanded('other', true);
+      fixture.detectChanges();
+
+      buttons('#maximize-type [role="radio"]')[1].click();
+      buttons('#theme [role="radio"]')[2].click();
+      fixture.detectChanges();
+
+      expect(component.settings().maximizeType).toEqual(MaximizeType.Weight);
+      expect(component.preferences().theme).toEqual(Theme.Black);
+    });
+
+    it('should allow locations to be independently selected and cleared', () => {
+      component.datasetsSvc.loadData(
+        Mocks.modId,
+        {
+          ...Mocks.modData,
+          locations: [
+            { id: 'id', name: 'Location' },
+            { id: 'id2', name: 'Second location' },
+          ],
+        },
+        Mocks.modHash,
+      );
+      component.settingsSvc.apply({ locationIds: new Set(['id']) });
+      component.setSectionExpanded('other', true);
+      fixture.detectChanges();
+
+      buttons('#locations [role="checkbox"]')[1].click();
+      fixture.detectChanges();
+      expect(component.settings().locationIds).toEqual(new Set(['id', 'id2']));
+
+      buttons('#locations [role="checkbox"]')[0].click();
+      fixture.detectChanges();
+      expect(component.settings().locationIds).toEqual(new Set(['id2']));
+
+      buttons('#locations [role="checkbox"]')[1].click();
+      fixture.detectChanges();
+      expect(component.settings().locationIds.size).toEqual(0);
+    });
   });
 
   describe('openCreateState', () => {

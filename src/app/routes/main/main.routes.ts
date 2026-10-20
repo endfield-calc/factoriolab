@@ -26,6 +26,13 @@ export const routes: Routes = [
       },
       {
         path: 'flow',
+        data: { partitionPreview: false },
+        loadComponent: () =>
+          import('./routes/flow/flow.component').then((c) => c.FlowComponent),
+      },
+      {
+        path: 'flow-preview',
+        data: { partitionPreview: true },
         loadComponent: () =>
           import('./routes/flow/flow.component').then((c) => c.FlowComponent),
       },

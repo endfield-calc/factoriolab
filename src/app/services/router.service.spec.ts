@@ -244,6 +244,44 @@ describe('RouterService', () => {
     expect(service).toBeTruthy();
   });
 
+  it('round trips partition settings through both shared URL formats', async () => {
+    const partition = {
+      bases: [
+        {
+          id: 'base:battery',
+          name: '电池 100% &= #~*',
+          outputItemIds: [ItemId.IronPlate],
+        },
+      ],
+    };
+    const data = mockZipData();
+    service.zipSettings(
+      data,
+      { ...initialSettingsState, flowPartition: partition },
+      [],
+      Mocks.dataset,
+      Mocks.modHash,
+    );
+    const bare = service.migrationSvc.migrate('aef', {
+      ...data.config.bare,
+      v: '11',
+    }).params;
+    const zipped = await service.getHashParams(data.config.hash);
+    const unzipped = await service.unzipQueryParams({ ...zipped });
+    for (const params of [bare, unzipped]) {
+      const result = service.unzipSettings(
+        'aef',
+        params,
+        [],
+        [],
+        Mocks.modData,
+        Mocks.modHash,
+        Mocks.modHash,
+      );
+      expect(result?.flowPartition).toEqual(partition);
+    }
+  });
+
   it('should update state from route', fakeAsync(() => {
     spyOn(service, 'updateState').and.callThrough();
     mockRoute.next({}, {});
@@ -298,6 +336,15 @@ describe('RouterService', () => {
   });
 
   describe('updateUrl', () => {
+    it('caches the split preview route including its plan parameters', async () => {
+      const url = '/aef/flow-preview?z=plan&v=11';
+      spyOn(service, 'getHash').and.returnValue(Promise.resolve({ z: 'plan' }));
+      spyOn(service.router, 'navigate');
+      spyOnProperty(service.router, 'url').and.returnValue(url);
+      await service.updateUrl(mockZipData());
+      expect(service.stored()).toEqual(url);
+    });
+
     it('should update url with products', async () => {
       spyOn(service, 'zipState').and.returnValue(mockZipData());
       spyOn(service, 'getHash').and.returnValue(Promise.resolve({ z: 'z' }));

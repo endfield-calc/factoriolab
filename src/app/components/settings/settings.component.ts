@@ -7,15 +7,15 @@ import {
   HostBinding,
   inject,
   Input,
-  signal,
+  Signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AccordionModule } from 'primeng/accordion';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -23,15 +23,15 @@ import { MenuModule } from 'primeng/menu';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { OrderListModule } from 'primeng/orderlist';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
-import { first } from 'rxjs';
+import { first, map } from 'rxjs';
 
 import { DropdownBaseDirective } from '~/directives/dropdown-base.directive';
 import { DropdownTranslateDirective } from '~/directives/dropdown-translate.directive';
 import { NoDragDirective } from '~/directives/no-drag.directive';
 import { coalesce } from '~/helpers';
-import { CustomRecipeImportResult } from '~/models/custom-recipe';
 import { displayRateOptions } from '~/models/enum/display-rate';
 import { Game, gameOptions } from '~/models/enum/game';
 import { inserterCapacityOptions } from '~/models/enum/inserter-capacity';
@@ -59,7 +59,10 @@ import { RouterService } from '~/services/router.service';
 import { TranslateService } from '~/services/translate.service';
 import { DatasetsService } from '~/store/datasets.service';
 import { MachinesService } from '~/store/machines.service';
-import { PreferencesService } from '~/store/preferences.service';
+import {
+  PreferencesService,
+  SettingsSection,
+} from '~/store/preferences.service';
 import { SettingsService } from '~/store/settings.service';
 
 import { BeaconsOverlayComponent } from '../beacons-overlay/beacons-overlay.component';
@@ -81,7 +84,6 @@ import { TooltipComponent } from '../tooltip/tooltip.component';
     AccordionModule,
     ButtonModule,
     CheckboxModule,
-    DialogModule,
     DropdownModule,
     InputNumberModule,
     InputTextModule,
@@ -89,6 +91,7 @@ import { TooltipComponent } from '../tooltip/tooltip.component';
     MultiSelectModule,
     OrderListModule,
     ScrollPanelModule,
+    SelectButtonModule,
     TableModule,
     TooltipModule,
     BeaconsOverlayComponent,
@@ -152,7 +155,41 @@ export class SettingsComponent {
       0,
     ),
   );
-  customRecipeImportResults = signal<CustomRecipeImportResult[]>([]);
+  hasFactorySettings = computed(() => {
+    const options = this.options();
+    const data = this.data();
+    return (
+      options.modules.length > 0 ||
+      !data.flags.has('hideMachineSettings') ||
+      (
+        [
+          'fuels',
+          'beacons',
+          'proliferator',
+          'beltStack',
+          'flowRate',
+          'inserterEstimation',
+        ] as const
+      ).some((flag) => data.flags.has(flag)) ||
+      this.settings().beaconReceivers != null ||
+      [
+        options.belts,
+        options.pipes,
+        options.cargoWagons,
+        options.fluidWagons,
+      ].some((options) => options.length > 1)
+    );
+  });
+  hasBonuses = computed(() => {
+    const data = this.data();
+    return (
+      data.flags.has('inserterEstimation') ||
+      data.flags.has('miningSpeed') ||
+      data.flags.has('miningProductivity') ||
+      data.flags.has('researchSpeed') ||
+      data.canProdUpgradeRecipeIds.length > 0
+    );
+  });
 
   state = '';
   editValue = '';
@@ -195,17 +232,16 @@ export class SettingsComponent {
   ];
   versionsVisible = false;
   recipeProdVisible = false;
-  customRecipesVisible = false;
 
-  displayRateOptions = displayRateOptions;
+  displayRateOptions = this.translatedOptions(displayRateOptions);
   gameOptions = gameOptions;
   inserterCapacityOptions = inserterCapacityOptions;
   inserterTargetOptions = inserterTargetOptions;
   languageOptions = languageOptions;
   powerUnitOptions = powerUnitOptions;
   researchSpeedOptions = researchBonusOptions;
-  themeOptions = themeOptions;
-  maximizeTypeOptions = maximizeTypeOptions;
+  themeOptions = this.translatedOptions(themeOptions);
+  maximizeTypeOptions = this.translatedOptions(maximizeTypeOptions);
   qualityOptions = qualityOptions;
 
   ItemId = ItemId;
@@ -223,6 +259,38 @@ export class SettingsComponent {
         Object.keys(states).find((s) => states[s] === this.search),
         '',
       );
+    });
+  }
+
+  private translatedOptions<T>(
+    options: SelectItem<T>[],
+  ): Signal<SelectItem<T>[]> {
+    return toSignal(
+      this.translateSvc.multi(options.map((option) => option.label ?? '')).pipe(
+        map((labels): SelectItem<T>[] =>
+          options.map((option, index) => ({
+            ...option,
+            label: labels[index],
+          })),
+        ),
+      ),
+      { initialValue: options },
+    );
+  }
+
+  isSectionExpanded(section: SettingsSection): boolean {
+    return (
+      this.preferences().settingsSections?.[section] ??
+      (section === 'saved' || section === 'recipes')
+    );
+  }
+
+  setSectionExpanded(section: SettingsSection, expanded: boolean): void {
+    this.preferencesSvc.apply({
+      settingsSections: {
+        ...this.preferences().settingsSections,
+        [section]: expanded,
+      },
     });
   }
 
@@ -359,10 +427,6 @@ export class SettingsComponent {
     );
   }
 
-  openCustomRecipes(): void {
-    this.customRecipesVisible = true;
-  }
-
   openCustomRecipeEditor(): void {
     const modId = this.modId();
     if (modId == null) return;
@@ -370,31 +434,5 @@ export class SettingsComponent {
     void this.router.navigate([modId, 'custom-recipes'], {
       queryParamsHandling: 'preserve',
     });
-  }
-
-  importCustomRecipes(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = input.files;
-    const context = this.settingsSvc.customRecipeContext();
-    if (!files?.length || context == null) return;
-
-    void this.customRecipeSvc
-      .importFiles(Array.from(files), context)
-      .then((results) => {
-        this.customRecipeImportResults.set(results);
-        input.value = '';
-      });
-  }
-
-  removeCustomRecipeSource(sourceId: string): void {
-    const modId = this.modId();
-    if (modId != null) this.customRecipeSvc.removeSource(modId, sourceId);
-  }
-
-  openCustomRecipe(recipeId: string): void {
-    const modId = this.modId();
-    if (modId == null) return;
-    this.customRecipesVisible = false;
-    void this.router.navigate([modId, 'data', 'recipes', recipeId]);
   }
 }

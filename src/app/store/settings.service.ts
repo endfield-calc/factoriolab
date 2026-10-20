@@ -59,6 +59,7 @@ import {
   initialColumnsState,
 } from '~/models/settings/column-settings';
 import { CostSettings } from '~/models/settings/cost-settings';
+import { FlowPartitionSettings } from '~/models/settings/flow-partition-settings';
 import { ModuleSettings } from '~/models/settings/module-settings';
 import { Settings } from '~/models/settings/settings';
 import { Entities, Optional } from '~/models/utils';
@@ -71,6 +72,7 @@ import { PreferencesService } from './preferences.service';
 import { Store } from './store';
 
 export interface SettingsState {
+  flowPartition?: FlowPartitionSettings;
   modId?: string;
   checkedObjectiveIds: Set<string>;
   maximizeType: MaximizeType;
@@ -317,8 +319,19 @@ export class SettingsService extends Store<SettingsState> {
     return gameColumnsState(spread(initialColumnsState, columns), data.flags);
   });
 
+  private calculationState = computed(() => this.state(), {
+    equal: (previous, next) =>
+      (Object.keys({ ...previous, ...next }) as (keyof SettingsState)[]).every(
+        (key) => key === 'flowPartition' || previous[key] === next[key],
+      ),
+  });
+
   settings = computed(() =>
-    this.computeSettings(this.state(), this.defaults(), this.dataset()),
+    this.computeSettings(
+      this.calculationState(),
+      this.defaults(),
+      this.dataset(),
+    ),
   );
 
   options = computed((): Options => {

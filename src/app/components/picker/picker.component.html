@@ -115,7 +115,12 @@
                       pButton
                       pRipple
                       type="button"
-                      class="me-1 mb-1"
+                      class="picker-option me-1 mb-1"
+                      [class.recipe-excluded]="
+                        type === 'recipe' &&
+                        isMultiselect &&
+                        selection?.includes(id)
+                      "
                       [class.p-button-text]="id !== selection"
                       [class.hover-action]="isMultiselect"
                       [class.hover-active]="selection?.includes(id)"

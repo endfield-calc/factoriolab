@@ -19,6 +19,8 @@ import { TranslateService } from '~/services/translate.service';
 
 import { Store } from './store';
 
+export type SettingsSection = 'saved' | 'recipes' | 'display' | 'other';
+
 export interface PreferencesState {
   states: Record<string, Entities>;
   columns: ColumnsState;
@@ -32,6 +34,7 @@ export interface PreferencesState {
   paused: boolean;
   convertObjectiveValues: boolean;
   flowSettings: FlowSettings;
+  settingsSections?: Partial<Record<SettingsSection, boolean>>;
 }
 
 export const initialPreferencesState: PreferencesState = {
@@ -46,12 +49,15 @@ export const initialPreferencesState: PreferencesState = {
   disablePaginator: false,
   paused: false,
   convertObjectiveValues: false,
+  settingsSections: { saved: true, recipes: true },
   flowSettings: {
     diagram: FlowDiagram.BoxLine,
     linkSize: LinkValue.Items,
     linkText: LinkValue.Items,
     sankeyAlign: SankeyAlign.Justify,
     hideExcluded: false,
+    localizePublicSupplies: true,
+    publicSupplyItemIds: ['liquid_water'],
   },
 };
 @Injectable({
@@ -74,7 +80,11 @@ export class PreferencesService extends Store<PreferencesState> {
   theme = this.select('theme');
 
   constructor() {
-    super(initialPreferencesState, ['states', 'flowSettings']);
+    super(initialPreferencesState, [
+      'states',
+      'flowSettings',
+      'settingsSections',
+    ]);
     const stored = this.stored();
     if (stored) {
       try {
@@ -82,6 +92,41 @@ export class PreferencesService extends Store<PreferencesState> {
           bypassLanding?: boolean;
         };
         delete storedState.bypassLanding;
+        const sections = storedState.settingsSections as
+          | Partial<
+              Record<
+                | SettingsSection
+                | 'common'
+                | 'more'
+                | 'calculation'
+                | 'interface',
+                boolean
+              >
+            >
+          | undefined;
+        if (sections) {
+          const {
+            common,
+            more,
+            calculation,
+            interface: interfaceSection,
+            ...current
+          } = sections;
+          if (current.recipes == null && common != null)
+            current.recipes = common;
+          if (
+            current.other == null &&
+            [more, calculation].some((value) => value != null)
+          ) {
+            current.other = [more, calculation].some((value) => value === true);
+          }
+          if ([more, interfaceSection].some((value) => value != null)) {
+            current.display = [current.display, more, interfaceSection].some(
+              (value) => value === true,
+            );
+          }
+          storedState.settingsSections = current;
+        }
         this.load(storedState);
       } catch (ex) {
         console.warn('Failed to parse stored preferences', ex);

@@ -2,7 +2,12 @@ import { effect, signal, WritableSignal } from '@angular/core';
 
 import { Optional } from './utils';
 
-type StorageKey = 'router' | 'preferences' | 'stepDetailTab' | 'customRecipes';
+type StorageKey =
+  | 'router'
+  | 'preferences'
+  | 'stepDetailTab'
+  | 'customRecipes'
+  | 'customRecipeDefaults';
 
 export function getStoredValue(key: StorageKey): Optional<string> {
   return localStorage.getItem(key) ?? undefined;

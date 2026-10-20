@@ -60,9 +60,9 @@ export class MainComponent {
   );
 
   tabItems$ = this.translateSvc
-    .multi(['app.list', 'app.flow', 'app.data'])
+    .multi(['app.list', 'app.flow', 'app.flowPreview', 'app.data'])
     .pipe(
-      map(([list, flow, data]): MenuItem[] => [
+      map(([list, flow, flowPreview, data]): MenuItem[] => [
         {
           label: list,
           icon: 'fa-solid fa-list',
@@ -73,6 +73,12 @@ export class MainComponent {
           label: flow,
           icon: 'fa-solid fa-diagram-project',
           routerLink: 'flow',
+          queryParamsHandling: 'preserve',
+        },
+        {
+          label: flowPreview,
+          icon: 'fa-solid fa-layer-group',
+          routerLink: 'flow-preview',
           queryParamsHandling: 'preserve',
         },
         {

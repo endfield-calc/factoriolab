@@ -182,7 +182,7 @@
     }
   </ng-template>
 
-  <ng-template #recipeIcon let-recipe let-large="large">
+  <ng-template #iconPart let-recipe let-large="large">
     @if (recipeIconId(recipe); as iconId) {
       <i
         [class]="'lab-icon recipe-builtin-icon ' + iconId"
@@ -200,6 +200,237 @@
         >{{ recipe.customRecipe.iconText || '?' }}</span
       >
     }
+  </ng-template>
+
+  <ng-template #recipeIcon let-recipe let-large="large">
+    <span class="recipe-composite-icon" [class.lg]="large">
+      <ng-container
+        *ngTemplateOutlet="
+          iconPart;
+          context: { $implicit: recipe, large: large }
+        "
+      ></ng-container>
+      @if (recipe.secondaryIcon.iconMode !== 'none') {
+        <span class="recipe-secondary-icon">
+          <ng-container
+            *ngTemplateOutlet="
+              iconPart;
+              context: { $implicit: recipe.secondaryIcon, large: large }
+            "
+          ></ng-container>
+        </span>
+      }
+    </span>
+  </ng-template>
+
+  <ng-template
+    #iconEditor
+    let-icon
+    let-recipe="recipe"
+    let-secondary="secondary"
+  >
+    <div class="icon-editor">
+      <div class="field field-wide">
+        <label
+          [id]="
+            secondary
+              ? 'recipe-secondary-icon-mode-label'
+              : 'recipe-icon-mode-label'
+          "
+          [attr.for]="
+            secondary ? 'recipe-secondary-icon-mode' : 'recipe-icon-mode'
+          "
+          >{{
+            (secondary
+              ? 'customRecipeEditor.secondaryIcon'
+              : 'customRecipeEditor.mainIcon'
+            ) | translate
+          }}</label
+        >
+        <p-selectButton
+          [id]="secondary ? 'recipe-secondary-icon-mode' : 'recipe-icon-mode'"
+          styleClass="recipe-options icon-mode-options"
+          [options]="
+            secondary
+              ? [
+                  {
+                    label: 'customRecipeEditor.noIcon' | translate,
+                    value: 'none',
+                  },
+                  {
+                    label: 'customRecipeEditor.textIcon' | translate,
+                    value: 'text',
+                  },
+                  {
+                    label: 'customRecipeEditor.builtInItemIcon' | translate,
+                    value: 'item',
+                  },
+                  {
+                    label: 'customRecipeEditor.builtInMachineIcon' | translate,
+                    value: 'machine',
+                  },
+                ]
+              : [
+                  {
+                    label: 'customRecipeEditor.textIcon' | translate,
+                    value: 'text',
+                  },
+                  {
+                    label: 'customRecipeEditor.builtInItemIcon' | translate,
+                    value: 'item',
+                  },
+                  {
+                    label: 'customRecipeEditor.builtInMachineIcon' | translate,
+                    value: 'machine',
+                  },
+                ]
+          "
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ariaLabelledBy]="
+            secondary
+              ? 'recipe-secondary-icon-mode-label'
+              : 'recipe-icon-mode-label'
+          "
+          [ngModel]="icon.iconMode"
+          (onChange)="
+            secondary
+              ? setSecondaryIconMode(recipe, $event.value)
+              : setIconMode(recipe, $event.value)
+          "
+        ></p-selectButton>
+      </div>
+      @if (icon.iconMode !== 'none') {
+        <div class="icon-config">
+          <div class="icon-preview">
+            <ng-container
+              *ngTemplateOutlet="
+                secondary ? iconPart : recipeIcon;
+                context: { $implicit: secondary ? icon : recipe, large: true }
+              "
+            ></ng-container>
+          </div>
+          <div class="icon-fields">
+            @if (icon.iconMode !== 'text') {
+              <div class="field field-wide builtin-icon-field">
+                <label
+                  [attr.for]="
+                    secondary ? 'recipe-secondary-icon-id' : 'recipe-icon-id'
+                  "
+                  >{{ 'customRecipeEditor.builtInIcon' | translate }}</label
+                >
+                <p-dropdown
+                  [inputId]="
+                    secondary ? 'recipe-secondary-icon-id' : 'recipe-icon-id'
+                  "
+                  styleClass="builtin-icon-select"
+                  appendTo="body"
+                  [options]="iconOptions(icon)"
+                  optionLabel="label"
+                  optionValue="value"
+                  [filter]="true"
+                  filterBy="label,searchText"
+                  [filterPlaceholder]="
+                    'customRecipeEditor.iconSearch' | translate
+                  "
+                  [placeholder]="'customRecipeEditor.selectIcon' | translate"
+                  [disabled]="iconOptions(icon).length === 0"
+                  [(ngModel)]="icon.customRecipe.iconId"
+                  (ngModelChange)="onFormChange()"
+                >
+                  <ng-template pTemplate="selectedItem" let-option>
+                    <div class="builtin-icon-option">
+                      <i
+                        [class]="'lab-icon ' + option.value"
+                        aria-hidden="true"
+                      ></i>
+                      <span class="builtin-icon-copy">
+                        <span>{{ option.label }}</span>
+                        <small>{{ option.value }}</small>
+                      </span>
+                    </div>
+                  </ng-template>
+                  <ng-template pTemplate="item" let-option>
+                    <div class="builtin-icon-option">
+                      <i
+                        [class]="'lab-icon ' + option.value"
+                        aria-hidden="true"
+                      ></i>
+                      <span class="builtin-icon-copy">
+                        <span>{{ option.label }}</span>
+                        <small>{{ option.value }}</small>
+                      </span>
+                    </div>
+                  </ng-template>
+                </p-dropdown>
+                @if (!recipeIconId(icon)) {
+                  <small class="legacy-warning">{{
+                    'customRecipeEditor.iconUnavailable' | translate
+                  }}</small>
+                }
+              </div>
+            } @else {
+              <div class="field">
+                <label
+                  [attr.for]="
+                    secondary
+                      ? 'recipe-secondary-icon-text'
+                      : 'recipe-icon-text'
+                  "
+                  >{{ 'customRecipeEditor.iconText' | translate }}</label
+                >
+                <input
+                  [id]="
+                    secondary
+                      ? 'recipe-secondary-icon-text'
+                      : 'recipe-icon-text'
+                  "
+                  pInputText
+                  type="text"
+                  maxlength="2"
+                  [(ngModel)]="icon.customRecipe.iconText"
+                  (ngModelChange)="onFormChange()"
+                />
+              </div>
+              <div class="field">
+                <label
+                  [attr.for]="
+                    secondary
+                      ? 'recipe-secondary-icon-background'
+                      : 'recipe-icon-background'
+                  "
+                  >{{ 'customRecipeEditor.iconBackground' | translate }}</label
+                >
+                <div class="color-fields">
+                  <input
+                    class="editor-color"
+                    type="color"
+                    [attr.aria-label]="
+                      'customRecipeEditor.iconBackground' | translate
+                    "
+                    [value]="colorValue(icon.customRecipe.iconBackground)"
+                    (input)="setColor(icon, $event)"
+                  />
+                  <input
+                    [id]="
+                      secondary
+                        ? 'recipe-secondary-icon-background'
+                        : 'recipe-icon-background'
+                    "
+                    pInputText
+                    type="text"
+                    [placeholder]="'#64748b'"
+                    [(ngModel)]="icon.customRecipe.iconBackground"
+                    (ngModelChange)="onFormChange()"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
   </ng-template>
 
   @if (editorMode === 'text') {
@@ -629,6 +860,23 @@
 
         <div class="entity-form">
           @if (selectedRecipe; as recipe) {
+            <ng-container
+              *ngTemplateOutlet="
+                iconEditor;
+                context: { $implicit: recipe, recipe: recipe, secondary: false }
+              "
+            ></ng-container>
+            <ng-container
+              *ngTemplateOutlet="
+                iconEditor;
+                context: {
+                  $implicit: recipe.secondaryIcon,
+                  recipe: recipe,
+                  secondary: true,
+                }
+              "
+            ></ng-container>
+
             <div class="form-grid">
               <div class="field">
                 <label for="recipe-id">{{
@@ -818,7 +1066,7 @@
                   track $index;
                   let index = $index
                 ) {
-                  <div class="amount-row">
+                  <div class="amount-row output-amount-row">
                     <p-autoComplete
                       class="item-autocomplete w-100"
                       styleClass="w-100"
@@ -853,6 +1101,18 @@
                       pButton
                       pRipple
                       type="button"
+                      class="p-button-outlined p-button-sm product-recipe-management"
+                      icon="fa-solid fa-sliders"
+                      [label]="
+                        'customRecipeEditor.recipeManagement' | translate
+                      "
+                      [disabled]="!entry.id.trim()"
+                      (click)="openRecipeManagement(entry.id, recipe.id)"
+                    ></button>
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
                       class="p-button-rounded p-button-text p-button-danger"
                       icon="fa-solid fa-xmark"
                       [pTooltip]="'customRecipeEditor.removeRow' | translate"
@@ -861,147 +1121,6 @@
                   </div>
                 }
               </section>
-            </div>
-
-            <div class="icon-editor">
-              <div class="field field-wide">
-                <label id="recipe-icon-mode-label" for="recipe-icon-mode">{{
-                  'customRecipeEditor.iconMode' | translate
-                }}</label>
-                <p-selectButton
-                  id="recipe-icon-mode"
-                  styleClass="recipe-options icon-mode-options"
-                  [options]="[
-                    {
-                      label: 'customRecipeEditor.textIcon' | translate,
-                      value: 'text',
-                    },
-                    {
-                      label: 'customRecipeEditor.builtInItemIcon' | translate,
-                      value: 'item',
-                    },
-                    {
-                      label:
-                        'customRecipeEditor.builtInMachineIcon' | translate,
-                      value: 'machine',
-                    },
-                  ]"
-                  optionLabel="label"
-                  optionValue="value"
-                  [allowEmpty]="false"
-                  ariaLabelledBy="recipe-icon-mode-label"
-                  [ngModel]="recipe.iconMode"
-                  (onChange)="setIconMode(recipe, $event.value)"
-                ></p-selectButton>
-              </div>
-              <div class="icon-config">
-                <div class="icon-preview">
-                  <ng-container
-                    *ngTemplateOutlet="
-                      recipeIcon;
-                      context: { $implicit: recipe, large: true }
-                    "
-                  ></ng-container>
-                </div>
-                <div class="icon-fields">
-                  @if (recipe.iconMode !== 'text') {
-                    <div class="field field-wide builtin-icon-field">
-                      <label for="recipe-icon-id">{{
-                        'customRecipeEditor.builtInIcon' | translate
-                      }}</label>
-                      <p-dropdown
-                        inputId="recipe-icon-id"
-                        styleClass="builtin-icon-select"
-                        appendTo="body"
-                        [options]="iconOptions(recipe)"
-                        optionLabel="label"
-                        optionValue="value"
-                        [filter]="true"
-                        filterBy="label,searchText"
-                        [filterPlaceholder]="
-                          'customRecipeEditor.iconSearch' | translate
-                        "
-                        [placeholder]="
-                          'customRecipeEditor.selectIcon' | translate
-                        "
-                        [disabled]="iconOptions(recipe).length === 0"
-                        [(ngModel)]="recipe.customRecipe.iconId"
-                        (ngModelChange)="onFormChange()"
-                      >
-                        <ng-template pTemplate="selectedItem" let-option>
-                          <div class="builtin-icon-option">
-                            <i
-                              [class]="'lab-icon ' + option.value"
-                              aria-hidden="true"
-                            ></i>
-                            <span class="builtin-icon-copy">
-                              <span>{{ option.label }}</span>
-                              <small>{{ option.value }}</small>
-                            </span>
-                          </div>
-                        </ng-template>
-                        <ng-template pTemplate="item" let-option>
-                          <div class="builtin-icon-option">
-                            <i
-                              [class]="'lab-icon ' + option.value"
-                              aria-hidden="true"
-                            ></i>
-                            <span class="builtin-icon-copy">
-                              <span>{{ option.label }}</span>
-                              <small>{{ option.value }}</small>
-                            </span>
-                          </div>
-                        </ng-template>
-                      </p-dropdown>
-                      @if (!recipeIconId(recipe)) {
-                        <small class="legacy-warning">{{
-                          'customRecipeEditor.iconUnavailable' | translate
-                        }}</small>
-                      }
-                    </div>
-                  } @else {
-                    <div class="field">
-                      <label for="recipe-icon-text">{{
-                        'customRecipeEditor.iconText' | translate
-                      }}</label>
-                      <input
-                        id="recipe-icon-text"
-                        pInputText
-                        type="text"
-                        maxlength="2"
-                        [(ngModel)]="recipe.customRecipe.iconText"
-                        (ngModelChange)="onFormChange()"
-                      />
-                    </div>
-                    <div class="field">
-                      <label for="recipe-icon-background">{{
-                        'customRecipeEditor.iconBackground' | translate
-                      }}</label>
-                      <div class="color-fields">
-                        <input
-                          class="editor-color"
-                          type="color"
-                          [attr.aria-label]="
-                            'customRecipeEditor.iconBackground' | translate
-                          "
-                          [value]="
-                            colorValue(recipe.customRecipe.iconBackground)
-                          "
-                          (input)="setColor(recipe, $event)"
-                        />
-                        <input
-                          id="recipe-icon-background"
-                          pInputText
-                          type="text"
-                          [placeholder]="'#64748b'"
-                          [(ngModel)]="recipe.customRecipe.iconBackground"
-                          (ngModelChange)="onFormChange()"
-                        />
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
             </div>
 
             <div class="advanced-editor">
@@ -1106,3 +1225,104 @@
     </p-card>
   </section>
 </div>
+<p-dialog
+  [(visible)]="recipeManagementVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="
+    ('customRecipeEditor.recipeManagement' | translate) +
+    ' · ' +
+    managedItemName()
+  "
+  [style]="{ width: '42rem', maxWidth: '95vw' }"
+  appendTo="body"
+>
+  @if (recipeManagementVisible) {
+    <div class="product-recipe-toolbar">
+      <span class="product-recipe-hint">{{
+        'customRecipeEditor.recipeManagementHint' | translate
+      }}</span>
+      <button
+        pButton
+        pRipple
+        type="button"
+        class="p-button-outlined p-button-sm"
+        icon="fa-solid fa-filter"
+        [label]="'customRecipeEditor.blockOtherRecipes' | translate"
+        [disabled]="!canBlockOtherRecipes()"
+        (click)="blockOtherProductRecipes()"
+      ></button>
+    </div>
+    @if (!canBlockOtherRecipes()) {
+      <p class="product-recipe-hint">
+        {{ 'customRecipeEditor.blockOtherRecipesUnavailable' | translate }}
+      </p>
+    }
+    <div class="product-recipe-list">
+      @for (entry of managedRecipes(); track entry.id) {
+        <div
+          class="product-recipe-entry"
+          [class.product-recipe-excluded]="!entry.included"
+        >
+          <p-checkbox
+            [inputId]="'managed-recipe-' + entry.id"
+            [binary]="true"
+            [ngModel]="entry.included"
+            [disabled]="entry.locked"
+            [ariaLabel]="
+              ('customRecipeEditor.enableFile' | translate) + ' · ' + entry.name
+            "
+            (ngModelChange)="setManagedRecipeIncluded(entry.id, $event)"
+          ></p-checkbox>
+          <div class="product-recipe-details">
+            <label [for]="'managed-recipe-' + entry.id">{{ entry.name }}</label>
+            <small>{{ entry.id }}</small>
+            <small
+              >{{
+                (entry.sourceId
+                  ? 'customRecipeEditor.customRecipeSource'
+                  : 'customRecipeEditor.nativeRecipeSource'
+                ) | translate
+              }}
+              @if (entry.fileName) {
+                · {{ entry.fileName }}
+              }
+            </small>
+            @if (entry.otherOutputs.length) {
+              <small
+                >{{ 'customRecipeEditor.otherOutputs' | translate }}：{{
+                  entry.otherOutputs.join('、')
+                }}</small
+              >
+            }
+          </div>
+          <div class="product-recipe-status">
+            @if (entry.id === managedRecipeId()) {
+              <span>{{ 'customRecipeEditor.currentRecipe' | translate }}</span>
+            }
+            <small>{{
+              entry.inactiveReason ??
+                (entry.included
+                  ? 'customRecipeEditor.enableFile'
+                  : 'customRecipeEditor.recipeExcluded') | translate
+            }}</small>
+          </div>
+        </div>
+      } @empty {
+        <p class="product-recipe-hint">
+          {{ 'customRecipeEditor.noProductRecipes' | translate }}
+        </p>
+      }
+    </div>
+    @if (managedRecipes().length && !managedIncludedCount()) {
+      <p class="product-recipe-warning" role="status">
+        {{ 'customRecipeEditor.noIncludedProductRecipes' | translate }}
+      </p>
+    }
+    <p class="product-recipe-hint mt-3 mb-0">
+      {{ 'customRecipeEditor.recipeManagementScopeHint' | translate }}
+    </p>
+  }
+</p-dialog>

@@ -8,6 +8,8 @@ import {
   CUSTOM_RECIPE_EXAMPLE_FILE_NAME,
   CUSTOM_RECIPE_FORMAT,
   CUSTOM_RECIPE_LIBRARY_FORMAT,
+  CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT,
+  CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
   CUSTOM_RECIPE_VERSION,
   CustomRecipeDocument,
   CustomRecipeEntry,
@@ -34,15 +36,50 @@ export type CustomRecipeState = Entities<CustomRecipeSource[]>;
 })
 export class CustomRecipeService {
   private readonly stateSignal = signal(this.loadState());
+  private simplifiedDefaultsHandled =
+    getStoredValue('customRecipeDefaults') === '1';
 
   readonly state = this.stateSignal.asReadonly();
 
   constructor(private readonly validator: CustomRecipeValidatorService) {}
 
-  ensureBuiltInExample(context: CustomRecipeValidationContext): void {
-    // An explicit empty library is initialized too; do not restore deleted examples.
-    if (Object.hasOwn(this.stateSignal(), context.modId)) return;
-    this.replaceLibrary(this.defaultLibrary(context.modId), context);
+  ensureBuiltInDefaults(context: CustomRecipeValidationContext): void {
+    if (!Object.hasOwn(this.stateSignal(), context.modId)) {
+      this.replaceLibrary(this.defaultLibrary(context.modId), context);
+      return;
+    }
+    if (
+      context.modId !== CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT.modId ||
+      this.simplifiedDefaultsHandled
+    )
+      return;
+
+    const sources = this.sourcesForMod(context.modId);
+    const presetIds = new Set(
+      CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT.recipes.map((recipe) => recipe.id),
+    );
+    // Keep deliberately cleared libraries empty and preserve edited or renamed presets.
+    if (
+      !sources.length ||
+      sources.some(
+        (source) =>
+          source.fileName === CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME ||
+          source.document.recipes.some((recipe) => presetIds.has(recipe.id)),
+      )
+    ) {
+      this.markDefaultsHandled(context.modId);
+      return;
+    }
+
+    const result = this.importDocument(
+      CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
+      structuredClone(CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT),
+      context,
+    );
+    if (result.valid && result.source) {
+      this.setSourceEnabled(context.modId, result.source.id, false);
+      this.markDefaultsHandled(context.modId);
+    }
   }
 
   importDocument(
@@ -247,6 +284,15 @@ export class CustomRecipeService {
                   CUSTOM_RECIPE_EXAMPLE_DOCUMENT.recipes,
                 ),
               },
+              {
+                fileName: CUSTOM_RECIPE_SIMPLIFIED_FILE_NAME,
+                starred: false,
+                enabled: false,
+                disabledRecipeIds: [],
+                recipes: structuredClone(
+                  CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT.recipes,
+                ),
+              },
             ]
           : [],
     };
@@ -446,8 +492,10 @@ export class CustomRecipeService {
     defaultEnabled = true,
   ): CustomRecipeLibraryValidationResult {
     const result = this.validateLibrary(value, context, defaultEnabled);
-    if (result.valid && result.sources)
+    if (result.valid && result.sources) {
       this.setSources(context.modId, structuredClone(result.sources));
+      this.markDefaultsHandled(context.modId);
+    }
     return result;
   }
 
@@ -595,6 +643,13 @@ export class CustomRecipeService {
 
   clearMod(modId: string): void {
     this.setSources(modId, []);
+    this.markDefaultsHandled(modId);
+  }
+
+  private markDefaultsHandled(modId: string): void {
+    if (modId !== CUSTOM_RECIPE_SIMPLIFIED_DOCUMENT.modId) return;
+    this.simplifiedDefaultsHandled = true;
+    storeValue('customRecipeDefaults', '1');
   }
 
   private setSources(modId: string, sources: CustomRecipeSource[]): void {
@@ -687,11 +742,19 @@ export class CustomRecipeService {
     if (!this.isObject(value) || !this.isObject(value['customRecipe']))
       return false;
     return (
-      typeof value['customRecipe']['iconText'] === 'string' &&
-      (value['customRecipe']['iconBackground'] === undefined ||
-        typeof value['customRecipe']['iconBackground'] === 'string') &&
-      (value['customRecipe']['iconId'] === undefined ||
-        typeof value['customRecipe']['iconId'] === 'string')
+      this.isStoredIcon(value['customRecipe']) &&
+      (value['customRecipe']['secondaryIcon'] === undefined ||
+        this.isStoredIcon(value['customRecipe']['secondaryIcon']))
+    );
+  }
+
+  private isStoredIcon(value: unknown): boolean {
+    if (!this.isObject(value)) return false;
+    return (
+      typeof value['iconText'] === 'string' &&
+      (value['iconBackground'] === undefined ||
+        typeof value['iconBackground'] === 'string') &&
+      (value['iconId'] === undefined || typeof value['iconId'] === 'string')
     );
   }
 
@@ -703,6 +766,16 @@ export class CustomRecipeService {
         iconBackground:
           recipe.customRecipe.iconBackground ??
           DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+        ...(recipe.customRecipe.secondaryIcon
+          ? {
+              secondaryIcon: {
+                ...recipe.customRecipe.secondaryIcon,
+                iconBackground:
+                  recipe.customRecipe.secondaryIcon.iconBackground ??
+                  DEFAULT_CUSTOM_RECIPE_BACKGROUND,
+              },
+            }
+          : {}),
       },
     };
   }

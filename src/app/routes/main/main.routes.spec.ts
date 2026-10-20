@@ -15,6 +15,11 @@ describe('Main Routes', () => {
     expect(await routes[0].children![2].loadComponent!()).toEqual(
       FlowComponent,
     );
-    expect(await routes[0].children![3].loadChildren!()).toEqual(dataRoutes);
+    expect(await routes[0].children![3].loadComponent!()).toEqual(
+      FlowComponent,
+    );
+    expect(await routes[0].children![4].loadChildren!()).toEqual(dataRoutes);
+    expect(routes[0].children![2].data).toEqual({ partitionPreview: false });
+    expect(routes[0].children![3].data).toEqual({ partitionPreview: true });
   });
 });

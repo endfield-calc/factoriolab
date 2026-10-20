@@ -15,6 +15,7 @@ import {
 } from '../store/preferences.service';
 import { SettingsService } from '../store/settings.service';
 import { CustomRecipeService } from './custom-recipe.service';
+import { CustomRecipeIconService } from './custom-recipe-icon.service';
 
 const LAB_ICON_STYLE_ID = 'lab-icon-css';
 const LAB_THEME_STYLE_ID = 'lab-theme-css';
@@ -35,6 +36,7 @@ export class ThemeService {
   preferencesSvc = inject(PreferencesService);
   settingsSvc = inject(SettingsService);
   customRecipeSvc = inject(CustomRecipeService);
+  customIconSvc = inject(CustomRecipeIconService);
 
   themeValues$ = new ReplaySubject<ThemeValues>(1);
   head = this.document.getElementsByTagName('head')[0];
@@ -115,6 +117,15 @@ export class ThemeService {
       for (const recipe of customRecipes.values()) {
         if (data.recipeQIds.has(recipe.id)) continue;
         const selector = this.escapeSelector(recipe.id);
+        const composite = this.customIconSvc.resolve(
+          recipe.customRecipe,
+          data,
+          this.preferencesSvc.theme() === Theme.Light,
+        );
+        if (composite) {
+          css += `.${selector}.recipe::before { background-image: url("${composite}"); background-position: 0 0; content: ""; filter: none; } `;
+          continue;
+        }
         const icon = recipe.customRecipe.iconId
           ? data.iconEntities[recipe.customRecipe.iconId]
           : undefined;

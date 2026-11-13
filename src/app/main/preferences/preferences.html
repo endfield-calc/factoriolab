@@ -71,7 +71,7 @@
           [dirty]="currentState() !== selectedState()"
           placeholder="preferences.selectSavedState"
           [(ngModel)]="selectedState"
-          (ngModelChange)="setState($event)"
+          (optionSelected)="setState($event)"
         ></lab-select>
         @if (selectedState(); as state) {
           <button

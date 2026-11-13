@@ -1,7 +1,9 @@
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 
+import { Select } from '~/components/select/select';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
@@ -112,6 +114,39 @@ describe('Preferences', () => {
   });
 
   describe('setState', () => {
+    it('loads the selected archive again after the workspace becomes dirty', async () => {
+      spyOn(component['settingsStore'], 'modStates').and.returnValue({
+        state: 'v=12&o=iron_ore*60',
+        other: 'v=12&o=quartz_sand*30',
+      });
+      spyOn(component['settingsStore'], 'stateOptions').and.returnValue([
+        { label: 'state', value: 'state' },
+        { label: 'other', value: 'other' },
+      ]);
+      component.selectedState.set('state');
+      const navigate = spyOn(component['router'], 'navigate').and.returnValue(
+        Promise.resolve(true),
+      );
+      fixture.detectChanges();
+      await TestBed.inject(ApplicationRef).whenStable();
+      fixture.detectChanges();
+      const select = fixture.debugElement.query(By.directive(Select))
+        .componentInstance as Select<string>;
+      expect(select.value()).toBe('state');
+      expect(select.dirty()).toBeTrue();
+      select.select('state');
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(navigate).toHaveBeenCalledOnceWith([], {
+        queryParams: { v: '12', o: 'iron_ore*60' },
+      });
+      navigate.calls.reset();
+      select.select('other');
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(navigate).toHaveBeenCalledOnceWith([], {
+        queryParams: { v: '12', o: 'quartz_sand*30' },
+      });
+    });
+
     it('should return if no matching state is found', async () => {
       spyOn(component['router'], 'navigate');
       await component.setState('state');

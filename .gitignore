@@ -42,6 +42,7 @@ testem.log
 Thumbs.db
 
 # Script temp files
+.tmp/
 scripts/temp
 scripts/logs
 scripts/cache

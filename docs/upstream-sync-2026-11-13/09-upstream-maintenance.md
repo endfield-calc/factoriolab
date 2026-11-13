@@ -38,6 +38,8 @@
 
 中立契约位于 `src/extensions`：`PRODUCT_PROFILE` / `EFFECTIVE_DEFAULTS`、`CALCULATION_EXTENSION`、`STATE_EXTENSION`、`PRESENTATION_EXTENSION` 分别提供上述四类接点的上游默认实现。`immutableValue` / `mutableValue` 约束只读快照与 Store 写入边界；`WorkspaceLifecycle` 提供不依赖 RouterSync 或计算 Store 的恢复票据与就绪状态。未装配产品提供者时不添加派生目标、约束、状态参数或页面插槽，保留上游默认值和成本。契约测试为 `src/extensions/extensions.spec.ts` 中的 `Neutral extension defaults` 和 `Workspace recovery lifecycle`；这些测试只验证契约与生命周期，不替代调用位置及双配置的运行验收。
 
+领域实现位于 `src/endfield/domain`：`createEndfieldState` 定义版本1的额外默认状态，`applyEndfieldAction` 返回额外状态和通用设置的原子变更声明，`deriveEndfieldObjectives` / `compileEndfieldRules` 分别声明派生目标和按实际变量编译的约束，`calculateEndfieldRecipeCost` 计算统一配方成本。对应测试为 `presets.spec.ts`、`rules.spec.ts`、`cost.spec.ts`；它们验证领域数值和声明，不替代求解器、恢复及 UI 接线验收。
+
 ## 4. 避免长期漂移的实现约束
 
 1. 不复制上游大类、整页模板、旧package-lock或主题体系；不靠继承后重写大部分私有实现维持一个“同名新类”。

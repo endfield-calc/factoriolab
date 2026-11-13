@@ -1,6 +1,6 @@
 {
-  "name": "factoriolab",
-  "description": "Angular-based calculator for the game Factorio",
+  "name": "endfield-calc",
+  "description": "Factory production calculator for Arknights: Endfield",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -9,15 +9,22 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/factoriolab/factoriolab.git"
+    "url": "git+https://github.com/endfield-calc/factoriolab.git"
   },
-  "homepage": "https://factoriolab.github.io",
+  "homepage": "https://endfield-calc.github.io/",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/endfield/prepare-i18n.mjs --out .tmp/endfield-assets/i18n",
     "start": "ng serve",
+    "prebuild": "node scripts/endfield/prepare-i18n.mjs --out .tmp/endfield-assets/i18n",
     "build": "ng build",
+    "prewatch": "node scripts/endfield/prepare-i18n.mjs --out .tmp/endfield-assets/i18n",
     "watch": "ng build --watch --configuration development",
+    "build:sites": "node scripts/endfield/build-sites.mjs",
+    "package:sites": "node scripts/endfield/package-sites.mjs",
+    "verify:sites": "node scripts/endfield/verify-sites.mjs",
+    "test:delivery": "node --test scripts/endfield/build-sites.spec.mjs",
     "test": "ng test",
     "test:ci": "ng test --no-watch --progress=false --browsers=ChromeHeadless",
     "lint": "ng lint",

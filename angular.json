@@ -24,7 +24,17 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": ["**/defaults.json", "data/**", "endfield/i18n/**"]
+                "ignore": [
+                  "**/defaults.json",
+                  "data/**",
+                  "endfield/i18n/**",
+                  "i18n/**"
+                ]
+              },
+              {
+                "glob": "**/*",
+                "input": ".tmp/endfield-assets/i18n",
+                "output": "i18n"
               },
               {
                 "glob": "**/*",
@@ -142,6 +152,9 @@
   },
   "cli": {
     "analytics": "d77293c4-7d34-44a7-879c-a57e1cd6821e",
+    "cache": {
+      "path": ".tmp/angular-cache"
+    },
     "schematicCollections": ["angular-eslint"]
   }
 }

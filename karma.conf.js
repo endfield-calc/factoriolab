@@ -17,12 +17,13 @@ export default function (config) {
     jasmineHtmlReporter: {
       suppressAll: true, // removes the duplicated traces
     },
-    junitReporter: { outputDir: './coverage' },
+    junitReporter: { outputDir: './.tmp/coverage' },
     coverageReporter: {
-      dir: path.join(import.meta.dirname, './coverage'),
+      dir: path.join(import.meta.dirname, './.tmp/coverage'),
       subdir: '.',
       reporters: [
         { type: 'html' },
+        { type: 'json' },
         { type: 'text-summary' },
         { type: 'cobertura' },
       ],

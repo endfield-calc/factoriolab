@@ -8,7 +8,7 @@
 | 上下文     | 独立上下文，仅提供用户要求、最终文档及固定源码位置                             |
 | 范围       | 本文件夹全部最终方案，核对语言机制、集中重写、上游接点、后续同步及项目文档范围 |
 | 方法       | 只读Git/源码、数据集合与协议分析，检查文档一致性和验收辨别力                   |
-| 状态       | 方案已做独立静态复核；最终实现树及全部运行验收仍待独立复核                     |
+| 状态       | 方案、实现和 S7 合并均经独立复核；运行证据范围见下                             |
 
 ## 复核结论
 
@@ -20,7 +20,7 @@
 | 重写设计 | 统一有效默认快照、单一状态来源、原子恢复、无间接DI环的纯规则编译、完整目标索引及步骤owner读写、统一成本准备、结构化失败      |
 | 数值契约 | 固定供给、机器整数例外、传输预算、净水联合约束、成本角色和MIP结果保持明确语义；缺陷按反例修正                                |
 | 状态兼容 | 冻结旧hash、新表只追加、退休配方限定别名、旧11–14/cet及派生设置/勾选在导入边界转换，ef和有效默认值贯通全部持久化/重置路径    |
-| 维护性   | M01–M10登记当前共享差异和默认路径；最终提交树是否完整覆盖、无散落业务判断，须结合A27–A30及实际差异复核                       |
+| 维护性   | M01–M10登记共享差异和默认路径；完整差异审计及受控同步结果见下                                                                |
 | 文档形式 | 只表达最终契约、来源证据与当前复核结论；实现、定向测试和完整验收须分别报告                                                   |
 | 项目文档 | D05/A31：既有说明与对应实际实现一致，在原主题内校正字段、语义和链接，不新增开发/执行记录、执行入口、数据版本等原文没有的内容 |
 
@@ -29,7 +29,7 @@
 ## 关键静态依据
 
 - aef数据为161物品、257配方、254图标、5注册分类、2地点；59条传输及28条hideProducer。
-- 当前hash缺11个物品和14个配方，残留9/22个退休条目；新版pipe需要追加。上游updateHash会复用null槽位，aef不能直接使用该行为。
+- 旧来源hash缺11个物品和14个配方，残留9/22个退休条目；迁移时pipe需要追加。上游updateHash会复用null槽位，aef不能直接使用该行为。
 - 旧xiranite_powder配方与xiranite_powder-carbon_enr在祖先数据和当前数据的八项物理字段相同，限定别名有依据；同名物品不改写。
 - 普通配方变量与显式配方目标有不同直接成本系数；GLPK的LP/MIP值必须按最终求解类型读取。
 - 上游步骤归一化会按recipeObjectiveId索引目标设置，派生供给不能只接入求解而不接入完整设置记录。RecipeDetail也显示调整成本，必须与求解共用准备数据。
@@ -42,23 +42,16 @@
 
 ## 实现复核与发现处理
 
-当前工作树另有独立生产镜像验证：`browser/working-preview-inputs.json` 记录774个源码、资产及配置输入与工作树逐字节一致；`working-preview-build-final.log` 构建成功且双站各98个最终哈希。`working-archive.json` 验证谷地存档保存、切武陵、同名重选及刷新；`working-fragment.json` 的真实新页保留三项供给且资源面板可见。`working-upgrade-{before,after,offline}.json` 验证真实 Angular 18→22 缓存升级、旧原链接、black→dark、相同 G01 成本/功耗及列表/流图离线重开；`working-numeric-error.json` 验证浏览器明确显示数值下溢错误。这些输入包含待签名变更，不能用镜像 release 中的旧 HEAD 元数据冒充最终签名交付身份；范围说明见 `.tmp/upstream-migration/browser/WORKING-PREVIEW.md`。
+实际交付代码为 `400c9f75d287ccd3fce67ffeeb8e2a0c0babf181`。`evidence/source-mirror-match.txt` 记录浏览器镜像的774个源码、资产和配置输入与交付代码一致；镜像在签名前构建，其 release 字符串不能作为最终交付提交身份。`browser/working-archive.json` 验证脏状态重选同一存档及刷新；`working-fragment.json` 验证三条资源定位链接实际点击；`working-numeric-error.json` 验证非零下溢明确报错且不污染存储。`working-upgrade-{before,after,offline}.json` 验证旧 Angular 18 到新 Angular 22 的原生 SW 更新、存档与 black→dark 保留，以及 list/flow 离线刷新。
 
-S7 受控输入的独立预演已完成：`rehearsal/merge-preflight.log` 定位第六参数冲突，临时解析保留模型上下文并把观察回调适配为第七参数；`preview-context-observer-tests.log` 的1402项、四项覆盖率100%及类型/格式检查通过。独立复核关闭了真实模型上下文与回调共启的验证缺口。预演不是实际分支合并；签名输入提交、正常 merge、合并身份及最终分支复验仍待完成，详见 `.tmp/upstream-migration/rehearsal/INDEX.md`。
+实际 S7 使用父节点为 `00bdb91c2442cd8d715501b9469cec115735645f` 的受控上游提交 `245a581fac12fe4c069319b2134b5359221cbf88`，合并提交 `e348d354306ab5b7c1922dbe0efa4f5565c38568` 的双父分别为交付代码和受控上游提交。`rehearsal/actual-merge-identity.log`、`actual-merged-checks.log`、`actual-merged-tests.log` 记录签名、身份、类型/lint 和1402/1402测试、四项覆盖率100%；独立 Astra 复核未发现 P0–P3。`actual-return-check.log` 确认交付分支已返回 `400c9f75`，不包含受控变化。这是一次受控合并演练，不表示已兼容所有未来上游版本。
 
-| 主题             | 当前证据和处理状态                                                                                                                                                                                                                                                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 旧来源和正常样本 | `.tmp/upstream-migration/golden/source-verification.json` 以438个 Git blob 校验归档与固定旧提交一致。`golden/new-final.log` / `new-final-results.json` 记录20个样本通过；G01/G02 的配方、物料、盈余、功耗、成本按绝对及相对 `1e-7` 吻合。该计算对照旧侧使用 Node 适配器，不等同于真实旧浏览器 UI 过程；独立 SW 浏览器验证见下。                                 |
-| 既有缺陷         | G03 保留退休配方等价别名的4台目标；G07 的6个模型记录传输整数、净水单变量与显式目标、MIP 成本的修正。G05/G06 未使用传输时的旧预算与新实际输入差异单独登记于 `golden/new-final-differences.json`，不算未分类差异。这些是样本证据，不证明所有输入或整套最优数值。                                                                                                  |
-| 中立默认与模型   | 独立复核发现 `1e-400` 正供给转 GLPK 数值0可静默报告 optimal；签名提交 `4b8c21a6` 的统一转换拒绝非零下溢，`evidence/numeric-index-tests.log` 的108项精确暂存镜像测试包含真实 aef 集成，独立复核确认该问题关闭。上游默认配置仍须作为 S7 同步演练的一部分验证。                                                                                                    |
-| 状态恢复         | `b95f487d` 修复扩展回调同步启动后续导航的重入边界并经独立复核；`evidence/s3-final-index-tests.log` 的精确暂存镜像393/393通过。`.tmp/router/settlement-final-router-resource.log` 283/283、`.tmp/router/coverage-last-initial.log` 74/74行为通过；故障注入刻意违反扩展纯性约束，不表示 Endfield 适配器自行导航。                                                 |
-| 全局质量         | `evidence/reviewed-final-tests.log` 使用默认 ChromeHeadless，1399/1399行为测试通过且退出0；语句9176/9176、分支3395/3395、函数1886/1886、行8213/8213均为100%。`evidence/final-lint.log`、`final-prettier.log`、`final-types.log` 的 lint、格式及应用/规格类型检查均退出0。日志对应当时工作树输入，并非后续未构建产物的浏览器证据。                               |
-| 交付与浏览器     | `delivery/final-code-root-build.log` 记录 `cc576c6c` 候选根路径构建及双站各98个 SW 哈希，1.15 MB 超预算仅为 warning；旧 Angular 18 客户端到 `872ec1b` 候选的 SW 升级和离线重开有独立记录。`browser/{guide,recovery,cost,save}-final.json` 记录 `cc576c6c` 的三原示例、坏 ef 恢复、电力重置及谷地存档/武陵预设操作；新存档修复后的构建和最终浏览器升级仍待验证。 |
+| 主题           | 已复核范围和证据                                                                                                                                                                                                                                                                                                                    |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 来源与数值     | `golden/source-verification.json` 以438个 Git blob 校验旧归档；20个新旧样本中 G01/G02 按绝对及相对 `1e-7` 比较物理量和成本。旧侧计算使用 Node 适配器；旧浏览器 SW 升级单独验证。G03别名、G07的6个约束/MIP反例及 G05/G06 已分类差异见 `golden/new-final-differences.json`，这些样本不构成全域最优性证明。                            |
+| 约束与状态     | `evidence/acceptance-remaining-final.log` 11/11 覆盖真实 aef 资源、洪炉、传输、净水及旧状态往返，精确输入见 `acceptance-remaining-report.md`；`acceptance-closure-complete.log` 47/47 包含八组速率/转换恢复、389列 MIP 成本点积和详情/模型成本。净水禁用只排除自动候选，显式目标仍可选且受联合额度约束。                            |
+| 数值与恢复防御 | `4b8c21a6` 修正非零数值下溢，108项定向测试含真实 aef；`b95f487d` 修正回调重入，精确暂存镜像393项通过。独立复核确认相关发现关闭。                                                                                                                                                                                                    |
+| UI 与文档      | 同配方节点身份、ELK 过期绘制、内部 owner 标签、成本重置、F21 通知及同存档重选均有测试和独立复核；`da2f8a73` 完成重选修复，`06531d26` 集中名称及片段接点。README和三份既有数据说明的独立范围复核未发现越界；计算及 UI/交付复核无遗留 P0–P3。                                                                                         |
+| 全量质量与产物 | `evidence/reviewed-final-tests.log` 使用默认 ChromeHeadless，1399/1399通过，语句9176/9176、分支3395/3395、函数1886/1886、行8213/8213均为100%；`evidence/final-node-tests.log` 16/16通过。`delivery/candidate-{root,subpath}[-verify]-400c9f75.log` 记录根及 `/delivery/check/` 双站各98项 SW 哈希；1.15 MB 初始包超预算为 warning。 |
 
-`evidence/acceptance-closure-complete.log` 47/47 覆盖八组真实 localStorage 速率/转换恢复、同一 MIP 的389列独立成本点积和详情/模型成本；`evidence/acceptance-remaining-final.log` 11/11 覆盖真实 aef 约束及旧状态往返，逐项输入见 `evidence/acceptance-remaining-report.md`。净水禁用按排除候选实现，显式目标仍可用但始终受联合额度约束。
-
-流图同配方节点身份、旧 ELK 结果迟到覆盖和内部 owner 标签泄漏三项发现，及电力成本 modified/reset、版本检测和生产安装失败通知，已由实现、测试和独立复核关闭。新增浏览器检查发现存档脏状态下重选同一存档未触发载入；中立 Select 的单选显式选择事件与 Preferences 接线已有46/46定向测试及独立复核，未见剩余 P0–P3，签名与最终产物复验仍待完成；当前工作树的独立镜像已通过实际存档重选及刷新，证据见本节。计算及 UI/交付独立复核范围内没有遗留待修 P0–P3；词典白名单漏项已补，`ui/translations-final.log` 3/3。A31 的独立复核已检查 README 和三份既有数据说明的实际差异，确认保持原信息范围；最终提交前仍须核对后续变动。
-
-共享模板的新增边界复核已把专属文案键及资源面板片段移到 `PresentationExtension.nameToggleLabel` / `stepFragment`；中立默认隐藏开关且不附加片段，原工作区序列化策略保持独立。独立复核未发现该范围的 P0–P3；`ui/fragment-dom-tests-final.log` 的26项验证包含实际链接片段出现和清除。`evidence/final-diff-audit.md` 对219个差异文件完成静态分类，锁文件除两处根名称外与上游一致，没有未登记共享运行逻辑；成本详情测试的登记漏项已补入09。这个静态审计不代替 S7 合并演练或最终提交身份核对。
-
-除单独标注外，表中 `golden/`、`solver/`、`router/`、`evidence/`、`delivery/`、`browser/` 均位于 `.tmp/upstream-migration/`。应用代码已提交至 `cc576c6c`，后续存档修复、展示契约收口及验收规格尚未完成提交，方案文档仍有未提交变更；旧候选浏览器证据不能代替最终代码验证。完整待验收映射见[06](06-execution-and-acceptance.md)；S7 的受控上游合并、双配置回归及最终 M01–M10 差异审计尚未完成。本次任务不执行实际部署。
+除单独标注外，证据路径均位于 `.tmp/upstream-migration/`。最终文档提交后重新构建根及子路径产物，交付步骤须生成 `evidence/final-delivery.json` 以绑定最终文档提交与产物身份；不将尚未生成的报告当作已有证据。本任务不执行远端部署。

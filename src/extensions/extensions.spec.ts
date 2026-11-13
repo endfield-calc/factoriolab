@@ -8,7 +8,7 @@ import {
   CALCULATION_EXTENSION,
   emptyModelRules,
 } from './calculation-extension';
-import { immutableValue } from './immutable';
+import { immutableValue, mutableValue } from './immutable';
 import { PRESENTATION_EXTENSION } from './presentation-extension';
 import {
   cloneDefaults,
@@ -66,7 +66,78 @@ describe('Neutral extension defaults', () => {
     const calculation = TestBed.inject(CALCULATION_EXTENSION);
     expect(calculation.rules({} as never, [])).toBe(emptyModelRules);
     expect(calculation.derive({} as never)).toEqual([]);
+    expect(
+      calculation.cost({ adjusted: { cost: rational(7) } } as never),
+    ).toEqual(rational(7));
+    expect(extension.preflight({} as never)).toEqual([]);
     expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels).toEqual([]);
+  });
+
+  it('keeps the read-only Set contract and isolates results of set operations', () => {
+    const set = immutableValue(new Set(['a', 'b']));
+    expect(set.size).toBe(2);
+    expect([...set.entries()]).toEqual([
+      ['a', 'a'],
+      ['b', 'b'],
+    ]);
+    expect([...set.keys()]).toEqual(['a', 'b']);
+    expect([...set.values()]).toEqual(['a', 'b']);
+    expect(set.union(new Set(['c']))).toEqual(new Set(['a', 'b', 'c']));
+    expect(set.intersection(new Set(['b', 'c']))).toEqual(new Set(['b']));
+    expect(set.difference(new Set(['b']))).toEqual(new Set(['a']));
+    expect(set.symmetricDifference(new Set(['b', 'c']))).toEqual(
+      new Set(['a', 'c']),
+    );
+    expect(set.isSubsetOf(new Set(['a', 'b', 'c']))).toBeTrue();
+    expect(set.isSupersetOf(new Set(['b']))).toBeTrue();
+    expect(set.isDisjointFrom(new Set(['c']))).toBeTrue();
+    const context = { values: [] as string[] };
+    set.forEach(function (this: typeof context, first, second, readonlySet) {
+      expect(first).toBe(second);
+      expect(readonlySet).toBe(set);
+      expect(Reflect.get(readonlySet, 'delete')).toBeUndefined();
+      this.values.push(first);
+    }, context);
+    expect(context.values).toEqual(['a', 'b']);
+    const union = set.union(new Set(['c']));
+    union.clear();
+    expect([...set]).toEqual(['a', 'b']);
+    const value = { rate: rational(7), owners: [new Set(['a'])] };
+    const copy = mutableValue<typeof value>(immutableValue(value));
+    copy.owners[0].add('b');
+    expect(value.owners[0]).toEqual(new Set(['a']));
+    expect(copy.rate).not.toBe(value.rate);
+    expect(copy.rate.eq(value.rate)).toBeTrue();
+  });
+
+  it('does not acquire editing or ownership effects from the default presentation', () => {
+    const presentation = TestBed.inject(PRESENTATION_EXTENSION);
+    expect(presentation.costsModified()).toBeFalse();
+    expect(presentation.resetCosts()).toBeUndefined();
+    const owner = { kind: 'objective', id: '1' } as const;
+    expect(presentation.showNames()).toBeFalse();
+    presentation.toggleNames();
+    expect(presentation.showNames()).toBeFalse();
+    expect(presentation.hideDuplicateIcons()).toBeFalse();
+    expect(presentation.hideProducer('recipe')).toBeFalse();
+    expect(presentation.forceLabel('recipe')).toBeFalse();
+    expect(presentation.owner({ id: '1' })).toBeUndefined();
+    expect(
+      presentation.updateRecipeField(owner, 'cost', rational.one),
+    ).toBeFalse();
+    expect(presentation.resetRecipe(owner)).toBeFalse();
+    expect(presentation.checked({ id: '1' })).toBeUndefined();
+    expect(presentation.toggleChecked({ id: '1' }, true)).toBeFalse();
+    presentation.clearChecked();
+    expect(presentation.hasChecked()).toBeFalse();
+    expect(presentation.modified(owner)).toBeFalse();
+    presentation.resetRecipes(['cost']);
+    expect(presentation.sourceLabel({ id: '1' })).toBeUndefined();
+    expect(presentation.workspaceLink({ id: '1' })).toBeFalse();
+    const state = TestBed.inject(STATE_EXTENSION);
+    state.commit({ extra: 'ignored' });
+    state.reset();
+    expect(state.snapshot()).toBeUndefined();
   });
 
   it('isolates and freezes Rational values without mutating shared constants', () => {

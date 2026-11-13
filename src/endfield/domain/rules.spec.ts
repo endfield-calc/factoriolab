@@ -247,4 +247,75 @@ describe('Endfield model rules', () => {
     expect(rule(justLocal, 'ef:water:local').terms[0].ref).toEqual(local.ref);
     expect(rule(justLocal, 'ef:water:export').terms).toEqual([]);
   });
+
+  it('rejects negative and non-rational physical machine limits', () => {
+    const state = createEndfieldState();
+    for (const limit of [rational(-1), 'bad' as unknown as Rational]) {
+      expect(() =>
+        compileEndfieldRules(
+          {
+            ...state,
+            machineLimits: { enabled: false, limits: { [ovenId]: limit } },
+          },
+          [],
+        ),
+      ).toThrowError(`Invalid machine limit: ${ovenId}`);
+    }
+  });
+
+  it('blocks unavailable recipes or machines for automatic and explicit variables', () => {
+    const state = createEndfieldState();
+    const rows = [
+      variable('recipe', 'automatic', 'iron_ore', 'miner'),
+      variable('objective', 'explicit', 'iron_ore', 'miner'),
+      variable('recipe', 'no-machine', 'iron_ore'),
+      variable('objective', 'elsewhere', 'copper_ore', 'miner'),
+    ];
+    const availability = {
+      recipeIds: new Set(['iron_ore']),
+      machineIds: new Set(['miner']),
+    };
+    const sameRegion = compileEndfieldRules(
+      state,
+      rows,
+      availability,
+    ).constraints.filter((constraint) => constraint.source === 'availability');
+    expect(sameRegion.map((constraint) => constraint.terms[0].ref.id)).toEqual([
+      'elsewhere',
+    ]);
+    expect(sameRegion[0].upper).toEqual(rational.zero);
+    const missingMachine = compileEndfieldRules(state, rows, {
+      ...availability,
+      machineIds: new Set(),
+    }).constraints.filter((constraint) => constraint.source === 'availability');
+    expect(
+      missingMachine.map((constraint) => constraint.terms[0].ref.id),
+    ).toEqual(['automatic', 'explicit', 'elsewhere']);
+    const emptyRegion = compileEndfieldRules(state, rows, {
+      recipeIds: new Set(),
+      machineIds: new Set(),
+    }).constraints.filter((constraint) => constraint.source === 'availability');
+    expect(emptyRegion.length).toBe(4);
+    expect(
+      compileEndfieldRules(state, rows).constraints.some(
+        (constraint) => constraint.source === 'availability',
+      ),
+    ).toBeFalse();
+  });
+
+  it('creates a positive supply without inventing recipe settings', () => {
+    const initial = createEndfieldState();
+    const state = {
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, iron_ore: rational(5) },
+      },
+    };
+    const output = deriveEndfieldObjectives(state).find(
+      (item) => item.objective.id === 'ef:resource:iron_ore',
+    );
+    expect(output?.fixedOutput?.perSecond).toEqual(rational(5));
+    expect(output?.objective.machineId).toBeUndefined();
+  });
 });

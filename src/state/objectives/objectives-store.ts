@@ -8,12 +8,28 @@ import {
 import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
+import {
+  CALCULATION_EXTENSION,
+  CalculationInput,
+  upstreamCalculation,
+} from '~/extensions/calculation-extension';
+import { immutableValue, mutableValue } from '~/extensions/immutable';
+import {
+  PRESENTATION_EXTENSION,
+  StepOwner,
+} from '~/extensions/presentation-extension';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import {
+  STATE_EXTENSION,
+  WorkspaceRestoreError,
+} from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Option } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
+import { SimplexResult } from '~/solver/simplex-result';
 import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
-import { TranslateParams } from '~/translate/translate';
+import { Translate, TranslateParams } from '~/translate/translate';
 import { coalesce, notNullish } from '~/utils/nullish';
 import { spread } from '~/utils/object';
 import { sortedKeyValues, toRecord } from '~/utils/record';
@@ -51,6 +67,11 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   private readonly settingsStore = inject(SettingsStore);
   private readonly solver = inject(Solver);
   private readonly lifecycle = inject(WorkspaceLifecycle);
+  private readonly calculation = inject(CALCULATION_EXTENSION);
+  private readonly extension = inject(STATE_EXTENSION);
+  private readonly presentation = inject(PRESENTATION_EXTENSION);
+  private readonly product = inject(PRODUCT_PROFILE);
+  private readonly translate = inject(Translate);
 
   readonly baseObjectives = computed(() => {
     const state = this.state();
@@ -74,13 +95,15 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const data = this.recipesStore.adjustedDataset();
 
     return objectives.map((o) =>
-      this.adjustment.adjustObjective(
-        o,
-        itemsState,
-        recipesState,
-        machinesState,
-        settings,
-        data,
+      this.recipesStore.applyObjectiveCost(
+        this.adjustment.adjustObjective(
+          o,
+          itemsState,
+          recipesState,
+          machinesState,
+          settings,
+          data,
+        ),
       ),
     );
   });
@@ -91,23 +114,133 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     ),
   );
 
-  readonly matrixResult = computed(() => {
-    if (!this.lifecycle.ready())
-      return { steps: [], resultType: 'paused' as const };
-    const objectives = this.normalizedObjectives();
+  /** A single immutable input and complete settings index for solving and steps. */
+  readonly calculationContext = computed(() => {
+    const ordinary = this.objectives();
+    const data = this.recipesStore.adjustedDataset();
+    const settings = this.settingsStore.settings();
+    const recipeSettings = this.recipesStore.settings();
+    const input: CalculationInput = immutableValue({
+      data,
+      settings,
+      recipeSettings,
+      objectives: ordinary,
+      extension: this.extension.snapshot(),
+    });
+    const declarations = this.lifecycle.ready()
+      ? this.calculation.derive(input)
+      : [];
+    const owners: Record<string, StepOwner> = {};
+    const rates = new Map<string, Rational>();
+    const derived = declarations.map((declaration) => {
+      const base = mutableValue<ObjectiveState>(declaration.objective);
+      const exists = isRecipeObjective(base)
+        ? data.recipeRecord[base.targetId] != null
+        : data.itemRecord[base.targetId] != null;
+      if (!exists)
+        this.invalidDerived(
+          base.id,
+          `Unknown derived target: ${base.targetId}`,
+        );
+      if (
+        ordinary.some((objective) => objective.id === base.id) ||
+        owners[base.id] != null
+      )
+        this.invalidDerived(base.id, 'Duplicate derived objective ID');
+      let prepared = this.recipesStore.applyObjectiveCost(
+        this.adjustment.adjustObjective(
+          base,
+          this.itemsStore.settings(),
+          recipeSettings,
+          this.machinesStore.settings(),
+          settings,
+          data,
+        ),
+      );
+      if (declaration.fixedOutput != null) {
+        const output = prepared.recipe?.output[declaration.fixedOutput.itemId];
+        if (!output?.gt(rational.zero))
+          this.invalidDerived(
+            base.id,
+            'Derived supply has no positive adjusted output',
+          );
+        prepared = {
+          ...prepared,
+          value: declaration.fixedOutput.perSecond.div(output),
+        };
+      }
+      if (declaration.fixedRate != null) {
+        rates.set(base.id, declaration.fixedRate);
+        prepared = {
+          ...prepared,
+          value: declaration.fixedRate.mul(
+            this.settingsStore.displayRateInfo().value,
+          ),
+        };
+      }
+      owners[base.id] = { kind: 'extension', id: declaration.owner };
+      return prepared;
+    });
+    const objectives = [...ordinary, ...derived];
+    const normalized = [
+      ...this.normalizedObjectives(),
+      ...derived.map((objective) => ({
+        ...objective,
+        value:
+          rates.get(objective.id) ??
+          this.normalization.normalizeRate(objective),
+      })),
+    ];
+    return {
+      objectives,
+      normalized,
+      owners,
+      input,
+      recipeSettings: input.recipeSettings,
+    };
+  });
+
+  private invalidDerived(field: string, message: string): never {
+    throw new WorkspaceRestoreError([
+      { code: 'invalid-derived-objective', field, message, severity: 'error' },
+    ]);
+  }
+
+  readonly matrixResult = computed((): SimplexResult => {
+    if (!this.lifecycle.ready()) return { steps: [], resultType: 'paused' };
+    const context = this.calculationContext();
+    const objectives = context.normalized;
     const settings = this.settingsStore.settings();
     const data = this.recipesStore.adjustedDataset();
     const paused = this.preferencesStore.paused();
     const glpkAlgorithm = this.preferencesStore.glpkAlgorithm();
 
-    return this.solver.solve(objectives, settings, data, paused, glpkAlgorithm);
+    return this.solver.solve(
+      objectives,
+      settings,
+      data,
+      paused,
+      glpkAlgorithm,
+      this.calculation === upstreamCalculation
+        ? undefined
+        : {
+            recipeSettings: context.recipeSettings,
+            compile: (variables) =>
+              this.calculation.rules(context.input, variables),
+          },
+    );
   });
 
-  readonly steps = computed(() => {
+  readonly steps = computed<Step[]>(() => {
     const result = this.matrixResult();
-    const objectives = this.objectives();
+    const objectives = this.calculationContext().objectives;
 
-    return this.normalization.normalizeSteps(result.steps, objectives);
+    return this.normalization
+      .normalizeSteps(result.steps, objectives)
+      .map((step) => ({
+        ...step,
+        checked: this.presentation.checked(step) ?? step.checked,
+      }));
   });
 
   readonly stepsModified = computed(() => {
@@ -117,14 +250,21 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const recipesState = this.recipesStore.state();
 
     return {
-      objectives: objectives.reduce((e: Record<string, boolean>, p) => {
-        e[p.id] =
-          p.machineId != null ||
-          p.modules != null ||
-          p.beacons != null ||
-          p.overclock != null;
-        return e;
-      }, {}),
+      objectives: objectives.reduce(
+        (e: Record<string, boolean>, p) => {
+          e[p.id] =
+            p.machineId != null ||
+            p.modules != null ||
+            p.beacons != null ||
+            p.overclock != null;
+          return e;
+        },
+        Object.fromEntries(
+          Object.entries(this.calculationContext().owners).map(
+            ([id, owner]) => [id, this.presentation.modified(owner)],
+          ),
+        ),
+      ),
       items: steps.reduce((e: Record<string, boolean>, s) => {
         if (s.itemId) e[s.itemId] = itemsState[s.itemId] != null;
         return e;
@@ -203,7 +343,10 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         step.recipeSettings != null
       ) {
         // Total Machines & Modules
-        if (step.machines?.nonzero()) {
+        if (
+          step.machines?.nonzero() &&
+          !this.presentation.hideProducer(step.recipeId)
+        ) {
           const recipe = step.recipe;
           // Don't include silos from launch recipes
           if (!recipe.part && recipe.producers?.length) {
@@ -618,11 +761,20 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
             p.machineId != null ||
             p.modules != null ||
             p.overclock != null,
-        ),
+        ) ||
+        this.presentation.modified(undefined, [
+          'fuelId',
+          'machineId',
+          'modules',
+          'overclock',
+        ]),
       beacons:
         Object.keys(state).some((id) => state[id].beacons != null) ||
-        objectives.some((p) => p.beacons != null),
-      cost: Object.keys(state).some((id) => state[id].cost),
+        objectives.some((p) => p.beacons != null) ||
+        this.presentation.modified(undefined, ['beacons']),
+      cost:
+        Object.keys(state).some((id) => state[id].cost) ||
+        this.presentation.modified(undefined, ['cost']),
     };
   });
 
@@ -695,8 +847,10 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
             : data.itemRecord[o.targetId]?.name,
         )
         .find((n) => n != null);
-      if (name == null) this.title.setTitle('FactorioLab');
-      else this.title.setTitle(`${name} | FactorioLab`);
+      const localized = this.translate.get('app.name');
+      const appName = localized === 'app.name' ? this.product.name : localized;
+      if (name == null) this.title.setTitle(appName);
+      else this.title.setTitle(`${name} | ${appName}`);
     });
   }
 
@@ -736,6 +890,14 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     value: ObjectiveState[K],
     def?: ObjectiveState[K],
   ): void {
+    const owner = this.presentation.owner(step);
+    if (
+      owner != null &&
+      this.presentation.updateRecipeField(owner, field, value, def)
+    )
+      return;
+    if (owner?.kind === 'extension')
+      throw new Error(`Unhandled extension recipe owner: ${owner.id}`);
     if (step.recipeObjectiveId) {
       this.updateRecordField(step.recipeObjectiveId, field, value, def);
       if (field === 'machineId')

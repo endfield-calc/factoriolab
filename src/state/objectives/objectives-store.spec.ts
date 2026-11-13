@@ -76,7 +76,7 @@ describe('ObjectivesStore', () => {
 
   describe('steps', () => {
     it('should normalize steps after solution is found', () => {
-      spyOn(service['normalization'], 'normalizeSteps');
+      spyOn(service['normalization'], 'normalizeSteps').and.returnValue([]);
       service.steps();
       expect(service['normalization'].normalizeSteps).toHaveBeenCalled();
     });

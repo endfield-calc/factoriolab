@@ -167,4 +167,117 @@ describe('Endfield resource actions', () => {
       settings.excludedRecipeIds,
     );
   });
+  it('updates independent controls without changing earlier snapshots', () => {
+    const start = createEndfieldState();
+    const enabled = applyEndfieldAction(
+      start,
+      { type: 'resourceEnabled', enabled: true },
+      settings,
+    ).state;
+    const machines = applyEndfieldAction(
+      enabled,
+      { type: 'machineEnabled', enabled: true },
+      settings,
+    ).state;
+    const limited = applyEndfieldAction(
+      machines,
+      { type: 'machineLimit', id: ovenId, value: rational(8) },
+      settings,
+    ).state;
+    const transferred = applyEndfieldAction(
+      limited,
+      { type: 'transfer', enabled: true, source: 'tundra' },
+      settings,
+    ).state;
+    const powered = applyEndfieldAction(
+      transferred,
+      { type: 'electric', value: rational(3, 2) },
+      settings,
+    ).state;
+    const checked = applyEndfieldAction(
+      powered,
+      {
+        type: 'derivedChecked',
+        owner: resourceOwner('iron_ore'),
+        checked: true,
+      },
+      settings,
+    ).state;
+    const unchecked = applyEndfieldAction(
+      checked,
+      {
+        type: 'derivedChecked',
+        owner: resourceOwner('iron_ore'),
+        checked: false,
+      },
+      settings,
+    ).state;
+    const cleared = applyEndfieldAction(
+      checked,
+      { type: 'clearDerivedChecked' },
+      settings,
+    ).state;
+    expect(start.resourceLimits.enabled).toBeFalse();
+    expect(enabled.resourceLimits.enabled).toBeTrue();
+    expect(machines.machineLimits.enabled).toBeTrue();
+    expect(limited.machineLimits.limits[ovenId]).toEqual(rational(8));
+    expect(transferred.transfer.enabled).toBeTrue();
+    expect(powered.electric).toEqual(rational(3, 2));
+    expect(checked.checkedDerived.has(resourceOwner('iron_ore'))).toBeTrue();
+    expect(unchecked.checkedDerived.size).toBe(0);
+    expect(cleared.checkedDerived.size).toBe(0);
+    expect(checked.checkedDerived.size).toBe(1);
+    const removed = applyEndfieldAction(
+      { ...powered, resourceRecipeSettings: { iron_ore: { fuelId: 'fuel' } } },
+      { type: 'resourceRecipeSettings', id: 'iron_ore', value: undefined },
+      settings,
+    );
+    expect(removed.state.resourceRecipeSettings).toEqual({});
+  });
+
+  it('rejects invalid presets, ids, rates, sources and weights without changing either snapshot', () => {
+    const state = createEndfieldState();
+    const cases = [
+      [{ type: 'preset', preset: 'unknown' }, 'invalid-preset'],
+      [
+        { type: 'resourceRate', id: 'unknown', value: rational.one },
+        'invalid-id',
+      ],
+      [
+        { type: 'resourceRate', id: 'iron_ore', value: rational(-1) },
+        'invalid-value',
+      ],
+      [{ type: 'resourceRate', id: 'iron_ore', value: 'bad' }, 'invalid-value'],
+      [
+        { type: 'machineLimit', id: ovenId, value: rational(-1) },
+        'invalid-value',
+      ],
+      [
+        { type: 'machineLimit', id: 'unknown', value: rational.one },
+        'invalid-id',
+      ],
+      [
+        { type: 'transfer', enabled: true, source: 'jinlong' },
+        'invalid-source',
+      ],
+      [{ type: 'electric', value: rational(-1) }, 'invalid-value'],
+      [{ type: 'resourceRecipeSettings', id: 'unknown' }, 'invalid-id'],
+      [{ type: 'derivedChecked', owner: '  ', checked: true }, 'invalid-id'],
+      [
+        { type: 'derivedChecked', owner: 'ordinary:1', checked: true },
+        'invalid-id',
+      ],
+    ] as const;
+    for (const [action, code] of cases) {
+      const result = applyEndfieldAction(
+        state,
+        action as unknown as Parameters<typeof applyEndfieldAction>[1],
+        settings,
+      );
+      expect(result.state).toBe(state);
+      expect(result.settings).toEqual({});
+      expect(result.diagnostics[0].code).toBe(code);
+    }
+    expect(settings.excludedRecipeIds.size).toBe(3);
+  });
 });

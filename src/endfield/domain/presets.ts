@@ -9,6 +9,7 @@ import {
   ovenId,
   ResourceId,
   resourceIds,
+  resourceOwner,
 } from './model';
 
 export const waterRecipeIds = ['sewage-treat', 'sewage-treat-export'] as const;
@@ -275,12 +276,12 @@ export function applyEndfieldAction(
       return result({ ...state, resourceRecipeSettings: next });
     }
     case 'derivedChecked': {
-      if (typeof action.owner !== 'string' || !action.owner.trim())
+      if (!resourceIds.some((id) => resourceOwner(id) === action.owner))
         return invalid(
           state,
           'invalid-id',
           'owner',
-          'Derived owner must not be empty',
+          'Unknown derived resource owner',
         );
       const checkedDerived = new Set(state.checkedDerived);
       if (action.checked) checkedDerived.add(action.owner);

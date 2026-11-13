@@ -1,6 +1,15 @@
 import { computed, inject, Service } from '@angular/core';
 
+import { AdjustedRecipe } from '~/data/schema/recipe';
+import {
+  CALCULATION_EXTENSION,
+  RecipeCostInput,
+  upstreamCalculation,
+} from '~/extensions/calculation-extension';
+import { immutableValue } from '~/extensions/immutable';
+import { STATE_EXTENSION } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
+import { ObjectiveSettings } from '~/state/objectives/objective';
 import { spread } from '~/utils/object';
 
 import { Adjustment } from '../adjustment';
@@ -20,6 +29,8 @@ export class RecipesStore extends RecordStore<RecipeState> {
   private readonly itemsStore = inject(ItemsStore);
   private readonly machinesStore = inject(MachinesStore);
   private readonly settingsStore = inject(SettingsStore);
+  private readonly calculation = inject(CALCULATION_EXTENSION);
+  private readonly extension = inject(STATE_EXTENSION);
 
   readonly settings = computed(() =>
     this.computeRecipesSettings(
@@ -36,13 +47,68 @@ export class RecipesStore extends RecordStore<RecipeState> {
     const settings = this.settingsStore.settings();
     const data = this.settingsStore.dataset();
 
-    return this.adjustment.adjustDataset(
+    const adjusted = this.adjustment.adjustDataset(
       recipesState,
       itemsState,
       settings,
       data,
     );
+    if (this.calculation === upstreamCalculation) return adjusted;
+    const context = immutableValue({
+      data: adjusted,
+      settings,
+      extension: this.extension.snapshot(),
+    });
+    const adjustedRecipe = Object.fromEntries(
+      Object.keys(adjusted.adjustedRecipe).map((id) => [
+        id,
+        this.overrideCost(
+          id,
+          adjusted.adjustedRecipe[id],
+          recipesState[id],
+          context,
+        ),
+      ]),
+    );
+    return { ...adjusted, adjustedRecipe };
   });
+
+  private readonly costContext = computed(() =>
+    immutableValue({
+      data: this.adjustedDataset(),
+      settings: this.settingsStore.settings(),
+      extension: this.extension.snapshot(),
+    }),
+  );
+
+  /** Apply the same cost policy to independently adjusted recipe objectives. */
+  applyObjectiveCost(objective: ObjectiveSettings): ObjectiveSettings {
+    if (this.calculation === upstreamCalculation || objective.recipe == null)
+      return objective;
+    return {
+      ...objective,
+      recipe: this.overrideCost(
+        objective.targetId,
+        objective.recipe,
+        objective,
+        this.costContext(),
+      ),
+    };
+  }
+
+  private overrideCost(
+    id: string,
+    recipe: AdjustedRecipe,
+    recipeSettings: RecipeSettings,
+    context: Pick<RecipeCostInput, 'data' | 'settings' | 'extension'>,
+  ): AdjustedRecipe {
+    const input = Object.freeze({
+      ...context,
+      ...immutableValue({ adjusted: recipe, recipeSettings }),
+      raw: context.data.recipeRecord[id],
+    });
+    return { ...recipe, cost: this.calculation.cost(input) };
+  }
 
   readonly inserterSpeed = computed(() => {
     const data = this.adjustedDataset();

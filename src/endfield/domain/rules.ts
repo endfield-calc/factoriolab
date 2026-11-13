@@ -157,6 +157,10 @@ export function deriveEndfieldObjectives(
 export function compileEndfieldRules(
   state: EndfieldState,
   variables: readonly CalculationVariable[],
+  availability?: {
+    readonly recipeIds: ReadonlySet<string>;
+    readonly machineIds: ReadonlySet<string>;
+  },
 ): ModelRules {
   const constraints: LinearRule[] = [];
   const integers: ModelVariableRef[] = [];
@@ -172,6 +176,22 @@ export function compileEndfieldRules(
     selected: readonly CalculationVariable[],
   ): LinearRule['terms'] =>
     selected.map(({ ref }) => ({ ref, coefficient: rational.one }));
+
+  if (availability != null) {
+    for (const variable of variables) {
+      if (
+        !availability.recipeIds.has(variable.recipeId) ||
+        (variable.machineId != null &&
+          !availability.machineIds.has(variable.machineId))
+      )
+        constraints.push({
+          id: `ef:availability:${variable.ref.kind}:${variable.ref.id}`,
+          source: 'availability',
+          terms: [{ ref: variable.ref, coefficient: rational.one }],
+          upper: rational.zero,
+        });
+    }
+  }
 
   for (const [machineId, limit] of Object.entries(state.machineLimits.limits)) {
     if (machineId !== ovenId)

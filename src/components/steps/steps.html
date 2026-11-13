@@ -688,11 +688,7 @@
                 target="_blank"
                 routerLink="."
                 [queryParams]="step | stepHref: routerSync.zipConfig() | async"
-                [fragment]="
-                  presentation.workspaceLink(step)
-                    ? 'endfield-resources'
-                    : undefined
-                "
+                [fragment]="presentation.stepFragment(step)"
                 labButton
                 [faIcon]="faArrowUpRightFromSquare"
                 [border]="false"

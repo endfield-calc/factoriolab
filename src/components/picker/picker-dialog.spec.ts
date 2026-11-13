@@ -350,6 +350,7 @@ describe('PickerDialog name presentation', () => {
           useValue: {
             ...upstreamPresentation,
             showNameToggle: true,
+            nameToggleLabel: 'Sample name control',
             showNames: (): boolean => names(),
             toggleNames: (): void => {
               names.update((value) => !value);
@@ -379,6 +380,9 @@ describe('PickerDialog name presentation', () => {
     const checkbox = fixture.nativeElement.querySelector(
       'lab-checkbox input',
     ) as HTMLInputElement;
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Sample name control',
+    );
     checkbox.click();
     fixture.detectChanges();
     expect(names()).toBeTrue();

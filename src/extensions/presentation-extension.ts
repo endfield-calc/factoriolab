@@ -14,6 +14,7 @@ export interface PresentationExtension {
   readonly showPreset: boolean;
   readonly showPowerUnit: boolean;
   readonly showNameToggle: boolean;
+  readonly nameToggleLabel: string;
   costsModified(): boolean;
   resetCosts(): void;
   showNames(): boolean;
@@ -37,6 +38,7 @@ export interface PresentationExtension {
   resetRecipes(fields: readonly (keyof RecipeState)[]): void;
   sourceLabel(step: Step): string | undefined;
   workspaceLink(step: Step): boolean;
+  stepFragment(step: Step): string | undefined;
 }
 
 export const upstreamPresentation: PresentationExtension = {
@@ -45,6 +47,7 @@ export const upstreamPresentation: PresentationExtension = {
   showPreset: true,
   showPowerUnit: true,
   showNameToggle: false,
+  nameToggleLabel: 'Name',
   costsModified: () => false,
   resetCosts: () => undefined,
   showNames: () => false,
@@ -68,6 +71,7 @@ export const upstreamPresentation: PresentationExtension = {
   resetRecipes: () => undefined,
   sourceLabel: () => undefined,
   workspaceLink: () => false,
+  stepFragment: () => undefined,
 };
 export const PRESENTATION_EXTENSION = new InjectionToken<PresentationExtension>(
   'PRESENTATION_EXTENSION',

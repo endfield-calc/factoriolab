@@ -47,6 +47,7 @@ export function createEndfieldPresentation(
     showPreset: false,
     showPowerUnit: false,
     showNameToggle: true,
+    nameToggleLabel: 'endfield.picker.showNames',
     costsModified: () => !store.state().electric.eq(rational.one),
     resetCosts: (): void => {
       store.set({ ...store.state(), electric: rational.one });
@@ -116,5 +117,7 @@ export function createEndfieldPresentation(
     sourceLabel: (step) =>
       derivedResource(step) == null ? undefined : 'endfield.resources.source',
     workspaceLink: (step) => derivedResource(step) != null,
+    stepFragment: (step) =>
+      derivedResource(step) == null ? undefined : 'endfield-resources',
   };
 }

@@ -134,6 +134,7 @@ describe('Neutral extension defaults', () => {
     presentation.resetRecipes(['cost']);
     expect(presentation.sourceLabel({ id: '1' })).toBeUndefined();
     expect(presentation.workspaceLink({ id: '1' })).toBeFalse();
+    expect(presentation.stepFragment({ id: '1' })).toBeUndefined();
     const state = TestBed.inject(STATE_EXTENSION);
     state.commit({ extra: 'ignored' });
     state.reset();

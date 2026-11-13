@@ -1,4 +1,4 @@
-import { ApplicationRef, inject } from '@angular/core';
+import { ApplicationRef, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { createEndfieldPresentation } from '~/endfield/adapters/presentation-extension';
@@ -20,7 +20,7 @@ import { initialColumnsState } from '~/state/preferences/columns-state';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
 import { TestModule } from '~/tests/test-module';
-import { setInputs } from '~/tests/utils';
+import { assert, setInputs } from '~/tests/utils';
 
 import { Steps } from './steps';
 
@@ -42,6 +42,36 @@ describe('Steps', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('renders a presentation-provided link fragment and omits it for ordinary links', async () => {
+    spyOn(component['objectivesStore'], 'steps').and.returnValue([
+      mocks.step1(),
+    ]);
+    // Start the view with a populated result so its computed table is not cached empty.
+    fixture.destroy();
+    fixture = TestBed.createComponent(Steps);
+    component = fixture.componentInstance;
+    const fragment = signal<string | undefined>('sample-resource-panel');
+    spyOn(component['presentation'], 'stepFragment').and.callFake(fragment);
+    component['preferencesStore'].apply({
+      columns: {
+        ...initialColumnsState,
+        link: { ...initialColumnsState.link, show: true },
+      },
+    });
+    fixture.detectChanges();
+    await TestBed.inject(ApplicationRef).whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const link = element.querySelector<HTMLAnchorElement>(
+      'td a[target="_blank"]',
+    );
+    assert(link != null);
+    expect(link.hash).toBe('#sample-resource-panel');
+    fragment.set(undefined);
+    fixture.detectChanges();
+    expect(link.hash).toBe('');
   });
 
   describe('steps', () => {

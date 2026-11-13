@@ -93,6 +93,9 @@ describe('Endfield presentation extension', () => {
     expect(view.sourceLabel(ordinary)).toBeUndefined();
     expect(view.workspaceLink(derived)).toBeTrue();
     expect(view.workspaceLink(ordinary)).toBeFalse();
+    expect(view.stepFragment(derived)).toBe('endfield-resources');
+    expect(view.stepFragment(ordinary)).toBeUndefined();
+    expect(view.nameToggleLabel).toBe('endfield.picker.showNames');
     expect(view.checked(derived)).toBeFalse();
     expect(view.toggleChecked(derived, true)).toBeTrue();
     expect(view.checked(derived)).toBeTrue();

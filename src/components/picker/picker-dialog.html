@@ -58,7 +58,7 @@
 
 @if (presentation.showNameToggle) {
   <lab-checkbox
-    label="endfield.picker.showNames"
+    [label]="presentation.nameToggleLabel"
     [ngModel]="presentation.showNames()"
     (ngModelChange)="presentation.toggleNames()"
   ></lab-checkbox>

@@ -1,5 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
+import {
+  STATE_EXTENSION,
+  upstreamState,
+  WorkspaceRestoreError,
+} from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
 
 import { ZEMPTY, ZFALSE, ZTRUE } from './constants';
@@ -124,6 +129,25 @@ describe('Zip', () => {
           ['a', 'b', 'missing', 'c', 'd', 'e', 'f'],
         ),
       ).toEqual('A~B*F~G');
+    });
+
+    it('breaks ranges at null and non-current hash slots', () => {
+      expect(
+        service.zipDiffSubset(
+          new Set(['a', 'c']),
+          undefined,
+          ['a', 'c'],
+          ['a', null, 'c'],
+        ),
+      ).toEqual('A*C');
+      expect(
+        service.zipDiffSubset(
+          new Set(['a', 'c']),
+          undefined,
+          ['a', 'c'],
+          ['a', 'retired', 'c'],
+        ),
+      ).toEqual('A*C');
     });
   });
 
@@ -350,5 +374,107 @@ describe('Zip', () => {
         service.parseSubset('A~B*G', ['a', 'b', 'missing', 'c', 'd', 'e', 'f']),
       ).toEqual(new Set(['a', 'b', 'f']));
     });
+  });
+});
+
+describe('Zip strict imports', () => {
+  let service: Zip;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: STATE_EXTENSION,
+          useValue: { ...upstreamState, strictImports: true },
+        },
+      ],
+    });
+    service = TestBed.inject(Zip);
+  });
+
+  it('rejects malformed, missing, and retired-null hash indices', () => {
+    for (const token of ['?', 'B', 'C', 'AAAAAAAAAA'])
+      expect(() => service.parseNString(token, ['one', null])).toThrowError(
+        WorkspaceRestoreError,
+      );
+    expect(() => service.parseNArray('A~?', ['one'])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() => service.parseIndices('0~2', [{}])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() => service.parseIndices('0~NaN', [{}])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() => service.parseIndices('0~-1', [{}])).toThrowError(
+      WorkspaceRestoreError,
+    );
+  });
+
+  it('validates subset endpoints and preserves all non-null slots in a sparse range', () => {
+    expect(service.parseSubset('A~D', ['one', null, 'retired', 'two'])).toEqual(
+      new Set(['one', 'retired', 'two']),
+    );
+    for (const token of ['B', 'A~E', 'D~A', 'A~C~D', 'A~?'])
+      expect(() =>
+        service.parseSubset(token, ['one', null, 'retired', 'two']),
+      ).toThrowError(WorkspaceRestoreError);
+  });
+
+  it('reports the settings field for invalid short IDs', () => {
+    const read = service.get({ mmr: '?' })(service.parseArray.bind(service));
+    try {
+      read('mmr', ['one']);
+      fail('expected an invalid index');
+    } catch (error) {
+      expect((error as WorkspaceRestoreError).diagnostics[0].field).toEqual(
+        'mmr',
+      );
+    }
+  });
+
+  it('rejects malformed boolean and numeric settings with their field names', () => {
+    const get = service.get({ orm: 'yes', omt: 'NaN' });
+    const boolean = get(service.parseBool.bind(service));
+    const number = get(service.parseNumber.bind(service));
+    for (const [name, read] of [
+      ['orm', (): unknown => boolean('orm')],
+      ['omt', (): unknown => number('omt')],
+    ] as const) {
+      try {
+        read();
+        fail(`expected invalid ${name}`);
+      } catch (error) {
+        expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
+        expect((error as WorkspaceRestoreError).diagnostics[0].field).toEqual(
+          name,
+        );
+      }
+    }
+    expect(service.parseBool('0')).toBeFalse();
+    expect(service.parseBool('1')).toBeTrue();
+    expect(service.parseNumber('0')).toEqual(0);
+  });
+
+  it('propagates ordinary parsing errors without disguising them as index errors', () => {
+    const read = service.get({ moc: '1/2/3' })(
+      service.parseRational.bind(service),
+    );
+    expect(() => read('moc')).toThrowError('Too many /');
+  });
+
+  it('never writes an entity that is absent from its hash', () => {
+    expect(() => service.zipNString('missing', ['one'])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() => service.zipDiffString('missing', '', ['one'])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() => service.zipDiffArray(['missing'], [], ['one'])).toThrowError(
+      WorkspaceRestoreError,
+    );
+    expect(() =>
+      service.zipDiffSubset(new Set(['missing']), undefined, ['one']),
+    ).toThrowError(WorkspaceRestoreError);
   });
 });

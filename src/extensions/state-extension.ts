@@ -4,12 +4,17 @@ import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
 import { ItemState } from '~/state/items/item-state';
 import { MachineState } from '~/state/machines/machine-state';
-import { ObjectiveState } from '~/state/objectives/objective';
+import {
+  ObjectiveSettings,
+  ObjectiveState,
+} from '~/state/objectives/objective';
 import { RecipeState } from '~/state/recipes/recipe-state';
 import { LabParams } from '~/state/router/lab-params';
 import { Params } from '~/state/router/params';
 import { PartialSettingsState } from '~/state/settings/settings-state';
 import { TableState } from '~/state/table/table-state';
+
+import { ReadonlyValue } from './immutable';
 
 export interface WorkspaceState {
   objectivesState?: Record<string, ObjectiveState>;
@@ -41,6 +46,11 @@ export interface RestoreInput {
 export interface RestorePlan extends RestoreInput {
   readonly context?: unknown;
   readonly hash?: ModHash;
+  readonly legacyModHashes?: {
+    readonly modHash: (string | null)[];
+    readonly modHashV0: (string | null)[];
+  };
+  readonly prepareObjectives?: boolean;
 }
 
 export interface DecodedWorkspace {
@@ -51,24 +61,36 @@ export interface DecodedWorkspace {
 
 /** Only the independent extension state may be read or committed by a provider. */
 export interface StateExtension {
+  readonly strictImports: boolean;
   snapshot(): unknown;
   encode(snapshot: unknown): Params;
   prepare(input: RestoreInput): RestorePlan;
+  /** Validate detached values before upstream preparation and select required objectives. */
+  preflight(input: {
+    readonly state: WorkspaceState;
+    readonly plan: RestorePlan;
+    readonly data: ModData;
+  }): readonly string[];
   decode(input: {
     readonly state: WorkspaceState;
     readonly params: LabParams;
     readonly plan: RestorePlan;
     readonly data: ModData;
     readonly hash: ModHash;
+    readonly preparedObjectives?: ReadonlyValue<
+      Record<string, ObjectiveSettings>
+    >;
   }): DecodedWorkspace;
   commit(snapshot: unknown): void;
   reset(): void;
 }
 
 export const upstreamState: StateExtension = {
+  strictImports: false,
   snapshot: () => undefined,
   encode: () => ({}),
   prepare: (input) => input,
+  preflight: () => [],
   decode: ({ state }) => ({ state, diagnostics: [] }),
   commit: () => undefined,
   reset: () => undefined,

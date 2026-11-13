@@ -37,6 +37,15 @@ export class ItemsStore extends RecordStore<ItemState> {
     };
   });
 
+  /** Prepare a restoration snapshot without changing live store state. */
+  prepareSettings(
+    state: Record<string, ItemState>,
+    settings: Settings,
+    data: Dataset,
+  ): Record<string, ItemSettings> {
+    return this.computeItemsSettings(state, settings, data);
+  }
+
   private computeItemsSettings(
     state: Record<string, ItemState>,
     settings: Settings,

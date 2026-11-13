@@ -71,6 +71,16 @@ export class RecipesStore extends RecordStore<RecipeState> {
     );
   });
 
+  /** Prepare a restoration snapshot without changing live store state. */
+  prepareSettings(
+    state: Record<string, RecipeState>,
+    machines: Record<string, MachineState>,
+    settings: Settings,
+    data: Dataset,
+  ): Record<string, RecipeSettings> {
+    return this.computeRecipesSettings(state, machines, settings, data);
+  }
+
   private computeRecipesSettings(
     state: Record<string, RecipeState>,
     machines: Record<string, MachineState>,

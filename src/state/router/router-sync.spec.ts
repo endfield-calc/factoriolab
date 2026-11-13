@@ -1,7 +1,6 @@
-import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Params } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { defer, of, Subject } from 'rxjs';
 
 import { Confirm } from '~/components/confirm/confirm';
 import { DEFAULT_MOD } from '~/data/datasets';
@@ -265,12 +264,20 @@ describe('RouterSync', () => {
   });
 
   it('should update state from route', async () => {
-    spyOn(service['settingsStore'], 'apply');
+    spyOn(service['settingsStore'], 'apply').and.callThrough();
     spyOn(service, 'updateState');
-    (service as any).modData = of(mockModData);
-    (service as any).modHash = of(mockModHash);
+    spyOn(service['appRef'], 'tick');
+    (service as any).resources = defer(() =>
+      of({
+        modId: service['settingsStore'].modId(),
+        data: mockModData,
+        hash: mockModHash,
+        loading: false,
+        error: undefined,
+      }),
+    );
     mockRoute.next({}, {});
-    await TestBed.inject(ApplicationRef).whenStable();
+    for (let i = 0; i < 8; i++) await Promise.resolve();
     expect(service['settingsStore'].apply).toHaveBeenCalledWith({
       modId: DEFAULT_MOD,
     });
@@ -340,7 +347,7 @@ describe('RouterSync', () => {
     it('should update url with products', async () => {
       spyOn(service, 'zipState').and.returnValue(mockZipData());
       spyOn(service, 'getHash').and.returnValue(Promise.resolve({ z: 'z' }));
-      spyOn(service['router'], 'navigate');
+      spyOn(service['router'], 'navigate').and.resolveTo(true);
       spyOnProperty(service['router'], 'url').and.returnValue('/spa/list');
       await service.updateUrl(mockZipData());
       expect(service['router'].navigate).toHaveBeenCalledWith([], {
@@ -508,7 +515,16 @@ describe('RouterSync', () => {
     beforeEach(() => {
       dispatch = spyOn(service, 'dispatch');
       spyOn(service['appRef'], 'tick');
-      spyOn(service['settingsStore'], 'apply');
+      spyOn(service['settingsStore'], 'apply').and.callThrough();
+      (service as any).resources = defer(() =>
+        of({
+          modId: service['settingsStore'].modId(),
+          data: mockModData,
+          hash: mockModHash,
+          loading: false,
+          error: undefined,
+        }),
+      );
     });
 
     it('should skip if loading empty, current state', () => {

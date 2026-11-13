@@ -132,9 +132,26 @@ export class SettingsStore extends Store<SettingsState> {
       this.modI18nResource.isLoading(),
   );
 
+  /** A resource may retain its preceding error while a fresh request is loading. */
   readonly loadError = computed(
-    () => this.modDataResource.error() ?? this.modHashResource.error(),
+    () =>
+      (this.modDataResource.isLoading()
+        ? undefined
+        : this.modDataResource.error()) ??
+      (this.modHashResource.isLoading()
+        ? undefined
+        : this.modHashResource.error()),
   );
+
+  /** A navigation may retry the same dataset after an HTTP failure. */
+  retryFailedResources(): boolean {
+    let requested = false;
+    if (this.modDataResource.error() != null)
+      requested = this.modDataResource.reload() || requested;
+    if (this.modHashResource.error() != null)
+      requested = this.modHashResource.reload() || requested;
+    return requested;
+  }
 
   readonly modData = computed(() => {
     const modId = this.modId();

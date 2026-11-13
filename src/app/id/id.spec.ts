@@ -23,15 +23,12 @@ describe('Id', () => {
   });
 
   describe('setup', () => {
-    it('should apply the mod id from the route', () => {
-      spyOn(component['route'].snapshot.paramMap, 'get').and.returnValue(
-        'modId',
-      );
-      spyOn(component['settingsStore'], 'apply');
+    it('should pass the route to the restore coordinator', () => {
+      spyOn(component['routerSvc'].route$, 'next');
       component['setup']();
-      expect(component['settingsStore'].apply).toHaveBeenCalledWith({
-        modId: 'modId',
-      });
+      expect(component['routerSvc'].route$.next).toHaveBeenCalledWith(
+        component['route'],
+      );
     });
   });
 });

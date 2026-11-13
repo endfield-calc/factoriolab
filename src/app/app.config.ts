@@ -18,6 +18,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { loadModule } from 'glpk-ts';
 
 import { Dialog } from '~/components/dialog/dialog';
+import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
 import { provideEndfieldProduct } from '~/endfield/product/product';
 import { SIMPLEX_CONFIG } from '~/solver/simplex-config';
 import { Translate } from '~/translate/translate';
@@ -55,6 +56,7 @@ async function initializeApp(): Promise<unknown> {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideEndfieldProduct(),
+    ...provideEndfieldStateExtension(),
     { provide: DEFAULT_DIALOG_CONFIG, useValue: APP_DIALOG_CONFIG },
     { provide: ErrorHandler, useClass: LabErrorHandler },
     provideAppInitializer(() => initializeApp()),

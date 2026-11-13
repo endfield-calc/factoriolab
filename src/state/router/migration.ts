@@ -4,6 +4,10 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Confirm } from '~/components/confirm/confirm';
 import { datasets, DEFAULT_MOD } from '~/data/datasets';
 import { ModData } from '~/data/schema/mod-data';
+import {
+  RestorePlan,
+  WorkspaceRestoreError,
+} from '~/extensions/state-extension';
 import { asString } from '~/utils/coercion';
 import { log } from '~/utils/log';
 import { coalesce, notNullish } from '~/utils/nullish';
@@ -42,6 +46,7 @@ interface MigrationState {
   params: Params;
   warnings: string[];
   isBare: boolean;
+  modHashes?: RestorePlan['legacyModHashes'];
 }
 
 interface MigrationResult {
@@ -62,7 +67,11 @@ export class Migration {
   private readonly zip = inject(Zip);
 
   /** Migrates older zip params to latest bare/hash formats */
-  migrate(modId: string | undefined, params: Params): MigrationResult {
+  migrate(
+    modId: string | undefined,
+    params: Params,
+    modHashes?: RestorePlan['legacyModHashes'],
+  ): MigrationResult {
     if (Object.keys(params).length === 0)
       return {
         modId: modId ?? DEFAULT_MOD,
@@ -85,7 +94,7 @@ export class Migration {
       });
     }
 
-    const result = this.migrateAny(modId, params, isBare, v);
+    const result = this.migrateAny(modId, params, isBare, v, modHashes);
     this.displayWarnings(result.warnings);
 
     const coerceArrayKeys = ['o', 'i', 'r', 'm', 'e', 'b'] as const;
@@ -106,9 +115,16 @@ export class Migration {
     params: Params,
     isBare: boolean,
     v: ZipVersion,
+    modHashes?: RestorePlan['legacyModHashes'],
   ): MigrationState {
     const warnings: string[] = [];
-    const state: MigrationState = { modId, params, warnings, isBare };
+    const state: MigrationState = {
+      modId,
+      params,
+      warnings,
+      isBare,
+      modHashes,
+    };
     switch (v) {
       case ZipVersion.Version0:
         return this.migrateV0(state);
@@ -148,7 +164,20 @@ export class Migration {
       const s = zip.split(ZFIELDSEP);
       // Convert modId to V1
       let modId: string | null | undefined = this.zip.parseString(s[0]);
-      modId = modId && datasets.modHash[datasets.modHashV0.indexOf(modId)];
+      const hashes = state.modHashes ?? datasets;
+      if (modId) {
+        const original = modId;
+        modId = hashes.modHash[hashes.modHashV0.indexOf(modId)];
+        if (state.modHashes != null && modId == null)
+          throw new WorkspaceRestoreError([
+            {
+              code: 'invalid-mod-index',
+              message: `Unknown legacy mod ID: ${original}`,
+              field: 's',
+              severity: 'error',
+            },
+          ]);
+      }
       modId = modId ?? '';
       // Convert displayRate to V1
       const displayRateV0 = this.zip.parseNumber(s[6]) ?? 60;
@@ -980,7 +1009,10 @@ export class Migration {
     delete params[ZipSectionV10.Mod];
     let newMod = oldMod;
     if (newMod && !state.isBare)
-      newMod = datasets.modHash[this.compression.idToN(newMod)];
+      newMod = this.zip.parseNString(
+        newMod,
+        (state.modHashes ?? datasets).modHash,
+      );
     if (newMod) state.modId = newMod;
 
     params['e'] = newModules;
@@ -1044,6 +1076,15 @@ export class Migration {
       addIds = new Set<string>();
 
       for (const id of selection) {
+        if (techRecord[id] == null)
+          throw new WorkspaceRestoreError([
+            {
+              code: 'unknown-technology',
+              message: `Unknown technology ID: ${id}`,
+              field: 'v10tre',
+              severity: 'error',
+            },
+          ]);
         const tech = techRecord[id].technology;
         tech?.prerequisites
           ?.filter((p) => !selection.has(p))

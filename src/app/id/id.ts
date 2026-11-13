@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterOutlet } from '@angular/router';
 
 import { RouterSync } from '~/state/router/router-sync';
-import { SettingsStore } from '~/state/settings/settings-store';
 
 @Component({
   selector: 'lab-id',
@@ -12,15 +11,12 @@ import { SettingsStore } from '~/state/settings/settings-store';
 export class Id {
   private readonly route = inject(ActivatedRoute);
   private readonly routerSvc = inject(RouterSync);
-  private readonly settingsStore = inject(SettingsStore);
 
   constructor() {
     this.setup();
   }
 
   private setup(): void {
-    const modId = this.route.snapshot.paramMap.get('id');
-    if (modId) this.settingsStore.apply({ modId });
     this.routerSvc.route$.next(this.route);
   }
 }

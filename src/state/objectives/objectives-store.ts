@@ -8,6 +8,7 @@ import {
 import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
+import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Option } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
 import { Solver } from '~/solver/solver';
@@ -49,6 +50,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly solver = inject(Solver);
+  private readonly lifecycle = inject(WorkspaceLifecycle);
 
   readonly baseObjectives = computed(() => {
     const state = this.state();
@@ -90,6 +92,8 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   );
 
   readonly matrixResult = computed(() => {
+    if (!this.lifecycle.ready())
+      return { steps: [], resultType: 'paused' as const };
     const objectives = this.normalizedObjectives();
     const settings = this.settingsStore.settings();
     const data = this.recipesStore.adjustedDataset();

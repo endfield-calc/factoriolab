@@ -40,7 +40,7 @@ const byId = (list) =>
 // Execute actual upstream class bodies in Node without bootstrapping Angular.
 function loadClass(path, name, context = {}) {
   const source = readFileSync(join(root, path), 'utf8')
-    .replace(/^import .*;\r?\n/gm, '')
+    .replace(/^import\s[\s\S]*?;\r?\n/gm, '')
     .replace(/^@Service\(\)\r?\n/gm, '')
     .replace(/^export class /gm, 'class ');
   const compiled = ts.transpileModule(source, {
@@ -465,9 +465,17 @@ test('all current entities round-trip through the production compressed index co
     { noop: () => {} },
   );
   const compression = new Compression();
+  const STATE_EXTENSION = Symbol('STATE_EXTENSION');
+  class WorkspaceRestoreError extends Error {}
   const Zip = loadClass('src/state/router/zip.ts', 'Zip', {
-    inject: () => compression,
+    inject: (token) => {
+      if (token === Compression) return compression;
+      if (token === STATE_EXTENSION) return { strictImports: false };
+      throw new Error('Unexpected injection token');
+    },
     Compression,
+    STATE_EXTENSION,
+    WorkspaceRestoreError,
     ZEMPTY: '_',
   });
   const zip = new Zip();

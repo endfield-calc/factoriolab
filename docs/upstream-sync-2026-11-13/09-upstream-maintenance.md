@@ -40,6 +40,8 @@
 
 领域实现位于 `src/endfield/domain`：`createEndfieldState` 定义版本1的额外默认状态，`applyEndfieldAction` 返回额外状态和通用设置的原子变更声明，`deriveEndfieldObjectives` / `compileEndfieldRules` 分别声明派生目标和按实际变量编译的约束，`calculateEndfieldRecipeCost` 计算统一配方成本。对应测试为 `presets.spec.ts`、`rules.spec.ts`、`cost.spec.ts`；它们验证领域数值和声明，不替代求解器、恢复及 UI 接线验收。
 
+数据接点由 `scripts/endfield/convert-data.mjs` 生成 `public/data/aef`，以固定源内容校验 schema 转换；`src/endfield/compat/legacy-hash.json` / `legacy-datasets.json` 冻结两层旧索引，`src/endfield/domain/display-metadata.json` 保存不影响计算的配方展示标记。`convert-data.spec.mjs` 验证源身份、物理量、引用、物流/机器选择、图集及只追加 hash 的全实体往返。独立数据检查不能替代资源恢复和生产资产边界验收。
+
 ## 4. 避免长期漂移的实现约束
 
 1. 不复制上游大类、整页模板、旧package-lock或主题体系；不靠继承后重写大部分私有实现维持一个“同名新类”。

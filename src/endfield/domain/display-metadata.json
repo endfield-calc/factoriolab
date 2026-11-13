@@ -1,0 +1,88 @@
+{
+  "recipes": {
+    "tundra_coupon-crystal_shell": {
+      "hideProducer": true
+    },
+    "tundra_coupon-glass_bottle": {
+      "hideProducer": true
+    },
+    "tundra_coupon-glass_cmpt": {
+      "hideProducer": true
+    },
+    "tundra_coupon-iron_cmpt": {
+      "hideProducer": true
+    },
+    "tundra_coupon-iron_enr_cmpt": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_food_1": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_food_2": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_food_3": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_rec_hp_1": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_rec_hp_2": {
+      "hideProducer": true
+    },
+    "tundra_coupon-bottled_rec_hp_3": {
+      "hideProducer": true
+    },
+    "tundra_coupon-proc_battery_1": {
+      "hideProducer": true
+    },
+    "tundra_coupon-proc_battery_2": {
+      "hideProducer": true
+    },
+    "tundra_coupon-proc_battery_3": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-copper_cmpt": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-copper_enr_cmpt": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-copper_enr2_cmpt": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-filter_core": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-xiranite_powder": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-xiranite_enr_powder": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-bottled_food_4": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-bottled_food_5": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-bottled_rec_hp_4": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-bottled_rec_hp_5": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-proc_battery_4": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-proc_battery_5": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-activity_xiranite_lung": {
+      "hideProducer": true
+    },
+    "jinlong_coupon-activity_xiranite_enr_lung": {
+      "hideProducer": true
+    }
+  }
+}

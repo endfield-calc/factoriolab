@@ -22,6 +22,7 @@ import {
   addModelRow,
   addModelVariable,
   bindModelRules,
+  finiteNumber,
   ModelBinding,
   ModelRow,
   validateModelSolution,
@@ -915,6 +916,64 @@ describe('Solver model extension', () => {
   });
 
   describe('model input and solution defenses', () => {
+    it('converts finite rationals without losing nonzero values at the GLPK boundary', () => {
+      expect(finiteNumber(rational.zero, 'fixture')).toBe(0);
+      expect(finiteNumber(rational(7n, 4n), 'fixture')).toBe(1.75);
+      expect(finiteNumber(rational(-7n, 4n), 'fixture')).toBe(-1.75);
+      expect(finiteNumber(rational(1n, 10n ** 308n), 'fixture')).toBe(1e-308);
+      expect(finiteNumber(rational(9007199254740991n), 'fixture')).toBe(
+        Number.MAX_SAFE_INTEGER,
+      );
+      // Safe-integer restrictions apply to integer model rules, not this conversion.
+      expect(finiteNumber(rational(9007199254740992n), 'fixture')).toBe(
+        9007199254740992,
+      );
+      for (const value of [rational(10n ** 400n), rational(-(10n ** 400n))])
+        expect(() => finiteNumber(value, 'fixture')).toThrowError(
+          'Non-finite fixture',
+        );
+      for (const value of [
+        // Rational.toNumber can underflow when its denominator overflows first.
+        rational(1n, 10n ** 310n),
+        rational(1n, 10n ** 400n),
+        rational(-1n, 10n ** 400n),
+      ])
+        expect(() => finiteNumber(value, 'fixture')).toThrowError(
+          'Unrepresentable fixture: numeric underflow',
+        );
+    });
+
+    it('retains exact safe-integer bounds for integer model variables', () => {
+      const bind = (upper: Rational): Variable => {
+        const model = new Model();
+        const variable = addModelVariable(model, { name: 'r', lb: 0 });
+        bindModelRules(
+          model,
+          context(() => ({ constraints: [], integers: [recipeRef('r')] })),
+          [
+            {
+              variable,
+              description: {
+                ref: recipeRef('r'),
+                recipeId: 'r',
+                recipe: recipe('r'),
+              },
+              lower: rational.zero,
+              upper,
+            },
+          ],
+          [],
+        );
+        return variable;
+      };
+      expect(bind(rational(9007199254740991n)).ub).toBe(
+        Number.MAX_SAFE_INTEGER,
+      );
+      expect(() => bind(rational(9007199254740992n))).toThrowError(
+        /Integer upper bound.*exceeds safe numeric range/,
+      );
+    });
+
     it('rejects a compiler that mutates a source objective after its variable is bound', () => {
       const target = recipe('empty');
       target.in = {};
@@ -1150,6 +1209,40 @@ describe('Solver model extension', () => {
       s.itemValues['product'].max = rational(10n ** 308n);
       expect(() => solver['glpk'](s)).toThrowError(
         /Non-finite maximize objective/,
+      );
+    });
+
+    it('rejects underflow in the combined maximize objective', () => {
+      const s = state();
+      s.maximizeType = MaximizeType.Ratio;
+      s.costs.maximize = rational(-1n, 10n ** 200n);
+      s.itemValues['product'].max = rational(1n, 10n ** 200n);
+      expect(() => solver['glpk'](s)).toThrowError(
+        'Unrepresentable maximize objective coefficient: numeric underflow',
+      );
+    });
+
+    it('rejects an underflowing maximize factor after exact cancellation', () => {
+      const denominator = 10n ** 200n;
+      const s = state([]);
+      s.itemValues = {};
+      s.maximizeType = MaximizeType.Ratio;
+      s.recipeObjectives = [
+        objective(
+          'a',
+          recipe('a'),
+          rational(1n, denominator),
+          ObjectiveType.Maximize,
+        ),
+        objective(
+          'b',
+          recipe('b'),
+          rational(-1n, denominator + 1n),
+          ObjectiveType.Maximize,
+        ),
+      ];
+      expect(() => solver['glpk'](s)).toThrowError(
+        'Unrepresentable maximize factor: numeric underflow',
       );
     });
 

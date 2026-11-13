@@ -37,6 +37,7 @@ import {
   addModelRow,
   addModelVariable,
   bindModelRules,
+  finiteNumber,
   INTEGER_TOLERANCE,
   ModelBinding,
   ModelRow,
@@ -370,7 +371,7 @@ export class Solver {
         ? FACTORIO_FLUID_COST_RATIO
         : rational.one;
     const cost = state.costs[costKey];
-    return base.mul(cost).toNumber();
+    return finiteNumber(base.mul(cost), `${costKey} cost of ${itemId}`);
   }
 
   private glpk(state: SimplexState): GlpkResult {
@@ -405,7 +406,7 @@ export class Solver {
     const recipeObjectiveConstrRecord: Record<string, Constraint> = {};
     // Variable for maximization ratio
     const config: VariableProperties = {
-      obj: state.costs.maximize.toNumber(),
+      obj: finiteNumber(state.costs.maximize, 'maximize objective coefficient'),
       lb: 0,
       name: 'maximize',
     };
@@ -417,14 +418,20 @@ export class Solver {
     // Add recipe vars to model
     for (const recipeId of recipeIds) {
       const config: VariableProperties = {
-        obj: (state.recipes[recipeId].cost ?? rational.zero).toNumber(),
+        obj: finiteNumber(
+          state.recipes[recipeId].cost ?? rational.zero,
+          `objective coefficient of ${recipeId}`,
+        ),
         lb: 0,
         name: recipeId,
       };
 
       // Add limit, if any
       if (state.recipeLimits[recipeId]) {
-        config.ub = state.recipeLimits[recipeId].toNumber();
+        config.ub = finiteNumber(
+          state.recipeLimits[recipeId],
+          `upper bound of ${recipeId}`,
+        );
       }
 
       recipeVarRecord[recipeId] = addModelVariable(m, config);
@@ -452,8 +459,9 @@ export class Solver {
 
       // Set ub/lb if type is output, maximize will be set up later
       if (obj.type === ObjectiveType.Output) {
-        config.ub = obj.value.toNumber();
-        config.lb = obj.value.toNumber();
+        const bound = finiteNumber(obj.value, `bound of objective ${obj.id}`);
+        config.ub = bound;
+        config.lb = bound;
       }
 
       recipeObjectiveVarRecord[obj.id] = addModelVariable(m, config);
@@ -475,7 +483,10 @@ export class Solver {
         switch (state.maximizeType) {
           case MaximizeType.Weight: {
             const varConfig: VariableProperties = {
-              obj: obj.value.mul(state.costs.maximize).toNumber(),
+              obj: finiteNumber(
+                obj.value.mul(state.costs.maximize),
+                `maximize objective coefficient of ${obj.id}`,
+              ),
               lb: 0,
               name: obj.id,
             };
@@ -500,7 +511,13 @@ export class Solver {
             maximizeFactor = maximizeFactor.add(obj.value);
             const coeffs: [Variable, number][] = [
               [recipeObjectiveVarRecord[obj.id], 1],
-              [maximizeVar, obj.value.inverse().toNumber()],
+              [
+                maximizeVar,
+                finiteNumber(
+                  obj.value.inverse(),
+                  `maximize coefficient of objective ${obj.id}`,
+                ),
+              ],
             ];
             const config: ConstraintProperties = {
               coeffs,
@@ -550,7 +567,7 @@ export class Solver {
       if (values.in) {
         const inputConfig: VariableProperties = {
           lb: 0,
-          ub: values.in.toNumber(),
+          ub: finiteNumber(values.in, `input upper bound of ${itemId}`),
           name: itemId,
         };
         inputVarRecord[itemId] = addModelVariable(m, inputConfig);
@@ -569,13 +586,22 @@ export class Solver {
 
         const val = recipe.output[itemId];
         if (val?.nonzero()) {
-          netCoeffs.push([recipeVarRecord[recipeId], val.toNumber()]);
+          netCoeffs.push([
+            recipeVarRecord[recipeId],
+            finiteNumber(
+              val,
+              `output coefficient of ${recipeId} for ${itemId}`,
+            ),
+          ]);
         }
 
-        if (recipe.in[itemId]) {
+        if (values.lim && recipe.in[itemId]) {
           inputCoeffs.push([
             recipeVarRecord[recipeId],
-            recipe.in[itemId].div(recipe.time).toNumber(),
+            finiteNumber(
+              recipe.in[itemId].div(recipe.time),
+              `input coefficient of ${recipeId} for ${itemId}`,
+            ),
           ]);
         }
       });
@@ -588,14 +614,23 @@ export class Solver {
             recipeObjectiveOutput[itemId] ??= {};
             recipeObjectiveOutput[itemId][obj.id] = val;
           } else {
-            netCoeffs.push([recipeObjectiveVarRecord[obj.id], val.toNumber()]);
+            netCoeffs.push([
+              recipeObjectiveVarRecord[obj.id],
+              finiteNumber(
+                val,
+                `output coefficient of objective ${obj.id} for ${itemId}`,
+              ),
+            ]);
           }
         }
 
-        if (recipe.in[itemId]) {
+        if (values.lim && recipe.in[itemId]) {
           inputCoeffs.push([
             recipeObjectiveVarRecord[obj.id],
-            recipe.in[itemId].div(recipe.time).toNumber(),
+            finiteNumber(
+              recipe.in[itemId].div(recipe.time),
+              `input coefficient of objective ${obj.id} for ${itemId}`,
+            ),
           ]);
         }
       }
@@ -623,7 +658,10 @@ export class Solver {
         switch (state.maximizeType) {
           case MaximizeType.Weight: {
             const config: VariableProperties = {
-              obj: values.max.mul(state.costs.maximize).toNumber(),
+              obj: finiteNumber(
+                values.max.mul(state.costs.maximize),
+                `maximize objective coefficient of ${itemId}`,
+              ),
               lb: 0,
               name: itemId,
             };
@@ -633,16 +671,23 @@ export class Solver {
           }
           case MaximizeType.Ratio: {
             maximizeFactor = maximizeFactor.add(values.max);
-            netCoeffs.push([maximizeVar, values.max.inverse().toNumber()]);
+            netCoeffs.push([
+              maximizeVar,
+              finiteNumber(
+                values.max.inverse(),
+                `maximize coefficient of ${itemId}`,
+              ),
+            ]);
             break;
           }
         }
       }
 
+      const outputBound = finiteNumber(values.out, `output bound of ${itemId}`);
       const netConfig: ConstraintProperties = {
         coeffs: netCoeffs,
-        lb: values.out.toNumber(),
-        ub: values.out.toNumber(),
+        lb: outputBound,
+        ub: outputBound,
         name: itemId,
       };
       itemConstrRecord[itemId] = addModelRow(m, netConfig, rows);
@@ -650,7 +695,7 @@ export class Solver {
       if (values.lim) {
         const inputConfig: ConstraintProperties = {
           coeffs: inputCoeffs,
-          ub: values.lim.toNumber(),
+          ub: finiteNumber(values.lim, `input limit of ${itemId}`),
           name: itemId,
         };
         inputLimitConstrRecord[itemId] = addModelRow(m, inputConfig, rows);
@@ -662,9 +707,21 @@ export class Solver {
      * helps prevent increases in values of maximize objectives from overtaking
      * the maximize cost and resulting in no production as the optimal solution.
      */
-    const maximizeCost = maximizeVar.obj * maximizeFactor.toNumber();
+    const numericMaximizeFactor = finiteNumber(
+      maximizeFactor,
+      'maximize factor',
+    );
+    const maximizeCost = maximizeVar.obj * numericMaximizeFactor;
     if (!Number.isFinite(maximizeCost))
       throw new Error('Non-finite maximize objective coefficient');
+    if (
+      maximizeCost === 0 &&
+      maximizeVar.obj !== 0 &&
+      numericMaximizeFactor !== 0
+    )
+      throw new Error(
+        'Unrepresentable maximize objective coefficient: numeric underflow',
+      );
     maximizeVar.obj = maximizeCost;
 
     const extension = state.modelContext

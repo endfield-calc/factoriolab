@@ -103,11 +103,12 @@ function refKey(ref: ModelVariableRef): string {
   return JSON.stringify([ref.kind, ref.id]);
 }
 
-function finiteNumber(value: Rational, label: string): number {
+/** Convert a rational at the GLPK boundary without silently losing its sign. */
+export function finiteNumber(value: Rational, label: string): number {
   const number = value.toNumber();
   if (!Number.isFinite(number)) throw new Error(`Non-finite ${label}`);
   if (number === 0 && value.nonzero())
-    throw new Error(`Unrepresentable ${label}`);
+    throw new Error(`Unrepresentable ${label}: numeric underflow`);
   return number;
 }
 

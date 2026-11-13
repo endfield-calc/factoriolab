@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
-import { loadModule } from 'glpk-ts';
+import { loadModule, Model } from 'glpk-ts';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
+import { Main } from '~/app/main/main';
 import { ModData } from '~/data/schema/mod-data';
 import { CALCULATION_EXTENSION } from '~/extensions/calculation-extension';
 import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
@@ -19,6 +20,7 @@ import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RecipesStore } from '~/state/recipes/recipes-store';
 import { DisplayRate } from '~/state/settings/display-rate';
+import { MaximizeType } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 import { Translate } from '~/translate/translate';
@@ -61,7 +63,7 @@ describe('Endfield calculation composition with the published aef data', () => {
   });
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [TestModule],
+      imports: [TestModule, Main],
       providers: [
         ...provideEndfield(),
         { provide: SettingsStore, useClass: SettingsStore },
@@ -525,6 +527,157 @@ describe('Endfield calculation composition with the published aef data', () => {
       recipes.adjustedDataset().adjustedRecipe['originium_ore'].cost!;
     expect(changed.gt(ordinary)).toBeTrue();
     expect(settings.settings().costs.factor.eq(rational.one)).toBeTrue();
+  });
+
+  it('matches the visible integer objective to an independent dot product of every solved model variable', () => {
+    settings.apply({
+      maximizeType: MaximizeType.Weight,
+      costs: {
+        ...settings.state().costs,
+        maximize: rational(-1000000),
+        unproduceable: rational(100),
+      },
+    });
+    const base = store.snapshot();
+    store.set({
+      ...base,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...base.resourceLimits.rates, originium_ore: rational.one },
+      },
+      machineLimits: { enabled: true, limits: { [ovenId]: rational(2) } },
+      transfer: { enabled: true, source: 'tundra' },
+    });
+    objectives.set({
+      '1': {
+        id: '1',
+        targetId: 'carbon_enr',
+        value: rational(60),
+        type: ObjectiveType.Output,
+        unit: ObjectiveUnit.Items,
+      },
+      '2': machineObjective('2', 'xiranite_powder-carbon_enr'),
+      '3': {
+        ...machineObjective('3', 'xiranite_powder-carbon_enr'),
+        type: ObjectiveType.Maximize,
+      },
+    });
+
+    const snapshots: {
+      objective: number;
+      variables: {
+        id: number;
+        name: string;
+        type: string;
+        coefficient: number;
+        value: number;
+      }[];
+    }[] = [];
+    const originalIntopt = Model.prototype.intopt;
+    spyOn(Model.prototype, 'intopt').and.callFake(function (
+      this: Model,
+      options,
+    ) {
+      const code = originalIntopt.call(this, options);
+      if (code === 'ok' && this.statusMIP === 'optimal') {
+        const variables = this.vars.map((variable) => ({
+          id: variable.id,
+          name: variable.name,
+          type: variable.type,
+          coefficient: variable.obj,
+          value: variable.valueMIP,
+        }));
+        expect(variables.length).toBe(this.numVars);
+        snapshots.push({ objective: this.valueMIP, variables });
+      }
+      return code;
+    });
+
+    const result = objectives.matrixResult();
+    expect(result.resultType).toBe('solved');
+    expect(snapshots.length).toBe(1);
+    const model = snapshots[0];
+    expect(new Set(model.variables.map((variable) => variable.id)).size).toBe(
+      model.variables.length,
+    );
+    const named = (name: string): typeof model.variables =>
+      model.variables.filter((variable) => variable.name === name);
+    // The solver must bind normal production, the fixed explicit recipe, the
+    // maximize recipe and its reward, and the separate fixed mining supply.
+    expect(
+      named('carbon_enr').some(
+        (variable) => variable.value > 0 && variable.coefficient > 0,
+      ),
+    ).toBeTrue();
+    expect(
+      named('2').some(
+        (variable) => variable.value === 1 && variable.coefficient === 0,
+      ),
+    ).toBeTrue();
+    expect(
+      named('3').some(
+        (variable) => variable.value > 0 && variable.coefficient === 0,
+      ),
+    ).toBeTrue();
+    expect(
+      named('3').some(
+        (variable) => variable.value > 0 && variable.coefficient === -1000000,
+      ),
+    ).toBeTrue();
+    expect(
+      named(resourceObjectiveId('originium_ore')).some(
+        (variable) => variable.value === 3 && variable.coefficient === 0,
+      ),
+    ).toBeTrue();
+    expect(
+      named('originium_ore').some(
+        (variable) => variable.value > 0 && variable.coefficient === 1,
+      ),
+    ).toBeTrue();
+
+    // Read GLPK's own complete column list and coefficients, not the solver's
+    // cost validator or its returned recipe subset. Integer columns are
+    // normalized only after independently checking their distance to an integer.
+    let independentlySummed = 0;
+    for (const variable of model.variables) {
+      expect(
+        Number.isFinite(variable.value) &&
+          Number.isFinite(variable.coefficient),
+      ).toBeTrue();
+      const integer = variable.type === 'integer' || variable.type === 'binary';
+      if (integer)
+        expect(
+          Math.abs(variable.value - Math.round(variable.value)),
+        ).toBeLessThanOrEqual(1e-7);
+      independentlySummed +=
+        variable.coefficient *
+        (integer ? Math.round(variable.value) : variable.value);
+    }
+    const tolerance =
+      1e-7 *
+      (1 + Math.max(Math.abs(model.objective), Math.abs(independentlySummed)));
+    expect(Math.abs(model.objective - independentlySummed)).toBeLessThanOrEqual(
+      tolerance,
+    );
+    expect(
+      Math.abs(result.cost!.toNumber() - independentlySummed),
+    ).toBeLessThanOrEqual(tolerance);
+
+    const fixture = TestBed.createComponent(Main);
+    fixture.detectChanges();
+    const footer = fixture.nativeElement.querySelector(
+      'main > div:last-child span',
+    ) as HTMLElement;
+    expect(footer.textContent).toContain(result.cost!.toLocaleString());
+    expect(footer.textContent).toContain(
+      independentlySummed.toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+        roundingMode: 'ceil',
+      }),
+    );
+    console.info(
+      `[acceptance-mip-cost] ${JSON.stringify({ objective: model.objective, independentlySummed, displayed: footer.textContent?.trim(), variables: model.variables })}`,
+    );
   });
 
   it('preserves the upstream available recipe set when applying the cost policy', () => {

@@ -1,8 +1,14 @@
+import {
+  createEnvironmentInjector,
+  EnvironmentInjector,
+  runInInjectionContext,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { loadModule } from 'glpk-ts';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
+import { Conversion } from '~/app/main/objectives/conversion';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
 import { createEndfieldState } from '~/endfield/domain/model';
@@ -17,12 +23,19 @@ import { GlpkResult } from '~/solver/glpk-result';
 import { SimplexState } from '~/solver/simplex-state';
 import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
+import { ItemsStore } from '~/state/items/items-store';
+import { MachinesStore } from '~/state/machines/machines-store';
 import { ObjectiveType } from '~/state/objectives/objective-type';
+import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { RecipesStore } from '~/state/recipes/recipes-store';
 import { Migration } from '~/state/router/migration';
+import { Params } from '~/state/router/params';
 import { RouterSync } from '~/state/router/router-sync';
+import { DisplayRate } from '~/state/settings/display-rate';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { TableStore } from '~/state/table/table-store';
 import { TestModule } from '~/tests/test-module';
 
 import golden from './fixtures/legacy-golden.json';
@@ -387,6 +400,107 @@ describe('Old Endfield UserTips through the real new calculation pipeline', () =
       .withContext(JSON.stringify(lifecycle.diagnostics()))
       .toBeTrue();
   }
+
+  it('preserves resource and machine quantities through all rates, conversion preferences, and saved workspaces', async () => {
+    const initialUrl =
+      '/aef/list?v=11&o=originium_ore*60&o=originium_ore*0*3*11&o=originium_ore*28*3*12&o=xiranite_oven_1*12**13&o=domain_key_tundra*1**14';
+    const preferences = TestBed.inject(PreferencesStore);
+    const conversion = TestBed.inject(Conversion);
+    const expectedRates: [DisplayRate, number][] = [
+      [DisplayRate.PerSecond, 1],
+      [DisplayRate.PerMinute, 60],
+      [DisplayRate.PerHour, 3600],
+      [DisplayRate.PerDay, 86400],
+    ];
+
+    for (const convert of [false, true]) {
+      for (const [rate, factor] of expectedRates) {
+        await restore(initialUrl);
+        preferences.apply({ convertObjectiveValues: convert });
+        objectives.adjustDisplayRate(rate);
+        expect(objectives.state()['1'].value).toEqual(rational(factor));
+
+        // One ore/s requires three miner_2 machines. With conversion disabled,
+        // changing unit preserves the displayed number instead.
+        conversion.convertItemsToMachines(
+          objectives.objectives()[0],
+          'originium_ore',
+        );
+        expect(objectives.state()['1'].value)
+          .withContext(`to machines: rate=${rate}, convert=${String(convert)}`)
+          .toEqual(rational(convert ? 3 : factor));
+        conversion.convertMachinesToItems(
+          objectives.objectives()[0],
+          'originium_ore',
+          ObjectiveUnit.Items,
+        );
+        expect(objectives.state()['1'].value).toEqual(rational(factor));
+
+        const snapshot = router.zipState({
+          objectives: objectives.state(),
+          items: TestBed.inject(ItemsStore).state(),
+          recipes: TestBed.inject(RecipesStore).state(),
+          machines: TestBed.inject(MachinesStore).state(),
+          settings: settings.state(),
+          table: TestBed.inject(TableStore).state(),
+          data: settings.dataset(),
+          hash,
+          extension: endfield.snapshot(),
+        });
+        const params = await router.getHash(snapshot);
+        const query = router.toString(params as Params);
+        preferences.saveState('aef', 'rate-check', query);
+        TestBed.tick();
+        const refresh = createEnvironmentInjector(
+          [],
+          TestBed.inject(EnvironmentInjector),
+        );
+        const reloaded = runInInjectionContext(
+          refresh,
+          () => new PreferencesStore(),
+        );
+        expect(reloaded.convertObjectiveValues()).toBe(convert);
+        expect(reloaded.states()['aef']['rate-check']).toBe(query);
+        const saved = reloaded.states()['aef']['rate-check'];
+        refresh.destroy();
+        endfield.reset();
+        objectives.set({});
+        await restore(`/aef/list?${saved}`);
+
+        expect(settings.displayRate()).toBe(rate);
+        expect(preferences.convertObjectiveValues()).toBe(convert);
+        expect(objectives.state()['1'].value).toEqual(rational(factor));
+        expect(endfield.state().resourceLimits.rates.originium_ore).toEqual(
+          rational(560, 60),
+        );
+        expect(
+          endfield.state().machineLimits.limits['xiranite_oven_1'],
+        ).toEqual(rational(12));
+        const transfer = objectives
+          .calculationContext()
+          .normalized.filter(
+            (objective) => objective.targetId === 'domain_key_tundra',
+          );
+        expect(transfer.length).toBe(2);
+        expect(
+          transfer.every((objective) => objective.value.eq(rational(1, 3600))),
+        ).toBeTrue();
+        expect(objectives.matrixResult().resultType).toBe('solved');
+        const ore = objectives
+          .steps()
+          .find((step) => step.itemId === 'originium_ore')!;
+        expect(
+          ore.items?.eq(rational(560, 60).mul(rational(factor))),
+        ).toBeTrue();
+        expect(
+          ore.surplus?.eq(rational(500, 60).mul(rational(factor))),
+        ).toBeTrue();
+        console.info(
+          `[acceptance-rate] ${JSON.stringify({ rate, factor, convert, query, resourcePerMinute: 560, machineLimit: 12, transferPerHour: 1, items: ore.items?.toString(), surplus: ore.surplus?.toString() })}`,
+        );
+      }
+    }
+  });
 
   for (const fixture of golden.cases.filter((entry) => entry.id !== 'G03')) {
     it(`${fixture.id} restores old inputs and compares the resulting model`, async () => {

@@ -1,0 +1,59 @@
+<lab-accordion [multi]="true">
+  <lab-accordion-item text="endfield.guide.title">
+    <ng-template>
+      <h3 class="font-semibold">{{ 'endfield.guide.examples' | translate }}</h3>
+      <div class="gap-2 flex flex-wrap">
+        @for (example of examples; track example.name) {
+          <a
+            labButton
+            class="max-w-full"
+            [attr.aria-label]="example.name | translate"
+            [text]="example.name"
+            [routerLink]="['/aef/flow']"
+            [queryParams]="example.params"
+          ></a>
+        }
+      </div>
+      <p>{{ 'endfield.guide.legacyNotice' | translate }}</p>
+      <h3 class="font-semibold">{{ 'endfield.guide.tips' | translate }}</h3>
+      <ul class="ms-4 list-disc">
+        @for (topic of topics; track topic) {
+          <li>{{ 'endfield.guide.' + topic | translate }}</li>
+        }
+      </ul>
+      <h3 class="font-semibold">{{ 'endfield.guide.feedback' | translate }}</h3>
+      <div class="gap-2 flex flex-wrap">
+        @if (preferences.language() === 'zh') {
+          <a
+            labButton
+            [href]="manifest.qqUrl"
+            target="_blank"
+            rel="noopener"
+            [text]="'endfield.guide.qq'"
+          ></a>
+        }
+        <a
+          labButton
+          [href]="manifest.guideIssuesUrl"
+          target="_blank"
+          rel="noopener"
+          text="endfield.guide.issues"
+        ></a>
+        <a
+          labButton
+          [href]="manifest.yituliuUrl"
+          target="_blank"
+          rel="noopener"
+          text="endfield.guide.yituliu"
+        ></a>
+        <a
+          labButton
+          [href]="manifest.sourceUrl"
+          target="_blank"
+          rel="noopener"
+          text="endfield.guide.source"
+        ></a>
+      </div>
+    </ng-template>
+  </lab-accordion-item>
+</lab-accordion>

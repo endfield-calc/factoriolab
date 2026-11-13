@@ -139,15 +139,19 @@
       } @else {
         @if (value().recipeId; as recipeId) {
           @let objId = value().recipeObjectiveId;
+          @let source = sourceLabel(objId, recipeId);
           <lab-icon
             class="mx-0.5"
             [value]="recipeId"
             type="recipe"
-            [text]="objId ? '#' + objId : ''"
+            [text]="source ? '' : objId ? '#' + objId : ''"
             [labTooltip]="recipeId"
             labTooltipType="recipe"
             labTooltipPosition="adjacent"
           ></lab-icon>
+          @if (source) {
+            <span>{{ source | translate }}</span>
+          }
         } @else {
           <div class="size-9"></div>
         }
@@ -179,14 +183,18 @@
           percent.div(safeFactor()) | rate: -2 | percentPad
         }}</span>
         @if (value().destId; as destId) {
+          @let source = sourceLabel(value().destRecipeObjectiveId, destId);
           <lab-icon
             class="mx-0.5 order-2"
             [value]="destId"
             [type]="value().destType"
-            [text]="value().destRecipeObjectiveId"
+            [text]="source ? '' : value().destRecipeObjectiveId"
             [labTooltip]="destId"
             [labTooltipType]="value().destType"
           ></lab-icon>
+          @if (source) {
+            <span class="order-2">{{ source | translate }}</span>
+          }
         }
         @if (value().isOutput) {
           <span class="order-2">{{ 'steps.outputs' | translate }}</span>

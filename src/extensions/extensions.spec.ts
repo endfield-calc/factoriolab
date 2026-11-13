@@ -113,7 +113,7 @@ describe('Neutral extension defaults', () => {
   it('does not acquire editing or ownership effects from the default presentation', () => {
     const presentation = TestBed.inject(PRESENTATION_EXTENSION);
     expect(presentation.costsModified()).toBeFalse();
-    expect(presentation.resetCosts()).toBeUndefined();
+    presentation.resetCosts();
     const owner = { kind: 'objective', id: '1' } as const;
     expect(presentation.showNames()).toBeFalse();
     presentation.toggleNames();

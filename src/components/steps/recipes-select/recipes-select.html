@@ -14,12 +14,16 @@
     (ngModelChange)="changeRecipesIncluded($event)"
   >
     <div class="flex group-hover:opacity-40">
-      @if (step().recipeId; as recipeId) {
+      @if (hideIcon()) {
+        <fa-icon [icon]="faChevronDown"></fa-icon>
+      } @else if (step().recipeId; as recipeId) {
         @let objId = step().recipeObjectiveId;
         <lab-icon
           type="recipe"
           [value]="recipeId"
-          [text]="objId ? '#' + objId : ''"
+          [text]="
+            presentation.sourceLabel(step()) ? '' : objId ? '#' + objId : ''
+          "
         ></lab-icon>
       } @else {
         <fa-icon [icon]="faFlaskVial"></fa-icon>

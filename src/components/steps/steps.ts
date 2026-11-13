@@ -26,6 +26,7 @@ import {
 
 import { RatePipe } from '~/components/steps/pipes/rate-pipe';
 import { Exporter } from '~/exporter/exporter';
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { BeaconSettings } from '~/state/beacon-settings';
@@ -98,6 +99,7 @@ export class Steps {
   protected readonly route = inject(ActivatedRoute);
   protected readonly dialog = inject(Dialog);
   protected readonly exporter = inject(Exporter);
+  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   private readonly hydration = inject(Hydration);
   protected readonly itemsStore = inject(ItemsStore);
   private readonly machinesStore = inject(MachinesStore);
@@ -176,6 +178,27 @@ export class Steps {
     });
   }
 
+  /** Keep the recipe selector usable while avoiding a repeated item sprite. */
+  duplicateRecipeIcon(step: Step): boolean {
+    if (
+      !this.presentation.hideDuplicateIcons() ||
+      !step.itemId ||
+      !step.recipeId
+    )
+      return false;
+    const icons = this.data().iconRecord;
+    const item = icons.item[step.itemId];
+    const recipe = icons.recipe[step.recipeId];
+    return (
+      !!item &&
+      !!recipe &&
+      item.file === recipe.file &&
+      item.id === recipe.id &&
+      item.text === recipe.text &&
+      item.quality?.id === recipe.quality?.id
+    );
+  }
+
   // Store per-recipe preferences in component memory
   perMachine: Record<string, boolean | undefined> = {};
 
@@ -190,6 +213,11 @@ export class Steps {
   resetStep(step: Step): void {
     if (step.itemId) this.itemsStore.resetId(step.itemId);
 
+    const owner = this.presentation.owner(step);
+    if (owner) {
+      const handled = this.presentation.resetRecipe(owner);
+      if (handled || owner.kind === 'extension') return;
+    }
     if (step.recipeObjectiveId) {
       this.objectivesStore.updateRecord(step.recipeObjectiveId, {
         machineId: undefined,
@@ -210,12 +238,8 @@ export class Steps {
     const settings = step.recipeSettings;
     if (step.recipeId == null || settings?.machineId == null) return;
 
-    const id = step.recipeObjectiveId ?? step.recipeId;
-    const update =
-      step.recipeObjectiveId != null
-        ? this.objectivesStore.updateRecord.bind(this.objectivesStore)
-        : this.recipesStore.updateRecord.bind(this.recipesStore);
-
+    const updateModules = state.modules != null;
+    const updateBeacons = state.beacons != null;
     const machine = this.data().machineRecord[settings.machineId];
     const machineSettings = this.machinesStore.settings()[settings.machineId];
     if (state.modules) {
@@ -235,7 +259,10 @@ export class Steps {
       );
     }
 
-    update(id, state);
+    if (updateModules)
+      this.objectivesStore.updateRecipeField(step, 'modules', state.modules);
+    if (updateBeacons)
+      this.objectivesStore.updateRecipeField(step, 'beacons', state.beacons);
   }
 
   changeStepChecked(step: Step, value: boolean): void {
@@ -248,6 +275,8 @@ export class Steps {
         settings.checkedItemIds,
       );
       this.settingsStore.apply({ checkedItemIds });
+    } else if (this.presentation.toggleChecked(step, value)) {
+      return;
     } else if (step.recipeObjectiveId != null) {
       const checkedObjectiveIds = updateSetIds(
         step.recipeObjectiveId,
@@ -266,6 +295,7 @@ export class Steps {
   }
 
   resetChecked(): void {
+    this.presentation.clearChecked();
     this.settingsStore.apply({
       checkedItemIds: new Set(),
       checkedObjectiveIds: new Set(),
@@ -304,10 +334,12 @@ export class Steps {
     ];
     this.objectivesStore.resetFields(...fields);
     this.recipesStore.resetFields(...fields);
+    this.presentation.resetRecipes(fields);
   }
 
   resetBeacons(): void {
     this.objectivesStore.resetFields('beacons');
     this.recipesStore.resetFields('beacons');
+    this.presentation.resetRecipes(['beacons']);
   }
 }

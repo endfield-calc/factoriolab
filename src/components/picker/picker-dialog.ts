@@ -21,6 +21,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { Dataset } from '~/state/settings/dataset';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -61,6 +62,7 @@ export class PickerDialog implements AfterViewInit {
   private static lastQuality: string | null = null;
 
   protected readonly settingsStore = inject(SettingsStore);
+  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly dialogData = inject<PickerData>(DIALOG_DATA);
   protected readonly dialogRef =
     inject<DialogRef<boolean | string, PickerDialog>>(DialogRef);

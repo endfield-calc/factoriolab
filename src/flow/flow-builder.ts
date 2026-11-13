@@ -1,5 +1,6 @@
 import { computed, inject, Service } from '@angular/core';
 
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -28,6 +29,7 @@ export class FlowBuilder {
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly translate = inject(Translate);
+  private readonly presentation = inject(PRESENTATION_EXTENSION);
 
   readonly flowData = computed(() => {
     const steps = this.objectivesStore.steps();
@@ -40,8 +42,8 @@ export class FlowBuilder {
     return this.buildGraph(steps, suffix, settings, preferences, data);
   });
 
-  private recipeStepNodeType(step: Step): string {
-    return step.recipeObjectiveId ? 'm' : 'r';
+  private recipeNodeId(recipeId: string, recipeObjectiveId?: string): string {
+    return recipeObjectiveId ? `m|${recipeObjectiveId}` : `r|${recipeId}`;
   }
 
   private buildGraph(
@@ -107,7 +109,10 @@ export class FlowBuilder {
 
             flow.links.push({
               source: id,
-              target: `${this.recipeStepNodeType(parent)}|${parent.recipeId}`,
+              target: this.recipeNodeId(
+                parent.recipeId,
+                parent.recipeObjectiveId,
+              ),
               text: this.linkText(
                 stepText[step.id],
                 step.parents[stepId],
@@ -208,7 +213,14 @@ export class FlowBuilder {
         const recipeQualityIcon = recipeIcon?.quality
           ? data.iconRecord.quality[recipeIcon.quality.id]
           : undefined;
-        const id = `${this.recipeStepNodeType(step)}|${step.recipeId}`;
+        const id = this.recipeNodeId(step.recipeId, step.recipeObjectiveId);
+        const sourceLabel = this.presentation.sourceLabel(step);
+        const owner = this.presentation.owner(step);
+        const objectiveLabel = sourceLabel
+          ? this.translate.get(sourceLabel)
+          : owner?.kind !== 'extension' && step.recipeObjectiveId
+            ? `#${step.recipeObjectiveId}`
+            : undefined;
         flow.nodes.push({
           id,
           name: recipe.name,
@@ -221,6 +233,7 @@ export class FlowBuilder {
           recipeIcon,
           recipeQualityIcon,
           recipeObjectiveId: step.recipeObjectiveId,
+          objectiveLabel,
         });
 
         if (step.outputs) {

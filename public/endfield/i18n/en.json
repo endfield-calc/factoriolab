@@ -1,0 +1,86 @@
+{
+  "app": {
+    "name": "EndfieldLab",
+    "updateAvailableMessage": "<div>An update is available. Would you like to reload the page to update?</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>",
+    "updateRequiredMessage": "<div>An update is available, and the page must be reloaded to proceed.</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>"
+  },
+  "landing": {
+    "welcome": "Welcome to <b>EndfieldLab</b>! Let's get to work."
+  },
+  "options": {
+    "game": {
+      "endfield": "Arknights: Endfield"
+    },
+    "displayRate": {
+      "perDay": "Units per day",
+      "perDaySuffix": "/d"
+    },
+    "objectiveUnit": {
+      "itemsPerDay": "Items/d",
+      "wagonsPerDay": "Wagons/d",
+      "rocketsPerDay": "Rockets/d",
+      "pollutionPerDay": "Pollution/d"
+    }
+  },
+  "endfield": {
+    "resources": {
+      "title": "Resource configuration",
+      "presetTundra": "Valley preset",
+      "presetJinlong": "Wuling 1.5 preset",
+      "clear": "Clear resources",
+      "enableResources": "Enable resource limits",
+      "enableMachines": "Enable machine limit",
+      "enableTransfer": "Enable cross-region transfer",
+      "transferSource": "Transfer source",
+      "tundra": "Valley",
+      "transferSelf": "Select another region before enabling transfer from the Valley.",
+      "disableWater": "Disable water purification nodes",
+      "source": "Resource supply",
+      "perMinute": "items/min",
+      "machines": "machines"
+    },
+    "electric": {
+      "title": "Power cost weight",
+      "description": "Weights the power usage of machines in recipe cost.",
+      "apply": "Apply power weight"
+    },
+    "picker": {
+      "showNames": "Show names"
+    },
+    "recovery": {
+      "preferences": "Some preferences were repaired. Original data was preserved where possible.",
+      "downloadPreferences": "Export original preferences",
+      "loading": "Restoring the workspace. Editing is unavailable until restoration finishes.",
+      "failed": "The workspace could not be fully restored. The original URL was kept; reset it or open a new plan.",
+      "original": "Original URL (select and copy)",
+      "downloadUrl": "Export original URL",
+      "newPlan": "Open a new plan",
+      "warnings": "The workspace was restored with warnings.",
+      "displayDamaged": "Display preferences were damaged; any valid fields were recovered.",
+      "displayBackupFailed": "The original display preferences could not be backed up. Automatic saving is disabled.",
+      "displayStorageUnavailable": "Display preference storage is unavailable. Changes will remain in memory only.",
+      "availableBackups": "Saved recovery copies are available to export."
+    },
+    "guide": {
+      "title": "Tips and guide",
+      "examples": "Examples",
+      "exampleTundra": "Valley endgame example",
+      "exampleCoupons": "Valley theoretical maximum coupons (exceeds demand)",
+      "exampleJinlongLegacy": "Wuling endgame example (legacy; requires dense originium powder transfer from Valley)",
+      "tips": "Tips",
+      "locations": "All regions are enabled by default. Select specific regions under Factory settings → Locations.",
+      "views": "Use List for statistics and Flow for the production process. Display rates can be set per minute, hour or day.",
+      "power": "Add machines to select a power facility. Generated power appears as a negative number.",
+      "coupons": "Add an item to select coupons directly, or add machines for product exchange (one machine per production line). Ignore the belts shown for final product exchange.",
+      "limits": "To prevent overproduction, add an item and change its objective from Output to Limit.",
+      "objectives": "Adding items sets a product output target; adding machines requires a fixed number of running production lines, reusing lines needed by output targets where possible.",
+      "archives": "Save and load plans in Saved states. Select the game icon in the header to reset.",
+      "feedback": "Feedback and links",
+      "qq": "QQ group: 1071155059",
+      "issues": "Report an issue",
+      "yituliu": "Yituliu",
+      "source": "Source code",
+      "legacyNotice": "The Wuling example uses a legacy version."
+    }
+  }
+}

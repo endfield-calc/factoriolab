@@ -10,6 +10,7 @@
             [labTooltip]="'costs.' + key + 'Tooltip'"
             labTooltipPosition="adjacent"
             [buttons]="true"
+            [disabled]="!ready()"
             [step]="rational(10)"
             stepType="multiply"
             [maximum]="key === 'maximize' ? rational.zero : undefined"
@@ -22,6 +23,9 @@
     }
   </tbody>
 </table>
+@for (panel of presentation.costPanels; track panel) {
+  <ng-container *ngComponentOutlet="panel"></ng-container>
+}
 
 <div class="gap-1 sm:gap-2 flex justify-end">
   @if (modified()) {
@@ -30,6 +34,7 @@
       labButton
       text="reset"
       [faIcon]="faRotateLeft"
+      [disabled]="!ready()"
       (click)="reset()"
     ></button>
   }
@@ -39,6 +44,7 @@
     color="brand"
     text="ok"
     [faIcon]="faCheck"
+    [disabled]="!ready()"
     (click)="save()"
   ></button>
   <button

@@ -36,22 +36,24 @@
       [border]="false"
       labTooltip="header.resetTooltip"
     ></a>
-    <lab-select
-      #gameSelect
-      class="w-11 shrink-0"
-      [attr.aria-label]="'header.selectGame' | translate"
-      rounded="end"
-      [iconOnly]="true"
-      [border]="false"
-      [options]="gameOptions()"
-      (valueChange)="setGame($event)"
-    >
-      <fa-icon
-        class="absolute text-gray-400 transition-transform"
-        [class.-scale-y-100]="gameSelect.opened()"
-        [icon]="faChevronDown"
-      ></fa-icon>
-    </lab-select>
+    @if (gameOptions().length) {
+      <lab-select
+        #gameSelect
+        class="w-11 shrink-0"
+        [attr.aria-label]="'header.selectGame' | translate"
+        rounded="end"
+        [iconOnly]="true"
+        [border]="false"
+        [options]="gameOptions()"
+        (valueChange)="setGame($event)"
+      >
+        <fa-icon
+          class="absolute text-gray-400 transition-transform"
+          [class.-scale-y-100]="gameSelect.opened()"
+          [icon]="faChevronDown"
+        ></fa-icon>
+      </lab-select>
+    }
   </div>
   <button
     type="button"

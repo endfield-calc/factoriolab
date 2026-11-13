@@ -1,9 +1,13 @@
 import { DIALOG_DATA } from '@angular/cdk/dialog';
-import { ApplicationRef, inject } from '@angular/core';
+import { ApplicationRef, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ModData } from '~/data/schema/mod-data';
 import { qualityId, QualityJson } from '~/data/schema/quality';
+import {
+  PRESENTATION_EXTENSION,
+  upstreamPresentation,
+} from '~/extensions/presentation-extension';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { CategoryId } from '~/tests/category-id';
 import { ItemId } from '~/tests/item-id';
@@ -327,5 +331,63 @@ describe('PickerDialog', () => {
   it('should parse a selected item and apply selected category and quality', () => {
     expect(component['selectedCategory']()).toEqual(CategoryId.Intermediate);
     expect(component['selectedQuality']()).toEqual('1');
+  });
+});
+
+describe('PickerDialog name presentation', () => {
+  it('toggles names while keeping a forced recipe label visible', async () => {
+    PickerDialog['lastCategory'] = null;
+    PickerDialog['lastQuality'] = null;
+    const names = signal(false);
+    const forced = signal(true);
+    let recipeId = '';
+    let label = '';
+    await TestBed.configureTestingModule({
+      imports: [TestModule, PickerDialog],
+      providers: [
+        {
+          provide: PRESENTATION_EXTENSION,
+          useValue: {
+            ...upstreamPresentation,
+            showNameToggle: true,
+            showNames: (): boolean => names(),
+            toggleNames: (): void => {
+              names.update((value) => !value);
+            },
+            forceLabel: (id: string): boolean => id === recipeId && forced(),
+          },
+        },
+        {
+          provide: DIALOG_DATA,
+          useFactory: (): PickerData => {
+            const data = inject(SettingsStore).dataset();
+            recipeId = data.recipeIds[0];
+            label = data.recipeRecord[recipeId].name;
+            return { type: 'recipe', allIds: [recipeId] };
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PickerDialog);
+    fixture.detectChanges();
+    const button = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'button',
+      ) as NodeListOf<HTMLButtonElement>,
+    ).find((element) => element.getAttribute('aria-label') === label);
+    expect(button?.textContent).toContain(label);
+    const checkbox = fixture.nativeElement.querySelector(
+      'lab-checkbox input',
+    ) as HTMLInputElement;
+    checkbox.click();
+    fixture.detectChanges();
+    expect(names()).toBeTrue();
+    forced.set(false);
+    fixture.detectChanges();
+    expect(button?.textContent).toContain(label);
+    checkbox.click();
+    fixture.detectChanges();
+    expect(names()).toBeFalse();
+    expect(button?.textContent).not.toContain(label);
   });
 });

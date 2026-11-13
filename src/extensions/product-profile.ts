@@ -29,6 +29,11 @@ export interface PreferenceRestore {
 export interface ProductProfile {
   readonly name: string;
   readonly exportPrefix: string;
+  readonly csv?: {
+    readonly entityNames: boolean;
+    readonly bom: boolean;
+    columnLabel(field: string, language: Language): string;
+  };
   readonly sourceUrl: string;
   readonly issuesUrl: string;
   readonly logo: string;

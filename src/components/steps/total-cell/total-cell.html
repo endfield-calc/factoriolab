@@ -9,6 +9,11 @@
           [labTooltip]="tot.key"
           [labTooltipType]="tot.value.tooltipType"
         ></lab-icon>
+        @if (
+          presentation.showNameToggle && tot.value.tooltipType === 'machine'
+        ) {
+          <span>{{ itemName(tot.key) }}</span>
+        }
       </div>
     }
   </div>

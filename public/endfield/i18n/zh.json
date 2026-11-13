@@ -1,0 +1,86 @@
+{
+  "app": {
+    "name": "终末地量化计算器",
+    "updateAvailableMessage": "<div>发现新版本，是否要刷新页面进行更新？</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">查看发行说明</a>",
+    "updateRequiredMessage": "<div>发现新版本，必须刷新页面才能继续使用。</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">查看发行说明</a>"
+  },
+  "landing": {
+    "welcome": "欢迎来到 <b>终末地量化计算器</b>！让我们开始吧。"
+  },
+  "options": {
+    "game": {
+      "endfield": "明日方舟：终末地"
+    },
+    "displayRate": {
+      "perDay": "每天",
+      "perDaySuffix": "/天"
+    },
+    "objectiveUnit": {
+      "itemsPerDay": "物品/天",
+      "wagonsPerDay": "车厢/天",
+      "rocketsPerDay": "火箭/天",
+      "pollutionPerDay": "污染/天"
+    }
+  },
+  "endfield": {
+    "resources": {
+      "title": "资源配置",
+      "presetTundra": "谷地预设",
+      "presetJinlong": "武陵 1.5 预设",
+      "clear": "清空资源配置",
+      "enableResources": "启用原料限制",
+      "enableMachines": "启用机器数量限制",
+      "enableTransfer": "启用跨地区传输",
+      "transferSource": "传输来源",
+      "tundra": "谷地",
+      "transferSelf": "请选择其他地区后再启用来自谷地的传输。",
+      "disableWater": "禁用净水节点",
+      "source": "资源供给",
+      "perMinute": "个/分钟",
+      "machines": "台"
+    },
+    "electric": {
+      "title": "电力成本权重",
+      "description": "按机器耗电量计算配方成本的权重。",
+      "apply": "应用电力权重"
+    },
+    "picker": {
+      "showNames": "显示名称"
+    },
+    "recovery": {
+      "preferences": "部分偏好已修复，原始数据已尽可能保留。",
+      "downloadPreferences": "导出原始偏好",
+      "loading": "正在恢复方案，完成前无法编辑。",
+      "failed": "方案未能完整恢复，原始网址已保留；可重置或打开新方案。",
+      "original": "原始网址（可选中复制）",
+      "downloadUrl": "导出原始网址",
+      "newPlan": "打开新方案",
+      "warnings": "方案已恢复，但存在警告。",
+      "displayDamaged": "显示偏好数据已损坏，已尽可能恢复有效字段。",
+      "displayBackupFailed": "无法备份原始显示偏好，已停用自动保存。",
+      "displayStorageUnavailable": "无法读取显示偏好存储，本次更改仅保留在内存中。",
+      "availableBackups": "可导出已保存的恢复备份。"
+    },
+    "guide": {
+      "title": "温馨提示与操作指南",
+      "examples": "示例模板",
+      "exampleTundra": "四号谷地毕业示例",
+      "exampleCoupons": "谷地理论最高调度券（超出需求）",
+      "exampleJinlongLegacy": "武陵毕业示例（旧版本，需谷地传输致密源石粉末）",
+      "tips": "使用小技巧",
+      "locations": "默认启用全区域；只计算特定区域时，在工厂设置 → 区域调整勾选。",
+      "views": "列表展示统计数据，流程图展示工序。 显示单位可选择每分钟、每小时或每天。",
+      "power": "添加机器并选择发电设施；发电量以负数表示。",
+      "coupons": "可添加物品直接选择调度券，或添加机器选择产品兑换（设备数等于产线数）；最终产物兑换显示的传送带可以忽略。",
+      "limits": "为避免超产，可添加矿物等物品，并将目标从输出改为限制。",
+      "objectives": "添加物品设定目标产物输出；添加机器要求指定数量的产线保持运行，并优先复用输出目标需要的产线。",
+      "archives": "在已保存状态中存取档，点击页头游戏图标可重置方案。",
+      "feedback": "反馈与链接",
+      "qq": "QQ群：1071155059",
+      "issues": "问题反馈",
+      "yituliu": "一图流",
+      "source": "源代码",
+      "legacyNotice": "武陵毕业示例为旧版本。"
+    }
+  }
+}

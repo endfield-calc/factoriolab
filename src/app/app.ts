@@ -4,12 +4,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterOutlet } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { faCheck, faRotate, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { filter, merge, switchMap } from 'rxjs';
+import { filter, ignoreElements, merge, switchMap } from 'rxjs';
 
 import { Confirm } from '~/components/confirm/confirm';
 import { CustomDataDialog } from '~/components/custom-data-dialog/custom-data-dialog';
 import { CUSTOM_MOD } from '~/data/game';
 import { Release } from '~/data/release';
+import { environment } from '~/environments/environment';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { log } from '~/utils/log';
 import { WindowClient } from '~/utils/window-client';
@@ -23,6 +25,7 @@ import { WindowClient } from '~/utils/window-client';
 export class App {
   private readonly swUpdate = inject(SwUpdate);
   protected readonly router = inject(Router);
+  protected readonly product = inject(PRODUCT_PROFILE);
   private readonly dialog = inject(Dialog);
   private readonly release = inject(Release);
   private readonly confirm = inject(Confirm);
@@ -47,7 +50,28 @@ export class App {
     });
 
     merge(
-      this.swUpdate.unrecoverable.pipe(
+      this.swUpdate.versionUpdates.pipe(
+        filter((event) => event.type === 'VERSION_DETECTED'),
+        switchMap(() =>
+          this.confirm.open({
+            header: 'app.updateDetected',
+            message: 'app.updateDetectedMessage',
+            icon: faRotate,
+            actions: [{ text: 'ok', icon: faCheck }],
+          }),
+        ),
+        ignoreElements(),
+      ),
+      merge(
+        this.swUpdate.unrecoverable,
+        this.swUpdate.versionUpdates.pipe(
+          filter(
+            (event) =>
+              event.type === 'VERSION_INSTALLATION_FAILED' &&
+              environment.production,
+          ),
+        ),
+      ).pipe(
         switchMap(() =>
           this.confirm.open({
             header: 'app.updateRequired',

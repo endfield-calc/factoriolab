@@ -1,6 +1,21 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { createEndfieldPresentation } from '~/endfield/adapters/presentation-extension';
+import {
+  createEndfieldState,
+  resourceObjectiveId,
+} from '~/endfield/domain/model';
+import { EndfieldDisplayPreferences } from '~/endfield/state/display-preferences';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
+import {
+  PRESENTATION_EXTENSION,
+  PresentationExtension,
+} from '~/extensions/presentation-extension';
+import {
+  EFFECTIVE_DEFAULTS,
+  upstreamProduct,
+} from '~/extensions/product-profile';
 import { initialColumnsState } from '~/state/preferences/columns-state';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
@@ -114,12 +129,14 @@ describe('Steps', () => {
         ...step,
         ...{ recipeSettings: { machineId: ItemId.AssemblingMachine3 } },
       };
-      spyOn(component['recipesStore'], 'updateRecord');
+      spyOn(component['objectivesStore'], 'updateRecipeField');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(component['recipesStore'].updateRecord).toHaveBeenCalledWith(
-        step.id,
-        { modules: [], beacons: [] },
-      );
+      expect(
+        component['objectivesStore'].updateRecipeField,
+      ).toHaveBeenCalledWith(step, 'modules', []);
+      expect(
+        component['objectivesStore'].updateRecipeField,
+      ).toHaveBeenCalledWith(step, 'beacons', []);
     });
 
     it('should update recipe objective modules and beacons', () => {
@@ -131,20 +148,117 @@ describe('Steps', () => {
           recipeSettings: { machineId: ItemId.AssemblingMachine3 },
         },
       };
-      spyOn(component['objectivesStore'], 'updateRecord');
+      spyOn(component['objectivesStore'], 'updateRecipeField');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(component['objectivesStore'].updateRecord).toHaveBeenCalledWith(
-        'id',
-        { modules: [], beacons: [] },
-      );
+      expect(
+        component['objectivesStore'].updateRecipeField,
+      ).toHaveBeenCalledWith(step, 'modules', []);
+      expect(
+        component['objectivesStore'].updateRecipeField,
+      ).toHaveBeenCalledWith(step, 'beacons', []);
     });
 
     it('should exit early if no recipe or machineId is found', () => {
       const step = mocks.step1();
-      spyOn(component['recipesStore'], 'updateRecord');
+      spyOn(component['objectivesStore'], 'updateRecipeField');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(component['recipesStore'].updateRecord).not.toHaveBeenCalled();
+      expect(
+        component['objectivesStore'].updateRecipeField,
+      ).not.toHaveBeenCalled();
     });
+
+    it('clears ordinary overrides when selections return to defaults', () => {
+      const step = {
+        ...mocks.step1(),
+        recipeSettings: { machineId: ItemId.AssemblingMachine3 },
+      };
+      const id = step.recipeId;
+      if (id == null) throw new Error('Expected recipe in test fixture');
+      component['recipesStore'].updateRecord(id, {
+        modules: [{ id: 'module' }],
+        beacons: [{ id: 'beacon' }],
+      });
+      spyOn(component['hydration'], 'dehydrateModules').and.returnValue(
+        undefined,
+      );
+      spyOn(component['hydration'], 'dehydrateBeacons').and.returnValue(
+        undefined,
+      );
+      component.changeModulesBeacons(step, { modules: [{ id: 'module' }] });
+      expect(component['recipesStore'].state()[id]?.modules).toBeUndefined();
+      expect(component['recipesStore'].state()[id]?.beacons).toEqual([
+        { id: 'beacon' },
+      ]);
+      component.changeModulesBeacons(step, { beacons: [{ id: 'beacon' }] });
+      expect(component['recipesStore'].state()[id]).toBeUndefined();
+    });
+  });
+
+  it('writes derived modules and beacons through their owner without a ghost objective', () => {
+    const step = {
+      ...mocks.step1(),
+      recipeObjectiveId: 'ef:resource:test',
+      recipeSettings: { machineId: ItemId.AssemblingMachine3 },
+    };
+    const owner = { kind: 'extension' as const, id: 'resource:test' };
+    spyOn(component['presentation'], 'owner').and.returnValue(owner);
+    spyOn(component['presentation'], 'updateRecipeField').and.returnValue(true);
+    component.changeModulesBeacons(step, { modules: [], beacons: [] });
+    expect(component['presentation'].updateRecipeField).toHaveBeenCalledWith(
+      owner,
+      'modules',
+      [],
+      undefined,
+    );
+    expect(component['presentation'].updateRecipeField).toHaveBeenCalledWith(
+      owner,
+      'beacons',
+      [],
+      undefined,
+    );
+    expect(
+      component['objectivesStore'].state()['ef:resource:test'],
+    ).toBeUndefined();
+  });
+
+  it('keeps an extension reset out of ordinary objectives while preserving item reset', () => {
+    const step = { ...mocks.step1(), recipeObjectiveId: 'ef:resource:test' };
+    const owner = { kind: 'extension' as const, id: 'resource:test' };
+    spyOn(component['presentation'], 'owner').and.returnValue(owner);
+    spyOn(component['presentation'], 'resetRecipe').and.returnValue(true);
+    spyOn(component['itemsStore'], 'resetId');
+    spyOn(component['objectivesStore'], 'updateRecord');
+    component.resetStep(step);
+    expect(component['itemsStore'].resetId).toHaveBeenCalledWith(step.itemId!);
+    expect(component['presentation'].resetRecipe).toHaveBeenCalledWith(owner);
+    expect(component['objectivesStore'].updateRecord).not.toHaveBeenCalled();
+  });
+
+  it('routes derived selection through the extension but keeps item priority', () => {
+    const step = { ...mocks.step1(), recipeObjectiveId: 'ef:resource:test' };
+    spyOn(component['presentation'], 'toggleChecked').and.returnValue(true);
+    spyOn(component['settingsStore'], 'apply');
+    component.changeStepChecked(step, true);
+    expect(component['presentation'].toggleChecked).not.toHaveBeenCalled();
+    expect(component['settingsStore'].apply).toHaveBeenCalled();
+    (component['settingsStore'].apply as jasmine.Spy).calls.reset();
+    component.changeStepChecked({ ...step, itemId: undefined }, true);
+    expect(component['presentation'].toggleChecked).toHaveBeenCalled();
+    expect(component['settingsStore'].apply).not.toHaveBeenCalled();
+  });
+
+  it('hides only identical item and recipe sprites when requested', () => {
+    const step = mocks.step1();
+    const data = mocks.getDataset();
+    const original = data.iconRecord.item[step.itemId!];
+    data.iconRecord.recipe[step.recipeId!] = { ...original };
+    spyOn<any>(component, 'data').and.returnValue(data);
+    spyOn(component['presentation'], 'hideDuplicateIcons').and.returnValue(
+      true,
+    );
+    expect(component.duplicateRecipeIcon(step)).toBeTrue();
+    data.iconRecord.recipe[step.recipeId!] = { ...original, id: 'different' };
+    expect(component.duplicateRecipeIcon(step)).toBeFalse();
   });
 
   describe('changeStepChecked', () => {
@@ -230,5 +344,58 @@ describe('Steps', () => {
       expect(component['objectivesStore'].resetFields).toHaveBeenCalled();
       expect(component['recipesStore'].resetFields).toHaveBeenCalled();
     });
+  });
+});
+
+describe('Steps derived resource settings', () => {
+  it('clears defaulted module and beacon overrides without creating an ordinary objective', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModule, Steps],
+      providers: [
+        {
+          provide: EFFECTIVE_DEFAULTS,
+          useValue: {
+            ...upstreamProduct.defaults(),
+            extension: createEndfieldState(),
+          },
+        },
+        {
+          provide: PRESENTATION_EXTENSION,
+          useFactory: (): PresentationExtension =>
+            createEndfieldPresentation(
+              inject(EndfieldStore),
+              inject(EndfieldDisplayPreferences),
+            ),
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Steps);
+    const component = fixture.componentInstance;
+    const store = TestBed.inject(EndfieldStore);
+    const step = {
+      ...TestBed.inject(Mocks).step1(),
+      recipeObjectiveId: resourceObjectiveId('iron_ore'),
+      recipeSettings: { machineId: ItemId.AssemblingMachine3 },
+    };
+    store.updateRecipeField('iron_ore', 'modules', [{ id: 'module' }]);
+    store.updateRecipeField('iron_ore', 'beacons', [{ id: 'beacon' }]);
+    spyOn(component['hydration'], 'dehydrateModules').and.returnValue(
+      undefined,
+    );
+    spyOn(component['hydration'], 'dehydrateBeacons').and.returnValue(
+      undefined,
+    );
+    component.changeModulesBeacons(step, { modules: [{ id: 'module' }] });
+    expect(
+      store.snapshot().resourceRecipeSettings.iron_ore?.modules,
+    ).toBeUndefined();
+    expect(store.snapshot().resourceRecipeSettings.iron_ore?.beacons).toEqual([
+      { id: 'beacon' },
+    ]);
+    component.changeModulesBeacons(step, { beacons: [{ id: 'beacon' }] });
+    expect(store.snapshot().resourceRecipeSettings.iron_ore).toBeUndefined();
+    expect(
+      component['objectivesStore'].state()[resourceObjectiveId('iron_ore')],
+    ).toBeUndefined();
   });
 });

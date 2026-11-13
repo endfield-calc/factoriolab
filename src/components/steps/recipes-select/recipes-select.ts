@@ -12,6 +12,7 @@ import { faChevronDown, faFlaskVial } from '@fortawesome/free-solid-svg-icons';
 import { Icon } from '~/components/icon/icon';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { Step } from '~/solver/step';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { StepRecipes } from '~/state/objectives/step-recipes';
@@ -28,9 +29,11 @@ import { updateSetIds } from '~/utils/set';
 })
 export class RecipesSelect {
   protected readonly objectivesStore = inject(ObjectivesStore);
+  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly settingsStore = inject(SettingsStore);
 
   readonly step = input.required<Step>();
+  readonly hideIcon = input(false);
 
   protected readonly recipes = computed<StepRecipes | undefined>(
     () => this.objectivesStore.stepRecipes()[this.step().id],

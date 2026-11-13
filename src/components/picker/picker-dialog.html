@@ -56,6 +56,14 @@
   }
 </div>
 
+@if (presentation.showNameToggle) {
+  <lab-checkbox
+    label="endfield.picker.showNames"
+    [ngModel]="presentation.showNames()"
+    (ngModelChange)="presentation.toggleNames()"
+  ></lab-checkbox>
+}
+
 <lab-tabs
   type="category"
   [(value)]="selectedCategory"
@@ -75,6 +83,12 @@
           labButton
           [iconType]="dialogData.type"
           [icon]="id"
+          [text]="
+            presentation.showNames() ||
+            (dialogData.type === 'recipe' && presentation.forceLabel(id))
+              ? data()[recordKey][id].name
+              : ''
+          "
           [border]="id === selectedId"
           [color]="id === selectedId ? 'brand' : 'gray'"
           [toggleIcon]="multi ? faEyeSlash : undefined"

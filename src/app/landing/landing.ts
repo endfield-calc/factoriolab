@@ -19,6 +19,7 @@ import { InputNumber } from '~/components/input-number/input-number';
 import { ObjectiveForm } from '~/components/objective-form';
 import { Select } from '~/components/select/select';
 import { Release } from '~/data/release';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RouterSync } from '~/state/router/router-sync';
@@ -44,6 +45,7 @@ import { TranslatePipe } from '~/translate/translate-pipe';
 })
 export class Landing {
   protected readonly router = inject(Router);
+  protected readonly product = inject(PRODUCT_PROFILE);
   private readonly route = inject(ActivatedRoute);
   protected readonly objectiveForm = inject(ObjectiveForm);
   private readonly objectivesStore = inject(ObjectivesStore);

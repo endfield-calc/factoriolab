@@ -1,0 +1,210 @@
+@if (warnings().length || backups.length) {
+  <section role="status" class="my-2 rounded p-3 border border-complement-400">
+    <p>
+      {{
+        (warnings().length
+          ? 'endfield.recovery.preferences'
+          : 'endfield.recovery.availableBackups'
+        ) | translate
+      }}
+    </p>
+    <ul class="ms-4 list-disc">
+      @for (warning of warnings(); track $index) {
+        <li>{{ warning | translate }}</li>
+      }
+    </ul>
+    @for (backup of backups; track backup.key) {
+      <button
+        type="button"
+        labButton
+        [text]="'endfield.recovery.downloadPreferences'"
+        (click)="download(backup.key + '.json', backup.value)"
+      ></button>
+      <span class="ms-1">{{ backup.key }}</span>
+    }
+  </section>
+}
+@if (!coordinator.ready() || lifecycle.diagnostics().length) {
+  <section role="alert" class="my-2 rounded p-3 border border-complement-400">
+    <p>
+      {{
+        (coordinator.ready()
+          ? 'endfield.recovery.warnings'
+          : lifecycle.diagnostics().length
+            ? 'endfield.recovery.failed'
+            : 'endfield.recovery.loading'
+        ) | translate
+      }}
+    </p>
+    @for (diagnostic of lifecycle.diagnostics(); track $index) {
+      <p>{{ diagnostic.message }}</p>
+    }
+    @if (lifecycle.originalInput(); as original) {
+      <label class="block" for="endfield-original-url">{{
+        'endfield.recovery.original' | translate
+      }}</label>
+      <textarea
+        id="endfield-original-url"
+        class="input w-full"
+        rows="2"
+        readonly
+        [value]="original"
+      ></textarea>
+      <div class="gap-2 flex flex-wrap">
+        <button
+          type="button"
+          labButton
+          text="endfield.recovery.downloadUrl"
+          (click)="download('endfield-original-url.txt', original)"
+        ></button>
+        <a
+          labButton
+          text="endfield.recovery.newPlan"
+          [routerLink]="['/aef/list']"
+        ></a>
+      </div>
+    }
+  </section>
+}
+<lab-accordion id="endfield-resources" [multi]="true">
+  <lab-accordion-item text="endfield.resources.title" [expanded]="true">
+    <ng-template>
+      <div class="gap-2 flex flex-wrap">
+        <button
+          type="button"
+          labButton
+          text="endfield.resources.presetTundra"
+          [disabled]="!coordinator.ready()"
+          (click)="coordinator.dispatch({ type: 'preset', preset: 'tundra' })"
+        ></button>
+        <button
+          type="button"
+          labButton
+          text="endfield.resources.presetJinlong"
+          [disabled]="!coordinator.ready()"
+          (click)="coordinator.dispatch({ type: 'preset', preset: 'jinlong' })"
+        ></button>
+        <button
+          type="button"
+          labButton
+          text="endfield.resources.clear"
+          [disabled]="!coordinator.ready()"
+          (click)="coordinator.dispatch({ type: 'clear' })"
+        ></button>
+      </div>
+      <lab-checkbox
+        label="endfield.resources.enableResources"
+        [disabled]="!coordinator.ready()"
+        [value]="coordinator.state().resourceLimits.enabled"
+        (valueChange)="
+          coordinator.dispatch({
+            type: 'resourceEnabled',
+            enabled: $event === true,
+          })
+        "
+      ></lab-checkbox>
+      <div class="gap-2 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
+        @for (id of resources; track id) {
+          <lab-form-field
+            [label]="
+              resourceName(id) +
+              ' (' +
+              ('endfield.resources.perMinute' | translate) +
+              ')'
+            "
+          >
+            <lab-input-number
+              [buttons]="true"
+              [disabled]="
+                !coordinator.ready() ||
+                !coordinator.state().resourceLimits.enabled
+              "
+              [value]="perMinute(coordinator.state().resourceLimits.rates[id])"
+              (valueChange)="updateRate(id, $event)"
+            ></lab-input-number>
+          </lab-form-field>
+        }
+      </div>
+      <lab-checkbox
+        label="endfield.resources.enableMachines"
+        [disabled]="!coordinator.ready()"
+        [value]="coordinator.state().machineLimits.enabled"
+        (valueChange)="
+          coordinator.dispatch({
+            type: 'machineEnabled',
+            enabled: $event === true,
+          })
+        "
+      ></lab-checkbox>
+      <lab-form-field
+        class="max-w-80"
+        [label]="
+          resourceName(ovenId) +
+          ' (' +
+          ('endfield.resources.machines' | translate) +
+          ')'
+        "
+      >
+        <lab-input-number
+          [buttons]="true"
+          [disabled]="
+            !coordinator.ready() || !coordinator.state().machineLimits.enabled
+          "
+          [value]="coordinator.state().machineLimits.limits[ovenId]"
+          (valueChange)="updateMachineLimit($event)"
+        ></lab-input-number>
+      </lab-form-field>
+      <lab-checkbox
+        label="endfield.resources.enableTransfer"
+        [disabled]="
+          !coordinator.ready() ||
+          (onlyTundra() && !coordinator.state().transfer.enabled)
+        "
+        [value]="coordinator.state().transfer.enabled"
+        (valueChange)="
+          coordinator.dispatch({
+            type: 'transfer',
+            enabled: $event === true,
+            source: 'tundra',
+          })
+        "
+      ></lab-checkbox>
+      @if (onlyTundra() && !coordinator.state().transfer.enabled) {
+        <p>{{ 'endfield.resources.transferSelf' | translate }}</p>
+      }
+      <lab-form-field
+        class="max-w-80"
+        label="endfield.resources.transferSource"
+      >
+        <lab-select
+          [disabled]="
+            !coordinator.ready() || !coordinator.state().transfer.enabled
+          "
+          [options]="sourceOptions"
+          [value]="coordinator.state().transfer.source"
+          (valueChange)="
+            coordinator.dispatch({
+              type: 'transfer',
+              enabled: true,
+              source: 'tundra',
+            })
+          "
+        ></lab-select>
+      </lab-form-field>
+      <lab-checkbox
+        label="endfield.resources.disableWater"
+        [disabled]="!coordinator.ready()"
+        [value]="waterDisabled()"
+        (valueChange)="
+          coordinator.dispatch({
+            type: 'waterDisabled',
+            disabled: $event === true,
+          })
+        "
+      ></lab-checkbox>
+      @for (diagnostic of coordinator.diagnostics(); track $index) {
+        <p role="alert">{{ diagnostic.message }}</p>
+      }
+    </ng-template>
+  </lab-accordion-item>
+</lab-accordion>

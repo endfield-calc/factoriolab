@@ -44,6 +44,7 @@ import {
   EFFECTIVE_DEFAULTS,
   PRODUCT_PROFILE,
 } from '~/extensions/product-profile';
+import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { glpkAlgorithmOptions } from '~/state/preferences/glpk-algorithm';
 import { powerUnitOptions } from '~/state/preferences/power-unit';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
@@ -89,13 +90,14 @@ export class Preferences {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly dialog = inject(Dialog);
+  protected readonly lifecycle = inject(WorkspaceLifecycle);
   private readonly confirm = inject(Confirm);
   protected readonly preferencesStore = inject(PreferencesStore);
   protected readonly routerSync = inject(RouterSync);
   protected readonly settingsStore = inject(SettingsStore);
   private readonly windowClient = inject(WindowClient);
   private readonly defaults = inject(EFFECTIVE_DEFAULTS);
-  private readonly product = inject(PRODUCT_PROFILE);
+  protected readonly product = inject(PRODUCT_PROFILE);
 
   readonly open = signal(false);
 
@@ -143,6 +145,7 @@ export class Preferences {
   protected readonly glpkAlgorithmOptions = glpkAlgorithmOptions;
 
   reset(): void {
+    if (!this.lifecycle.ready()) return;
     this.confirm
       .open({
         header: 'preferences.resetHeader',
@@ -155,6 +158,7 @@ export class Preferences {
         ],
       })
       .subscribe((res) => {
+        if (!this.lifecycle.ready()) return;
         if (res === 1) {
           // Do not reset saved states
           const { states, ...state } = cloneDefaults(this.defaults).preferences;
@@ -172,6 +176,7 @@ export class Preferences {
   }
 
   saveState(): void {
+    if (!this.lifecycle.ready()) return;
     const editValue = this.editValue();
     const editState = this.editStatus();
     const params = this.params();
@@ -197,6 +202,7 @@ export class Preferences {
   }
 
   saveChanges(): void {
+    if (!this.lifecycle.ready()) return;
     const selectedState = this.selectedState();
     const params = this.params();
     if (selectedState == null || params == null) return;
@@ -206,16 +212,19 @@ export class Preferences {
   }
 
   createState(): void {
+    if (!this.lifecycle.ready()) return;
     this.editValue.set('');
     this.editStatus.set('create');
   }
 
   editState(state: string): void {
+    if (!this.lifecycle.ready()) return;
     this.editValue.set(state);
     this.editStatus.set('edit');
   }
 
   deleteState(state: string): void {
+    if (!this.lifecycle.ready()) return;
     this.preferencesStore.removeState(
       this.settingsStore.dataset().modId,
       state,

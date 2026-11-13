@@ -10,7 +10,9 @@
     "updateAvailable": "Update available",
     "updateAvailableMessage": "<div>An update is available. Would you like to reload the page to update?<div><a href=\"https://github.com/factoriolab/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>",
     "updateRequired": "Update required",
-    "updateRequiredMessage": "<div>An update is available, and the page must be reloaded to proceed.</div><a href=\"https://github.com/factoriolab/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>"
+    "updateRequiredMessage": "<div>An update is available, and the page must be reloaded to proceed.</div><a href=\"https://github.com/factoriolab/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>",
+    "updateDetected": "Neue Version erkannt",
+    "updateDetectedMessage": "Neue Version wird heruntergeladen, bitte warten..."
   },
   "beaconsSelect": {
     "addBeacons": "Add beacons",

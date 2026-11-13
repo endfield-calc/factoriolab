@@ -52,6 +52,7 @@ import { RankSelect } from '~/components/rank-select/rank-select';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
 import { CUSTOM_MOD } from '~/data/game';
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { FilterOptionsPipe } from '~/option/filter-options-pipe';
 import { OptionPipe } from '~/option/option-pipe';
 import { rational } from '~/rational/rational';
@@ -115,6 +116,7 @@ export class Settings {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly dialog = inject(Dialog);
+  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   private readonly hydration = inject(Hydration);
   protected readonly machinesStore = inject(MachinesStore);
   protected readonly picker = inject(Picker);

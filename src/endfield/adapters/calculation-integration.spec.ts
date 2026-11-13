@@ -84,7 +84,7 @@ describe('Endfield calculation composition with the published aef data', () => {
   });
 
   it('constructs all four providers without a dependency cycle and skips an empty default workspace', () => {
-    expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels.length).toBe(0);
+    expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels.length).toBe(2);
     expect(objectives.calculationContext().objectives).toEqual([]);
     expect(objectives.matrixResult().resultType).toBe('skipped');
   });

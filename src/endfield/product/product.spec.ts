@@ -1,9 +1,12 @@
+import { FactoryProvider } from '@angular/core';
+
+import { environment } from '~/environments/environment';
 import { cloneDefaults, upstreamProduct } from '~/extensions/product-profile';
 import { rational } from '~/rational/rational';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
 import { PowerUnit } from '~/state/preferences/power-unit';
 
-import { createEndfieldProduct } from './product';
+import { createEndfieldProduct, provideEndfieldProduct } from './product';
 
 describe('Endfield product', () => {
   it('uses only the production browser language and supports exact and prefix matches', () => {
@@ -104,5 +107,110 @@ describe('Endfield product', () => {
       'ru',
       'zh',
     ]);
+  });
+
+  it('salvages independent fields while rejecting damaged archives and preferences', () => {
+    const profile = createEndfieldProduct(true, 'zh');
+    const input = {
+      language: 'unknown',
+      powerUnit: 99,
+      bypassLanding: 'bad',
+      showTechLabels: true,
+      hue: Number.NaN,
+      chroma: 42,
+      glpkAlgorithm: 'bad',
+      theme: 'bad',
+      states: { aef: { safe: 'v=11&o=iron', broken: 3 }, invalid: [] },
+      columns: {
+        items: { show: true, precision: 101 },
+        broken: {},
+        belts: 'bad',
+      },
+      flowSettings: {
+        diagram: 1,
+        hideExcluded: false,
+        elkAlgorithm: 'force',
+        sankeyAlign: 99,
+        unknown: 2,
+      },
+      sections: { sources: false, inputs: 'bad', unknown: true },
+    };
+    const result = profile.migratePreferences(input);
+    expect(result.state.states).toEqual({ aef: { safe: 'v=11&o=iron' } });
+    expect(result.state.language).toBeUndefined();
+    expect(result.state.powerUnit).toBeUndefined();
+    expect(result.state.showTechLabels).toBeTrue();
+    expect(result.state.chroma).toBe(42);
+    expect(result.state.theme).toBeUndefined();
+    expect(result.state.columns?.items.show).toBeTrue();
+    expect(result.state.flowSettings?.elkAlgorithm).toBe('force');
+    expect(result.state.sections?.sources).toBeFalse();
+    expect(result.warnings).toContain('Invalid preferences.states.aef.broken');
+    expect(result.warnings).toContain('Invalid preferences.states.invalid');
+    expect(result.warnings).toContain(
+      'Invalid preferences.columns.items.precision',
+    );
+    expect(result.warnings).toContain(
+      'Invalid preferences.flowSettings.sankeyAlign',
+    );
+    expect(result.warnings).toContain('Invalid preferences.sections.inputs');
+    expect(input.states.aef.broken).toBe(3);
+    expect(input.columns.items.precision).toBe(101);
+  });
+
+  it('handles invalid preference containers and validates localized game metadata', () => {
+    const profile = createEndfieldProduct(false, 'en');
+    expect(profile.migratePreferences(null).warnings).toEqual([
+      'Invalid preferences',
+    ]);
+    const result = profile.migratePreferences({
+      states: [],
+      columns: [],
+      flowSettings: null,
+      sections: 'bad',
+    });
+    expect(result.warnings).toEqual([
+      'Invalid preferences.states',
+      'Invalid preferences.columns',
+      'Invalid preferences.flowSettings',
+      'Invalid preferences.sections',
+    ]);
+    expect(result.state.states).toEqual({});
+    expect(profile.gameMetadata('other', 'en', {} as never)).toEqual({});
+    expect(profile.gameMetadata('aef', 'en')).toEqual({});
+    expect(
+      profile.gameMetadata('aef', 'en', {
+        name: 'Game',
+        version: { current: '1.5' },
+      } as never),
+    ).toEqual({ name: 'Game', version: { current: '1.5' } });
+    expect(
+      profile.gameMetadata('aef', 'en', {
+        name: 3,
+        version: { current: 2 },
+      } as never),
+    ).toEqual({});
+  });
+
+  it('reads browser language only for a production provider', () => {
+    const original = environment.production;
+    spyOnProperty(navigator, 'language', 'get').and.returnValue('zh-CN');
+    const factory = (provideEndfieldProduct() as FactoryProvider).useFactory;
+    try {
+      environment.production = false;
+      expect(factory().defaults().preferences.language).toBe('en');
+      environment.production = true;
+      expect(factory().defaults().preferences.language).toBe('zh');
+    } finally {
+      environment.production = original;
+    }
+  });
+
+  it('retains the supported stress layout algorithm during preference recovery', () => {
+    const result = createEndfieldProduct(false, 'en').migratePreferences({
+      flowSettings: { elkAlgorithm: 'stress' },
+    });
+    expect(result.state.flowSettings?.elkAlgorithm).toBe('stress');
+    expect(result.warnings).toEqual([]);
   });
 });

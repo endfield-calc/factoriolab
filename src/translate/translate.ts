@@ -2,6 +2,7 @@ import { httpResource } from '@angular/common/http';
 import {
   computed,
   inject,
+  InjectionToken,
   Injector,
   linkedSignal,
   Service,
@@ -14,6 +15,11 @@ import { PreferencesStore } from '~/state/preferences/preferences-store';
 export interface LangData {
   [key: string]: LangData | string;
 }
+/** Optional bundled fallback, independent of a previously successful request. */
+export const TRANSLATION_FALLBACK = new InjectionToken<LangData | undefined>(
+  'TRANSLATION_FALLBACK',
+  { factory: (): LangData | undefined => undefined },
+);
 export type TranslateData = Record<string, string | undefined>;
 export type TranslateVal = string | number | null | undefined;
 export type TranslateParams = Record<string, TranslateVal>;
@@ -28,6 +34,7 @@ interface ParseEntry {
 export class Translate {
   private readonly injector = inject(Injector);
   private readonly preferences = inject(PreferencesStore);
+  private readonly fallback = inject(TRANSLATION_FALLBACK);
 
   private readonly templateMatcher = /{{\s?([^{}\s]*)\s?}}/g;
 
@@ -36,8 +43,10 @@ export class Translate {
   );
 
   private readonly safeHttpData = computed(() => {
-    if (this.httpData.error()) return undefined;
-    return this.httpData.value();
+    if (this.httpData.error()) return this.fallback;
+    if (this.fallback != null && this.httpData.isLoading())
+      return this.fallback;
+    return this.httpData.value() ?? this.fallback;
   });
 
   readonly data = linkedSignal<LangData | undefined, TranslateData>({
@@ -50,9 +59,12 @@ export class Translate {
 
   load(): Promise<boolean> {
     return firstValueFrom(
-      toObservable(this.httpData.isLoading, { injector: this.injector }).pipe(
-        filter((v) => v),
-      ),
+      toObservable(
+        computed(
+          () => this.httpData.hasValue() || this.httpData.error() != null,
+        ),
+        { injector: this.injector },
+      ).pipe(filter((ready) => ready)),
     );
   }
 

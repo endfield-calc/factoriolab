@@ -18,6 +18,8 @@ import { PowerUnit } from '~/state/preferences/power-unit';
 import { PreferencesState } from '~/state/preferences/preferences-state';
 import { Language, languageOptions } from '~/translate/language';
 
+import { endfieldCsv } from './csv';
+
 const languages: readonly Language[] = ['en', 'zh', 'de', 'fr', 'ru', 'ja'];
 const endfieldLanguageOptions = languageOptions.filter((option) =>
   languages.includes(option.value),
@@ -189,6 +191,7 @@ export function createEndfieldProduct(
   return {
     name: manifest.name,
     exportPrefix: manifest.exportPrefix,
+    csv: endfieldCsv,
     sourceUrl: manifest.sourceUrl,
     issuesUrl: manifest.issuesUrl,
     logo: manifest.logo,

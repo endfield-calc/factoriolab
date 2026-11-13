@@ -1,4 +1,8 @@
-<aside #settings="labSettings" labSettings></aside>
+<aside
+  #settings="labSettings"
+  labSettings
+  [attr.inert]="lifecycle.ready() ? null : ''"
+></aside>
 <div
   role="none"
   class="xl:hidden fixed z-5 hidden h-dvh w-dvw bg-ground-950/75"
@@ -24,7 +28,14 @@
     [(settingsXlHidden)]="settings.xlHidden"
   ></header>
   <main class="flex grow flex-col">
-    <lab-objectives></lab-objectives>
+    <div class="px-1 sm:px-3 lg:px-6">
+      @for (panel of presentation.mainPanels; track panel) {
+        <ng-container *ngComponentOutlet="panel"></ng-container>
+      }
+    </div>
+    <lab-objectives
+      [attr.inert]="lifecycle.ready() ? null : ''"
+    ></lab-objectives>
 
     <div class="px-1 sm:px-3 lg:px-6 lg:pt-3 flex grow flex-col">
       <h2 class="mb-1 text-2xl font-light xl:block hidden">
@@ -33,13 +44,16 @@
       <div class="mb-1 sm:mb-2 relative">
         <lab-tabs [tabs]="tabs"></lab-tabs>
       </div>
-      <div class="pb-1 grow overflow-x-auto">
+      <div
+        class="pb-1 grow overflow-x-auto"
+        [attr.inert]="lifecycle.ready() ? null : ''"
+      >
         <router-outlet #ro="outlet"></router-outlet>
         @if (!ro.isActivated) {
           <div class="flex h-full items-center justify-center">
             <img
-              src="factoriolab-animate.webp"
-              alt="FactorioLab"
+              [src]="product.loadingLogo"
+              [alt]="product.name"
               height="174"
               width="194"
               fetchpriority="high"

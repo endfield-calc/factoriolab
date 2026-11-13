@@ -1,7 +1,8 @@
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
+import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
 import { Preferences } from './preferences';
@@ -44,6 +45,12 @@ describe('Preferences', () => {
   });
 
   describe('reset', () => {
+    it('does not open a reset confirmation while a workspace is being restored', () => {
+      const open = spyOn(component['confirm'], 'open');
+      TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=pending');
+      component.reset();
+      expect(open).not.toHaveBeenCalled();
+    });
     it('should handle preserve saved states', () => {
       spyOn(component['confirm'], 'open').and.returnValue(of(1));
       spyOn(component['preferencesStore'], 'apply');
@@ -61,6 +68,26 @@ describe('Preferences', () => {
       component.reset();
       await TestBed.inject(ApplicationRef).whenStable();
       expect(component['windowClient'].reload).toHaveBeenCalled();
+    });
+
+    it('ignores a pending reset confirmation if restoration starts before the answer', () => {
+      const reply = new Subject<number | undefined>();
+      const open = spyOn(component['confirm'], 'open').and.returnValue(
+        reply.asObservable(),
+      );
+      const clear = spyOn(window.localStorage, 'clear');
+      const apply = spyOn(component['preferencesStore'], 'apply');
+      const navigate = spyOn(component['router'], 'navigate');
+      expect(TestBed.inject(WorkspaceLifecycle).ready()).toBeTrue();
+      component.reset();
+      expect(open).toHaveBeenCalled();
+      expect(reply.observed).toBeTrue();
+      TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=bad');
+      reply.next(2);
+      reply.next(1);
+      expect(clear).not.toHaveBeenCalled();
+      expect(apply).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 

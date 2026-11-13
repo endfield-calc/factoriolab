@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { errorGuard } from './error/error';
-import { idGuard } from './id/id-guard';
+import { editorGuard, idGuard } from './id/id-guard';
 import { landingGuard } from './landing/landing-guard';
 
 export const routes: Routes = [
@@ -12,6 +12,7 @@ export const routes: Routes = [
   },
   {
     path: 'editor',
+    canActivate: [editorGuard],
     loadComponent: () => import('./editor/editor').then((c) => c.Editor),
     loadChildren: () => import('./editor/editor.routes').then((c) => c.routes),
   },

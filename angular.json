@@ -24,7 +24,13 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": ["**/defaults.json"]
+                "ignore": ["**/defaults.json", "data/**", "endfield/i18n/**"]
+              },
+              {
+                "glob": "**/*",
+                "input": "public/data/aef",
+                "output": "data/aef",
+                "ignore": ["defaults.json"]
               },
               {
                 "glob": "glpk.all.wasm",
@@ -42,6 +48,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -63,9 +75,21 @@
               "sourceMap": true
             },
             "staging": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
               "baseHref": "/staging/"
             },
             "next": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
               "baseHref": "/next/"
             }
           },

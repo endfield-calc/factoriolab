@@ -1,5 +1,10 @@
 import { DOCUMENT, effect, inject, Service } from '@angular/core';
 
+import {
+  cloneDefaults,
+  EFFECTIVE_DEFAULTS,
+  PRODUCT_PROFILE,
+} from '~/extensions/product-profile';
 import { Store } from '~/state/store';
 import { applyBackgroundLightness, applyHue } from '~/utils/color';
 import { log } from '~/utils/log';
@@ -7,11 +12,12 @@ import { spread } from '~/utils/object';
 import { storedSignal, storeValue } from '~/utils/stored-signal';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
-import { initialPreferencesState, PreferencesState } from './preferences-state';
+import { PreferencesState } from './preferences-state';
 
 @Service()
 export class PreferencesStore extends Store<PreferencesState> {
   private readonly document = inject(DOCUMENT);
+  readonly migrationWarnings: string[] = [];
 
   readonly stored = storedSignal('preferences');
 
@@ -32,19 +38,33 @@ export class PreferencesStore extends Store<PreferencesState> {
   readonly glpkAlgorithm = this.select('glpkAlgorithm');
 
   constructor() {
-    super(initialPreferencesState, ['states', 'flowSettings']);
+    super(cloneDefaults(inject(EFFECTIVE_DEFAULTS)).preferences, [
+      'states',
+      'flowSettings',
+    ]);
     const stored = this.stored();
+    let canPersist = true;
     if (stored) {
       try {
-        const storedState = JSON.parse(stored) as PreferencesState;
-        this.load(storedState);
+        const restored = inject(PRODUCT_PROFILE).migratePreferences(
+          JSON.parse(stored),
+        );
+        this.migrationWarnings.push(...restored.warnings);
+        if (restored.warnings.length)
+          canPersist = this.backupPreferences(stored);
+        this.load(restored.state);
       } catch (ex) {
         console.warn('Failed to parse stored preferences', ex);
+        this.migrationWarnings.push('Failed to parse stored preferences');
+        canPersist = this.backupPreferences(stored);
       }
     }
 
+    if (this.migrationWarnings.length)
+      console.warn('Preferences recovery:', this.migrationWarnings);
+
     effect(() => {
-      storeValue('preferences', JSON.stringify(this.state()));
+      if (canPersist) storeValue('preferences', JSON.stringify(this.state()));
     });
 
     effect(() => {
@@ -77,6 +97,24 @@ export class PreferencesStore extends Store<PreferencesState> {
     effect(() => {
       log('set_lang', this.language());
     });
+  }
+
+  /** Keep every distinct damaged original available for manual recovery. */
+  private backupPreferences(raw: string): boolean {
+    try {
+      let key = 'preferences.recovery';
+      let index = 0;
+      let previous = localStorage.getItem(key);
+      while (previous != null && previous !== raw) {
+        key = `preferences.recovery.${++index}`;
+        previous = localStorage.getItem(key);
+      }
+      if (previous == null) localStorage.setItem(key, raw);
+      return true;
+    } catch (ex) {
+      console.warn('Failed to back up stored preferences', ex);
+      return false;
+    }
   }
 
   saveState(modId: string, id: string, value: string): void {

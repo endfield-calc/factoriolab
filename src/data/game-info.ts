@@ -8,6 +8,7 @@ export interface GameInfo {
 
 /** Game information data, nonconfigurable */
 export const gameInfo: Record<Game, GameInfo> = {
+  endfield: { label: 'options.game.endfield', modId: 'aef' },
   factorio: { label: 'options.game.factorio', modId: 'spa' },
   'dyson-sphere-program': {
     label: 'options.game.dysonSphereProgram',

@@ -2,10 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
+import { createEndfieldProduct } from '~/endfield/product/product';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { MockComponent } from '~/tests/mocks/component';
 import { TestModule } from '~/tests/test-module';
 
-import { idGuard } from './id-guard';
+import { editorGuard, idGuard } from './id-guard';
 
 describe('idGuard', () => {
   let router: Router;
@@ -59,5 +61,79 @@ describe('idGuard', () => {
     expect(router.url).toEqual('/sfy');
     await rth.navigateByUrl('/techtonica');
     expect(router.url).toEqual('/tta');
+  });
+});
+
+describe('product route restrictions', () => {
+  let router: Router;
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+          {
+            path: ':id',
+            canActivate: [idGuard],
+            children: [
+              { path: '', pathMatch: 'full', component: MockComponent },
+              { path: 'list', component: MockComponent },
+              { path: 'flow', component: MockComponent },
+              { path: 'data', component: MockComponent },
+            ],
+          },
+        ]),
+      ],
+    });
+    router = TestBed.inject(Router);
+  });
+
+  it('keeps every query parameter for allowed and legacy shortcut routes', async () => {
+    const harness = await RouterTestingHarness.create(
+      '/aef/list?v=11&o=a&o=b&cet=x&z=abc',
+    );
+    expect(router.url).toBe('/aef/list?v=11&o=a&o=b&cet=x&z=abc');
+    await harness.navigateByUrl('/flow?v=11&o=a&o=b&cet=x&z=abc');
+    expect(router.url).toBe('/aef/flow?v=11&o=a&o=b&cet=x&z=abc');
+    await harness.navigateByUrl('/data?v=11&o=a&o=b');
+    expect(router.url).toBe('/aef/data?v=11&o=a&o=b');
+  });
+
+  it('redirects other games, custom data and editor without their queries', async () => {
+    const harness = await RouterTestingHarness.create(
+      '/2x1/list?v=11&o=foreign',
+    );
+    expect(router.url).toBe('/aef');
+    await harness.navigateByUrl('/cst/list?v=11&o=foreign');
+    expect(router.url).toBe('/aef');
+    await harness.navigateByUrl('/editor?v=11&o=foreign');
+    expect(router.url).toBe('/aef');
+  });
+});
+
+describe('upstream editor capability', () => {
+  it('allows the editor without a product provider', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await RouterTestingHarness.create('/editor?x=1');
+    expect(router.url).toBe('/editor?x=1');
   });
 });

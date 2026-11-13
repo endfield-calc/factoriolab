@@ -16,7 +16,7 @@ import {
 import { Button } from '~/components/button/button';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { Game, gameOptions } from '~/data/game';
+import { Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -57,7 +57,9 @@ export class Header {
   protected readonly headerLinks = headerLinks;
 
   protected readonly gameOptions = computed(() =>
-    gameOptions.filter((o) => o.value !== this.settingsStore.game()),
+    this.settingsStore.gameOptions.filter(
+      (o) => o.value !== this.settingsStore.game(),
+    ),
   );
 
   togglePreferences(): void {

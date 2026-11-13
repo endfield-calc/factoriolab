@@ -10,7 +10,7 @@ declare const gtag: (type: string, name: string, data: EventData) => void;
 
 /** Log an event with an optional value using Google Analytics */
 export function log(event: string, value?: string): void {
-  if (isDevMode()) return;
+  if (isDevMode() || typeof gtag !== 'function') return;
   // istanbul ignore next: Don't test calling google analytics function
   gtag('event', event, { event_category: value });
 }

@@ -1,0 +1,16 @@
+{
+  "name": "EndfieldLab",
+  "nameZh": "终末地量化计算器",
+  "exportPrefix": "endfield-calc",
+  "description": "A factory production calculator for Arknights: Endfield. Determine resource and machine requirements for your objectives.",
+  "descriptionZh": "明日方舟：终末地量化计算器，计算目标产物所需的资源与生产设施。",
+  "sourceUrl": "https://github.com/endfield-calc/factoriolab",
+  "readmeUrl": "https://github.com/endfield-calc/factoriolab#readme",
+  "issuesUrl": "https://github.com/endfield-calc/factoriolab/issues",
+  "guideIssuesUrl": "https://github.com/endfield-calc/endfield-calc.github.io/issues",
+  "yituliuUrl": "https://ef.yituliu.cn/",
+  "qqUrl": "https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr",
+  "qqGroup": "1071155059",
+  "logo": "endfield/logo.webp",
+  "loadingLogo": "endfield/logo.webp"
+}

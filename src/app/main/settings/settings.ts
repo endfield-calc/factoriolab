@@ -51,7 +51,7 @@ import { Picker } from '~/components/picker/picker';
 import { RankSelect } from '~/components/rank-select/rank-select';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { CUSTOM_MOD, gameOptions } from '~/data/game';
+import { CUSTOM_MOD } from '~/data/game';
 import { FilterOptionsPipe } from '~/option/filter-options-pipe';
 import { OptionPipe } from '~/option/option-pipe';
 import { rational } from '~/rational/rational';
@@ -154,7 +154,7 @@ export class Settings {
   protected readonly faMicrochip = faMicrochip;
   protected readonly faUpload = faUpload;
   protected readonly faXmark = faXmark;
-  protected readonly gameOptions = gameOptions;
+  protected readonly gameOptions = this.settingsStore.gameOptions;
   protected readonly maximizeTypeOptions = maximizeTypeOptions;
   protected readonly modId = this.settingsStore.modId;
   protected readonly options = this.settingsStore.options;

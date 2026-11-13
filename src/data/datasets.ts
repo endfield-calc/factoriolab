@@ -13,6 +13,12 @@ export interface Datasets {
 
 export const datasets: Datasets = {
   mods: [
+    {
+      id: 'aef',
+      name: '明日方舟：终末地',
+      game: 'endfield',
+      hashPolicy: 'append-only',
+    },
     { id: '2x1', name: 'Space Age', game: 'factorio' },
     { id: '2q1', name: 'Quality', game: 'factorio' },
     { id: '2.1', name: '2.1', game: 'factorio' },
@@ -124,6 +130,7 @@ export const datasets: Datasets = {
     'ows',
     'spa',
     'sky',
+    'aef',
   ],
 };
 

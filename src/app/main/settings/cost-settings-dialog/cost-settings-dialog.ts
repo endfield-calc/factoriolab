@@ -17,9 +17,12 @@ import { Button } from '~/components/button/button';
 import { DialogData } from '~/components/dialog/dialog';
 import { InputNumber } from '~/components/input-number/input-number';
 import { Tooltip } from '~/components/tooltip/tooltip';
+import {
+  cloneDefaults,
+  EFFECTIVE_DEFAULTS,
+} from '~/extensions/product-profile';
 import { Rational, rational } from '~/rational/rational';
 import { CostKey, costKeys } from '~/state/settings/cost-settings';
-import { initialSettingsState } from '~/state/settings/settings-state';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
@@ -36,15 +39,16 @@ import { TranslatePipe } from '~/translate/translate-pipe';
 export class CostSettingsDialog implements DialogData {
   protected readonly dialogRef = inject(DialogRef);
   private readonly settingsStore = inject(SettingsStore);
+  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
 
   protected readonly editValue = linkedSignal(
     () => this.settingsStore.settings().costs,
   );
   protected readonly modified = computed(() => {
     const edit = this.editValue();
-    const init = initialSettingsState.costs;
+    const init = this.defaults.settings.costs;
     const keys = Object.keys(init) as CostKey[];
-    return keys.some((k) => init[k] !== edit[k]);
+    return keys.some((k) => !init[k].eq(edit[k]));
   });
 
   protected readonly costKeys = costKeys;
@@ -59,7 +63,7 @@ export class CostSettingsDialog implements DialogData {
   }
 
   reset(): void {
-    this.editValue.set(initialSettingsState.costs);
+    this.editValue.set(cloneDefaults(this.defaults).settings.costs);
   }
 
   save(): void {

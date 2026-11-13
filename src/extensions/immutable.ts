@@ -69,7 +69,9 @@ class SetSnapshot<T> implements ReadonlySet<T> {
 }
 
 export function immutableValue<T>(value: T): ReadonlyValue<T> {
-  if (value instanceof Rational || value == null || typeof value !== 'object')
+  if (value instanceof Rational)
+    return Object.freeze(new Rational(value.p, value.q)) as ReadonlyValue<T>;
+  if (value == null || typeof value !== 'object')
     return value as ReadonlyValue<T>;
   if (value instanceof Set || value instanceof SetSnapshot)
     return new SetSnapshot(
@@ -91,8 +93,9 @@ export function immutableValue<T>(value: T): ReadonlyValue<T> {
 
 /** Copy back at a store boundary, preserving immutable Rational values. */
 export function mutableValue<T>(value: ReadonlyValue<T>): T {
-  if (value instanceof Rational || value == null || typeof value !== 'object')
-    return value as T;
+  if (value instanceof Rational)
+    return Object.freeze(new Rational(value.p, value.q)) as T;
+  if (value == null || typeof value !== 'object') return value as T;
   if (value instanceof Set || value instanceof SetSnapshot)
     return new Set(Array.from(value, (v: unknown) => mutableValue(v))) as T;
   if (Array.isArray(value))

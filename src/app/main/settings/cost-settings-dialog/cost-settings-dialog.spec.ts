@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { createEndfieldProduct } from '~/endfield/product/product';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { rational } from '~/rational/rational';
 import { initialSettingsState } from '~/state/settings/settings-state';
 import { TestModule } from '~/tests/test-module';
@@ -51,5 +53,32 @@ describe('CostSettingsDialog', () => {
       });
       expect(component['dialogRef'].close).toHaveBeenCalled();
     });
+  });
+});
+
+describe('CostSettingsDialog with Endfield product', () => {
+  it('compares rational values and resets to the effective product costs', async () => {
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [TestModule, CostSettingsDialog],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(CostSettingsDialog);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.apply('unproduceable', rational(1000000));
+    expect(component['modified']()).toBeFalse();
+    component.apply('surplus', rational.zero);
+    expect(component['modified']()).toBeTrue();
+    component.reset();
+    expect(component['editValue']().surplus.eq(rational.one)).toBeTrue();
+    expect(component['editValue']().recycling.eq(rational(1000))).toBeTrue();
+    expect(component['modified']()).toBeFalse();
+    localStorage.clear();
   });
 });

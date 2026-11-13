@@ -1,5 +1,6 @@
 import { inject, InjectionToken } from '@angular/core';
 
+import { IconJson } from '~/data/schema/icon-data';
 import { ModI18n } from '~/data/schema/mod-i18n';
 import {
   initialPreferencesState,
@@ -32,6 +33,7 @@ export interface ProductProfile {
   readonly issuesUrl: string;
   readonly logo: string;
   readonly loadingLogo: string;
+  readonly systemIcons?: readonly (IconJson & { readonly file: string })[];
   readonly defaultModId?: string;
   readonly allowedModIds?: readonly string[];
   readonly allowEditor: boolean;

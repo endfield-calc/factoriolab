@@ -42,6 +42,8 @@
 
 数据接点由 `scripts/endfield/convert-data.mjs` 生成 `public/data/aef`，以固定源内容校验 schema 转换；`src/endfield/compat/legacy-hash.json` / `legacy-datasets.json` 冻结两层旧索引，`src/endfield/domain/display-metadata.json` 保存不影响计算的配方展示标记。`convert-data.spec.mjs` 验证源身份、物理量、引用、物流/机器选择、图集及只追加 hash 的全实体往返。独立数据检查不能替代资源恢复和生产资产边界验收。
 
+产品接点由 `src/endfield/product/product.ts` 的 `createEndfieldProduct` / `provideEndfieldProduct` 装配，`public/endfield/product.json` 集中品牌和不同用途的链接。`SettingsStore` 提供受产品筛选的目录、数据/i18n请求、系统图标和不提交实时状态的 `prepareState`；PreferencesStore、成本/流图/列对话框及偏好重置消费同一有效默认快照。`product.spec.ts`、产品 guard、PreferencesStore/SettingsStore 和对话框规格验证六语策略、损坏偏好保留、翻译切换及两套默认路径。生产资产由 Angular 的独立 aef 条目选择，其他上游数据仅保留为明确排除的通用测试输入。`ModInfo.hashPolicy`、`updateHash` 与 `scripts/update-hash.ts` 对注册的只追加协议保留全部历史槽位，CLI 身份在任何写入前校验。
+
 ## 4. 避免长期漂移的实现约束
 
 1. 不复制上游大类、整页模板、旧package-lock或主题体系；不靠继承后重写大部分私有实现维持一个“同名新类”。

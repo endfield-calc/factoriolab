@@ -2,6 +2,7 @@ import { Option } from '../option/option';
 
 export type Game =
   | 'belts-of-iron'
+  | 'endfield'
   | 'captain-of-industry'
   | 'dyson-sphere-program'
   | 'factor-y'
@@ -20,6 +21,12 @@ export type Game =
 export const CUSTOM_MOD = 'cst';
 
 export const gameOptions: Option<Game>[] = [
+  {
+    value: 'endfield',
+    label: 'options.game.endfield',
+    icon: 'endfield',
+    iconType: 'system',
+  },
   {
     value: 'captain-of-industry',
     label: 'options.game.captainOfIndustry',

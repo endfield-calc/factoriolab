@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { rational } from '~/rational/rational';
 import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { initialSettingsState } from '~/state/settings/settings-state';
 
@@ -66,6 +67,16 @@ describe('Neutral extension defaults', () => {
     expect(calculation.rules({} as never, [])).toBe(emptyModelRules);
     expect(calculation.derive({} as never)).toEqual([]);
     expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels).toEqual([]);
+  });
+
+  it('isolates and freezes Rational values without mutating shared constants', () => {
+    const original = rational.one;
+    const snapshot = immutableValue({ value: original });
+    expect(snapshot.value).not.toBe(original);
+    expect(snapshot.value.eq(original)).toBeTrue();
+    expect(() => Object.assign(snapshot.value, { p: 2n })).toThrow();
+    expect(original.p).toBe(1n);
+    expect(snapshot.value.mul(rational(2)).toString()).toBe('2');
   });
 
   it('retains structured restore errors', () => {

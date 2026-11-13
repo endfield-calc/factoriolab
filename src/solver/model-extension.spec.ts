@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { loadModule, Model, Variable } from 'glpk-ts';
+import { ConstraintProperties, loadModule, Model, Variable } from 'glpk-ts';
 
 import { AdjustedRecipe } from '~/data/schema/recipe';
 import {
@@ -18,6 +18,14 @@ import { MaximizeType } from '~/state/settings/maximize-type';
 import { Settings } from '~/state/settings/settings';
 import { initialSettingsState } from '~/state/settings/settings-state';
 
+import {
+  addModelRow,
+  addModelVariable,
+  bindModelRules,
+  ModelBinding,
+  ModelRow,
+  validateModelSolution,
+} from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
 import { SimplexState } from './simplex-state';
 import { Solver } from './solver';
@@ -904,5 +912,510 @@ describe('Solver model extension', () => {
     const s = state();
     s.modelContext = context((variables) => budget(variables, rational.one));
     expect(() => solver['glpk'](s)).toThrowError(/violates lower constraint/);
+  });
+
+  describe('model input and solution defenses', () => {
+    it('rejects a compiler that mutates a source objective after its variable is bound', () => {
+      const target = recipe('empty');
+      target.in = {};
+      target.out = {};
+      target.output = {};
+      target.produces = new Set();
+      const fixed = objective('fixed', target, rational.one);
+      const data = {
+        itemIds: [],
+        itemAvailableRecipeIds: {},
+        itemAvailableIoRecipeIds: {},
+        adjustedRecipe: {},
+        itemRecord: {},
+        flags: new Set(),
+      } as unknown as AdjustedDataset;
+      const settings = { ...initialSettingsState } as Settings;
+      const modelContext = context((variables) => {
+        expect(variables.map((variable) => variable.ref)).toEqual([
+          objectiveRef('fixed'),
+        ]);
+        // This deliberately violates the pure compiler contract through its
+        // captured caller object, not through the immutable variables snapshot.
+        fixed.id = 'changed';
+        return { constraints: [], integers: [] };
+      });
+      expect(() =>
+        solver.solve([fixed], settings, data, false, 'simplex', modelContext),
+      ).toThrowError('Missing checked model variable');
+    });
+
+    it('rejects non-finite variable properties and malformed model rows before passing them to GLPK', () => {
+      const model = new Model();
+      for (const properties of [
+        { name: 'x', obj: Infinity },
+        { name: 'x', lb: NaN },
+        { name: 'x', ub: -Infinity },
+        { lb: NaN },
+      ]) {
+        expect(() => addModelVariable(model, properties)).toThrowError(
+          /Non-finite/,
+        );
+      }
+      const x = addModelVariable(model, { name: 'x', lb: 0 });
+      const rows: ModelRow[] = [];
+      expect(() => addModelRow(model, {}, rows)).toThrowError(
+        /explicit coefficient list/,
+      );
+      expect(() =>
+        addModelRow(model, { coeffs: new Map([[x, 1]]) }, rows),
+      ).toThrowError(/explicit coefficient list/);
+      for (const properties of [
+        { coeffs: [[x, 1]], lb: NaN },
+        { coeffs: [[x, 1]], ub: Infinity },
+        { coeffs: [[x, NaN]] },
+      ] as ConstraintProperties[]) {
+        expect(() => addModelRow(model, properties, rows)).toThrowError(
+          /Non-finite model row/,
+        );
+      }
+      expect(rows).toEqual([]);
+      expect(model.numConstrs).toBe(0);
+      addModelRow(model, { coeffs: [] }, rows);
+      expect(rows[0].name).toBe('');
+    });
+
+    it('rejects duplicate bindings of the same actual variable', () => {
+      const model = new Model();
+      const x = addModelVariable(model, { lb: 0 });
+      const binding = (id: string): ModelBinding => ({
+        variable: x,
+        description: { ref: recipeRef(id), recipeId: id, recipe: recipe(id) },
+        lower: rational.zero,
+      });
+      expect(() =>
+        bindModelRules(
+          model,
+          context(() => ({ constraints: [], integers: [] })),
+          [binding('a'), binding('b')],
+          [],
+        ),
+      ).toThrowError(/variable bound more than once/);
+    });
+
+    it('rejects malformed compiler output, constraint metadata, references, and terms', () => {
+      const attempt = (rules: unknown): boolean => {
+        const s = state();
+        s.modelContext = context(() => rules as ModelRules);
+        return solver['glpk'](s).error;
+      };
+      for (const rules of [
+        null,
+        {},
+        { constraints: {}, integers: [] },
+        { constraints: [], integers: {} },
+      ]) {
+        expect(() => attempt(rules)).toThrowError(/Invalid model rules/);
+      }
+      for (const constraint of [
+        null,
+        { id: '', source: 'fixture', terms: [] },
+        { id: 'id', source: '', terms: [] },
+        { id: 'id', source: 'fixture', terms: null },
+      ]) {
+        expect(() =>
+          attempt({ constraints: [constraint], integers: [] }),
+        ).toThrowError(/Invalid model constraint/);
+      }
+      for (const ref of [
+        null,
+        { kind: 'other', id: 'r' },
+        { kind: 'recipe', id: '' },
+        { kind: 'recipe', id: 4 },
+      ]) {
+        expect(() =>
+          attempt({ constraints: [], integers: [ref] }),
+        ).toThrowError(/Invalid model variable reference/);
+      }
+      expect(() =>
+        attempt({
+          constraints: [{ id: 'id', source: 'fixture', terms: [null] }],
+          integers: [],
+        }),
+      ).toThrowError(/Invalid term/);
+      const duplicate = { id: 'id', source: 'fixture', terms: [] };
+      expect(() =>
+        attempt({ constraints: [duplicate, duplicate], integers: [] }),
+      ).toThrowError(/Duplicate model constraint/);
+    });
+
+    it('rejects continuous bounds that underflow or collapse to the same floating point value', () => {
+      const s = state();
+      s.modelContext = context(() => ({
+        constraints: [
+          {
+            id: 'tiny',
+            source: 'fixture',
+            terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
+            upper: rational(1n, 10n ** 400n),
+          },
+        ],
+        integers: [],
+      }));
+      expect(() => solver['glpk'](s)).toThrowError(
+        /Unrepresentable upper bound/,
+      );
+
+      const collapsed = state();
+      collapsed.modelContext = context(() => ({
+        constraints: [
+          {
+            id: 'collapsed',
+            source: 'fixture',
+            terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
+            lower: rational(99999999999999999n, 100000000000000000n),
+            upper: rational.one,
+          },
+        ],
+        integers: [],
+      }));
+      expect(() => solver['glpk'](collapsed)).toThrowError(
+        /Indistinguishable bounds/,
+      );
+    });
+
+    it('decides zero and fixed continuous rows using exact original values', () => {
+      const run = (
+        lower: Rational | undefined,
+        upper: Rational | undefined,
+      ): boolean => {
+        const s = state([]);
+        s.itemValues = {};
+        s.recipeObjectives = [
+          objective('fixed', recipe('fixed'), rational(1n, 2n)),
+        ];
+        s.modelContext = context(() => ({
+          constraints: [
+            {
+              id: 'constant',
+              source: 'fixture',
+              lower,
+              upper,
+              terms: [{ ref: objectiveRef('fixed'), coefficient: rational(2) }],
+            },
+          ],
+          integers: [],
+        }));
+        return solver['glpk'](s).error;
+      };
+      expect(run(rational.one, rational.one)).toBeFalse();
+      expect(run(rational(2), undefined)).toBeTrue();
+      expect(run(undefined, rational.zero)).toBeTrue();
+
+      const s = state();
+      s.modelContext = context(() => ({
+        constraints: [
+          {
+            id: 'zero',
+            source: 'fixture',
+            terms: [{ ref: recipeRef('r'), coefficient: rational.zero }],
+            lower: rational.zero,
+            upper: rational.zero,
+          },
+        ],
+        integers: [],
+      }));
+      expect(solver['glpk'](s).error).toBeFalse();
+    });
+
+    it('proves a fractional interval with no attainable integer is infeasible', () => {
+      const s = state();
+      s.modelContext = context(() => ({
+        constraints: [
+          {
+            id: 'gap',
+            source: 'fixture',
+            terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
+            lower: rational(1n, 5n),
+            upper: rational(4n, 5n),
+          },
+        ],
+        integers: [recipeRef('r')],
+      }));
+      const result = solver['glpk'](s);
+      expect(result.error).toBeTrue();
+      expect(result.status).toBe('no_feasible');
+      expect(result.returnCode).toBeUndefined();
+    });
+
+    it('rejects overflow in the combined maximize objective', () => {
+      const s = state();
+      s.maximizeType = MaximizeType.Ratio;
+      s.costs.maximize = rational(-(10n ** 308n));
+      s.itemValues['product'].max = rational(10n ** 308n);
+      expect(() => solver['glpk'](s)).toThrowError(
+        /Non-finite maximize objective/,
+      );
+    });
+
+    it('checks continuous column and row bounds using the same solution and tolerance', () => {
+      const model = new Model({ sense: 'min' });
+      const x = addModelVariable(model, { name: 'x', lb: 0, ub: 2, obj: 0 });
+      const rows: ModelRow[] = [];
+      addModelRow(
+        model,
+        { name: 'fixed-row', coeffs: [[x, 1]], lb: 1, ub: 1 },
+        rows,
+      );
+      expect(model.simplex({ msgLevel: 'off' })).toBe('ok');
+      expect(model.status).toBe('optimal');
+      const spy = spyOnProperty(Variable.prototype, 'value', 'get');
+      spy.and.returnValue(-1);
+      expect(() =>
+        validateModelSolution(model, rows, [], [], [], false),
+      ).toThrowError(/violates lower bound/);
+      spy.and.returnValue(3);
+      expect(() =>
+        validateModelSolution(model, rows, [], [], [], false),
+      ).toThrowError(/violates upper bound/);
+      spy.and.returnValue(0.5);
+      expect(() =>
+        validateModelSolution(model, rows, [], [], [], false),
+      ).toThrowError(/violates lower constraint/);
+      spy.and.returnValue(1.5);
+      expect(() =>
+        validateModelSolution(model, rows, [], [], [], false),
+      ).toThrowError(/violates upper constraint/);
+      spy.and.returnValue(1 + 1e-8);
+      expect(
+        validateModelSolution(model, rows, [], [], [], false).values.get(x),
+      ).toBeCloseTo(1 + 1e-8, 12);
+      spy.and.returnValue(NaN);
+      expect(() =>
+        validateModelSolution(model, rows, [], [], [], false),
+      ).toThrowError(/Non-finite solution value/);
+    });
+
+    it('rejects a non-finite objective coefficient or reported objective', () => {
+      const model = new Model();
+      addModelVariable(model, { name: 'x', lb: 0, ub: 1, obj: 1 });
+      expect(model.simplex({ msgLevel: 'off' })).toBe('ok');
+      const coeff = spyOnProperty(
+        Variable.prototype,
+        'obj',
+        'get',
+      ).and.returnValue(NaN);
+      expect(() =>
+        validateModelSolution(model, [], [], [], [], false),
+      ).toThrowError(/Non-finite solution value or objective coefficient/);
+      coeff.and.callThrough();
+      spyOnProperty(Model.prototype, 'value', 'get').and.returnValue(NaN);
+      expect(() =>
+        validateModelSolution(model, [], [], [], [], false),
+      ).toThrowError(/objective does not match/);
+    });
+
+    it('rejects overflow while recomputing a real model row or objective', () => {
+      const rowModel = new Model();
+      const x = addModelVariable(rowModel, { name: 'x', lb: 2, ub: 2, obj: 0 });
+      const rows: ModelRow[] = [];
+      addModelRow(rowModel, { name: 'large', coeffs: [[x, 1e308]] }, rows);
+      expect(rowModel.simplex({ msgLevel: 'off' })).toBe('ok');
+      expect(rowModel.status).toBe('optimal');
+      expect(() =>
+        validateModelSolution(rowModel, rows, [], [], [], false),
+      ).toThrowError(/Non-finite solution row/);
+
+      const objectiveModel = new Model();
+      const y = addModelVariable(objectiveModel, {
+        name: 'y',
+        lb: 2,
+        ub: 2,
+        obj: 1e308,
+      });
+      const objectiveRows: ModelRow[] = [];
+      addModelRow(
+        objectiveModel,
+        { name: 'valid', coeffs: [[y, 1]], lb: 0 },
+        objectiveRows,
+      );
+      expect(objectiveModel.simplex({ msgLevel: 'off' })).toBe('ok');
+      expect(objectiveModel.status).toBe('optimal');
+      expect(() =>
+        validateModelSolution(objectiveModel, objectiveRows, [], [], [], false),
+      ).toThrowError(/objective does not match/);
+    });
+
+    it('rejects validation metadata containing variables from another model', () => {
+      const model = new Model();
+      const x = addModelVariable(model, { name: 'x', lb: 1, ub: 1, obj: 0 });
+      const rows: ModelRow[] = [];
+      addModelRow(model, { name: 'actual', coeffs: [[x, 1]], lb: 0 }, rows);
+      expect(model.simplex({ msgLevel: 'off' })).toBe('ok');
+
+      const other = new Model();
+      const foreign = addModelVariable(other, { name: 'foreign', lb: 0 });
+      const binding: ModelBinding = {
+        variable: foreign,
+        description: {
+          ref: recipeRef('foreign'),
+          recipeId: 'foreign',
+          recipe: recipe('foreign'),
+        },
+        lower: rational.zero,
+      };
+      expect(() =>
+        validateModelSolution(
+          model,
+          rows,
+          [],
+          [{ name: 'foreign', coeffs: [[foreign, 1n]] }],
+          [],
+          false,
+        ),
+      ).toThrowError(/Invalid exact integer row/);
+      expect(() =>
+        validateModelSolution(
+          model,
+          rows,
+          [],
+          [{ name: 'not-integer', coeffs: [[x, 1n]] }],
+          [],
+          false,
+        ),
+      ).toThrowError(/Invalid exact integer row/);
+      expect(() =>
+        validateModelSolution(
+          model,
+          rows,
+          [binding],
+          [],
+          [{ name: 'foreign-original', terms: [[binding, rational.one]] }],
+          false,
+        ),
+      ).toThrowError(/Invalid exact row/);
+      expect(() =>
+        validateModelSolution(
+          model,
+          [{ name: 'foreign-row', coeffs: [[foreign, 1]] }],
+          [],
+          [],
+          [],
+          false,
+        ),
+      ).toThrowError(/Invalid solution row/);
+      expect(() =>
+        validateModelSolution(
+          model,
+          [{ name: 'invalid-coefficient', coeffs: [[x, NaN]] }],
+          [],
+          [],
+          [],
+          false,
+        ),
+      ).toThrowError(/Invalid solution row/);
+    });
+
+    it('independently checks original rational rows against a solved integer variable', () => {
+      const model = new Model();
+      const x = addModelVariable(model, { name: 'x', lb: 1, ub: 1, obj: 0 });
+      const rows: ModelRow[] = [];
+      addModelRow(model, { name: 'actual', coeffs: [[x, 1]], lb: 0 }, rows);
+      const binding: ModelBinding = {
+        variable: x,
+        description: {
+          ref: recipeRef('x'),
+          recipeId: 'x',
+          recipe: recipe('x'),
+        },
+        lower: rational.one,
+        upper: rational.one,
+      };
+      const bound = bindModelRules(
+        model,
+        context(() => ({ constraints: [], integers: [recipeRef('x')] })),
+        [binding],
+        rows,
+      );
+      expect(model.simplex({ msgLevel: 'off' })).toBe('ok');
+      expect(model.intopt({ msgLevel: 'off' })).toBe('ok');
+      expect(model.statusMIP).toBe('optimal');
+      const terms: [ModelBinding, Rational][] = [[binding, rational.one]];
+      expect(() =>
+        validateModelSolution(
+          model,
+          rows,
+          bound.integerBindings,
+          [],
+          [{ name: 'lower', terms, lower: rational(2) }],
+          true,
+        ),
+      ).toThrowError(/exact original lower constraint/);
+      expect(() =>
+        validateModelSolution(
+          model,
+          rows,
+          bound.integerBindings,
+          [],
+          [
+            {
+              name: 'upper',
+              terms,
+              upper: rational(99999999999999999n, 100000000000000000n),
+            },
+          ],
+          true,
+        ),
+      ).toThrowError(/exact original upper constraint/);
+      expect(
+        validateModelSolution(
+          model,
+          rows,
+          bound.integerBindings,
+          [],
+          [{ name: 'equal', terms, lower: rational.one, upper: rational.one }],
+          true,
+        ).values.get(x),
+      ).toBe(1);
+    });
+
+    it('rejects forged integer values below a fixed lower bound or an exact row', () => {
+      const getter = Object.getOwnPropertyDescriptor(
+        Variable.prototype,
+        'valueMIP',
+      )?.get;
+      if (!getter) throw new Error('Missing MIP variable getter');
+      const spy = spyOnProperty(Variable.prototype, 'valueMIP', 'get');
+      spy.and.callFake(function (this: Variable): number {
+        return this.name === 'fixed' ? 0 : (getter.call(this) as number);
+      });
+      const fixed = state([]);
+      fixed.itemValues = {};
+      fixed.recipeObjectives = [
+        objective('fixed', recipe('fixed'), rational.one),
+      ];
+      fixed.modelContext = context(() => ({
+        constraints: [],
+        integers: [objectiveRef('fixed')],
+      }));
+      expect(() => solver['glpk'](fixed)).toThrowError(
+        /exact integer lower bound/,
+      );
+
+      spy.and.callFake(function (this: Variable): number {
+        return this.name === 'r' ? 0 : (getter.call(this) as number);
+      });
+      const lower = state();
+      lower.itemValues = {};
+      lower.modelContext = context(() => ({
+        constraints: [
+          {
+            id: 'minimum',
+            source: 'fixture',
+            lower: rational.one,
+            terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
+          },
+        ],
+        integers: [recipeRef('r')],
+      }));
+      expect(() => solver['glpk'](lower)).toThrowError(
+        /exact integer lower constraint/,
+      );
+    });
   });
 });

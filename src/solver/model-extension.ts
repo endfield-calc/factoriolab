@@ -104,7 +104,6 @@ function refKey(ref: ModelVariableRef): string {
 }
 
 function finiteNumber(value: Rational, label: string): number {
-  if (!(value instanceof Rational)) throw new Error(`Invalid ${label}`);
   const number = value.toNumber();
   if (!Number.isFinite(number)) throw new Error(`Non-finite ${label}`);
   if (number === 0 && value.nonzero())
@@ -157,7 +156,6 @@ function integerRow(
     (result, [, coefficient]) => gcd(result, coefficient),
     0n,
   );
-  if (divisor === 0n) throw new Error(`Empty integer row: ${name}`);
   const step = new Rational(divisor, denominator);
   const coeffs = scaled.map(([variable, coefficient]): [Variable, bigint] => [
     variable,

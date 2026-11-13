@@ -13,6 +13,23 @@ describe('addIfMissing', () => {
 });
 
 describe('updateHash', () => {
+  it('reserves retired IDs and null slots for append-only protocols on repeated updates', () => {
+    const hash = emptyModHash();
+    hash.items = ['retired', null, ItemId.WoodenChest];
+    hash.recipes = ['retired-recipe', null];
+    updateHash(mockModData, hash, 'append-only');
+    expect(hash.items.slice(0, 3)).toEqual([
+      'retired',
+      null,
+      ItemId.WoodenChest,
+    ]);
+    expect(hash.recipes.slice(0, 2)).toEqual(['retired-recipe', null]);
+    expect(hash.items.filter((id) => id === ItemId.WoodenChest).length).toBe(1);
+    const first = JSON.stringify(hash);
+    updateHash(mockModData, hash, 'append-only');
+    expect(JSON.stringify(hash)).toBe(first);
+  });
+
   it('should update hash including quality items', () => {
     const data = {
       ...mockModData,

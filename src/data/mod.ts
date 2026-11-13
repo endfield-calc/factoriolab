@@ -1,6 +1,8 @@
 import { Game } from './game';
 
 export interface ModInfo {
+  /** Stable public protocols may reserve every historical hash slot permanently. */
+  hashPolicy?: 'append-only';
   /**
    * Do not use the colon (:) character in ID.
    * ID must match the folder name of the mod inside the data folder.

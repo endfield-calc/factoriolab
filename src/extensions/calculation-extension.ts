@@ -41,6 +41,12 @@ export interface ModelRules {
   readonly integers: readonly ModelVariableRef[];
 }
 
+/** Prepared settings and a pure compiler for the variables actually in a model. */
+export interface CalculationModelContext {
+  readonly recipeSettings: ReadonlyValue<Record<string, RecipeSettings>>;
+  readonly compile: (variables: readonly CalculationVariable[]) => ModelRules;
+}
+
 export interface DerivedObjective {
   readonly objective: ReadonlyValue<ObjectiveState>;
   readonly owner: string;

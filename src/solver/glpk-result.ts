@@ -13,7 +13,8 @@ export interface GlpkResult {
   unproduceable: Record<string, Rational>;
   excluded: Record<string, Rational>;
   cost: Rational;
-  returnCode: GlpkReturnCode;
+  /** Absent when an exact model check proves infeasibility before GLPK runs. */
+  returnCode?: GlpkReturnCode;
   status: Status;
   unboundedRecipeId?: string;
   error: boolean;

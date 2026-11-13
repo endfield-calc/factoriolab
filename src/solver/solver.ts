@@ -10,6 +10,7 @@ import {
 } from 'glpk-ts';
 
 import { AdjustedRecipe, Recipe } from '~/data/schema/recipe';
+import { CalculationModelContext } from '~/extensions/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
 import {
   isRecipeObjective,
@@ -18,6 +19,7 @@ import {
 } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { GlpkAlgorithm } from '~/state/preferences/glpk-algorithm';
+import { RecipeState } from '~/state/recipes/recipe-state';
 import {
   CostKey,
   FACTORIO_FLUID_COST_RATIO,
@@ -31,6 +33,15 @@ import { contains } from '~/utils/record';
 
 import { GlpkResult, GlpkReturnCode } from './glpk-result';
 import { ItemValues } from './item-values';
+import {
+  addModelRow,
+  addModelVariable,
+  bindModelRules,
+  INTEGER_TOLERANCE,
+  ModelBinding,
+  ModelRow,
+  validateModelSolution,
+} from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
 import { SimplexResult } from './simplex-result';
 import { SimplexSolution } from './simplex-solution';
@@ -47,13 +58,20 @@ export class Solver {
     data: AdjustedDataset,
     paused: boolean,
     glpkAlgorithm: GlpkAlgorithm,
+    modelContext?: CalculationModelContext,
   ): SimplexResult {
     if (paused) return { steps: [], resultType: 'paused' };
 
     if (objectives.length === 0) return { steps: [], resultType: 'skipped' };
 
     // Get matrix state
-    const state = this.getState(objectives, settings, data, glpkAlgorithm);
+    const state = this.getState(
+      objectives,
+      settings,
+      data,
+      glpkAlgorithm,
+      modelContext,
+    );
 
     // Get solution for matrix state
     const solution = this.getSolution(state);
@@ -93,6 +111,7 @@ export class Solver {
     settings: Settings,
     data: AdjustedDataset,
     glpkAlgorithm: GlpkAlgorithm,
+    modelContext?: CalculationModelContext,
   ): SimplexState {
     // Set up state object
     const state: SimplexState = {
@@ -116,6 +135,7 @@ export class Solver {
       hasSurplusCost: settings.costs.surplus.gt(rational.zero),
       glpkAlgorithm,
     };
+    if (modelContext) state.modelContext = modelContext;
 
     // Add item objectives to matrix state
     for (const obj of objectives) {
@@ -358,6 +378,8 @@ export class Solver {
     const recipeIds = Object.keys(state.recipes);
 
     const m = new Model({ sense: 'min' });
+    const bindings: ModelBinding[] = [];
+    const rows: ModelRow[] = [];
     // Variables for recipes
     const recipeVarRecord: Record<string, Variable> = {};
     // Variables for recipe output objectives, where lb and ub represent
@@ -387,7 +409,7 @@ export class Solver {
       lb: 0,
       name: 'maximize',
     };
-    const maximizeVar = m.addVar(config);
+    const maximizeVar = addModelVariable(m, config);
 
     // Used to track quantities from maximization ratio
     let maximizeFactor = rational.zero;
@@ -405,7 +427,20 @@ export class Solver {
         config.ub = state.recipeLimits[recipeId].toNumber();
       }
 
-      recipeVarRecord[recipeId] = m.addVar(config);
+      recipeVarRecord[recipeId] = addModelVariable(m, config);
+      if (state.modelContext) {
+        bindings.push({
+          description: {
+            ref: { kind: 'recipe', id: recipeId },
+            recipeId,
+            machineId: state.modelContext.recipeSettings[recipeId]?.machineId,
+            recipe: state.recipes[recipeId],
+          },
+          variable: recipeVarRecord[recipeId],
+          lower: rational.zero,
+          upper: state.recipeLimits[recipeId],
+        });
+      }
     }
 
     // Add recipe objective vars to model
@@ -421,7 +456,20 @@ export class Solver {
         config.lb = obj.value.toNumber();
       }
 
-      recipeObjectiveVarRecord[obj.id] = m.addVar(config);
+      recipeObjectiveVarRecord[obj.id] = addModelVariable(m, config);
+      if (state.modelContext) {
+        bindings.push({
+          description: {
+            ref: { kind: 'objective', id: obj.id },
+            recipeId: obj.recipe.id,
+            machineId: (obj as RecipeObjective & RecipeState).machineId,
+            recipe: obj.recipe,
+          },
+          variable: recipeObjectiveVarRecord[obj.id],
+          lower: obj.type === ObjectiveType.Output ? obj.value : rational.zero,
+          upper: obj.type === ObjectiveType.Output ? obj.value : undefined,
+        });
+      }
 
       if (obj.type === ObjectiveType.Maximize) {
         switch (state.maximizeType) {
@@ -431,7 +479,7 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            maximizeRecipeVarRecord[obj.id] = m.addVar(varConfig);
+            maximizeRecipeVarRecord[obj.id] = addModelVariable(m, varConfig);
             const coeffs: [Variable, number][] = [
               [recipeObjectiveVarRecord[obj.id], 1],
               [maximizeRecipeVarRecord[obj.id], -1],
@@ -441,7 +489,11 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            recipeObjectiveConstrRecord[obj.id] = m.addConstr(constrConfig);
+            recipeObjectiveConstrRecord[obj.id] = addModelRow(
+              m,
+              constrConfig,
+              rows,
+            );
             break;
           }
           case MaximizeType.Ratio: {
@@ -455,7 +507,7 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            recipeObjectiveConstrRecord[obj.id] = m.addConstr(config);
+            recipeObjectiveConstrRecord[obj.id] = addModelRow(m, config, rows);
             break;
           }
         }
@@ -470,7 +522,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      unproduceableVarRecord[itemId] = m.addVar(config);
+      unproduceableVarRecord[itemId] = addModelVariable(m, config);
     }
 
     // Add excluded vars to model
@@ -481,7 +533,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      excludedVarRecord[itemId] = m.addVar(config);
+      excludedVarRecord[itemId] = addModelVariable(m, config);
     }
 
     // Add input/output vars to model
@@ -492,7 +544,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      surplusVarRecord[itemId] = m.addVar(config);
+      surplusVarRecord[itemId] = addModelVariable(m, config);
 
       const values = state.itemValues[itemId];
       if (values.in) {
@@ -501,7 +553,7 @@ export class Solver {
           ub: values.in.toNumber(),
           name: itemId,
         };
-        inputVarRecord[itemId] = m.addVar(inputConfig);
+        inputVarRecord[itemId] = addModelVariable(m, inputConfig);
       }
     }
 
@@ -575,7 +627,7 @@ export class Solver {
               lb: 0,
               name: itemId,
             };
-            maximizeItemVarRecord[itemId] = m.addVar(config);
+            maximizeItemVarRecord[itemId] = addModelVariable(m, config);
             netCoeffs.push([maximizeItemVarRecord[itemId], -1]);
             break;
           }
@@ -593,7 +645,7 @@ export class Solver {
         ub: values.out.toNumber(),
         name: itemId,
       };
-      itemConstrRecord[itemId] = m.addConstr(netConfig);
+      itemConstrRecord[itemId] = addModelRow(m, netConfig, rows);
 
       if (values.lim) {
         const inputConfig: ConstraintProperties = {
@@ -601,7 +653,7 @@ export class Solver {
           ub: values.lim.toNumber(),
           name: itemId,
         };
-        inputLimitConstrRecord[itemId] = m.addConstr(inputConfig);
+        inputLimitConstrRecord[itemId] = addModelRow(m, inputConfig, rows);
       }
     }
 
@@ -610,24 +662,57 @@ export class Solver {
      * helps prevent increases in values of maximize objectives from overtaking
      * the maximize cost and resulting in no production as the optimal solution.
      */
-    maximizeVar.obj = maximizeVar.obj * maximizeFactor.toNumber();
+    const maximizeCost = maximizeVar.obj * maximizeFactor.toNumber();
+    if (!Number.isFinite(maximizeCost))
+      throw new Error('Non-finite maximize objective coefficient');
+    maximizeVar.obj = maximizeCost;
 
-    // Run GLPK simplex
+    const extension = state.modelContext
+      ? bindModelRules(m, state.modelContext, bindings, rows)
+      : {
+          integerVariables: [],
+          integerBindings: [],
+          integerRows: [],
+          originalRows: [],
+          infeasible: false,
+        };
+    if (extension.infeasible) {
+      return {
+        status: 'no_feasible',
+        time: 0,
+        surplus: {},
+        unproduceable: {},
+        excluded: {},
+        recipes: {},
+        cost: rational.zero,
+        error: true,
+      };
+    }
+
+    // An optimal LP basis prepares either the final LP or the integer solve.
     const start = Date.now();
-    const [returnCode, status] = this.glpkSimplex(m, state.glpkAlgorithm);
+    let [returnCode, status] = this.glpkSimplex(m, state.glpkAlgorithm);
+    const mip = extension.integerVariables.length > 0;
+    if (returnCode === 'ok' && status === 'optimal' && mip) {
+      returnCode = m.intopt({ msgLevel: 'off', tolInt: INTEGER_TOLERANCE });
+      status = m.statusMIP;
+    }
     const time = Date.now() - start;
     const surplus: Record<string, Rational> = {};
     const unproduceable: Record<string, Rational> = {};
     const excluded: Record<string, Rational> = {};
     const recipes: Record<string, Rational> = {};
-    const cost = rational(m.value);
+    const modelObjective = mip ? m.valueMIP : m.value;
+    let cost = mip ? rational.zero : rational(modelObjective);
 
     if (returnCode !== 'ok' || status !== 'optimal') {
       let ray: Constraint | Variable | undefined;
-      try {
-        ray = m.ray;
-      } catch {
-        // Ignore error
+      if (!mip) {
+        try {
+          ray = m.ray;
+        } catch {
+          // Ignore error
+        }
       }
 
       let unboundedRecipeId: string | undefined;
@@ -649,16 +734,34 @@ export class Solver {
       };
     }
 
+    const checked = validateModelSolution(
+      m,
+      rows,
+      extension.integerBindings,
+      extension.integerRows,
+      extension.originalRows,
+      mip,
+    );
+    cost = rational(mip ? checked.cost : modelObjective);
+    const valueOf = (variable: Variable): number => {
+      const value = checked.values.get(variable);
+      if (value === undefined)
+        throw new Error('Missing checked model variable');
+      return value;
+    };
+
     // Parse solution
     for (const itemId of itemIds) {
       const values = state.itemValues[itemId];
-      const val = rational(surplusVarRecord[itemId].value);
+      const val = rational(valueOf(surplusVarRecord[itemId]));
       if (val.nonzero()) surplus[itemId] = val;
+      if (mip && values.in)
+        values.in = rational(valueOf(inputVarRecord[itemId]));
 
       if (recipeObjectiveOutput[itemId]) {
         for (const objId of Object.keys(recipeObjectiveOutput[itemId])) {
           const outRat = recipeObjectiveOutput[itemId][objId];
-          const recipeVal = recipeObjectiveVarRecord[objId].value;
+          const recipeVal = valueOf(recipeObjectiveVarRecord[objId]);
           const recipeValRat = rational(recipeVal);
           const val = recipeValRat.mul(outRat);
           values.out = values.out.add(val);
@@ -668,7 +771,7 @@ export class Solver {
       if (values.max != null) {
         switch (state.maximizeType) {
           case MaximizeType.Ratio: {
-            const maxVal = maximizeVar.value;
+            const maxVal = valueOf(maximizeVar);
             const maxRat = rational(maxVal);
             const val = maxRat.mul(values.max);
             // Add maximize output to items output
@@ -676,7 +779,7 @@ export class Solver {
             break;
           }
           case MaximizeType.Weight: {
-            const maxVal = maximizeItemVarRecord[itemId].value;
+            const maxVal = valueOf(maximizeItemVarRecord[itemId]);
             const val = rational(maxVal);
             // Add maximize output to items output
             values.out = values.out.add(val);
@@ -687,23 +790,23 @@ export class Solver {
     }
 
     for (const recipeId of recipeIds) {
-      const val = rational(recipeVarRecord[recipeId].value);
+      const val = rational(valueOf(recipeVarRecord[recipeId]));
       if (val.nonzero()) recipes[recipeId] = val;
     }
 
     for (const itemId of state.unproduceableIds) {
-      const val = rational(unproduceableVarRecord[itemId].value);
+      const val = rational(valueOf(unproduceableVarRecord[itemId]));
       if (val.nonzero()) unproduceable[itemId] = val;
     }
 
     for (const itemId of state.excludedIds) {
-      const val = rational(excludedVarRecord[itemId].value);
+      const val = rational(valueOf(excludedVarRecord[itemId]));
       if (val.nonzero()) excluded[itemId] = val;
     }
 
     // Update recipe objective counts to account for maximizations
     state.recipeObjectives = state.recipeObjectives.map((o) =>
-      spread(o, { value: rational(recipeObjectiveVarRecord[o.id].value) }),
+      spread(o, { value: rational(valueOf(recipeObjectiveVarRecord[o.id])) }),
     );
 
     return {

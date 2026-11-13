@@ -6,7 +6,7 @@ import { recipeHasQuality } from '~/data/schema/recipe';
 
 type ModHashSet = Record<keyof ModHash, Set<string>>;
 
-export function emptyModHash(): ModHash {
+export function emptyModHash(): Required<ModHash> {
   return {
     items: [],
     beacons: [],
@@ -89,7 +89,7 @@ export function updateHash(
       const known = new Set(previous);
       hash[key] = [
         ...previous,
-        ...(current[key] ?? []).filter((id) => id != null && !known.has(id)),
+        ...current[key].filter((id) => id != null && !known.has(id)),
       ];
     }
     return;

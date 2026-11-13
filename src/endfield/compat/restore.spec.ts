@@ -125,6 +125,45 @@ function decode(
 }
 
 describe('Endfield workspace restoration', () => {
+  it('rejects non-Rational values at the public detached workspace boundary without modifying the input', () => {
+    for (const value of ['1', 1, { p: 1n, q: 1n }]) {
+      const entry = {
+        ...objective('1', 'originium_ore', 0, 1, ObjectiveUnit.Items),
+        value,
+      } as unknown as ObjectiveState;
+      const input = { objectivesState: { 1: entry } };
+      expectDiagnostic(() => decode(input, { v: '12' }), 'objectives.1.value');
+      expect(input.objectivesState[1]).toBe(entry);
+      expect(entry.value as unknown).toBe(value);
+    }
+  });
+
+  it('preserves typed recipe fields on the detached legacy-supply API independently of wire serialization', () => {
+    const source = objective(
+      '1',
+      'originium_ore',
+      12,
+      2,
+      ObjectiveUnit.Machines,
+      { cost: rational(-3), productivity: rational(7, 5) },
+    );
+    const restored = decode(
+      { objectivesState: { 1: source } },
+      { v: '11' },
+      { 1: prepared('1', 'originium_ore', rational(1, 3)) },
+    ).extension as EndfieldState;
+    expect(
+      restored.resourceRecipeSettings.originium_ore?.cost?.eq(rational(-3)),
+    ).toBeTrue();
+    expect(
+      restored.resourceRecipeSettings.originium_ore?.productivity?.eq(
+        rational(7, 5),
+      ),
+    ).toBeTrue();
+    expect(
+      restored.resourceLimits.rates.originium_ore.eq(rational(2, 3)),
+    ).toBeTrue();
+  });
   it('rejects zero-speed ordinary and legacy recipe settings before preparation', () => {
     for (const type of [0, 12]) {
       const state = {

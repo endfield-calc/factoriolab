@@ -66,6 +66,24 @@ function expectDiagnostic(
 }
 
 describe('Endfield ef codec', () => {
+  it('reads each whitelisted resource setting once and retains its captured value', () => {
+    let reads = 0;
+    const settings = Object.defineProperty({}, 'originium_ore', {
+      enumerable: true,
+      get: () => (++reads === 1 ? { cost: rational(-3) } : undefined),
+    });
+    const restored = decodeEndfield(
+      encodeEndfield({
+        ...createEndfieldState(),
+        resourceRecipeSettings: settings,
+      }),
+      data,
+    );
+    expect(reads).toBe(1);
+    expect(
+      restored.resourceRecipeSettings.originium_ore?.cost?.eq(rational(-3)),
+    ).toBeTrue();
+  });
   it('rejects zero recipe speed before a resource workspace can be committed', () => {
     expect(() =>
       decodeEndfield(

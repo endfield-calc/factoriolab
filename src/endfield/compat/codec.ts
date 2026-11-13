@@ -233,9 +233,8 @@ function encodeModules(
 }
 
 function encodeRecipe(
-  value: EndfieldState['resourceRecipeSettings'][ResourceId],
+  value: NonNullable<EndfieldState['resourceRecipeSettings'][ResourceId]>,
 ): object {
-  if (value == null) return {};
   return {
     ...(value.machineId == null ? {} : { machineId: value.machineId }),
     ...(value.fuelId == null ? {} : { fuelId: value.fuelId }),
@@ -270,8 +269,10 @@ function encodeRecipe(
 export function encodeEndfield(state: EndfieldState): string {
   const settings = Object.fromEntries(
     resourceIds
-      .filter((id) => state.resourceRecipeSettings[id] != null)
-      .map((id) => [id, encodeRecipe(state.resourceRecipeSettings[id])]),
+      .map((id) => [id, state.resourceRecipeSettings[id]] as const)
+      .flatMap(([id, value]) =>
+        value == null ? [] : [[id, encodeRecipe(value)]],
+      ),
   );
   const payload = {
     version: state.version,

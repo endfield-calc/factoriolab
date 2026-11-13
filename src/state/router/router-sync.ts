@@ -139,6 +139,11 @@ interface NavigationStatus {
   readonly retry?: RouteInput;
 }
 
+interface Settlement {
+  readonly ticket: number;
+  readonly status: NavigationStatus;
+}
+
 interface RouteInput {
   readonly params: Params;
   readonly queryParams: Params;
@@ -197,6 +202,7 @@ export class RouterSync {
   private readonly navigationPending = signal(false);
   private navigationId?: number;
   private navigationStatus?: NavigationStatus;
+  private settlement?: Settlement;
   private navigationHadRoute = false;
   private readonly retryRestore = new Subject<RouteInput>();
   private lastRouteInput?: RouteInput;
@@ -361,9 +367,11 @@ export class RouterSync {
                 take(1),
                 tap((resources) => {
                   if (resources.error != null) throw resources.error;
-                  if (!this.lifecycle.current(ticket)) return;
-                  const { data, hash } = resources;
-                  if (data == null || hash == null) return;
+                  // The filter admits a non-error result only with both values.
+                  const { data, hash } = resources as typeof resources & {
+                    data: ModData;
+                    hash: ModHash;
+                  };
                   this.updateState(
                     migrated.modId,
                     migrated.params,
@@ -446,14 +454,18 @@ export class RouterSync {
   private beginNavigation(event: NavigationStart): void {
     const alreadyPending = this.navigationPending();
     const wasReady = this.lifecycle.ready();
-    if (!alreadyPending) {
-      this.navigationStatus = {
-        ready: this.ready(),
-        lifecycleReady: wasReady,
-        diagnostics: this.lifecycle.diagnostics(),
-        originalInput: this.lifecycle.originalInput(),
-        retry: this.restoring ? this.lastRouteInput : undefined,
-      };
+    if (!alreadyPending || this.navigationStatus == null) {
+      const settlement = this.settlement;
+      this.navigationStatus =
+        settlement != null && this.lifecycle.current(settlement.ticket)
+          ? settlement.status
+          : {
+              ready: this.ready(),
+              lifecycleReady: wasReady,
+              diagnostics: this.lifecycle.diagnostics(),
+              originalInput: this.lifecycle.originalInput(),
+              retry: this.restoring ? this.lastRouteInput : undefined,
+            };
     }
     this.navigationId = event.id;
     this.navigationHadRoute = false;
@@ -483,7 +495,6 @@ export class RouterSync {
     }
     this.navigationId = undefined;
     this.navigationStatus = undefined;
-    if (this.ready() && this.lifecycle.ready()) this.stable = undefined;
     this.navigationPending.set(false);
   }
 
@@ -506,12 +517,27 @@ export class RouterSync {
     this.writeSequence++;
     this.ready.set(false);
     this.restoring = false;
+    const settlement: Settlement = {
+      ticket,
+      status: {
+        ready: false,
+        lifecycleReady: false,
+        diagnostics: [],
+        originalInput,
+      },
+    };
+    this.settlement = settlement;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
+      if (!this.lifecycle.current(ticket)) return;
       this.stable = undefined;
     } catch (error) {
+      if (!this.lifecycle.current(ticket)) return;
       this.failRestore(ticket, error);
+    } finally {
+      if (this.settlement === settlement) this.settlement = undefined;
     }
+    if (!this.lifecycle.current(ticket)) return;
     this.navigationPending.set(false);
   }
 
@@ -523,23 +549,35 @@ export class RouterSync {
       this.navigationPending.set(false);
       return;
     }
-    const ticket = this.lifecycle.begin(originalInput ?? status.originalInput);
+    const target = {
+      ...status,
+      originalInput: originalInput ?? status.originalInput,
+    };
+    const ticket = this.lifecycle.begin(target.originalInput);
     this.activeTicket = ticket;
     this.writeSequence++;
+    const settlement: Settlement = { ticket, status: target };
+    this.settlement = settlement;
     let restored = false;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
-      if (status.lifecycleReady)
-        this.lifecycle.complete(ticket, status.diagnostics);
-      else this.lifecycle.fail(ticket, status.diagnostics);
-      this.ready.set(status.ready);
-      if (status.retry == null) this.stable = undefined;
+      if (!this.lifecycle.current(ticket)) return;
+      if (target.lifecycleReady)
+        this.lifecycle.complete(ticket, target.diagnostics);
+      else this.lifecycle.fail(ticket, target.diagnostics);
+      this.ready.set(target.ready);
+      if (target.retry == null) this.stable = undefined;
       restored = true;
     } catch (error) {
+      if (!this.lifecycle.current(ticket)) return;
       this.failRestore(ticket, error);
+    } finally {
+      if (this.settlement === settlement) this.settlement = undefined;
     }
+    if (!this.lifecycle.current(ticket)) return;
     this.navigationPending.set(false);
-    if (restored && status.retry != null) this.retryRestore.next(status.retry);
+    if (restored && target.retry != null && this.lifecycle.current(ticket))
+      this.retryRestore.next(target.retry);
   }
 
   private errorMessage(error: unknown): string {
@@ -578,12 +616,6 @@ export class RouterSync {
   private failRestore(ticket: number, error: unknown): void {
     if (!this.lifecycle.current(ticket)) return;
     this.restoring = false;
-    let rollbackError: unknown;
-    try {
-      if (this.stable != null) this.restoreSnapshot(this.stable);
-    } catch (cause) {
-      rollbackError = cause;
-    }
     const diagnostics: RestoreDiagnostic[] =
       error instanceof WorkspaceRestoreError
         ? [...error.diagnostics]
@@ -594,6 +626,26 @@ export class RouterSync {
               severity: 'error',
             },
           ];
+    const settlement: Settlement = {
+      ticket,
+      status: {
+        ready: false,
+        lifecycleReady: false,
+        diagnostics,
+        originalInput: this.lifecycle.originalInput(),
+      },
+    };
+    this.settlement = settlement;
+    let rollbackError: unknown;
+    try {
+      if (this.stable != null) this.restoreSnapshot(this.stable);
+      if (!this.lifecycle.current(ticket)) return;
+    } catch (cause) {
+      if (!this.lifecycle.current(ticket)) return;
+      rollbackError = cause;
+    } finally {
+      if (this.settlement === settlement) this.settlement = undefined;
+    }
     if (rollbackError != null)
       diagnostics.push({
         code: 'workspace-rollback',
@@ -887,16 +939,20 @@ export class RouterSync {
     try {
       this.dispatch(decoded.state, ticket == null);
       this.extension.commit(decoded.extension);
+      if (ticket != null && !this.lifecycle.current(ticket)) return;
     } catch (error) {
+      if (ticket != null && !this.lifecycle.current(ticket)) return;
       try {
         this.restoreSnapshot(previous);
       } catch (rollbackError) {
+        if (ticket != null && !this.lifecycle.current(ticket)) return;
         throw new AggregateError(
           [error, rollbackError],
           'Workspace commit and rollback failed',
           { cause: rollbackError },
         );
       }
+      if (ticket != null && !this.lifecycle.current(ticket)) return;
       throw error;
     }
     if (ticket != null) {

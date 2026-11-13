@@ -159,12 +159,44 @@ describe('PreferencesStore with Endfield product', () => {
     ).toBe('zh');
   });
 
+  it('keeps distinct recovery copies and reuses an existing copy of the same original', () => {
+    const raw = '{"states":';
+    localStorage.clear();
+    localStorage.setItem('preferences', raw);
+    localStorage.setItem('preferences.recovery', 'older original');
+    localStorage.setItem('preferences.recovery.1', 'another original');
+    spyOn(console, 'warn');
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+      ],
+    });
+    const service = TestBed.inject(PreferencesStore);
+    expect(service.migrationWarnings).toContain(
+      'Failed to parse stored preferences',
+    );
+    expect(localStorage.getItem('preferences.recovery')).toBe('older original');
+    expect(localStorage.getItem('preferences.recovery.1')).toBe(
+      'another original',
+    );
+    expect(localStorage.getItem('preferences.recovery.2')).toBe(raw);
+    TestBed.tick();
+
+    localStorage.setItem('preferences', raw);
+    TestBed.runInInjectionContext(() => new PreferencesStore());
+    expect(localStorage.getItem('preferences.recovery.2')).toBe(raw);
+    expect(localStorage.getItem('preferences.recovery.3')).toBeNull();
+  });
+
   it('leaves the original intact when the recovery backup cannot be written', () => {
     const raw = '{bad';
     localStorage.clear();
     localStorage.setItem('preferences', raw);
     const realSet = localStorage.setItem.bind(localStorage);
-    spyOn(localStorage, 'setItem').and.callFake((key, value) => {
+    spyOn(Storage.prototype, 'setItem').and.callFake((key, value) => {
       if (key.startsWith('preferences.recovery')) throw new Error('quota');
       realSet(key, value);
     });
@@ -179,5 +211,9 @@ describe('PreferencesStore with Endfield product', () => {
     TestBed.inject(PreferencesStore);
     TestBed.tick();
     expect(localStorage.getItem('preferences')).toBe(raw);
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      'preferences.recovery',
+      raw,
+    );
   });
 });

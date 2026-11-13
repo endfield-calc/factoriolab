@@ -2,8 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
+import { DEFAULT_MOD } from '~/data/datasets';
 import { createEndfieldProduct } from '~/endfield/product/product';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { PRODUCT_PROFILE, upstreamProduct } from '~/extensions/product-profile';
 import { MockComponent } from '~/tests/mocks/component';
 import { TestModule } from '~/tests/test-module';
 
@@ -135,5 +136,43 @@ describe('upstream editor capability', () => {
     const router = TestBed.inject(Router);
     await RouterTestingHarness.create('/editor?x=1');
     expect(router.url).toBe('/editor?x=1');
+  });
+});
+
+describe('restricted product without a default mod', () => {
+  it('routes legacy shortcuts to the upstream default while retaining the query', async () => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: {
+            ...upstreamProduct,
+            allowEditor: false,
+            allowedModIds: [DEFAULT_MOD],
+          },
+        },
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+          {
+            path: ':id',
+            canActivate: [idGuard],
+            children: [
+              { path: '', pathMatch: 'full', component: MockComponent },
+              { path: 'flow', component: MockComponent },
+            ],
+          },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await RouterTestingHarness.create('/flow?v=11&o=coal');
+    expect(router.url).toEqual(`/${DEFAULT_MOD}/flow?v=11&o=coal`);
+    await router.navigateByUrl('/editor?untrusted=1');
+    expect(router.url).toEqual(`/${DEFAULT_MOD}`);
   });
 });

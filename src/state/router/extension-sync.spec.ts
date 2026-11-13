@@ -1,16 +1,21 @@
+import { HttpTestingController } from '@angular/common/http/testing';
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
   ActivatedRouteSnapshot,
+  NavigationSkipped,
+  NavigationStart,
   provideRouter,
   Router,
   UrlTree,
 } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
+import { Id } from '~/app/id/id';
 import { ModData } from '~/data/schema/mod-data';
 import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
 import { encodeEndfield } from '~/endfield/compat/codec';
@@ -24,6 +29,7 @@ import {
 import {
   cloneDefaults,
   EFFECTIVE_DEFAULTS,
+  PRODUCT_PROFILE,
   upstreamProduct,
 } from '~/extensions/product-profile';
 import {
@@ -35,6 +41,8 @@ import {
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { WorkspacePreparation } from '~/extensions/workspace-preparation';
 import { rational } from '~/rational/rational';
+import { ObjectivesStore } from '~/state/objectives/objectives-store';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { ItemId } from '~/tests/item-id';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
@@ -43,6 +51,7 @@ import { ObjectiveType } from '../objectives/objective-type';
 import { ObjectiveUnit } from '../objectives/objective-unit';
 import { initialSettingsState } from '../settings/settings-state';
 import { initialTableState } from '../table/table-state';
+import { Compression } from './compression';
 import { LabParams } from './lab-params';
 import { Params } from './params';
 import { RouterSync, ZipState } from './router-sync';
@@ -1826,5 +1835,672 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(service['objectivesStore'].state()['1'].value).toEqual(rational(4n));
     await changeObjective(5n);
     expect(service.stored()).toEqual(router.url);
+  });
+});
+
+/** Fault injection: these hooks deliberately violate the extension purity contract. */
+describe('RouterSync reentrant extension callbacks with a real Router', () => {
+  let router: Router;
+  let lifecycle: WorkspaceLifecycle;
+  let settings: SettingsStore;
+  let objectives: ObjectivesStore;
+  let http: HttpTestingController;
+  let phase: 'prepare' | 'preflight' | 'decode' | 'commit' | undefined;
+  let hook: (() => void) | undefined;
+  let blockedStarted: boolean;
+  let releaseBlocked: ((value: boolean) => void) | undefined;
+  let nested: Promise<boolean> | undefined;
+  let extensionValue: ReturnType<typeof signal<string>>;
+  let events: string[];
+
+  function fire(current: typeof phase): void {
+    if (phase !== current) return;
+    phase = undefined;
+    hook?.();
+  }
+
+  async function flush(): Promise<void> {
+    for (let i = 0; i < 40; i++) await Promise.resolve();
+  }
+
+  beforeEach(async () => {
+    phase = undefined;
+    hook = undefined;
+    blockedStarted = false;
+    releaseBlocked = undefined;
+    nested = undefined;
+    events = [];
+    extensionValue = signal('initial');
+    const extension: StateExtension = {
+      ...upstreamState,
+      strictImports: true,
+      snapshot: () => extensionValue(),
+      prepare: (input) => {
+        fire('prepare');
+        return input;
+      },
+      preflight: () => {
+        fire('preflight');
+        return [];
+      },
+      decode: ({ state }) => {
+        fire('decode');
+        return {
+          state,
+          extension: `commit:${state.objectivesState?.['1']?.value.toString() ?? 'none'}`,
+          diagnostics: [],
+        };
+      },
+      commit: (value) => {
+        fire('commit');
+        extensionValue.set(value as string);
+      },
+    };
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        { provide: STATE_EXTENSION, useValue: extension },
+        provideRouter([
+          { path: 'editor', component: NavigationFixture },
+          {
+            path: ':id',
+            component: Id,
+            children: [
+              { path: 'list', component: NavigationFixture },
+              {
+                path: 'reject',
+                component: NavigationFixture,
+                canActivate: [(): boolean => false],
+              },
+              {
+                path: 'blocked',
+                component: NavigationFixture,
+                canActivate: [
+                  (): Promise<boolean> => {
+                    blockedStarted = true;
+                    return new Promise<boolean>((resolve) => {
+                      releaseBlocked = resolve;
+                    });
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+      ],
+    });
+    settings = TestBed.inject(SettingsStore);
+    spyOn(settings, 'modData').and.returnValue(mockModData);
+    spyOn(settings, 'modHash').and.returnValue(mockModHash);
+    spyOn(settings, 'loading').and.returnValue(false);
+    spyOn(settings, 'loadError').and.returnValue(undefined);
+    objectives = TestBed.inject(ObjectivesStore);
+    http = TestBed.inject(HttpTestingController);
+    lifecycle = TestBed.inject(WorkspaceLifecycle);
+    router = TestBed.inject(Router);
+    const service = TestBed.inject(RouterSync);
+    spyOn(service, 'getHash').and.callFake((value) =>
+      Promise.resolve({
+        ...value.objectives.bare,
+        ...value.config.bare,
+        v: '12',
+      }),
+    );
+    router.events.subscribe((event) => {
+      if (event instanceof NavigationStart) events.push(`start:${event.url}`);
+      if (event instanceof NavigationSkipped)
+        events.push(`skipped:${event.url}`);
+    });
+    await RouterTestingHarness.create('/2.0/list?v=12&o=wood*2');
+    for (let i = 0; i < 8; i++) {
+      TestBed.tick();
+      await Promise.resolve();
+    }
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(settings.modId()).toEqual('2.0');
+    expect(objectives.state()['1'].value).toEqual(rational(2n));
+  });
+
+  it('does not apply an obsolete mod when prepare starts a guarded navigation', async () => {
+    const apply = spyOn(settings, 'apply').and.callThrough();
+    phase = 'prepare';
+    hook = (): void => {
+      events.push('hook:prepare');
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+      events.push('hook:return');
+    };
+    await router.navigateByUrl('/1.0/list?v=12&o=wood*8');
+    await flush();
+    expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
+    expect(events.indexOf('start:/2.0/blocked?v=12'))
+      .withContext(events.join(' | '))
+      .toBeLessThan(events.indexOf('hook:return'));
+    expect(settings.modId()).withContext(events.join(' | ')).toEqual('2.0');
+    expect(apply).not.toHaveBeenCalledWith({ modId: '1.0' });
+    expect(
+      http.match((request) => request.url.startsWith('data/1.0/')),
+    ).toEqual([]);
+    expect(lifecycle.ready()).toBeFalse();
+    releaseBlocked?.(true);
+    await nested;
+    await flush();
+  });
+
+  for (const callback of ['preflight', 'decode'] as const) {
+    it(`does not commit an obsolete restore when ${callback} starts a guarded navigation`, async () => {
+      const previous = objectives.state();
+      const previousExtension = extensionValue();
+      phase = callback;
+      hook = (): void => {
+        events.push(`hook:${callback}`);
+        nested = router.navigateByUrl('/2.0/blocked?v=12');
+        events.push('hook:return');
+      };
+      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
+      await flush();
+      expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
+      expect(events.indexOf('start:/2.0/blocked?v=12'))
+        .withContext(events.join(' | '))
+        .toBeLessThan(events.indexOf('hook:return'));
+      expect(objectives.state()).withContext(events.join(' | ')).toBe(previous);
+      expect(extensionValue()).toEqual(previousExtension);
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(true);
+      await nested;
+      await flush();
+    });
+  }
+
+  it('keeps the previous workspace ready when rollback reenters with a skipped same-URL navigation', async () => {
+    const previous = objectives.state();
+    const previousUrl = router.url;
+    let inside = false;
+    let skippedInside = false;
+    router.events.subscribe((event) => {
+      if (inside && event instanceof NavigationSkipped) skippedInside = true;
+    });
+    phase = 'commit';
+    hook = (): void => {
+      inside = true;
+      events.push('hook:commit');
+      nested = router.navigateByUrl(router.url);
+      inside = false;
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await nested;
+    await flush();
+    expect(skippedInside).withContext(events.join(' | ')).toBeTrue();
+    expect(router.url).toEqual(previousUrl);
+    expect(lifecycle.ready()).toBeTrue();
+    expect(objectives.state()).toBe(previous);
+  });
+
+  it('restores readiness when rollback starts another guarded navigation that is cancelled', async () => {
+    const previous = objectives.state();
+    const previousUrl = router.url;
+    phase = 'commit';
+    hook = (): void => {
+      events.push('hook:commit');
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+      events.push('hook:return');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
+    expect(events.indexOf('start:/2.0/blocked?v=12'))
+      .withContext(events.join(' | '))
+      .toBeLessThan(events.indexOf('hook:return'));
+    expect(lifecycle.ready()).withContext(events.join(' | ')).toBeFalse();
+    releaseBlocked?.(false);
+    await nested;
+    await flush();
+    expect(router.url).toEqual(previousUrl);
+    expect(objectives.state()).toBe(previous);
+    expect(lifecycle.ready()).withContext(events.join(' | ')).toBeTrue();
+  });
+
+  it('lets a guarded navigation succeed when it starts during rollback', async () => {
+    phase = 'commit';
+    hook = (): void => {
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(blockedStarted).toBeTrue();
+    expect(lifecycle.ready()).toBeFalse();
+    releaseBlocked?.(true);
+    expect(await nested).toBeTrue();
+    await flush();
+    expect(router.url).toEqual('/2.0/blocked?v=12');
+    expect(lifecycle.ready()).toBeTrue();
+    expect(lifecycle.diagnostics()).toEqual([]);
+  });
+
+  it('preserves an existing failed workspace when a rollback navigation is cancelled', async () => {
+    const failure = {
+      code: 'fault-input',
+      message: 'invalid input',
+      field: 'o',
+      severity: 'error' as const,
+    };
+    phase = 'preflight';
+    hook = (): void => {
+      throw new WorkspaceRestoreError([failure]);
+    };
+    await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()).toEqual([failure]);
+    const originalInput = lifecycle.originalInput();
+    const previous = objectives.state();
+    phase = 'commit';
+    hook = (): void => {
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(blockedStarted).toBeTrue();
+    releaseBlocked?.(false);
+    await nested;
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()).toEqual([failure]);
+    expect(lifecycle.originalInput()).toEqual(originalInput);
+    expect(objectives.state()).toBe(previous);
+  });
+
+  it('restarts an unfinished inflate after reentrant rollback cancellation', async () => {
+    const compression = TestBed.inject(Compression);
+    const pending: ((value: string) => void)[] = [];
+    spyOn(compression, 'inflate').and.callFake(
+      () => new Promise<string>((resolve) => pending.push(resolve)),
+    );
+    await router.navigateByUrl('/2.0/list?z=slow&v=12');
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    const previous = objectives.state();
+    const originalCount = pending.length;
+    expect(originalCount).toBeGreaterThan(0);
+    phase = 'commit';
+    hook = (): void => {
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(blockedStarted).toBeTrue();
+    const token = compression.nToId(mockModHash.items.indexOf('wood'));
+    for (const resolve of pending.slice(0, originalCount))
+      resolve(`v=12&o=${token}*9`);
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(objectives.state()).toBe(previous);
+    releaseBlocked?.(false);
+    await nested;
+    await flush();
+    expect(pending.length).toBeGreaterThan(originalCount);
+    pending[pending.length - 1](`v=12&o=${token}*6`);
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(objectives.state()['1'].targetId).toEqual('wood');
+    expect(objectives.state()['1'].value).toEqual(rational(6n));
+    expect(lifecycle.originalInput()).toEqual('/2.0/list?z=slow&v=12');
+  });
+
+  it('ignores an obsolete rollback error after the callback starts another navigation', async () => {
+    const previous = objectives.state();
+    phase = 'commit';
+    hook = (): void => {
+      nested = router.navigateByUrl('/2.0/blocked?v=12');
+      throw new Error('obsolete rollback failure');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(blockedStarted).toBeTrue();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()).toEqual([]);
+    releaseBlocked?.(false);
+    await nested;
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(objectives.state()).toBe(previous);
+  });
+
+  for (const throwAfterNavigation of [false, true]) {
+    it(`restarts the current restore when commit starts a cancelled navigation${throwAfterNavigation ? ' and throws' : ''}`, async () => {
+      phase = 'commit';
+      hook = (): void => {
+        nested = router.navigateByUrl('/2.0/blocked?v=12');
+        if (throwAfterNavigation) throw new Error('obsolete commit failure');
+      };
+      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
+      await flush();
+      expect(blockedStarted).toBeTrue();
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(false);
+      await nested;
+      await flush();
+      expect(router.url).toEqual('/2.0/list?v=12&o=wood*8');
+      expect(lifecycle.ready()).toBeTrue();
+      expect(lifecycle.diagnostics()).toEqual([]);
+      expect(objectives.state()['1'].value).toEqual(rational(8n));
+      expect(extensionValue()).toEqual('commit:8');
+    });
+
+    it(`keeps the new navigation in charge when a failed commit rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
+      phase = 'commit';
+      hook = (): void => {
+        phase = 'commit';
+        hook = (): void => {
+          nested = router.navigateByUrl('/2.0/blocked?v=12');
+          if (throwAfterNavigation)
+            throw new Error('obsolete rollback failure');
+        };
+        throw new Error('commit failure');
+      };
+      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
+      await flush();
+      expect(blockedStarted).toBeTrue();
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(false);
+      await nested;
+      await flush();
+      expect(lifecycle.ready()).toBeTrue();
+      expect(lifecycle.diagnostics()).toEqual([]);
+      expect(objectives.state()['1'].value).toEqual(rational(8n));
+      expect(extensionValue()).toEqual('commit:8');
+    });
+  }
+
+  for (const throwAfterNavigation of [false, true]) {
+    it(`preserves the failed diagnostic when failure rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
+      const failure = {
+        code: 'fault-input',
+        message: 'invalid input',
+        field: 'o',
+        severity: 'error' as const,
+      };
+      const previous = objectives.state();
+      phase = 'preflight';
+      hook = (): void => {
+        phase = 'commit';
+        hook = (): void => {
+          nested = router.navigateByUrl('/2.0/blocked?v=12');
+          if (throwAfterNavigation)
+            throw new Error('obsolete rollback failure');
+        };
+        throw new WorkspaceRestoreError([failure]);
+      };
+      await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
+      await flush();
+      expect(blockedStarted).toBeTrue();
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(false);
+      await nested;
+      await flush();
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.diagnostics()).toEqual([failure]);
+      expect(lifecycle.originalInput()).toEqual('/2.0/list?v=12&o=wood*9');
+      expect(objectives.state()).toBe(previous);
+    });
+
+    it(`keeps the editor paused when leave rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
+      const previous = objectives.state();
+      phase = 'commit';
+      hook = (): void => {
+        nested = router.navigateByUrl('/2.0/blocked?v=12');
+        if (throwAfterNavigation) throw new Error('obsolete rollback failure');
+      };
+      await router.navigateByUrl('/editor');
+      await flush();
+      expect(blockedStarted).toBeTrue();
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(false);
+      await nested;
+      await flush();
+      expect(router.url).toEqual('/editor');
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.diagnostics()).toEqual([]);
+      expect(lifecycle.originalInput()).toEqual('/editor');
+      expect(objectives.state()).toBe(previous);
+      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+      await flush();
+      expect(lifecycle.ready()).toBeTrue();
+      expect(objectives.state()['1'].value).toEqual(rational(3n));
+    });
+  }
+
+  for (const leaving of [false, true]) {
+    it(`keeps the failed baseline when ${leaving ? 'leaving' : 'cancelling'} fails and its failure rollback starts another navigation`, async () => {
+      const previous = objectives.state();
+      const previousUrl = router.url;
+      const previousInput = lifecycle.originalInput();
+      phase = 'commit';
+      hook = (): void => {
+        phase = 'commit';
+        hook = (): void => {
+          nested = router.navigateByUrl('/2.0/blocked?v=12');
+        };
+        throw new Error('first rollback failed');
+      };
+      await router.navigateByUrl(leaving ? '/editor' : '/2.0/reject?v=12');
+      await flush();
+      expect(blockedStarted).toBeTrue();
+      expect(lifecycle.ready()).toBeFalse();
+      releaseBlocked?.(false);
+      await nested;
+      await flush();
+      expect(router.url).toEqual(leaving ? '/editor' : previousUrl);
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.originalInput()).toEqual(
+        leaving ? '/editor' : previousInput,
+      );
+      expect(lifecycle.diagnostics()).toEqual([
+        {
+          code: 'workspace-restore',
+          message: 'first rollback failed',
+          severity: 'error',
+        },
+      ]);
+      expect(objectives.state()).toBe(previous);
+      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+      await flush();
+      expect(lifecycle.ready()).toBeTrue();
+      expect(objectives.state()['1'].value).toEqual(rational(3n));
+    });
+  }
+
+  for (const [rollbackError, message] of [
+    ['string rollback failure', 'string rollback failure'],
+    [{ detail: 'unknown failure' }, 'Failed to restore the previous workspace'],
+  ] as const) {
+    it(`reports a ${typeof rollbackError} thrown by the rollback callback`, async () => {
+      const previous = objectives.state();
+      phase = 'preflight';
+      hook = (): void => {
+        phase = 'commit';
+        hook = (): void => {
+          // Fault injection verifies diagnostic handling of non-Error throws.
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
+          throw rollbackError;
+        };
+        throw new Error('preflight failed');
+      };
+      await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
+      await flush();
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.diagnostics()).toEqual([
+        {
+          code: 'workspace-restore',
+          message: 'preflight failed',
+          severity: 'error',
+        },
+        { code: 'workspace-rollback', message, severity: 'error' },
+      ]);
+      expect(objectives.state()).toBe(previous);
+      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+      await flush();
+      expect(lifecycle.ready()).toBeTrue();
+      expect(objectives.state()['1'].value).toEqual(rational(3n));
+    });
+  }
+
+  it('reports a rollback error and accepts a later valid navigation', async () => {
+    const previous = objectives.state();
+    phase = 'commit';
+    hook = (): void => {
+      throw new Error('rollback failed');
+    };
+    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()[0].message).toContain('rollback failed');
+    expect(objectives.state()).toBe(previous);
+    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(objectives.state()['1'].value).toEqual(rational(3n));
+  });
+});
+
+describe('RouterSync public retry and product boundaries', () => {
+  let router: Router;
+  let service: RouterSync;
+  let lifecycle: WorkspaceLifecycle;
+  let settings: SettingsStore;
+  let objectives: ObjectivesStore;
+  const loading = signal(false);
+  const loadError = signal<Error | undefined>(undefined);
+
+  async function flush(): Promise<void> {
+    for (let i = 0; i < 40; i++) await Promise.resolve();
+  }
+
+  beforeEach(async () => {
+    loading.set(false);
+    loadError.set(undefined);
+    const extension: StateExtension = {
+      ...upstreamState,
+      prepare: (input) =>
+        input.params['missingMod'] === '1'
+          ? { ...input, modId: undefined }
+          : input,
+    };
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        { provide: STATE_EXTENSION, useValue: extension },
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: { ...upstreamProduct, allowedModIds: ['2.0'] },
+        },
+        provideRouter([
+          {
+            path: ':id',
+            component: Id,
+            children: [{ path: 'list', component: NavigationFixture }],
+          },
+        ]),
+      ],
+    });
+    settings = TestBed.inject(SettingsStore);
+    spyOn(settings, 'modData').and.returnValue(mockModData);
+    spyOn(settings, 'modHash').and.returnValue(mockModHash);
+    spyOn(settings, 'loading').and.callFake(loading);
+    spyOn(settings, 'loadError').and.callFake(loadError);
+    objectives = TestBed.inject(ObjectivesStore);
+    lifecycle = TestBed.inject(WorkspaceLifecycle);
+    router = TestBed.inject(Router);
+    service = TestBed.inject(RouterSync);
+    spyOn(service, 'getHash').and.callFake((value) =>
+      Promise.resolve({
+        ...value.objectives.bare,
+        ...value.config.bare,
+        v: '12',
+      }),
+    );
+    await RouterTestingHarness.create('/2.0/list?v=12&o=wood*2');
+    for (let i = 0; i < 8; i++) {
+      TestBed.tick();
+      await Promise.resolve();
+    }
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(objectives.state()['1'].value).toEqual(rational(2n));
+  });
+
+  it('rejects an extension plan with no mod while preserving the active workspace', async () => {
+    const previousObjectives = objectives.state();
+    const previousSettings = settings.state();
+    const stored = service.stored();
+    const navigate = spyOn(router, 'navigate').and.callThrough();
+    const url = '/2.0/list?v=12&missingMod=1';
+    expect(await router.navigateByUrl(url)).toBeTrue();
+    await flush();
+    TestBed.tick();
+    await flush();
+    expect(router.url).toEqual(url);
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.originalInput()).toEqual(url);
+    expect(lifecycle.diagnostics()).toEqual([
+      {
+        code: 'mod-not-allowed',
+        message: 'Workspace mod is not available: (missing)',
+        field: 'modId',
+        severity: 'error',
+      },
+    ]);
+    expect(objectives.state()).toBe(previousObjectives);
+    expect(settings.state()).toBe(previousSettings);
+    expect(service.stored()).toEqual(stored);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('waits for current resources when retry is unavailable and a cached snapshot is stale', async () => {
+    // Simulate a resource adapter declining a reload while another request is
+    // already loading; its public signals change before the queued effect runs.
+    const retry = spyOn(settings, 'retryFailedResources').and.returnValue(
+      false,
+    );
+    const compression = TestBed.inject(Compression);
+    let finishInflate: ((value: string) => void) | undefined;
+    spyOn(compression, 'inflate').and.callFake(
+      () =>
+        new Promise<string>((resolve) => {
+          finishInflate = resolve;
+        }),
+    );
+    const previous = objectives.state();
+    const stored = service.stored();
+    const navigate = spyOn(router, 'navigate').and.callThrough();
+    const url = '/2.0/list?v=12&z=slow';
+    expect(await router.navigateByUrl(url)).toBeTrue();
+    await flush();
+    expect(finishInflate).toBeDefined();
+    const error = new Error('data request failed');
+    loadError.set(error);
+    loading.set(true);
+    const token = compression.nToId(mockModHash.items.indexOf('wood'));
+    finishInflate?.(`v=12&o=${token}*8`);
+    await flush();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(lifecycle.ready()).toBeFalse();
+    expect(objectives.state()).toBe(previous);
+    expect(service.stored()).toEqual(stored);
+    expect(navigate).not.toHaveBeenCalled();
+    TestBed.tick();
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(objectives.state()).toBe(previous);
+    loadError.set(undefined);
+    loading.set(false);
+    TestBed.tick();
+    await flush();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(objectives.state()['1'].targetId).toEqual('wood');
+    expect(objectives.state()['1'].value).toEqual(rational(8n));
   });
 });

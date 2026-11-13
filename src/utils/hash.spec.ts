@@ -1,3 +1,4 @@
+import { ModHash } from '~/data/schema/mod-hash';
 import { ItemId } from '~/tests/item-id';
 import { mockModData } from '~/tests/mocks/data';
 
@@ -13,6 +14,16 @@ describe('addIfMissing', () => {
 });
 
 describe('updateHash', () => {
+  it('fills missing append-only sections without reusing a retained historical slot', () => {
+    const hash = { items: ['retired', null] } as ModHash;
+    updateHash(mockModData, hash, 'append-only');
+    expect(hash.items.slice(0, 2)).toEqual(['retired', null]);
+    expect(hash.recipes.length).toBeGreaterThan(0);
+    expect(hash.locations).toBeDefined();
+    const once = JSON.stringify(hash);
+    updateHash(mockModData, hash, 'append-only');
+    expect(JSON.stringify(hash)).toBe(once);
+  });
   it('reserves retired IDs and null slots for append-only protocols on repeated updates', () => {
     const hash = emptyModHash();
     hash.items = ['retired', null, ItemId.WoodenChest];

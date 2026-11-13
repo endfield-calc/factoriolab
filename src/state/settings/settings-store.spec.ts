@@ -6,6 +6,7 @@ import {
 import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import { modRecord } from '~/data/datasets';
 import { CUSTOM_MOD, Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { EnergyType } from '~/data/schema/energy-type';
@@ -184,6 +185,12 @@ describe('SettingsStore', () => {
   describe('game', () => {
     it('should return the game or Factorio', () => {
       expect(service.game()).toEqual('factorio');
+    });
+
+    it('falls back when a saved mod identifier is unknown', () => {
+      service.apply({ modId: 'missing-dataset' });
+      expect(service.modInfo()).toBeUndefined();
+      expect(service.game()).toBe('factorio');
     });
   });
 
@@ -908,6 +915,64 @@ describe('SettingsStore with Endfield product', () => {
     expect(service.modI18n()).toBeUndefined();
     expect(service.dataset().categoryRecord['category'].name).toBe('中文');
     expect(service.dataset().version).toEqual({ game: 'base' });
+  });
+
+  it('uses the base dataset when a translation request fails', async () => {
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    const data = emptyModData();
+    data.categories = [{ id: 'category', name: '中文' }];
+    data.icons = [{ id: 'category', x: 0, y: 0, color: '#fff' }];
+    http.expectOne('data/aef/data.json').flush(data);
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    http.expectOne('data/aef/i18n/en.json').flush('missing', {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.modI18n()).toBeUndefined();
+    expect(service.modInfo()?.name).toBe(modRecord['aef'].name);
+    expect(service.dataset().categoryRecord['category'].name).toBe('中文');
+    expect(service.retryFailedResources()).toBeFalse();
+  });
+
+  it('does not issue duplicate retries while failed data and hash requests reload', async () => {
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    for (const path of ['data', 'hash']) {
+      http.expectOne(`data/aef/${path}.json`).flush('unavailable', {
+        status: 503,
+        statusText: 'Service Unavailable',
+      });
+    }
+    http.expectOne('data/aef/i18n/en.json').flush({});
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeDefined();
+
+    expect(service.retryFailedResources()).toBeTrue();
+    expect(service.loading()).toBeTrue();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.retryFailedResources()).toBeFalse();
+    TestBed.tick();
+    const dataRetry = http.expectOne('data/aef/data.json');
+    const hashRetry = http.expectOne('data/aef/hash.json');
+    http.expectNone('data/aef/data.json');
+    http.expectNone('data/aef/hash.json');
+    dataRetry.flush(emptyModData());
+    hashRetry.flush(mockModHash);
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.modData()).toEqual(emptyModData());
+    expect(service.modHash()).toEqual(mockModHash);
+    expect(service.retryFailedResources()).toBeFalse();
   });
 
   it('filters runtime options and never requests other game or custom data', () => {

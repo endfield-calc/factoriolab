@@ -15,6 +15,8 @@ export interface LabParams {
   v?: string;
   /** `string` Zip */
   z?: string;
+  /** `string` Endfield extension */
+  ef?: string;
   /** `Set` Checked objectives  */
   och?: string;
   /** `number` Maximize type */

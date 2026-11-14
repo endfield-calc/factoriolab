@@ -14,19 +14,48 @@ import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
 import { Rational, rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
-import { ovenId, ResourceId, resourceIds } from '../domain/model';
-import { waterRecipeIds } from '../domain/presets';
-import { EndfieldCoordinator } from '../state/coordinator';
+import {
+  createEndfieldState,
+  ovenId,
+  ResourceId,
+  resourceIds,
+} from '../domain/model';
+import { EndfieldStore } from '../state/endfield-store';
 
-/** The resource model stores physical rates per second; the editor uses per minute. */
-export function perMinute(value: Rational): Rational {
-  return value.mul(rational(60));
-}
-export function perSecond(value: Rational): Rational {
-  return value.div(rational(60));
+const waterRecipeIds = ['sewage-treat', 'sewage-treat-export'] as const;
+const presetRates: Record<'tundra' | 'jinlong', Record<ResourceId, number>> = {
+  tundra: {
+    originium_ore: 560,
+    quartz_sand: 240,
+    iron_ore: 1080,
+    copper_ore: 0,
+    gas_xiranite: 0,
+    gas_inert: 0,
+  },
+  jinlong: {
+    originium_ore: 540,
+    quartz_sand: 0,
+    iron_ore: 120,
+    copper_ore: 510,
+    gas_xiranite: 150,
+    gas_inert: 460,
+  },
+};
+
+function waterExclusions(
+  original: ReadonlySet<string>,
+  disabled: boolean,
+): Set<string> {
+  const excluded = new Set(original);
+  for (const id of waterRecipeIds) {
+    if (disabled) excluded.add(id);
+    else excluded.delete(id);
+  }
+  return excluded;
 }
 
 @Component({
@@ -45,38 +74,134 @@ export function perSecond(value: Rational): Rational {
   host: { class: 'block' },
 })
 export class EndfieldResources {
-  protected readonly coordinator = inject(EndfieldCoordinator);
+  protected readonly store = inject(EndfieldStore);
+  protected readonly settingsStore = inject(SettingsStore);
   protected readonly lifecycle = inject(WorkspaceLifecycle);
   protected readonly preferences = inject(PreferencesStore);
   protected readonly resources = resourceIds;
   protected readonly ovenId = ovenId;
-  protected readonly perMinute = perMinute;
+  /** The resource model stores physical rates per second; the editor uses per minute. */
+  protected readonly ratesPerMinute = computed(() => {
+    const rates = this.store.state().resourceLimits.rates;
+    return Object.fromEntries(
+      resourceIds.map((id) => [id, rates[id].mul(rational(60))] as const),
+    ) as Record<ResourceId, Rational>;
+  });
   protected readonly waterDisabled = computed(() =>
     waterRecipeIds.every((id) =>
-      this.coordinator.settings().excludedRecipeIds.has(id),
+      this.settingsStore.settings().excludedRecipeIds.has(id),
     ),
   );
   protected readonly onlyTundra = computed(() => {
-    const locations = this.coordinator.settings().locationIds;
+    const locations = this.settingsStore.settings().locationIds;
     return locations.size === 1 && locations.has('tundra');
   });
 
   protected resourceName(id: string): string {
-    return this.coordinator.data().itemRecord[id]?.name ?? id;
+    return this.settingsStore.dataset().itemRecord[id]?.name ?? id;
+  }
+
+  protected applyPreset(preset: 'tundra' | 'jinlong'): void {
+    if (!this.lifecycle.ready()) return;
+    const state = this.store.state();
+    const settings = this.settingsStore.settings();
+    const defaults = createEndfieldState();
+    const rates = { ...defaults.resourceLimits.rates };
+    for (const id of resourceIds)
+      rates[id] = rational(presetRates[preset][id], 60);
+    const jinlong = preset === 'jinlong';
+    const next = {
+      ...defaults,
+      electric: state.electric,
+      resourceLimits: { enabled: true, rates },
+      machineLimits: { enabled: jinlong, limits: { [ovenId]: rational(12) } },
+      transfer: { enabled: jinlong, source: 'tundra' as const },
+    };
+    const patch = {
+      locationIds: new Set([preset]),
+      ...(jinlong
+        ? {
+            excludedRecipeIds: waterExclusions(
+              settings.excludedRecipeIds,
+              false,
+            ),
+          }
+        : {}),
+    };
+    this.store.set(next);
+    this.settingsStore.apply(patch);
+  }
+
+  protected clear(): void {
+    if (!this.lifecycle.ready()) return;
+    const state = this.store.state();
+    const settings = this.settingsStore.settings();
+    const next = { ...createEndfieldState(), electric: state.electric };
+    const patch = {
+      locationIds: new Set(settings.defaultLocationIds),
+      excludedRecipeIds: waterExclusions(settings.excludedRecipeIds, false),
+    };
+    this.store.set(next);
+    this.settingsStore.apply(patch);
+  }
+
+  protected setResourceEnabled(enabled: boolean): void {
+    if (!this.lifecycle.ready()) return;
+    const state = this.store.state();
+    this.store.set({
+      ...state,
+      resourceLimits: { ...state.resourceLimits, enabled },
+    });
   }
 
   protected updateRate(id: ResourceId, value: Rational | undefined): void {
-    if (value == null) return;
-    this.coordinator.dispatch({
-      type: 'resourceRate',
-      id,
-      value: perSecond(value),
+    if (!this.lifecycle.ready() || value == null || value.lt(rational.zero))
+      return;
+    const state = this.store.state();
+    this.store.set({
+      ...state,
+      resourceLimits: {
+        ...state.resourceLimits,
+        rates: { ...state.resourceLimits.rates, [id]: value.div(rational(60)) },
+      },
+    });
+  }
+
+  protected setMachineEnabled(enabled: boolean): void {
+    if (!this.lifecycle.ready()) return;
+    const state = this.store.state();
+    this.store.set({
+      ...state,
+      machineLimits: { ...state.machineLimits, enabled },
     });
   }
 
   protected updateMachineLimit(value: Rational | undefined): void {
-    if (value != null)
-      this.coordinator.dispatch({ type: 'machineLimit', id: ovenId, value });
+    if (!this.lifecycle.ready() || value == null || value.lt(rational.zero))
+      return;
+    const state = this.store.state();
+    this.store.set({
+      ...state,
+      machineLimits: {
+        ...state.machineLimits,
+        limits: { ...state.machineLimits.limits, [ovenId]: value },
+      },
+    });
+  }
+
+  protected setTransferEnabled(enabled: boolean): void {
+    if (!this.lifecycle.ready()) return;
+    const state = this.store.state();
+    this.store.set({ ...state, transfer: { enabled, source: 'tundra' } });
+  }
+
+  protected setWaterDisabled(disabled: boolean): void {
+    if (!this.lifecycle.ready()) return;
+    const excludedRecipeIds = waterExclusions(
+      this.settingsStore.settings().excludedRecipeIds,
+      disabled,
+    );
+    this.settingsStore.apply({ excludedRecipeIds });
   }
 
   protected download(name: string, value: string): void {

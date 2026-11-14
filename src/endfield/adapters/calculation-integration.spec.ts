@@ -11,7 +11,10 @@ import { Step } from '~/solver/step';
 import { Adjustment } from '~/state/adjustment';
 import { ItemsStore } from '~/state/items/items-store';
 import { MachinesStore } from '~/state/machines/machines-store';
-import { ObjectiveState } from '~/state/objectives/objective';
+import {
+  ObjectiveSettings,
+  ObjectiveState,
+} from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -33,10 +36,10 @@ import {
   resourceOwner,
 } from '../domain/model';
 import { provideEndfield } from '../providers';
-import { EndfieldCoordinator } from '../state/coordinator';
 import { EndfieldStore } from '../state/endfield-store';
+import { EndfieldResources } from '../ui/resources';
 import {
-  deriveEndfieldObjectives,
+  prepareEndfieldObjectives,
   tundraTransferRecipeIds,
 } from './calculation-extension';
 
@@ -54,74 +57,75 @@ function machineObjective(
   };
 }
 
-describe('Endfield objective declarations', () => {
+describe('Endfield native objective preparation', () => {
+  const adjust = (objective: ObjectiveState): ObjectiveSettings => ({
+    ...objective,
+    recipe: {
+      output: Object.fromEntries(resourceIds.map((id) => [id, rational(2)])),
+    } as NonNullable<ObjectiveSettings['recipe']>,
+  });
+
   it('distinguishes disabled resource limits, enabled zeroes, and positive physical rates', () => {
     const initial = createEndfieldState();
-    const disabled = deriveEndfieldObjectives(initial);
-    expect(disabled.map((d) => d.objective.id)).toEqual([
-      'ef:transfer:tundra:limit',
-    ]);
-    const zero = deriveEndfieldObjectives({
-      ...initial,
-      resourceLimits: { ...initial.resourceLimits, enabled: true },
-    });
-    const limits = zero.filter(
-      (d) => d.objective.unit === ObjectiveUnit.Machines,
+    const disabled = prepareEndfieldObjectives(initial, adjust, rational(60));
+    expect(disabled.map((d) => d.id)).toEqual(['ef:transfer:tundra:limit']);
+    const zero = prepareEndfieldObjectives(
+      {
+        ...initial,
+        resourceLimits: { ...initial.resourceLimits, enabled: true },
+      },
+      adjust,
+      rational(60),
     );
+    const limits = zero.filter((d) => d.unit === ObjectiveUnit.Machines);
     expect(limits.length).toBe(6);
     expect(
-      limits.every(
-        (d) =>
-          d.objective.type === ObjectiveType.Limit &&
-          d.objective.value.isZero(),
-      ),
+      limits.every((d) => d.type === ObjectiveType.Limit && d.value.isZero()),
     ).toBeTrue();
-    expect(limits.map((d) => d.objective.id)).toEqual(
+    expect(limits.map((d) => d.id)).toEqual(
       resourceIds.map((id) => `ef:limit:${id}`),
     );
 
     const rate = rational(510, 60);
-    const positive = deriveEndfieldObjectives({
-      ...initial,
-      resourceLimits: {
-        enabled: true,
-        rates: { ...initial.resourceLimits.rates, copper_ore: rate },
+    const positive = prepareEndfieldObjectives(
+      {
+        ...initial,
+        resourceLimits: {
+          enabled: true,
+          rates: { ...initial.resourceLimits.rates, copper_ore: rate },
+        },
+        resourceRecipeSettings: {
+          copper_ore: { machineId: 'chosen-miner', overclock: rational(125) },
+        },
       },
-      resourceRecipeSettings: {
-        copper_ore: { machineId: 'chosen-miner', overclock: rational(125) },
-      },
-    });
-    const output = positive.find(
-      (d) => d.objective.id === 'ef:resource:copper_ore',
-    )!;
-    expect(output.objective.targetId).toBe('copper_ore-liquid_water');
-    expect(output.objective.type).toBe(ObjectiveType.Output);
-    expect(output.objective.machineId).toBe('chosen-miner');
-    expect(output.objective.overclock).toEqual(rational(125));
-    expect(output.fixedOutput).toEqual({
-      itemId: 'copper_ore',
-      perSecond: rate,
-    });
-    expect(output.objective.value).toEqual(rational.zero);
+      adjust,
+      rational(60),
+    );
+    const output = positive.find((d) => d.id === 'ef:resource:copper_ore')!;
+    expect(output.targetId).toBe('copper_ore-liquid_water');
+    expect(output.type).toBe(ObjectiveType.Output);
+    expect(output.machineId).toBe('chosen-miner');
+    expect(output.overclock).toEqual(rational(125));
+    expect(output.value).toEqual(rate.div(rational(2)));
   });
 
-  it('declares transfer key input and limit in fixed per-second units', () => {
+  it('prepares transfer key input and limit in display units', () => {
     const initial = createEndfieldState();
-    const disabled = deriveEndfieldObjectives(initial);
-    expect(disabled[0].objective.type).toBe(ObjectiveType.Limit);
-    expect(disabled[0].fixedRate).toEqual(rational.zero);
-    const enabled = deriveEndfieldObjectives({
-      ...initial,
-      transfer: { enabled: true, source: 'tundra' },
-    });
-    expect(enabled.map((d) => d.objective.type)).toEqual([
+    const disabled = prepareEndfieldObjectives(initial, adjust, rational(60));
+    expect(disabled[0].type).toBe(ObjectiveType.Limit);
+    expect(disabled[0].value).toEqual(rational.zero);
+    const enabled = prepareEndfieldObjectives(
+      { ...initial, transfer: { enabled: true, source: 'tundra' } },
+      adjust,
+      rational(60),
+    );
+    expect(enabled.map((d) => d.type)).toEqual([
       ObjectiveType.Input,
       ObjectiveType.Limit,
     ]);
-    expect(
-      enabled.every((d) => d.objective.targetId === 'domain_key_tundra'),
-    ).toBeTrue();
-    expect(enabled.every((d) => d.fixedRate?.eq(rational(1, 3600)))).toBeTrue();
+    expect(enabled.every((d) => d.targetId === 'domain_key_tundra')).toBeTrue();
+    expect(enabled.every((d) => d.unit === ObjectiveUnit.Items)).toBeTrue();
+    expect(enabled.every((d) => d.value.eq(rational(1, 60)))).toBeTrue();
   });
 
   it('creates a positive supply without inventing recipe settings', () => {
@@ -133,11 +137,11 @@ describe('Endfield objective declarations', () => {
         rates: { ...initial.resourceLimits.rates, iron_ore: rational(5) },
       },
     };
-    const output = deriveEndfieldObjectives(state).find(
-      (item) => item.objective.id === 'ef:resource:iron_ore',
+    const output = prepareEndfieldObjectives(state, adjust, rational(60)).find(
+      (item) => item.id === 'ef:resource:iron_ore',
     );
-    expect(output?.fixedOutput?.perSecond).toEqual(rational(5));
-    expect(output?.objective.machineId).toBeUndefined();
+    expect(output?.value).toEqual(rational(5, 2));
+    expect(output?.machineId).toBeUndefined();
   });
 });
 
@@ -586,6 +590,20 @@ describe('Endfield calculation composition with the published aef data', () => {
       recipes.adjustedDataset().adjustedRecipe['originium_ore'].cost!;
     expect(changed.gt(ordinary)).toBeTrue();
     expect(settings.settings().costs.factor.eq(rational.one)).toBeTrue();
+  });
+
+  it('keeps the ordinary adjusted dataset when only source checks change', () => {
+    const adjustment = TestBed.inject(Adjustment);
+    const before = recipes.adjustedDataset();
+    const adjustDataset = spyOn(adjustment, 'adjustDataset').and.callThrough();
+
+    store.setResourceChecked('originium_ore', true);
+    expect(recipes.adjustedDataset()).toBe(before);
+    expect(adjustDataset).not.toHaveBeenCalled();
+
+    store.set({ ...store.snapshot(), electric: rational(2) });
+    expect(recipes.adjustedDataset()).not.toBe(before);
+    expect(adjustDataset).toHaveBeenCalledTimes(1);
   });
 
   it('keeps ordinary, explicit and derived machine settings independent', () => {
@@ -1116,6 +1134,43 @@ describe('Endfield calculation composition with the published aef data', () => {
     ]);
   });
 
+  it('isolates source, ordinary objective and item checks on solved steps', () => {
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, originium_ore: rational.one },
+      },
+    });
+    objectives.set({
+      1: machineObjective('1', 'originium_ore'),
+      2: machineObjective('2', 'originium_ore'),
+    });
+    expect(objectives.matrixResult().resultType).toBe('solved');
+    const checked = (): (boolean | undefined)[] => {
+      const steps = objectives.steps();
+      const item = steps.find((step) => step.itemId === 'originium_ore')!;
+      const ordinary = steps.find((step) => step.recipeObjectiveId === '2')!;
+      const source = steps.find(
+        (step) =>
+          step.recipeObjectiveId === resourceObjectiveId('originium_ore'),
+      )!;
+      expect(ordinary.itemId).toBeUndefined();
+      expect(source.itemId).toBeUndefined();
+      return [item.checked, ordinary.checked, source.checked];
+    };
+    expect(checked()).toEqual([false, false, false]);
+    store.setResourceChecked('originium_ore', true);
+    expect(checked()).toEqual([false, false, true]);
+    settings.apply({ checkedObjectiveIds: new Set(['2']) });
+    expect(checked()).toEqual([false, true, true]);
+    settings.apply({ checkedItemIds: new Set(['originium_ore']) });
+    expect(checked()).toEqual([true, true, true]);
+    store.setResourceChecked('originium_ore', false);
+    expect(checked()).toEqual([true, true, false]);
+  });
+
   it('gates solving and derived preparation while workspace resources are being restored', () => {
     store.set({
       ...createEndfieldState(),
@@ -1130,11 +1185,10 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(objectives.steps()).toEqual([]);
     expect(objectives.calculationContext().objectives).toEqual([]);
     expect(objectives.stepsModified().objectives).toEqual({});
-    expect(
-      TestBed.inject(EndfieldCoordinator).dispatch({
-        type: 'resourceEnabled',
-        enabled: true,
-      }),
-    ).toBeFalse();
+    const before = store.state();
+    TestBed.runInInjectionContext(() => new EndfieldResources())[
+      'setResourceEnabled'
+    ](false);
+    expect(store.state()).toBe(before);
   });
 });

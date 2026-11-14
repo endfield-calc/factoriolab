@@ -188,7 +188,7 @@
             <div class="flex justify-center">
               <lab-checkbox
                 ariaLabel="checked"
-                [ngModel]="stepChecked(step)"
+                [ngModel]="step.checked"
                 (ngModelChange)="changeStepChecked(step, $event)"
               ></lab-checkbox>
             </div>
@@ -680,8 +680,7 @@
                   mod.recipes[step.recipeId]) ||
                 (step.itemId && mod.items[step.itemId]) ||
                 (step.recipeObjectiveId &&
-                  mod.objectives[step.recipeObjectiveId]) ||
-                sourceModified(step)
+                  mod.objectives[step.recipeObjectiveId])
               ) {
                 <button
                   type="button"

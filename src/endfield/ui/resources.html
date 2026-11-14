@@ -13,7 +13,7 @@
     }
   </section>
 }
-@if (!coordinator.ready()) {
+@if (!lifecycle.ready()) {
   <section role="alert" class="my-2 rounded p-3 border border-complement-400">
     <p>
       {{
@@ -61,34 +61,29 @@
           type="button"
           labButton
           text="endfield.resources.presetTundra"
-          [disabled]="!coordinator.ready()"
-          (click)="coordinator.dispatch({ type: 'preset', preset: 'tundra' })"
+          [disabled]="!lifecycle.ready()"
+          (click)="applyPreset('tundra')"
         ></button>
         <button
           type="button"
           labButton
           text="endfield.resources.presetJinlong"
-          [disabled]="!coordinator.ready()"
-          (click)="coordinator.dispatch({ type: 'preset', preset: 'jinlong' })"
+          [disabled]="!lifecycle.ready()"
+          (click)="applyPreset('jinlong')"
         ></button>
         <button
           type="button"
           labButton
           text="endfield.resources.clear"
-          [disabled]="!coordinator.ready()"
-          (click)="coordinator.dispatch({ type: 'clear' })"
+          [disabled]="!lifecycle.ready()"
+          (click)="clear()"
         ></button>
       </div>
       <lab-checkbox
         label="endfield.resources.enableResources"
-        [disabled]="!coordinator.ready()"
-        [value]="coordinator.state().resourceLimits.enabled"
-        (valueChange)="
-          coordinator.dispatch({
-            type: 'resourceEnabled',
-            enabled: $event === true,
-          })
-        "
+        [disabled]="!lifecycle.ready()"
+        [value]="store.state().resourceLimits.enabled"
+        (valueChange)="setResourceEnabled($event === true)"
       ></lab-checkbox>
       <div class="gap-2 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
         @for (id of resources; track id) {
@@ -103,10 +98,9 @@
             <lab-input-number
               [buttons]="true"
               [disabled]="
-                !coordinator.ready() ||
-                !coordinator.state().resourceLimits.enabled
+                !lifecycle.ready() || !store.state().resourceLimits.enabled
               "
-              [value]="perMinute(coordinator.state().resourceLimits.rates[id])"
+              [value]="ratesPerMinute()[id]"
               (valueChange)="updateRate(id, $event)"
             ></lab-input-number>
           </lab-form-field>
@@ -114,14 +108,9 @@
       </div>
       <lab-checkbox
         label="endfield.resources.enableMachines"
-        [disabled]="!coordinator.ready()"
-        [value]="coordinator.state().machineLimits.enabled"
-        (valueChange)="
-          coordinator.dispatch({
-            type: 'machineEnabled',
-            enabled: $event === true,
-          })
-        "
+        [disabled]="!lifecycle.ready()"
+        [value]="store.state().machineLimits.enabled"
+        (valueChange)="setMachineEnabled($event === true)"
       ></lab-checkbox>
       <lab-form-field
         class="max-w-80"
@@ -135,28 +124,22 @@
         <lab-input-number
           [buttons]="true"
           [disabled]="
-            !coordinator.ready() || !coordinator.state().machineLimits.enabled
+            !lifecycle.ready() || !store.state().machineLimits.enabled
           "
-          [value]="coordinator.state().machineLimits.limits[ovenId]"
+          [value]="store.state().machineLimits.limits[ovenId]"
           (valueChange)="updateMachineLimit($event)"
         ></lab-input-number>
       </lab-form-field>
       <lab-checkbox
         label="endfield.resources.enableTransfer"
         [disabled]="
-          !coordinator.ready() ||
-          (onlyTundra() && !coordinator.state().transfer.enabled)
+          !lifecycle.ready() ||
+          (onlyTundra() && !store.state().transfer.enabled)
         "
-        [value]="coordinator.state().transfer.enabled"
-        (valueChange)="
-          coordinator.dispatch({
-            type: 'transfer',
-            enabled: $event === true,
-            source: 'tundra',
-          })
-        "
+        [value]="store.state().transfer.enabled"
+        (valueChange)="setTransferEnabled($event === true)"
       ></lab-checkbox>
-      @if (onlyTundra() && !coordinator.state().transfer.enabled) {
+      @if (onlyTundra() && !store.state().transfer.enabled) {
         <p>{{ 'endfield.resources.transferSelf' | translate }}</p>
       }
       <div class="inline-flex flex-col">
@@ -167,18 +150,10 @@
       </div>
       <lab-checkbox
         label="endfield.resources.disableWater"
-        [disabled]="!coordinator.ready()"
+        [disabled]="!lifecycle.ready()"
         [value]="waterDisabled()"
-        (valueChange)="
-          coordinator.dispatch({
-            type: 'waterDisabled',
-            disabled: $event === true,
-          })
-        "
+        (valueChange)="setWaterDisabled($event === true)"
       ></lab-checkbox>
-      @for (diagnostic of coordinator.diagnostics(); track $index) {
-        <p role="alert">{{ diagnostic.message }}</p>
-      }
     </ng-template>
   </lab-accordion-item>
 </lab-accordion>

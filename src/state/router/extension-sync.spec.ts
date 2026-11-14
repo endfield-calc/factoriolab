@@ -173,7 +173,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
     lifecycle.begin('/aef/list?new');
     service.updateState(
       'aef',
-      { v: '12', o: ['xiranite_powder*5'], ef: encoded(2) } as LabParams,
+      { v: '12', o: ['xiranite_powder*5'], ef: encoded(2) },
       true,
       data,
       rawHash,
@@ -320,9 +320,9 @@ describe('RouterSync current Endfield restoration and writes', () => {
     );
     void service.updateUrl(emptyZip(), service['activeTicket']);
     void service.updateUrl(emptyZip(), service['activeTicket']);
-    finishNew({ ef: encoded(3) } as LabParams);
+    finishNew({ ef: encoded(3) });
     await flush();
-    finishOld({ ef: encoded(2) } as LabParams);
+    finishOld({ ef: encoded(2) });
     await flush();
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate.calls.mostRecent().args[1].queryParams).toEqual({

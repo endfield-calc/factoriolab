@@ -342,9 +342,6 @@ export class Flow {
   ): Promise<void> {
     const generation = ++this.renderGeneration;
     if (this.destroyRef.destroyed) return;
-    const usesLiveInputs =
-      flow === this.flowBuilder.flowData() &&
-      flowSettings === this.preferencesStore.flowSettings();
     const graph: ElkGraph = {
       id: 'root',
       layoutOptions: { 'elk.algorithm': flowSettings.elkAlgorithm },
@@ -363,9 +360,8 @@ export class Flow {
     if (
       this.destroyRef.destroyed ||
       generation !== this.renderGeneration ||
-      (usesLiveInputs &&
-        (flow !== this.flowBuilder.flowData() ||
-          flowSettings !== this.preferencesStore.flowSettings())) ||
+      flow !== this.flowBuilder.flowData() ||
+      flowSettings !== this.preferencesStore.flowSettings() ||
       result.children == null ||
       result.edges == null ||
       result.width == null ||

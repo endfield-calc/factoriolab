@@ -60,15 +60,11 @@ function parseSignedRational(value: unknown, field: string): Rational {
   }
 }
 
-export function parseNonnegative(value: unknown, field: string): Rational {
+function parseNonnegative(value: unknown, field: string): Rational {
   const result = parseSignedRational(value, field);
   if (result.lt(rational.zero))
     invalid(`Expected a nonnegative rational at ${field}`);
   return result;
-}
-
-function rationalString(value: Rational): string {
-  return value.q === 1n ? value.p.toString() : `${value.p}/${value.q}`;
 }
 
 type EntityKind = 'machine' | 'fuel' | 'module' | 'beacon' | 'belt' | 'wagon';
@@ -95,11 +91,7 @@ export function validateRecipeReferences(
   field: string,
   recipeId?: string,
 ): void {
-  if (
-    settings.overclock != null &&
-    (!(settings.overclock instanceof Rational) ||
-      !settings.overclock.gt(rational.zero))
-  )
+  if (settings.overclock != null && !settings.overclock.gt(rational.zero))
     invalid('Recipe overclock must be positive');
   if (settings.machineId != null) {
     validateEntity(data, settings.machineId, 'machine', `${field}.machineId`);
@@ -137,11 +129,15 @@ function recipeSettings(
   const obj = record(value, field, ['machineId', 'overclock']);
   const result: { machineId?: string; overclock?: Rational } = {};
   if ('machineId' in obj) {
-    validateEntity(data, obj['machineId'], 'machine', `${field}.machineId`);
-    result.machineId = obj['machineId'] as string;
+    if (typeof obj['machineId'] !== 'string')
+      invalid(`Expected a string at ${field}.machineId`);
+    result.machineId = obj['machineId'];
   }
   if ('overclock' in obj)
-    result.overclock = parseNonnegative(obj['overclock'], `${field}.overclock`);
+    result.overclock = parseSignedRational(
+      obj['overclock'],
+      `${field}.overclock`,
+    );
   validateRecipeReferences(result, data, field, resourceRecipes[id]);
   return result;
 }
@@ -151,7 +147,7 @@ function encodeRecipe(value: SourceRecipeSettings): object {
     ...(value.machineId == null ? {} : { machineId: value.machineId }),
     ...(value.overclock == null
       ? {}
-      : { overclock: rationalString(value.overclock) }),
+      : { overclock: value.overclock.toFraction(false) }),
   };
 }
 
@@ -171,19 +167,21 @@ export function encodeEndfield(state: EndfieldState): string {
       rates: Object.fromEntries(
         resourceIds.map((id) => [
           id,
-          rationalString(state.resourceLimits.rates[id]),
+          state.resourceLimits.rates[id].toFraction(false),
         ]),
       ),
     },
     machineLimits: {
       enabled: state.machineLimits.enabled,
-      limits: { [ovenId]: rationalString(state.machineLimits.limits[ovenId]) },
+      limits: {
+        [ovenId]: state.machineLimits.limits[ovenId].toFraction(false),
+      },
     },
     transfer: {
       enabled: state.transfer.enabled,
       source: state.transfer.source,
     },
-    electric: rationalString(state.electric),
+    electric: state.electric.toFraction(false),
     resourceRecipeSettings: settings,
     checkedDerived: Array.from(state.checkedDerived).sort(),
   };

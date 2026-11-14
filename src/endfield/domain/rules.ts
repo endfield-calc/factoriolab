@@ -89,25 +89,15 @@ export function compileEndfieldRules(
   const waterExport = variables.filter(
     (variable) => variable.recipeId === 'sewage-treat-export',
   );
-  constraints.push(
-    {
-      id: 'ef:water:local',
-      terms: terms(water),
-      upper: rational(3),
-    },
-    {
-      id: 'ef:water:export',
-      terms: terms(waterExport),
-      upper: rational.one,
-    },
-    {
-      id: 'ef:water:shared',
-      terms: [
-        ...terms(water),
-        ...waterExport.map(({ ref }) => ({ ref, coefficient: rational(3) })),
-      ],
-      upper: rational(3),
-    },
-  );
+  // All machine counts are nonnegative, so this also bounds local by 3 and
+  // export by 1, including when either side has no variables.
+  constraints.push({
+    id: 'ef:water:shared',
+    terms: [
+      ...terms(water),
+      ...waterExport.map(({ ref }) => ({ ref, coefficient: rational(3) })),
+    ],
+    upper: rational(3),
+  });
   return { constraints, integers };
 }

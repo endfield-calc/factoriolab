@@ -1,11 +1,10 @@
 import { ModData } from '~/data/schema/mod-data';
-import { Rational, rational } from '~/rational/rational';
+import { rational } from '~/rational/rational';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import type { PartialState } from '~/state/router/router-sync';
 import { displayRateOptions } from '~/state/settings/display-rate';
 import { maximizeTypeOptions } from '~/state/settings/maximize-type';
-import { Preset } from '~/state/settings/preset';
 
 import { invalid, validateEntity, validateRecipeReferences } from './codec';
 
@@ -45,11 +44,12 @@ export function validateCurrentWorkspace(
   )
     invalid('Unknown maximize type');
   if (settings?.preset != null) {
-    const presets =
-      data.defaults != null && 'presets' in data.defaults
-        ? data.defaults.presets.map((preset) => preset.id)
-        : [Preset.Minimum, Preset.Modules, Preset.Beacon8, Preset.Beacon12];
-    if (!Number.isFinite(settings.preset) || !presets.includes(settings.preset))
+    if (
+      !Number.isFinite(settings.preset) ||
+      data.defaults == null ||
+      !('presets' in data.defaults) ||
+      !data.defaults.presets.some((preset) => preset.id === settings.preset)
+    )
       invalid('Unknown preset');
   }
   const table = state.tableState;
@@ -115,8 +115,6 @@ export function validateCurrentWorkspace(
     const isRecipe = objective.unit === ObjectiveUnit.Machines;
     if (!(isRecipe ? recipeIds : itemIds).has(objective.targetId))
       invalid(`Unknown objective target: ${objective.targetId}`);
-    if (!(objective.value instanceof Rational))
-      invalid('Expected a rational objective value');
     if (isRecipe && objective.value.lt(rational.zero))
       invalid(`Expected a nonnegative rational at ${field}.value`);
     validateRecipeReferences(

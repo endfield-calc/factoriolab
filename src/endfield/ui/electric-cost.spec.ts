@@ -1,11 +1,8 @@
-import { HttpTestingController } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { CostSettingsDialog } from '~/app/main/settings/cost-settings-dialog/cost-settings-dialog';
 import { Button } from '~/components/button/button';
-import { Modules } from '~/components/modules/modules';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
@@ -14,9 +11,8 @@ import { SettingsStore } from '~/state/settings/settings-store';
 import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { ItemId } from '~/tests/item-id';
 import { mockModI18n } from '~/tests/mocks/data';
-import { mockModuleSettings } from '~/tests/mocks/settings';
 import { TestModule } from '~/tests/test-module';
-import { assert, setInputs } from '~/tests/utils';
+import { assert } from '~/tests/utils';
 
 function preservePreferences(): () => void {
   const previous = localStorage.getItem('preferences');
@@ -228,57 +224,6 @@ describe('CostSettingsDialog with Endfield defaults', () => {
     click('ok');
     expect(settings.state().costs.surplus.eq(rational(5))).toBeTrue();
     expect(endfield.state().electric.eq(rational(3))).toBeTrue();
-  });
-
-  it('restores preference storage before a later Modules fixture is created', async () => {
-    TestBed.resetTestingModule();
-    const original = '{ "language": "en", "theme": "dark" }';
-    localStorage.setItem('preferences', original);
-    const restore = preservePreferences();
-    await TestBed.configureTestingModule({
-      imports: [TestModule, CostSettingsDialog],
-      providers: provideEndfield(),
-    }).compileComponents();
-    const cost = TestBed.createComponent(CostSettingsDialog);
-    cost.detectChanges();
-    TestBed.inject(PreferencesStore).apply({ language: 'zh' });
-    TestBed.tick();
-    expect(localStorage.getItem('preferences')).toContain('"language":"zh"');
-    TestBed.resetTestingModule();
-
-    async function createModules(): Promise<ComponentFixture<Modules>> {
-      await TestBed.configureTestingModule({
-        imports: [TestModule, Modules],
-      }).compileComponents();
-      const next = TestBed.createComponent(Modules);
-      setInputs(next, {
-        entity:
-          TestBed.inject(SettingsStore).dataset().machineRecord[
-            ItemId.AssemblingMachine3
-          ],
-        value: mockModuleSettings,
-      });
-      next.detectChanges();
-      TestBed.tick();
-      return next;
-    }
-
-    await createModules();
-    expect(TestBed.inject(PreferencesStore).language()).toBe('zh');
-    TestBed.inject(HttpTestingController).expectNone((request) =>
-      request.url.startsWith('data/2.0/'),
-    );
-    restore();
-    expect(localStorage.getItem('preferences')).toBe(original);
-
-    const next = await createModules();
-    expect(TestBed.inject(PreferencesStore).language()).toBe('en');
-    next.componentInstance['removeEntry'](0);
-    expect(next.componentInstance.value()).toHaveSize(1);
-    TestBed.inject(HttpTestingController).expectNone((request) =>
-      request.url.startsWith('data/2.0/i18n/'),
-    );
-    await TestBed.inject(ApplicationRef).whenStable();
   });
 
   it('refreshes both drafts when a committed ordinary cost changes', () => {

@@ -10,7 +10,7 @@ import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
 import {
-  deriveEndfieldObjectives,
+  prepareEndfieldObjectives,
   tundraTransferRecipeIds,
 } from '~/endfield/adapters/calculation-extension';
 import {
@@ -114,64 +114,45 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const recipeSettings = this.recipesStore.settings();
     const isEndfield = data.modId === 'aef';
     const state = isEndfield ? this.endfieldStore.snapshot() : undefined;
-    const declarations =
+    const ids = new Set(ordinary.map((objective) => objective.id));
+    const derived =
       this.lifecycle.ready() &&
       state != null &&
       (ordinary.length > 0 ||
         state.resourceLimits.enabled ||
         state.machineLimits.enabled ||
         state.transfer.enabled)
-        ? deriveEndfieldObjectives(state)
-        : [];
-    const ids = new Set(ordinary.map((objective) => objective.id));
-    const rates = new Map<string, Rational>();
-    const derived = declarations.map((declaration) => {
-      const base: ObjectiveState = { ...declaration.objective };
-      const exists = isRecipeObjective(base)
-        ? data.recipeRecord[base.targetId] != null
-        : data.itemRecord[base.targetId] != null;
-      if (!exists)
-        this.invalidDerived(`Unknown derived target: ${base.targetId}`);
-      if (ids.has(base.id))
-        this.invalidDerived('Duplicate derived objective ID');
-      ids.add(base.id);
-      let prepared = this.adjustment.adjustObjective(
-        base,
-        this.itemsStore.settings(),
-        recipeSettings,
-        this.machinesStore.settings(),
-        settings,
-        data,
-      );
-      if (declaration.fixedOutput != null) {
-        const output = prepared.recipe?.output[declaration.fixedOutput.itemId];
-        if (!output?.gt(rational.zero))
-          this.invalidDerived('Derived supply has no positive adjusted output');
-        prepared = {
-          ...prepared,
-          value: declaration.fixedOutput.perSecond.div(output),
-        };
-      }
-      if (declaration.fixedRate != null) {
-        rates.set(base.id, declaration.fixedRate);
-        prepared = {
-          ...prepared,
-          value: declaration.fixedRate.mul(
+        ? prepareEndfieldObjectives(
+            state,
+            (base) => {
+              const exists = isRecipeObjective(base)
+                ? data.recipeRecord[base.targetId] != null
+                : data.itemRecord[base.targetId] != null;
+              if (!exists)
+                throw new Error(`Unknown derived target: ${base.targetId}`);
+              if (ids.has(base.id))
+                throw new Error('Duplicate derived objective ID');
+              ids.add(base.id);
+              return this.adjustment.adjustObjective(
+                base,
+                this.itemsStore.settings(),
+                recipeSettings,
+                this.machinesStore.settings(),
+                settings,
+                data,
+              );
+            },
             this.settingsStore.displayRateInfo().value,
-          ),
-        };
-      }
-      return prepared;
-    });
+          )
+        : [];
     const objectives = [...ordinary, ...derived];
     const normalized = [
       ...this.normalizedObjectives(),
-      ...derived.map((objective) => ({
-        ...objective,
-        value:
-          rates.get(objective.id) ??
-          this.normalization.normalizeRate(objective),
-      })),
+      ...derived.map((objective) =>
+        spread(objective, {
+          value: this.normalization.normalizeRate(objective),
+        }),
+      ),
     ];
     return {
       objectives,
@@ -180,10 +161,6 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
       recipeSettings,
     };
   });
-
-  private invalidDerived(message: string): never {
-    throw new Error(message);
-  }
 
   readonly matrixResult = computed((): SimplexResult => {
     if (!this.lifecycle.ready()) return { steps: [], resultType: 'paused' };

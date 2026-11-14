@@ -1,4 +1,4 @@
-import { Service, signal } from '@angular/core';
+import { computed, Service, signal } from '@angular/core';
 
 import {
   createEndfieldState,
@@ -25,6 +25,7 @@ function assertOwner(owner: string): void {
 export class EndfieldStore {
   private readonly _state = signal<EndfieldState>(createEndfieldState());
   readonly state = this._state.asReadonly();
+  readonly electric = computed(() => this.state().electric);
 
   snapshot(): EndfieldState {
     return this.state();

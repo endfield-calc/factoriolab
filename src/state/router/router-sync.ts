@@ -624,8 +624,8 @@ export class RouterSync {
     this.zipTable(zState, table);
     if (settings.modId === 'aef' && endfield != null) {
       const ef = encodeEndfield(endfield);
-      Object.assign(zState.config.bare as Params, { ef });
-      Object.assign(zState.config.hash as Params, { ef });
+      zState.config.bare.ef = ef;
+      zState.config.hash.ef = ef;
     }
     return zState;
   }
@@ -815,10 +815,7 @@ export class RouterSync {
     let endfield: EndfieldState | undefined;
     if (modId === 'aef') {
       validateCurrentWorkspace(state, modData);
-      endfield = decodeEndfield(
-        (params as Record<string, unknown>)['ef'],
-        modData,
-      );
+      endfield = decodeEndfield(params.ef, modData);
     }
     if (ticket != null && !this.lifecycle.current(ticket)) return;
     const previous = this.stable ?? this.snapshot();

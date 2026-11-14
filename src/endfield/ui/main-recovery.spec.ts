@@ -153,8 +153,10 @@ describe('Flow recovery and source labels', () => {
   function delayedLayouts(): {
     complete(index: number): Promise<void>;
     count(): number;
+    started(index: number): Promise<void>;
   } {
     const pending: (() => Promise<void>)[] = [];
+    const starts: (() => void)[] = [];
     const realElk = new ELK();
     spyOn(component['elk'], 'layout').and.callFake((graph) => {
       const layout = realElk.layout(graph);
@@ -162,10 +164,17 @@ describe('Flow recovery and source labels', () => {
         pending.push(async (): Promise<void> => {
           resolve(await layout);
         });
+        starts[pending.length - 1]?.();
       });
     });
     return {
       count: (): number => pending.length,
+      started: (index): Promise<void> =>
+        pending[index] != null
+          ? Promise.resolve()
+          : new Promise((resolve) => {
+              starts[index] = resolve;
+            }),
       complete: async (index): Promise<void> => {
         await pending[index]();
       },
@@ -222,25 +231,43 @@ describe('Flow recovery and source labels', () => {
       expect(otherContainer.querySelector('span')).not.toBeNull();
       other.destroy();
     });
-    it('ignores an older layout that completes after a newer layout', async () => {
+    it('ignores an older layout for the same inputs after a newer layout', async () => {
       const layouts = delayedLayouts();
-      const oldRender = component.rebuildChart(namedFlow('old'), boxSettings);
-      const newRender = component.rebuildChart(namedFlow('new'), boxSettings);
+      liveFlow.set(namedFlow('current'));
+      liveSettings.set(boxSettings);
+      fixture.detectChanges();
+      await layouts.started(0);
+      const current = liveFlow()!;
+      liveFlow.set({ ...current });
+      liveFlow.set(current);
+      fixture.detectChanges();
+      await layouts.started(1);
       expect(layouts.count()).toBe(2);
       await layouts.complete(1);
-      await newRender;
       await layouts.complete(0);
-      await oldRender;
+      await Promise.resolve();
       expect(container().querySelectorAll(':scope > svg').length).toBe(1);
-      expect(container().textContent).toContain('new-0');
-      expect(container().textContent).not.toContain('old-0');
+      expect(container().textContent).toContain('current-0');
     });
     it('ignores an older layout after switching to Sankey', async () => {
       const layouts = delayedLayouts();
-      const oldRender = component.rebuildChart(namedFlow('old'), boxSettings);
-      await component.rebuildChart(namedFlow('sankey'), sankeySettings);
+      liveFlow.set(namedFlow('old'));
+      liveSettings.set(boxSettings);
+      fixture.detectChanges();
+      await layouts.started(0);
+      const rebuildSankey = component.rebuildSankey.bind(component);
+      const rendered = new Promise<void>((resolve) => {
+        spyOn(component, 'rebuildSankey').and.callFake((flow, settings) => {
+          rebuildSankey(flow, settings);
+          resolve();
+        });
+      });
+      liveFlow.set(namedFlow('sankey'));
+      liveSettings.set(sankeySettings);
+      fixture.detectChanges();
+      await rendered;
       await layouts.complete(0);
-      await oldRender;
+      await Promise.resolve();
       expect(container().querySelectorAll(':scope > svg').length).toBe(1);
       expect(container().textContent).toContain('sankey-0');
       expect(container().textContent).not.toContain('old-0');
@@ -248,10 +275,13 @@ describe('Flow recovery and source labels', () => {
     it('does not draw a layout that finishes after destruction', async () => {
       const layouts = delayedLayouts();
       const element = container();
-      const render = component.rebuildChart(namedFlow('old'), boxSettings);
+      liveFlow.set(namedFlow('old'));
+      liveSettings.set(boxSettings);
+      fixture.detectChanges();
+      await layouts.started(0);
       fixture.destroy();
       await layouts.complete(0);
-      await render;
+      await Promise.resolve();
       await component.rebuildChart(mocks.flow(), boxSettings);
       component.rebuildSankey(mocks.flow(), sankeySettings);
       await component.rebuildBoxLine(mocks.flow(), boxSettings);
@@ -314,7 +344,18 @@ describe('Flow recovery and source labels', () => {
       select(`#${SVG_ID} > *`).remove();
     });
     it('uses safe objective labels and keeps the selected step', async () => {
-      await component.rebuildBoxLine(labeledFlow(), boxSettings);
+      const rebuild = component.rebuildBoxLine.bind(component);
+      const rendered = new Promise<void>((resolve, reject) => {
+        spyOn(component, 'rebuildBoxLine').and.callFake((flow, settings) => {
+          const result = rebuild(flow, settings);
+          void result.then(resolve, reject);
+          return result;
+        });
+      });
+      liveFlow.set(labeledFlow());
+      liveSettings.set(boxSettings);
+      fixture.detectChanges();
+      await rendered;
       expectSafeLabelsAndSelection();
     });
   });

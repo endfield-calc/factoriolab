@@ -25,10 +25,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { RatePipe } from '~/components/steps/pipes/rate-pipe';
-import {
-  resourceFromObjectiveId,
-  resourceOwner,
-} from '~/endfield/domain/model';
+import { resourceFromObjectiveId } from '~/endfield/domain/model';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { Exporter } from '~/exporter/exporter';
 import { rational } from '~/rational/rational';
@@ -142,21 +139,6 @@ export class Steps {
     return resourceFromObjectiveId(step.recipeObjectiveId) == null
       ? undefined
       : 'endfield.resources.source';
-  }
-
-  protected sourceModified(step: Step): boolean {
-    const id = resourceFromObjectiveId(step.recipeObjectiveId);
-    return (
-      id != null &&
-      this.endfieldStore.state().resourceRecipeSettings[id] != null
-    );
-  }
-
-  protected stepChecked(step: Step): boolean | undefined {
-    const id = resourceFromObjectiveId(step.recipeObjectiveId);
-    return step.itemId == null && id != null
-      ? this.endfieldStore.state().checkedDerived.has(resourceOwner(id))
-      : step.checked;
   }
 
   protected readonly steps = computed(() => {

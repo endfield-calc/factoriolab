@@ -247,8 +247,6 @@ describe('Steps', () => {
     expect(
       store.state().checkedDerived.has(resourceOwner('iron_ore')),
     ).toBeTrue();
-    expect(component['stepChecked']({ ...step, itemId: undefined })).toBeTrue();
-    expect(component['stepChecked']({ ...step, checked: false })).toBeFalse();
     expect(component['settingsStore'].apply).not.toHaveBeenCalled();
   });
 

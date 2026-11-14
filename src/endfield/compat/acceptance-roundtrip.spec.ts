@@ -33,34 +33,6 @@ import { EndfieldStore } from '../state/endfield-store';
 const data = rawData as unknown as ModData;
 const hash = rawHash as unknown as ModHash;
 
-interface StateSummary {
-  objectives: {
-    id: string;
-    targetId: string;
-    value: string;
-    type: ObjectiveType;
-    unit: ObjectiveUnit;
-    machineId?: string;
-    overclock?: string;
-  }[];
-  checked: string[];
-  checkedItems: string[];
-  locations: string[];
-  excluded: string[];
-  rate: number;
-  costs: Record<string, string>;
-  extension: {
-    enabled: boolean;
-    rates: Record<string, string>;
-    machineEnabled: boolean;
-    machineLimit: string;
-    transfer: boolean;
-    electric: string;
-    recipe: Record<string, { machineId?: string; overclock?: string }>;
-    checked: string[];
-  };
-}
-
 describe('Endfield derived round trips', () => {
   let router: RouterSync;
   let settings: SettingsStore;
@@ -134,54 +106,6 @@ describe('Endfield derived round trips', () => {
     });
   }
 
-  function stateSummary(): StateSummary {
-    const state = endfield.state();
-    return {
-      objectives: Object.values(objectives.state()).map(
-        ({ id, targetId, value, type, unit, machineId, overclock }) => ({
-          id,
-          targetId,
-          value: value.toString(),
-          type,
-          unit,
-          machineId,
-          overclock: overclock?.toString(),
-        }),
-      ),
-      checked: [...settings.state().checkedObjectiveIds].sort(),
-      checkedItems: [...settings.state().checkedItemIds].sort(),
-      locations: [...settings.settings().locationIds].sort(),
-      excluded: [...settings.settings().excludedRecipeIds].sort(),
-      rate: settings.displayRate(),
-      costs: Object.fromEntries(
-        Object.entries(settings.state().costs).map(([id, value]) => [
-          id,
-          value.toString(),
-        ]),
-      ),
-      extension: {
-        enabled: state.resourceLimits.enabled,
-        rates: Object.fromEntries(
-          Object.entries(state.resourceLimits.rates).map(([id, v]) => [
-            id,
-            v.toString(),
-          ]),
-        ),
-        machineEnabled: state.machineLimits.enabled,
-        machineLimit: state.machineLimits.limits['xiranite_oven_1'].toString(),
-        transfer: state.transfer.enabled,
-        electric: state.electric.toString(),
-        recipe: Object.fromEntries(
-          Object.entries(state.resourceRecipeSettings).map(([id, v]) => [
-            id,
-            { machineId: v?.machineId, overclock: v?.overclock?.toString() },
-          ]),
-        ),
-        checked: [...state.checkedDerived].sort(),
-      },
-    };
-  }
-
   it('A30 preserves one real derived supply and its independent settings/check through every link and save', async () => {
     settings.apply({
       locationIds: new Set(['tundra', 'jinlong']),
@@ -248,16 +172,14 @@ describe('Endfield derived round trips', () => {
         .objectives.filter((o) => o.id === resourceObjectiveId('originium_ore'))
         .length,
     ).toBe(1);
-    const expected = stateSummary();
-    expect(expected.objectives.map((o) => o.targetId)).toEqual([
-      'originium_ore',
-    ]);
-    expect(expected.extension.checked).toEqual([
-      resourceOwner('originium_ore'),
-    ]);
-    expect(expected.extension.recipe['originium_ore']).toEqual({
+    const expectedObjectives = objectives.state();
+    const expectedEndfield = endfield.snapshot();
+    expect(expectedEndfield.checkedDerived).toEqual(
+      new Set([resourceOwner('originium_ore')]),
+    );
+    expect(expectedEndfield.resourceRecipeSettings.originium_ore).toEqual({
       machineId: 'miner_3',
-      overclock: '125',
+      overclock: rational(125),
     });
     const zipped = zip();
     expect(zipped.config.bare.och).toBe('A');
@@ -265,7 +187,7 @@ describe('Endfield derived round trips', () => {
     expect(zipped.config.bare.csu).toBe('0');
     expect(zipped.config.bare.cun).toBeUndefined();
     expect(zipped.config.bare.cre).toBeUndefined();
-    const ef = (zipped.config.bare as Params)['ef'] as string;
+    const ef = zipped.config.bare.ef!;
     const payload = JSON.parse(atob(ef.replace(/-/g, '+').replace(/_/g, '/')));
     expect(JSON.stringify(payload)).not.toContain('sewage-treat');
     const bare: LabParams = {
@@ -297,7 +219,9 @@ describe('Endfield derived round trips', () => {
         excludedRecipeIds: new Set(),
       });
       await restore(query);
-      expect(stateSummary()).withContext(mode).toEqual(expected);
+      expect(objectives.state()).withContext(mode).toEqual(expectedObjectives);
+      expect(endfield.snapshot()).withContext(mode).toEqual(expectedEndfield);
+      expect(zip()).withContext(mode).toEqual(zipped);
       expect(
         objectives
           .calculationContext()
@@ -321,11 +245,12 @@ describe('Endfield derived round trips', () => {
         )!;
       expect(restoredDerived.itemId).withContext(mode).toBeUndefined();
       expect(restoredDerived.checked).withContext(mode).toBeTrue();
-      console.info(
-        '[remaining-roundtrip] A30',
-        mode,
-        JSON.stringify({ query, summary: stateSummary() }),
-      );
+      expect(restoredDerived.recipeSettings?.machineId)
+        .withContext(mode)
+        .toBe('miner_3');
+      expect(restoredDerived.recipeSettings?.overclock)
+        .withContext(mode)
+        .toEqual(rational(125));
     }
   });
 });

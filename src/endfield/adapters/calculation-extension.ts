@@ -3,7 +3,10 @@ import { inject, Service } from '@angular/core';
 import { Recipe } from '~/data/schema/recipe';
 import { Rational, rational } from '~/rational/rational';
 import { Adjustment } from '~/state/adjustment';
-import { ObjectiveState } from '~/state/objectives/objective';
+import {
+  ObjectiveSettings,
+  ObjectiveState,
+} from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { RecipeSettings } from '~/state/recipes/recipe-settings';
@@ -31,7 +34,7 @@ export class EndfieldAdjustment extends Adjustment {
     costs: CostSettings,
     data: Dataset,
   ): void {
-    const electric = this.endfieldStore.snapshot().electric;
+    const electric = this.endfieldStore.electric();
     for (const recipe of Object.values(adjustedRecipe)) {
       const recipeSettings = recipes[recipe.id];
       const raw = data.recipeRecord[recipe.id];
@@ -58,16 +61,6 @@ export class EndfieldAdjustment extends Adjustment {
   }
 }
 
-interface DerivedObjective {
-  readonly objective: Readonly<ObjectiveState>;
-  /** Physical rate converted after the objective recipe is adjusted. */
-  readonly fixedOutput?: {
-    readonly itemId: string;
-    readonly perSecond: Rational;
-  };
-  readonly fixedRate?: Rational;
-}
-
 const transferKey = 'domain_key_tundra';
 const hourlyTransfer = rational(1, 3600);
 
@@ -82,63 +75,64 @@ export function tundraTransferRecipeIds(
   );
 }
 
-/** Values with fixedOutput stay physical rates until recipe adjustment. */
-export function deriveEndfieldObjectives(
+/** Prepare native objectives while preserving source rates in physical units. */
+export function prepareEndfieldObjectives(
   state: EndfieldState,
-): DerivedObjective[] {
-  const result: DerivedObjective[] = [];
+  adjust: (objective: ObjectiveState) => ObjectiveSettings,
+  displayFactor: Rational,
+): ObjectiveSettings[] {
+  const result: ObjectiveSettings[] = [];
   if (state.resourceLimits.enabled) {
     for (const id of resourceIds) {
       const targetId = resourceRecipes[id];
-      result.push({
-        objective: {
+      result.push(
+        adjust({
           id: resourceLimitId(id),
           targetId,
           value: rational.zero,
           unit: ObjectiveUnit.Machines,
           type: ObjectiveType.Limit,
-        },
-      });
+        }),
+      );
       const rate = state.resourceLimits.rates[id];
       if (rate.gt(rational.zero)) {
         const settings = state.resourceRecipeSettings[id];
-        result.push({
-          objective: {
-            ...settings,
-            id: resourceObjectiveId(id),
-            targetId,
-            value: rational.zero,
-            unit: ObjectiveUnit.Machines,
-            type: ObjectiveType.Output,
-          },
-          fixedOutput: { itemId: id, perSecond: rate },
+        const objective = adjust({
+          ...settings,
+          id: resourceObjectiveId(id),
+          targetId,
+          value: rational.zero,
+          unit: ObjectiveUnit.Machines,
+          type: ObjectiveType.Output,
         });
+        const output = objective.recipe?.output[id];
+        if (!output?.gt(rational.zero))
+          throw new Error('Derived supply has no positive adjusted output');
+        result.push({ ...objective, value: rate.div(output) });
       }
     }
   }
 
   if (state.transfer.enabled) {
-    result.push({
-      objective: {
+    result.push(
+      adjust({
         id: 'ef:transfer:tundra:input',
         targetId: transferKey,
-        value: hourlyTransfer,
+        value: hourlyTransfer.mul(displayFactor),
         unit: ObjectiveUnit.Items,
         type: ObjectiveType.Input,
-      },
-      fixedRate: hourlyTransfer,
-    });
+      }),
+    );
   }
   const transferLimit = state.transfer.enabled ? hourlyTransfer : rational.zero;
-  result.push({
-    objective: {
+  result.push(
+    adjust({
       id: 'ef:transfer:tundra:limit',
       targetId: transferKey,
-      value: transferLimit,
+      value: transferLimit.mul(displayFactor),
       unit: ObjectiveUnit.Items,
       type: ObjectiveType.Limit,
-    },
-    fixedRate: transferLimit,
-  });
+    }),
+  );
   return result;
 }

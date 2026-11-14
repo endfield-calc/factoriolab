@@ -171,7 +171,7 @@ describe('Endfield model rules', () => {
     expect(disabled.integers.length).toBe(59);
   });
 
-  it('applies both water bounds and their shared limit to sparse and explicit variables without integrality', () => {
+  it('applies the shared water limit to sparse and explicit variables without integrality', () => {
     const state = createEndfieldState();
     const local = variable('recipe', 'local', 'sewage-treat');
     const localExplicit = variable(
@@ -182,8 +182,15 @@ describe('Endfield model rules', () => {
     const exported = variable('objective', 'export', 'sewage-treat-export');
     const both = compileEndfieldRules(state, [local, localExplicit, exported]);
     const shared = rule(both, 'ef:water:shared');
-    expect(rule(both, 'ef:water:local').upper).toEqual(rational(3));
-    expect(rule(both, 'ef:water:export').upper).toEqual(rational.one);
+    expect(
+      both.constraints.filter((row) => row.id.startsWith('ef:water:')),
+    ).toEqual([shared]);
+    expect(shared.upper).toEqual(rational(3));
+    expect(shared.terms.map((term) => term.ref)).toEqual([
+      local.ref,
+      localExplicit.ref,
+      exported.ref,
+    ]);
     expect(shared.terms.map((term) => term.coefficient)).toEqual([
       rational.one,
       rational.one,
@@ -199,16 +206,17 @@ describe('Endfield model rules', () => {
     expect(both.integers).toEqual([]);
 
     const justExport = compileEndfieldRules(state, [exported]);
-    expect(rule(justExport, 'ef:water:local').terms).toEqual([]);
-    expect(rule(justExport, 'ef:water:export').terms[0].ref).toEqual(
+    expect(rule(justExport, 'ef:water:shared').terms[0].ref).toEqual(
       exported.ref,
     );
     expect(rule(justExport, 'ef:water:shared').terms[0].coefficient).toEqual(
       rational(3),
     );
     const justLocal = compileEndfieldRules(state, [local]);
-    expect(rule(justLocal, 'ef:water:local').terms[0].ref).toEqual(local.ref);
-    expect(rule(justLocal, 'ef:water:export').terms).toEqual([]);
+    expect(rule(justLocal, 'ef:water:shared').terms[0].ref).toEqual(local.ref);
+    expect(
+      rule(compileEndfieldRules(state, []), 'ef:water:shared').terms,
+    ).toEqual([]);
   });
 
   it('rejects negative and non-rational physical machine limits', () => {

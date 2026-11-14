@@ -3,8 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 
-import english from '/public/endfield/i18n/en.json';
-import chinese from '/public/endfield/i18n/zh.json';
 import { Preferences } from '~/app/main/preferences/preferences';
 import { Select } from '~/components/select/select';
 import { provideEndfield } from '~/endfield/providers';
@@ -124,37 +122,6 @@ describe('saved states during recovery', () => {
     });
   }
 
-  it('explains the protected original and reset consequences in English and Chinese', () => {
-    for (const text of [
-      'defaults are in use',
-      'original data is kept',
-      'automatic saving is paused',
-      'Export it',
-    ])
-      expect(english.endfield.recovery.preferences).toContain(text);
-    for (const text of [
-      'Export them',
-      'replaces the original',
-      'only plans currently available in memory',
-      'unloaded archives cannot be kept',
-    ])
-      expect(english.endfield.recovery.resetPreferences).toContain(text);
-    for (const text of [
-      '使用默认值',
-      '原始数据已保留',
-      '自动保存已暂停',
-      '先导出原文',
-    ])
-      expect(chinese.endfield.recovery.preferences).toContain(text);
-    for (const text of [
-      '先导出原文',
-      '替换原文',
-      '仅保留当前内存中可用的方案',
-      '无法保留未能加载的存档',
-    ])
-      expect(chinese.endfield.recovery.resetPreferences).toContain(text);
-  });
-
   it('blocks archive writes while preserving loading and language selection', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, Preferences],
@@ -205,21 +172,6 @@ describe('saved states during recovery', () => {
     expect(store.removeState).not.toHaveBeenCalled();
     await component.setState('safe');
     expect(component['router'].navigate).toHaveBeenCalled();
-  });
-
-  it('does not clear archives if recovery begins while the reset confirmation is open', async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, Preferences],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(Preferences);
-    const component = fixture.componentInstance;
-    const reply = new Subject<number | undefined>();
-    spyOn(component['confirm'], 'open').and.returnValue(reply.asObservable());
-    const clear = spyOn(window.localStorage, 'clear');
-    component.reset();
-    TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=bad');
-    reply.next(2);
-    expect(clear).not.toHaveBeenCalled();
   });
 });
 

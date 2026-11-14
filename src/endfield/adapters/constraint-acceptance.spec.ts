@@ -30,8 +30,8 @@ import {
   resourceObjectiveId,
 } from '../domain/model';
 import { provideEndfield } from '../providers';
-import { EndfieldCoordinator } from '../state/coordinator';
 import { EndfieldStore } from '../state/endfield-store';
+import { EndfieldResources } from '../ui/resources';
 
 function objective(
   id: string,
@@ -386,7 +386,9 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
   }
 
   it('A12 shares water nodes, supports fractional use and disabling/restoring them without an oven cap', () => {
-    const coordinator = TestBed.inject(EndfieldCoordinator);
+    const resources = TestBed.runInInjectionContext(
+      () => new EndfieldResources(),
+    );
     settings.apply({ excludedRecipeIds: new Set(['carbon_enr']) });
     objectives.set({
       1: objective('1', 'sewage-treat', 1.5),
@@ -424,9 +426,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     expect(result('A12-y-sparse-over').resultType).toBe('failed');
     settings.apply({ excludedRecipeIds: new Set(['carbon_enr']) });
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1) });
-    expect(
-      coordinator.dispatch({ type: 'waterDisabled', disabled: true }),
-    ).toBeTrue();
+    resources['setWaterDisabled'](true);
     expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();
     expect(
       settings.settings().excludedRecipeIds.has('sewage-treat'),
@@ -443,9 +443,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     });
     expect(result('A12-disabled-explicit-overlap').resultType).toBe('failed');
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1) });
-    expect(
-      coordinator.dispatch({ type: 'waterDisabled', disabled: false }),
-    ).toBeTrue();
+    resources['setWaterDisabled'](false);
     expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();
     expect(
       settings.settings().excludedRecipeIds.has('sewage-treat'),
@@ -457,7 +455,9 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
   });
 
   it('A12 makes an automatic node compete with an explicit node and toggles automatic use', () => {
-    const coordinator = TestBed.inject(EndfieldCoordinator);
+    const resources = TestBed.runInInjectionContext(
+      () => new EndfieldResources(),
+    );
     const input: ObjectiveState = {
       ...objective('2', 'liquid_sewage', 360, ObjectiveUnit.Items),
       type: ObjectiveType.Input,
@@ -487,16 +487,12 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     expect(enabled.resultType).toBe('solved');
     close(count(enabled.steps, 'sewage-treat-export'), 1);
     close(count(enabled.steps, 'sewage-treat'), 0);
-    expect(
-      coordinator.dispatch({ type: 'waterDisabled', disabled: true }),
-    ).toBeTrue();
+    resources['setWaterDisabled'](true);
     const disabled = result('A12-auto-disabled');
     expect(disabled.resultType).toBe('solved');
     close(count(disabled.steps, 'sewage-treat-export'), 0);
     close(count(disabled.steps, 'sewage-treat'), 0);
-    expect(
-      coordinator.dispatch({ type: 'waterDisabled', disabled: false }),
-    ).toBeTrue();
+    resources['setWaterDisabled'](false);
     const restored = result('A12-auto-restored');
     expect(restored.resultType).toBe('solved');
     close(count(restored.steps, 'sewage-treat-export'), 1);

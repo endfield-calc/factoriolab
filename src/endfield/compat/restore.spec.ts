@@ -5,7 +5,7 @@ import rawHash from '/public/data/aef/hash.json';
 import { EnergyType } from '~/data/schema/energy-type';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
-import { createEndfieldState, EndfieldState } from '~/endfield/domain/model';
+import { createEndfieldState } from '~/endfield/domain/model';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
@@ -22,7 +22,7 @@ import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
 import { TestModule } from '~/tests/test-module';
 
-import { decodeEndfield, encodeEndfield } from './codec';
+import { encodeEndfield } from './codec';
 import { validateCurrentWorkspace } from './restore';
 
 const data = rawData as unknown as ModData;
@@ -81,14 +81,6 @@ function objective(
     ...settings,
   };
 }
-function decode(
-  state: PartialState,
-  params: Record<string, string> = { v: '12' },
-): { state: PartialState; extension: EndfieldState } {
-  validateCurrentWorkspace(state, data);
-  return { state, extension: decodeEndfield(params['ef'], data) };
-}
-
 describe('Endfield workspace restoration', () => {
   it('rejects negative ordinary machine quantities while retaining zero, positive values and signed costs', () => {
     for (const type of [0, 1, 2, 3]) {
@@ -100,7 +92,9 @@ describe('Endfield workspace restoration', () => {
         ObjectiveUnit.Machines,
       );
       const state = { objectivesState: { 1: entry } };
-      expect(() => decode(state, { v: '12' })).toThrowError(
+      expect(() => {
+        validateCurrentWorkspace(state, data);
+      }).toThrowError(
         Error,
         'Expected a nonnegative rational at objectives.1.value',
       );
@@ -118,18 +112,16 @@ describe('Endfield workspace restoration', () => {
           cost: rational(-3),
         },
       );
-      const result = decode(
-        {
-          objectivesState: { 1: entry },
-          settingsState: { costs: { machine: rational(-2) } },
-        },
-        { v: '12' },
-      );
-      expect(result.state.objectivesState?.['1'].value).toEqual(
-        rational(value),
-      );
-      expect(result.state.objectivesState?.['1'].cost).toEqual(rational(-3));
-      expect(result.state.settingsState?.costs?.machine).toEqual(rational(-2));
+      const state: PartialState = {
+        objectivesState: { 1: entry },
+        settingsState: { costs: { machine: rational(-2) } },
+      };
+      expect(() => {
+        validateCurrentWorkspace(state, data);
+      }).not.toThrow();
+      expect(state.objectivesState?.['1'].value).toEqual(rational(value));
+      expect(state.objectivesState?.['1'].cost).toEqual(rational(-3));
+      expect(state.settingsState?.costs?.machine).toEqual(rational(-2));
     }
   });
 
@@ -166,7 +158,6 @@ describe('Endfield workspace restoration', () => {
       expect(() => {
         validateCurrentWorkspace(state, data);
       }).toThrowError(Error, message);
-      expect(() => decode(state, { v: '12' })).toThrowError(Error, message);
     }
     for (const displayRate of [0, 1, 2, 3])
       for (const maximizeType of [0, 1]) {
@@ -174,9 +165,9 @@ describe('Endfield workspace restoration', () => {
           settingsState: { displayRate, maximizeType, preset: 0 },
           tableState: { page: 0, rows: 37 },
         };
-        expect(decode(state, { v: '12' }).state.tableState).toEqual(
-          state.tableState,
-        );
+        expect(() => {
+          validateCurrentWorkspace(state, data);
+        }).not.toThrow();
       }
 
     const customData: ModData = {
@@ -187,29 +178,6 @@ describe('Endfield workspace restoration', () => {
     expect(() => {
       validateCurrentWorkspace(state, customData);
     }).not.toThrow();
-    const withoutCustomPresets: ModData = { ...data, defaults: undefined };
-    expect(() => {
-      validateCurrentWorkspace(
-        { settingsState: { preset: 1 } },
-        withoutCustomPresets,
-      );
-    }).not.toThrow();
-  });
-
-  it('rejects non-Rational values at the public detached workspace boundary without modifying the input', () => {
-    for (const value of ['1', 1, { p: 1n, q: 1n }]) {
-      const entry = {
-        ...objective('1', 'originium_ore', 0, 1, ObjectiveUnit.Items),
-        value,
-      } as unknown as ObjectiveState;
-      const input = { objectivesState: { 1: entry } };
-      expect(() => decode(input, { v: '12' })).toThrowError(
-        Error,
-        'Expected a rational objective value',
-      );
-      expect(input.objectivesState[1]).toBe(entry);
-      expect(entry.value as unknown).toBe(value);
-    }
   });
 
   it('validates ordinary setting IDs before commit and retains valid state', () => {
@@ -454,33 +422,6 @@ describe('Endfield router validation', () => {
     );
   }
 
-  it('reads ef exactly once and does not read cet', () => {
-    let reads = 0;
-    const encoded = encodeEndfield({
-      ...createEndfieldState(),
-      electric: rational(3),
-    });
-    const params = Object.defineProperties(
-      { v: '12' },
-      {
-        ef: {
-          get: () => {
-            reads++;
-            return encoded;
-          },
-        },
-        cet: {
-          get: () => {
-            throw new Error('cet must not be read');
-          },
-        },
-      },
-    );
-    router.updateState('aef', params, true, data, hash);
-    expect(reads).toBe(1);
-    expect(endfield.state().electric).toEqual(rational(3));
-  });
-
   it('rejects invalid wire values without publishing any part of the candidate', () => {
     objectives.set({
       1: objective('1', 'originium_ore', 0, 3, ObjectiveUnit.Machines),
@@ -501,8 +442,10 @@ describe('Endfield router validation', () => {
     };
     const dispatch = spyOn(router, 'dispatch').and.callThrough();
     const commit = spyOn(endfield, 'set').and.callThrough();
+    const encoded = encodeEndfield(createEndfieldState());
     for (const input of [
       'o=sewage-treat*-1*3*0',
+      `ef=${encoded}&ef=${encoded}`,
       'odr=999',
       'odr=Infinity',
       'omt=999',

@@ -1,8 +1,15 @@
+import { signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { select } from 'd3';
 
+import { FlowBuilder } from '~/flow/flow-builder';
+import { FlowData } from '~/flow/flow-data';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
-import { initialFlowSettings } from '~/state/preferences/flow-settings';
+import {
+  FlowSettings,
+  initialFlowSettings,
+} from '~/state/preferences/flow-settings';
+import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { Mocks } from '~/tests/mocks/mocks';
 import { TestModule } from '~/tests/test-module';
 import {
@@ -19,6 +26,8 @@ describe('Flow', () => {
   let component: Flow;
   let fixture: ComponentFixture<Flow>;
   let mocks: Mocks;
+  let liveFlow: WritableSignal<FlowData | null>;
+  let liveSettings: WritableSignal<FlowSettings>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -26,6 +35,12 @@ describe('Flow', () => {
     }).compileComponents();
 
     mocks = TestBed.inject(Mocks);
+    liveFlow = signal<FlowData | null>(null);
+    liveSettings = signal(initialFlowSettings);
+    spyOn(TestBed.inject(FlowBuilder), 'flowData').and.callFake(liveFlow);
+    spyOn(TestBed.inject(PreferencesStore), 'flowSettings').and.callFake(
+      liveSettings,
+    );
     fixture = TestBed.createComponent(Flow);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -97,8 +112,23 @@ describe('Flow', () => {
       select(`#${SVG_ID} > *`).remove();
     });
 
+    async function renderBoxLine(): Promise<void> {
+      const rebuild = component.rebuildBoxLine.bind(component);
+      const rendered = new Promise<void>((resolve, reject) => {
+        spyOn(component, 'rebuildBoxLine').and.callFake((flow, settings) => {
+          const result = rebuild(flow, settings);
+          void result.then(resolve, reject);
+          return result;
+        });
+      });
+      liveFlow.set(mocks.flow());
+      liveSettings.set(initialFlowSettings);
+      fixture.detectChanges();
+      await rendered;
+    }
+
     it('should build the box-line', async () => {
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       const gElements = document.getElementsByTagName('g');
       expect(gElements.length).toEqual(8);
     });
@@ -107,13 +137,13 @@ describe('Flow', () => {
       spyOn(component['elk'], 'layout').and.returnValue(
         Promise.resolve({ children: [], edges: [], width: 1 }),
       );
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       const gElements = document.getElementsByTagName('g');
       expect(gElements.length).toEqual(0);
     });
 
     it('should handle drag and drop', async () => {
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       assert(component['svg'] != null);
       const movingEl = component['svg'].select('svg');
       const x = movingEl.attr('x');
@@ -124,20 +154,20 @@ describe('Flow', () => {
     });
 
     it('should handle zoom', async () => {
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       zoomSelector(fixture, '#lab-flow-svg > svg', 500);
       assert(component['svg'] != null);
       expect(component['svg'].select('svg > g').attr('transform')).toBeTruthy();
     });
 
     it('should set selectedId when a rect is clicked', async () => {
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       altClickSelector(fixture, '#lab-flow-svg svg svg');
       expect(component['selectedId']()).toEqual(mocks.flow().nodes[0].stepId);
     });
 
     it('should not set selectedId when default is prevented', async () => {
-      await component.rebuildBoxLine(mocks.flow(), initialFlowSettings);
+      await renderBoxLine();
       spyOn(component['selectedId'], 'set');
       altClickSelector(fixture, '#lab-flow-svg svg svg', 0, true);
       expect(component['selectedId'].set).not.toHaveBeenCalled();

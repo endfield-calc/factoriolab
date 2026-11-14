@@ -120,12 +120,6 @@ export class CostSettingsDialog implements DialogData {
   save(): void {
     if (!this.ready()) return;
     const { costs, electric } = this.draft();
-    if (
-      !(electric instanceof Rational) ||
-      electric.lt(rational.zero) ||
-      costKeys.some((key) => !(costs[key] instanceof Rational))
-    )
-      return;
     this.settingsStore.apply({ costs });
     this.endfieldStore.set({ ...this.endfieldStore.state(), electric });
     this.dialogRef.close();

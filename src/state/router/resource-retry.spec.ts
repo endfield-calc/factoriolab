@@ -84,15 +84,11 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     else fail(`Unexpected aef request: ${request.request.url}`);
   }
 
-  function answerAefRequests(
-    label: string,
-    failure?: string | readonly string[],
-  ): string[] {
+  function answerAefRequests(failure?: string | readonly string[]): string[] {
     const requests = http.match((request) =>
       request.url.startsWith('data/aef/'),
     );
     const urls = requests.map((request) => request.request.url);
-    console.info(`[resource-retry] ${label}: ${JSON.stringify(urls)}`);
     requests.forEach((request) => {
       answer(request, failure);
     });
@@ -259,13 +255,10 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       const oldExtension = endfield.state();
       open(badAttemptUrl, '3', true);
       await settle();
-      expect(answerAefRequests('initial navigation', failedUrl).sort()).toEqual(
+      expect(answerAefRequests(failedUrl).sort()).toEqual(
         [dataUrl, hashUrl, i18nUrl].sort(),
       );
       await settle();
-      console.info(
-        `[resource-retry] after rollback: mod=${String(settings.modId())}, error=${String(settings.loadError())}, ready=${String(lifecycle.ready())}`,
-      );
       expect(lifecycle.ready()).toBeFalse();
       expect(lifecycle.originalInput()).toBe(badAttemptUrl);
       expect(lifecycle.errors().length).toBeGreaterThan(0);
@@ -273,9 +266,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
 
       open(retryUrl, '2');
       await settle();
-      expect(answerAefRequests('retry after unset rollback')).toContain(
-        failedUrl,
-      );
+      expect(answerAefRequests()).toContain(failedUrl);
       await settle();
       expectRecovered();
     });
@@ -283,9 +274,9 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     it(`retries an existing ${failure} error when the store is already aef`, async () => {
       settings.apply({ modId: 'aef' });
       await settle();
-      expect(
-        answerAefRequests('pre-existing aef load', failedUrl).sort(),
-      ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+      expect(answerAefRequests(failedUrl).sort()).toEqual(
+        [dataUrl, hashUrl, i18nUrl].sort(),
+      );
       await settle();
       expect(settings.modId()).toBe('aef');
       expect(settings.loadError()).toBeTruthy();
@@ -299,10 +290,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       expect(lifecycle.ready()).toBeFalse();
       expect(lifecycle.originalInput()).toBe(retryUrl);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
-      const requests = answerAefRequests('same-aef navigation after error');
-      console.info(
-        `[resource-retry] same-aef state: mod=${String(settings.modId())}, error=${String(settings.loadError())}, ready=${String(lifecycle.ready())}, diagnostics=${JSON.stringify(lifecycle.errors())}`,
-      );
+      const requests = answerAefRequests();
       expect(requests).toContain(failedUrl);
       await settle();
       expectRecovered();
@@ -316,9 +304,9 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       const oldExtension = endfield.state();
       open(badAttemptUrl, '3', true);
       await settle();
-      expect(
-        answerAefRequests('initial aef navigation', failedUrl).sort(),
-      ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+      expect(answerAefRequests(failedUrl).sort()).toEqual(
+        [dataUrl, hashUrl, i18nUrl].sort(),
+      );
       await settle();
       expect(settings.modId()).toBe('aef');
       expect(settings.loadError()).toBeTruthy();
@@ -331,9 +319,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       await settle();
       expect(lifecycle.originalInput()).toBe(retryUrl);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
-      expect(answerAefRequests('retry after same-aef rollback')).toContain(
-        failedUrl,
-      );
+      expect(answerAefRequests()).toContain(failedUrl);
       await settle();
       expectRecovered();
     });
@@ -346,17 +332,15 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       const oldExtension = endfield.state();
       open(badAttemptUrl, '3', true);
       await settle();
-      expect(
-        answerAefRequests('repeated failure initial load', failedUrl).sort(),
-      ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+      expect(answerAefRequests(failedUrl).sort()).toEqual(
+        [dataUrl, hashUrl, i18nUrl].sort(),
+      );
       await settle();
       expect(lifecycle.ready()).toBeFalse();
 
       open(retryUrl, '2');
       await settle();
-      expect(
-        answerAefRequests('repeated failure first retry', failedUrl),
-      ).toContain(failedUrl);
+      expect(answerAefRequests(failedUrl)).toContain(failedUrl);
       await settle();
       expect(lifecycle.ready()).toBeFalse();
       expect(lifecycle.originalInput()).toBe(retryUrl);
@@ -364,9 +348,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
 
       open('/aef/list?v=12&o=xiranite_powder*7', '7');
       await settle();
-      expect(answerAefRequests('repeated failure second retry')).toContain(
-        failedUrl,
-      );
+      expect(answerAefRequests()).toContain(failedUrl);
       await settle();
       expectRecovered(7n);
     });
@@ -376,7 +358,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       attachRouter();
       open(badAttemptUrl, '3', true);
       await settle();
-      answerAefRequests('immediate retry initial failure', failedUrl);
+      answerAefRequests(failedUrl);
       await settle();
       expect(lifecycle.ready()).toBeFalse();
       const retry = spyOn(settings, 'retryFailedResources').and.callThrough();
@@ -411,18 +393,15 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     attachRouter();
     open(badAttemptUrl, '3', true);
     await settle();
-    expect(
-      answerAefRequests('cancellation initial load', dataUrl).sort(),
-    ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+    expect(answerAefRequests(dataUrl).sort()).toEqual(
+      [dataUrl, hashUrl, i18nUrl].sort(),
+    );
     await settle();
     expect(lifecycle.ready()).toBeFalse();
     open(retryUrl, '2');
     await settle();
     const pending = http.match((request) =>
       request.url.startsWith('data/aef/'),
-    );
-    console.info(
-      `[resource-retry] cancellation retry: ${JSON.stringify(pending.map((request) => request.request.url))}`,
     );
     expect(pending.map((request) => request.request.url)).toContain(dataUrl);
     open('/aef/list?v=12&o=xiranite_powder*7', '7');
@@ -444,9 +423,9 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     attachRouter();
     open(badAttemptUrl, '3', true);
     await settle();
-    expect(
-      answerAefRequests('same-aef cancellation initial load', dataUrl).sort(),
-    ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+    expect(answerAefRequests(dataUrl).sort()).toEqual(
+      [dataUrl, hashUrl, i18nUrl].sort(),
+    );
     await settle();
     expect(lifecycle.ready()).toBeFalse();
 
@@ -457,9 +436,6 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     open('/aef/list?v=12&o=xiranite_powder*7', '7');
     await settle();
     const newer = http.match((request) => request.url.startsWith('data/aef/'));
-    console.info(
-      `[resource-retry] same-aef cancellation: older=${JSON.stringify(older.map((request) => ({ url: request.request.url, cancelled: request.cancelled })))}, newer=${JSON.stringify(newer.map((request) => request.request.url))}`,
-    );
     expect(lifecycle.ready()).toBeFalse();
     expect(navigate).not.toHaveBeenCalled();
     [...older, ...newer]
@@ -479,16 +455,16 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     attachRouter();
     open(badAttemptUrl, '3', true);
     await settle();
-    expect(
-      answerAefRequests('both resources fail', [dataUrl, hashUrl]).sort(),
-    ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+    expect(answerAefRequests([dataUrl, hashUrl]).sort()).toEqual(
+      [dataUrl, hashUrl, i18nUrl].sort(),
+    );
     await settle();
     expect(lifecycle.ready()).toBeFalse();
     expect(settings.loadError()).toBeTruthy();
 
     open(retryUrl, '2');
     await settle();
-    const requests = answerAefRequests('retry both resources');
+    const requests = answerAefRequests();
     expect(requests).toContain(dataUrl);
     expect(requests).toContain(hashUrl);
     await settle();
@@ -507,9 +483,9 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       const oldExtension = endfield.state();
       open(badAttemptUrl, '3', true);
       await settle();
-      expect(
-        answerAefRequests('both initial failures', [dataUrl, hashUrl]).sort(),
-      ).toEqual([dataUrl, hashUrl, i18nUrl].sort());
+      expect(answerAefRequests([dataUrl, hashUrl]).sort()).toEqual(
+        [dataUrl, hashUrl, i18nUrl].sort(),
+      );
       await settle();
       expect(lifecycle.ready()).toBeFalse();
       open(retryUrl, '2');
@@ -541,14 +517,25 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     await settle();
     expect(lifecycle.ready()).toBeFalse();
     expect(settings.loadError()).toBeTruthy();
+    expect(settings.loading()).toBeTrue();
+    expect(settings['modDataResource'].error()).toBeTruthy();
+    expect(settings['modDataResource'].isLoading()).toBeFalse();
+    expect(settings['modHashResource'].isLoading()).toBeTrue();
+    const reload = spyOn(
+      settings['modDataResource'],
+      'reload',
+    ).and.callThrough();
+    const previous = objectives.state();
 
     open(retryUrl, '2');
     await settle();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(reload.calls.mostRecent().returnValue).toBeTrue();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual([]);
+    expect(objectives.state()).toBe(previous);
     const requests = http.match((request) =>
       request.url.startsWith('data/aef/'),
-    );
-    console.info(
-      `[resource-retry] retry with other requests pending: ${JSON.stringify(requests.map((request) => request.request.url))}`,
     );
     expect(requests.map((request) => request.request.url)).toContain(dataUrl);
     [hash, translation, ...requests]
@@ -598,9 +585,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     await settle();
     open('/aef/list?v=12&o=xiranite_powder*7', '7');
     await settle();
-    expect(answerAefRequests('retry after pending-request failure')).toContain(
-      dataUrl,
-    );
+    expect(answerAefRequests()).toContain(dataUrl);
     await settle();
     expectRecovered(7n);
   });

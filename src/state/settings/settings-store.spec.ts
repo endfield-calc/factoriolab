@@ -50,13 +50,6 @@ describe('SettingsStore', () => {
     expect(service).toBeTruthy();
   });
 
-  it('keeps a store cost and its sets separate from native defaults', () => {
-    service.state().costs.surplus = rational(5);
-    service.state().checkedItemIds.add('test');
-    expect(initialSettingsState.costs.surplus.eq(rational.one)).toBeTrue();
-    expect(initialSettingsState.checkedItemIds.size).toBe(0);
-  });
-
   describe('customIconsUrl', () => {
     it('should return an object url', () => {
       spyOn(service.customIcons, 'value').and.returnValue({} as any);
@@ -231,17 +224,6 @@ describe('SettingsStore', () => {
     it('offers only the Endfield dataset', () => {
       expect(service.modOptions()).toEqual([]);
       service.apply({ modId: 'aef' });
-      expect(service.modOptions()).toEqual([
-        { value: 'aef', label: 'options.game.endfield' },
-      ]);
-    });
-
-    it('does not use unlisted dataset metadata as the Endfield option label', () => {
-      spyOn(service, 'modInfo').and.returnValue({
-        id: 'other-endfield-dataset',
-        game: 'endfield',
-        name: 'Unlisted dataset',
-      });
       expect(service.modOptions()).toEqual([
         { value: 'aef', label: 'options.game.endfield' },
       ]);

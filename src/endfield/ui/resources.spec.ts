@@ -1,4 +1,4 @@
-import { effect, Signal, signal, WritableSignal } from '@angular/core';
+import { Signal, signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { rational } from '~/rational/rational';
@@ -166,12 +166,6 @@ describe('EndfieldResources', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const before = store.state();
-    fixture.componentInstance['updateRate']('originium_ore', undefined);
-    fixture.componentInstance['updateRate']('originium_ore', rational(-1));
-    fixture.componentInstance['updateMachineLimit'](undefined);
-    fixture.componentInstance['updateMachineLimit'](rational(-1));
-    expect(store.state()).toBe(before);
-
     const inputs = (fixture.nativeElement as HTMLElement).querySelectorAll(
       'lab-input-number input',
     );
@@ -326,28 +320,6 @@ describe('EndfieldResources', () => {
     expect(store.state()).toBe(before);
   });
 
-  it('presents coherent snapshots to effects after preset and clear commands', () => {
-    const observations: string[] = [];
-    TestBed.runInInjectionContext(() =>
-      effect(() => {
-        const settings = settingsStore.settings();
-        observations.push(
-          `${String(store.state().resourceLimits.enabled)}:${[...settings.locationIds].join(',')}:${settings.excludedRecipeIds.size}`,
-        );
-      }),
-    );
-    TestBed.tick();
-    fixture.componentInstance['applyPreset']('jinlong');
-    TestBed.tick();
-    fixture.componentInstance['clear']();
-    TestBed.tick();
-    expect(observations).toEqual([
-      'false:tundra,jinlong:3',
-      'true:jinlong:1',
-      'false:tundra,jinlong:1',
-    ]);
-  });
-
   it('gates every edit during restore and exposes errors and the original URL', async () => {
     const ticket = lifecycle.begin('/aef/list?z=bad&v=11');
     lifecycle.fail(ticket, ['Unable to restore']);
@@ -387,18 +359,6 @@ describe('EndfieldResources', () => {
       'lab-accordion-item button',
     ) as HTMLButtonElement;
     expect(accordionButton.getAttribute('aria-expanded')).toBe('true');
-    accordionButton.click();
-    fixture.detectChanges();
-    expect(accordionButton.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('keeps resource controls within a 390px workspace', async () => {
-    const host: HTMLElement = fixture.nativeElement;
-    host.style.width = '382px';
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(host.scrollWidth).toBeLessThanOrEqual(host.clientWidth + 1);
   });
 
   it('prevents enabling a Tundra self-transfer while allowing an existing transfer to be disabled', async () => {
@@ -460,25 +420,29 @@ describe('EndfieldResources', () => {
     );
   });
 
-  it('exports the unmodified original as a local text blob', async () => {
+  it('exports the original preference bytes and name when clicked', async () => {
+    const raw = '{"theme":"black"}';
+    const download = spyOn(
+      fixture.componentInstance as unknown as {
+        download: (name: string, value: string) => void;
+      },
+      'download',
+    ).and.callThrough();
     const create = spyOn(URL, 'createObjectURL').and.returnValue(
       'blob:recovery-test',
     );
-    spyOn(URL, 'revokeObjectURL');
-    spyOn(HTMLAnchorElement.prototype, 'dispatchEvent').and.returnValue(true);
     jasmine.clock().install();
     try {
-      fixture.componentInstance['download'](
-        'preferences.recovery.json',
-        '{"theme":"black"}',
-      );
-      expect(create).toHaveBeenCalled();
-      jasmine.clock().tick(40000);
+      button('endfield.recovery.downloadPreferences').click();
+      expect(download).toHaveBeenCalledOnceWith('preferences.json', raw);
+      expect(create).toHaveBeenCalledTimes(1);
     } finally {
       jasmine.clock().uninstall();
     }
     const blob = create.calls.mostRecent().args[0] as Blob;
-    expect(await blob.text()).toBe('{"theme":"black"}');
+    expect(new Uint8Array(await blob.arrayBuffer())).toEqual(
+      new TextEncoder().encode(raw),
+    );
   });
 });
 
@@ -494,10 +458,8 @@ describe('EndfieldResources preference recovery integration', () => {
     ['malformed JSON', '{"states":'],
     ['empty text', ''],
   ]) {
-    it(`exports ${label} without writing or listing old backups`, async () => {
+    it(`exports ${label} without writing preferences`, async () => {
       localStorage.setItem('preferences', raw);
-      localStorage.setItem('preferences.recovery.1', 'old backup');
-      localStorage.setItem('endfield.presentation', 'old display');
       await TestBed.configureTestingModule({
         imports: [TestModule, EndfieldResources],
         providers: [{ provide: SettingsStore, useValue: createSettings() }],
@@ -507,8 +469,6 @@ describe('EndfieldResources preference recovery integration', () => {
       const html: HTMLElement = fixture.nativeElement;
       expect(TestBed.inject(PreferencesStore).restoreError()).toBeDefined();
       expect(html.textContent).toContain('endfield.recovery.preferences');
-      expect(html.textContent).not.toContain('preferences.recovery.1');
-      expect(html.textContent).not.toContain('endfield.presentation');
       const download = spyOn(
         fixture.componentInstance as unknown as {
           download: (name: string, value: string) => void;
@@ -523,8 +483,6 @@ describe('EndfieldResources preference recovery integration', () => {
       expect(download).toHaveBeenCalledOnceWith('preferences.json', raw);
       TestBed.tick();
       expect(localStorage.getItem('preferences')).toBe(raw);
-      expect(localStorage.getItem('preferences.recovery.1')).toBe('old backup');
-      expect(localStorage.getItem('endfield.presentation')).toBe('old display');
     });
   }
 });

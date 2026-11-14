@@ -25,15 +25,20 @@ describe('PreferencesStore', () => {
     expect(service).toBeTruthy();
   });
 
-  it('uses the native defaults and isolates each reset from nested edits', () => {
+  it('uses the native defaults when resetting edited preferences', () => {
     const originalLanguage = service.language();
     expect(service.powerUnit()).toBe(PowerUnit.kW);
     expect(service.theme()).toBe('light');
     expect(service.flowSettings().diagram).toBe(FlowDiagram.BoxLine);
-    service.state().columns.items.show = false;
-    service.state().flowSettings.diagram = FlowDiagram.Sankey;
-    service.state().sections.sources = false;
-    service.apply({ language: 'ja' });
+    service.apply({
+      language: 'ja',
+      columns: {
+        ...service.columns(),
+        items: { ...service.columns().items, show: false },
+      },
+      flowSettings: { ...service.flowSettings(), diagram: FlowDiagram.Sankey },
+    });
+    service.setSectionDefault('sources', false);
     service.resetPreferences(false);
     expect(service.language()).toBe(originalLanguage);
     expect(service.columns().items.show).toBeTrue();
@@ -292,6 +297,7 @@ describe('PreferencesStore persistence and recovery', () => {
     ['powerUnit', 4],
     ['powerUnit', 1.5],
     ['powerUnit', '1'],
+    ['powerUnit', 'kW'],
     ['theme', 'black'],
     ['glpkAlgorithm', 'not-a-solver'],
     ['hue', '10'],
@@ -314,9 +320,13 @@ describe('PreferencesStore persistence and recovery', () => {
     ['flowSettings', null],
     ['flowSettings', []],
     ['flowSettings', { diagram: 2 }],
+    ['flowSettings', { diagram: 'Sankey' }],
     ['flowSettings', { linkSize: 6 }],
+    ['flowSettings', { linkSize: 'Wagons' }],
     ['flowSettings', { linkText: -1 }],
+    ['flowSettings', { linkText: 'Machines' }],
     ['flowSettings', { sankeyAlign: 4 }],
+    ['flowSettings', { sankeyAlign: 'Left' }],
     ['flowSettings', { hideExcluded: 'false' }],
     ['flowSettings', { elkAlgorithm: 'random' }],
     ['flowSettings', { extra: true }],
@@ -327,6 +337,8 @@ describe('PreferencesStore persistence and recovery', () => {
     ['bypassLanding', 1],
   ];
   const invalidDocuments: [string, string][] = [
+    ['malformed JSON', '{"states":'],
+    ['empty JSON', ''],
     ...[null, [], 42, 'bad'].map((value): [string, string] => [
       `root ${JSON.stringify(value)}`,
       JSON.stringify(value),
@@ -361,44 +373,31 @@ describe('PreferencesStore persistence and recovery', () => {
     });
   }
 
-  for (const [label, raw] of [
-    ['malformed JSON', '{"states":'],
-    ['empty JSON', ''],
-    ['retired black theme', JSON.stringify({ theme: 'black', language: 'ru' })],
-    [
-      'invalid nested schema',
-      JSON.stringify({
-        ...initialPreferencesState,
-        theme: 'black',
-        language: 'ru',
-        states: { aef: { safe: '/aef/list?v=12', broken: 42 } },
-      }),
-    ],
-  ]) {
-    it(`preserves ${label} without salvaging fields until explicit reset`, () => {
-      const service = create(raw);
-      expect(service.restoreError()).toBeDefined();
-      expect(service.language()).toBe(
-        initialLanguage(!isDevMode(), navigator.language),
-      );
-      expect(service.theme()).toBe('light');
-      expect(service.states()).toEqual({});
-      TestBed.tick();
-      service.apply({ theme: 'dark', language: 'ja' });
-      service.saveState('aef', 'new', '/aef/list?v=12');
-      TestBed.tick();
-      expect(service.restoreError()).toBeDefined();
-      expect(localStorage.getItem('preferences')).toBe(raw);
-      expect(localStorage.getItem('preferences.recovery')).toBeNull();
-      expect(localStorage.getItem('preferences.recovery.1')).toBeNull();
-      service.resetPreferences(true);
-      TestBed.tick();
-      expect(service.restoreError()).toBeUndefined();
-      const persisted = JSON.parse(localStorage.getItem('preferences')!);
-      expect(persisted.theme).toBe('light');
-      expect(persisted.states.aef.new).toBe('/aef/list?v=12');
-    });
-  }
+  it('unlocks persistence only after an explicit reset', () => {
+    const raw = JSON.stringify({ theme: 'black', language: 'ru' });
+    const service = create(raw);
+    expect(service.restoreError()).toBeDefined();
+    expect(service.language()).toBe(
+      initialLanguage(!isDevMode(), navigator.language),
+    );
+    expect(service.theme()).toBe('light');
+    expect(service.states()).toEqual({});
+    TestBed.tick();
+    service.apply({ theme: 'dark', language: 'ja' });
+    service.saveState('aef', 'new', '/aef/list?v=12');
+    TestBed.tick();
+    expect(service.restoreError()).toBeDefined();
+    expect(localStorage.getItem('preferences')).toBe(raw);
+    expect(localStorage.getItem('preferences.recovery')).toBeNull();
+    expect(localStorage.getItem('preferences.recovery.1')).toBeNull();
+    service.resetPreferences(true);
+    TestBed.tick();
+    expect(service.restoreError()).toBeUndefined();
+    expect(service.stored()).toBe(raw);
+    const persisted = JSON.parse(localStorage.getItem('preferences')!);
+    expect(persisted.theme).toBe('light');
+    expect(persisted.states.aef.new).toBe('/aef/list?v=12');
+  });
 
   it('does not consult or change the retired display preference', () => {
     localStorage.clear();

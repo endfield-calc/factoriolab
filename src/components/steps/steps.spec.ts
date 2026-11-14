@@ -5,7 +5,6 @@ import { resourceObjectiveId, resourceOwner } from '~/endfield/domain/model';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
-import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { initialColumnsState } from '~/state/preferences/columns-state';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
@@ -350,39 +349,5 @@ describe('Steps', () => {
       expect(component['objectivesStore'].resetFields).toHaveBeenCalled();
       expect(component['recipesStore'].resetFields).toHaveBeenCalled();
     });
-  });
-});
-
-describe('Steps derived resource settings', () => {
-  it('shows the upstream tree, item and recipe icons for the Endfield view', async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, Steps],
-    }).compileComponents();
-    const step = TestBed.inject(Mocks).step1();
-    const objectives = TestBed.inject(ObjectivesStore);
-    spyOn(objectives, 'steps').and.returnValue([step]);
-    spyOn(objectives, 'stepTree').and.returnValue({ [step.id]: [] });
-    spyOn(objectives, 'stepRecipes').and.returnValue({
-      [step.id]: {
-        ids: [step.recipeId!],
-        enabledIds: [step.recipeId!],
-        options: [],
-      },
-    });
-    const fixture = TestBed.createComponent(Steps);
-    fixture.componentInstance['preferencesStore'].apply({
-      columns: {
-        ...initialColumnsState,
-        tree: { ...initialColumnsState.tree, show: true },
-      },
-    });
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const row = (fixture.nativeElement as HTMLElement).querySelector(
-      'tbody tr',
-    );
-    expect(row?.querySelectorAll('lab-exclude-button').length).toBe(2);
-    expect(row?.querySelector('lab-recipes-select lab-icon')).not.toBeNull();
   });
 });

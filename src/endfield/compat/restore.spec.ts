@@ -475,58 +475,6 @@ describe('Endfield router validation', () => {
     expect(endfield.state().electric).toEqual(rational(8));
   });
 
-  it('rolls back previously loaded stores if a later store load fails', () => {
-    objectives.set({
-      1: objective('1', 'originium_ore', 0, 3, ObjectiveUnit.Machines),
-    });
-    settings.apply({
-      costs: { ...settings.state().costs, machine: rational(-2) },
-    });
-    endfield.set({ ...createEndfieldState(), electric: rational(8) });
-    const previous = {
-      objectives: objectives.state(),
-      items: items.state(),
-      recipes: recipes.state(),
-      machines: machines.state(),
-      settings: settings.state(),
-      table: table.state(),
-      endfield: encodeEndfield(endfield.snapshot()),
-    };
-    spyOn(table, 'load').and.throwError('table load failed');
-    expect(() => {
-      restore('v=12&o=xiranite_powder*2&cma=0');
-    }).toThrowError('table load failed');
-    expect(objectives.state()).toBe(previous.objectives);
-    expect(items.state()).toBe(previous.items);
-    expect(recipes.state()).toBe(previous.recipes);
-    expect(machines.state()).toBe(previous.machines);
-    expect(settings.state()).toBe(previous.settings);
-    expect(table.state()).toBe(previous.table);
-    expect(encodeEndfield(endfield.snapshot())).toBe(previous.endfield);
-  });
-
-  it('reports both a commit failure and a subsequent rollback failure', () => {
-    spyOn(table, 'load').and.throwError('table load failed');
-    const originalSet = items.set.bind(items);
-    let calls = 0;
-    spyOn(items, 'set').and.callFake((state) => {
-      if (++calls === 2) throw new Error('items rollback failed');
-      originalSet(state);
-    });
-    let error: unknown;
-    try {
-      restore('v=12&o=xiranite_powder*2');
-    } catch (caught) {
-      error = caught;
-    }
-    expect(error).toBeInstanceOf(AggregateError);
-    if (error instanceof AggregateError)
-      expect(error.errors.map((cause: Error) => cause.message)).toEqual([
-        'table load failed',
-        'items rollback failed',
-      ]);
-  });
-
   it('publishes valid enum and page values, machine quantities and signed costs', () => {
     for (const [displayRate, maximizeType, page, rows, value] of [
       [0, 0, 0, 1, 0],

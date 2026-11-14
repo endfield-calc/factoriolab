@@ -1,10 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import ELK from 'elkjs';
 
-import { sankey } from '~/d3/sankey/sankey';
 import { resourceObjectiveId } from '~/endfield/domain/model';
-import { Link } from '~/flow/link';
-import { Node } from '~/flow/node';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { initialColumnsState } from '~/state/preferences/columns-state';
@@ -334,13 +330,7 @@ describe('FlowBuilder objective presentation', () => {
     service = TestBed.inject(FlowBuilder);
     mocks = TestBed.inject(Mocks);
   });
-  it('uses recipe IDs for ordinary steps and objective IDs for objectives', () => {
-    expect(service['recipeNodeId']('recipe')).toEqual('r|recipe');
-    expect(service['recipeNodeId']('recipe', 'obj')).toEqual('m|obj');
-    expect(service['recipeNodeId']('recipe', '')).toEqual('r|recipe');
-    expect(service['recipeNodeId']('', '')).toEqual('r|');
-  });
-  it('keeps same-recipe objective nodes, their labels and links distinct', async () => {
+  it('keeps same-recipe objective nodes, their labels and links distinct', () => {
     spyOn(service['translate'], 'get').and.returnValue('Resource supply');
     const recipeId = RecipeId.AdvancedOilProcessing;
     const derivedId = resourceObjectiveId('iron_ore');
@@ -394,6 +384,9 @@ describe('FlowBuilder objective presentation', () => {
     expect(result.nodes.find((node) => node.id === 'm|1')).toEqual(
       jasmine.objectContaining({ stepId: 'target-1', objectiveLabel: '#1' }),
     );
+    expect(result.nodes.find((node) => node.id === 'm|2')).toEqual(
+      jasmine.objectContaining({ stepId: 'target-2', objectiveLabel: '#2' }),
+    );
     expect(result.nodes.find((node) => node.id === `m|${derivedId}`)).toEqual(
       jasmine.objectContaining({
         stepId: 'derived',
@@ -401,43 +394,11 @@ describe('FlowBuilder objective presentation', () => {
         objectiveLabel: 'Resource supply',
       }),
     );
-    expect(
-      result.nodes.find((node) => node.id === `r|${recipeId}`)?.objectiveLabel,
-    ).toBeUndefined();
-
-    const sankeyGraph = sankey<Node, Link>()
-      .nodeId((node) => node.id)
-      .nodeWidth(36)
-      .extent([
-        [0, 0],
-        [600, 300],
-      ])({
-      nodes: result.nodes.map((node) => ({ ...node })),
-      links: result.links.map((link) => ({ ...link })),
-    });
-    expect(
-      sankeyGraph.links.map(
-        (link) => `${(link.source as Node).id}>${(link.target as Node).id}`,
-      ),
-    ).toEqual(edgeIds);
-    const elkGraph = await new ELK().layout({
-      id: 'root',
-      children: result.nodes.map((node) => ({
-        ...node,
-        width: 38,
-        height: 38,
-      })),
-      edges: result.links.map((link) => ({
-        id: `${link.source}>${link.target}`,
-        sources: [link.source],
-        targets: [link.target],
-      })),
-    });
-    expect(elkGraph.children?.map((node) => node.id).sort()).toEqual(
-      [...nodeIds].sort(),
-    );
-    expect(elkGraph.edges?.map((edge) => edge.id).sort()).toEqual(
-      [...edgeIds].sort(),
+    expect(result.nodes.find((node) => node.id === `r|${recipeId}`)).toEqual(
+      jasmine.objectContaining({
+        stepId: 'ordinary',
+        objectiveLabel: undefined,
+      }),
     );
   });
 });

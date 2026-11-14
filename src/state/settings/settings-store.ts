@@ -170,9 +170,7 @@ export class SettingsStore extends Store<SettingsState> {
   readonly modInfo = computed(() => {
     const modId = this.modId();
     if (modId == null) return undefined;
-    const info = modRecord[modId];
-    if (!info) return undefined;
-    return info;
+    return modRecord[modId];
   });
 
   readonly game = computed(() => {
@@ -206,12 +204,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly modOptions = computed(() => {
     const game = this.game();
-    const info = this.modInfo();
-    return modOptions(game)
-      .filter((option) => option.value === DEFAULT_MOD)
-      .map((option) =>
-        option.value === info?.id ? { ...option, label: info.name } : option,
-      );
+    return modOptions(game).filter((option) => option.value === DEFAULT_MOD);
   });
 
   readonly defaults = computed(() =>
@@ -225,15 +218,15 @@ export class SettingsStore extends Store<SettingsState> {
     return `data/${modId}/icons.webp`;
   });
 
-  readonly dataset = computed(() => {
-    return this.computeDataset(
+  readonly dataset = computed(() =>
+    this.computeDataset(
       this.modInfo(),
       this.modData(),
       this.modHash(),
       this.modI18n(),
       this.game(),
-    );
-  });
+    ),
+  );
 
   readonly linkValueOptions = computed(() => {
     const data = this.dataset();

@@ -1,3 +1,4 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
@@ -54,6 +55,35 @@ describe('RankSelect', () => {
   });
 
   describe('toggle', () => {
+    it('renders the committed selection when the overlay opens', () => {
+      setInputs(fixture, {
+        options: [
+          {
+            label: '1',
+            value: '1',
+            icon: 'selected-icon',
+            iconText: 'Selected option metadata',
+          },
+        ],
+      });
+      component.writeValue(['1']);
+      (fixture.nativeElement as HTMLElement).click();
+      fixture.detectChanges();
+      const overlay = TestBed.inject(OverlayContainer).getContainerElement();
+      expect(overlay.querySelector('.cdk-drop-list')?.textContent).toContain(
+        'Selected option metadata',
+      );
+      expect(
+        overlay
+          .querySelector(
+            '[role="option"][aria-selected="true"] lab-icon + span',
+          )
+          ?.textContent?.trim(),
+      ).toBe('1');
+      (fixture.nativeElement as HTMLElement).click();
+      fixture.detectChanges();
+    });
+
     it('should open the overlay', () => {
       spyOn(component.opened, 'set');
       spyOn(component['filterText'], 'set');

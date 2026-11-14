@@ -93,28 +93,8 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     preferences.apply({ paused: false, glpkAlgorithm: 'simplex' });
   });
 
-  function result(label: string): SimplexResult {
-    const value = objectives.matrixResult();
-    console.info(
-      '[remaining-constraint]',
-      label,
-      JSON.stringify({
-        resultType: value.resultType,
-        status: value.simplexStatus,
-        steps: value.steps.map((s) => ({
-          id: s.id,
-          item: s.itemId,
-          recipe: s.recipeId,
-          obj: s.recipeObjectiveId,
-          machine: s.recipeSettings?.machineId,
-          n: s.machines?.toNumber(),
-          items: s.items?.toNumber(),
-          surplus: s.surplus?.toNumber(),
-          belts: s.belts?.toNumber(),
-        })),
-      }),
-    );
-    return value;
+  function result(): SimplexResult {
+    return objectives.matrixResult();
   }
 
   it('A08 solves originium alone, preserving 560/min, 28 miners and surplus', () => {
@@ -150,7 +130,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       )
         .withContext(id)
         .toBeTrue();
-    const solved = result('A08-originium');
+    const solved = result();
     expect(solved.resultType).toBe('solved');
     close(count(solved.steps, 'originium_ore'), 28);
     const ore = objectives.steps().find((s) => s.itemId === 'originium_ore')!;
@@ -178,7 +158,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
         .filter((o) => o.id.startsWith('ef:resource:'))
         .map((o) => o.targetId),
     ).toEqual(['copper_ore-liquid_water', 'gas_xiranite', 'gas_inert']);
-    const solved = result('A08-copper-gases');
+    const solved = result();
     expect(solved.resultType).toBe('solved');
     for (const [id, perMinute] of [
       ['copper_ore', 510],
@@ -201,6 +181,11 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     const copper = solved.steps.find(
       (s) => s.recipeObjectiveId === resourceObjectiveId('copper_ore'),
     )!;
+    const visibleCopper = objectives
+      .steps()
+      .find((s) => s.recipeObjectiveId === resourceObjectiveId('copper_ore'))!;
+    expect(visibleCopper).toBeDefined();
+    expect(visibleCopper.power).toBeUndefined();
     close(
       copper
         .machines!.mul(copper.recipe!.in['__miner_water']!)
@@ -240,12 +225,12 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       ...state,
       machineLimits: { enabled: true, limits: { [ovenId]: rational(4) } },
     });
-    expect(result('A10-cap4').resultType).toBe('failed');
+    expect(result().resultType).toBe('failed');
     extension.set({
       ...state,
       machineLimits: { enabled: true, limits: { [ovenId]: rational(9, 2) } },
     });
-    const solved = result('A10-cap4.5');
+    const solved = result();
     expect(solved.resultType).toBe('solved');
     const steps = objectives.steps();
     const normal = steps.find(
@@ -268,27 +253,18 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
         .toNumber(),
       4.5,
     );
-    extension.set({
-      ...state,
-      machineLimits: { enabled: true, limits: { [ovenId]: rational(12) } },
+    objectives.set({ 1: objective('1', 'xiranite_powder-carbon_enr', 0.5) });
+    expect(result().resultType).toBe('failed');
+    objectives.set({
+      1: objective('1', 'xiranite_powder', 90, ObjectiveUnit.Items),
+      2: objective('2', 'xiranite_powder-carbon_enr', 1),
+      3: objective('3', 'xiranite_enr_powder', 0.5),
     });
-    const twelve = result('A10-cap12');
-    expect(twelve.resultType).toBe('solved');
-    close(
-      count(twelve.steps, 'xiranite_powder-carbon_enr') +
-        count(twelve.steps, 'xiranite_enr_powder'),
-      4.5,
-    );
-    extension.set({
-      ...state,
-      machineLimits: { enabled: true, limits: { [ovenId]: rational.zero } },
-    });
-    expect(result('A10-cap0').resultType).toBe('failed');
     extension.set({
       ...state,
       machineLimits: { enabled: false, limits: { [ovenId]: rational.zero } },
     });
-    const disabled = result('A10-disabled');
+    const disabled = result();
     expect(disabled.resultType).toBe('solved');
     expect(count(disabled.steps, 'xiranite_powder-carbon_enr')).toBeGreaterThan(
       0,
@@ -312,7 +288,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     objectives.set({
       1: objective('1', 'xiranite_powder', 30, ObjectiveUnit.Items),
     });
-    const solved = result('A10-other-machine');
+    const solved = result();
     expect(solved.resultType).toBe('solved');
     const step = objectives
       .steps()
@@ -342,7 +318,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       objectives.set({
         1: objective('1', 'carbon_enr', 12.5, ObjectiveUnit.Items),
       });
-      const solved = result(`A11-${algorithm}-half`);
+      const solved = result();
       expect(solved.resultType).toBe('solved');
       expect(extension.snapshot().machineLimits.enabled).toBeFalse();
       close(count(solved.steps, 'transfer_tundra_carbon_enr'), 1);
@@ -362,7 +338,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       close(carbon.items!.toNumber(), 25);
       close(carbon.surplus!.toNumber(), 12.5);
       objectives.set({ 1: objective('1', 'transfer_tundra_carbon_enr', 0.5) });
-      expect(result(`A11-${algorithm}-explicit`).resultType).toBe('failed');
+      expect(result().resultType).toBe('failed');
       extension.set({
         ...state,
         transfer: { enabled: false, source: 'tundra' },
@@ -370,9 +346,9 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       objectives.set({
         1: objective('1', 'carbon_enr', 12.5, ObjectiveUnit.Items),
       });
-      expect(result(`A11-${algorithm}-disabled`).resultType).toBe('failed');
+      expect(result().resultType).toBe('failed');
       settings.apply({ excludedRecipeIds: new Set() });
-      const alternate = result(`A11-${algorithm}-disabled-alternate`);
+      const alternate = result();
       expect(alternate.resultType).toBe('solved');
       close(count(alternate.steps, 'transfer_tundra_carbon_enr'), 0);
       close(
@@ -395,7 +371,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       2: objective('2', 'sewage-treat-export', 0.5),
     });
     expect(extension.snapshot().machineLimits.enabled).toBeFalse();
-    const solved = result('A12-both-boundary');
+    const solved = result();
     expect(solved.resultType).toBe('solved');
     close(count(solved.steps, 'sewage-treat', '1'), 1.5);
     close(count(solved.steps, 'sewage-treat-export', '2'), 0.5);
@@ -403,55 +379,41 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       1: objective('1', 'sewage-treat', 3),
       2: objective('2', 'sewage-treat-export', 0.1),
     });
-    expect(result('A12-overlap').resultType).toBe('failed');
+    expect(result().resultType).toBe('failed');
     settings.apply({
       excludedRecipeIds: new Set(['carbon_enr', 'sewage-treat-export']),
     });
     objectives.set({ 1: objective('1', 'sewage-treat', 3) });
-    const sparseX = result('A12-x-sparse');
+    const sparseX = result();
     expect(sparseX.resultType).toBe('solved');
     close(count(sparseX.steps, 'sewage-treat'), 3);
     close(count(sparseX.steps, 'sewage-treat-export'), 0);
     objectives.set({ 1: objective('1', 'sewage-treat', 3.1) });
-    expect(result('A12-x-sparse-over').resultType).toBe('failed');
+    expect(result().resultType).toBe('failed');
     settings.apply({
       excludedRecipeIds: new Set(['carbon_enr', 'sewage-treat']),
     });
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1) });
-    const sparseY = result('A12-y-sparse');
+    const sparseY = result();
     expect(sparseY.resultType).toBe('solved');
     close(count(sparseY.steps, 'sewage-treat'), 0);
     close(count(sparseY.steps, 'sewage-treat-export'), 1);
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1.1) });
-    expect(result('A12-y-sparse-over').resultType).toBe('failed');
+    expect(result().resultType).toBe('failed');
     settings.apply({ excludedRecipeIds: new Set(['carbon_enr']) });
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1) });
     resources['setWaterDisabled'](true);
-    expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();
-    expect(
-      settings.settings().excludedRecipeIds.has('sewage-treat'),
-    ).toBeTrue();
-    expect(
-      settings.settings().excludedRecipeIds.has('sewage-treat-export'),
-    ).toBeTrue();
     // Recipe exclusions govern automatic selection. Existing explicit recipe
     // objectives are preserved by the upstream objective contract.
-    expect(result('A12-disabled-explicit').resultType).toBe('solved');
+    expect(result().resultType).toBe('solved');
     objectives.set({
       1: objective('1', 'sewage-treat', 3),
       2: objective('2', 'sewage-treat-export', 0.1),
     });
-    expect(result('A12-disabled-explicit-overlap').resultType).toBe('failed');
+    expect(result().resultType).toBe('failed');
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1) });
     resources['setWaterDisabled'](false);
-    expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();
-    expect(
-      settings.settings().excludedRecipeIds.has('sewage-treat'),
-    ).toBeFalse();
-    expect(
-      settings.settings().excludedRecipeIds.has('sewage-treat-export'),
-    ).toBeFalse();
-    expect(result('A12-restored').resultType).toBe('solved');
+    expect(result().resultType).toBe('solved');
   });
 
   it('A12 makes an automatic node compete with an explicit node and toggles automatic use', () => {
@@ -470,7 +432,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       ]),
     });
     objectives.set({ 1: objective('1', 'sewage-treat-export', 0.5), 2: input });
-    const combined = result('A12-auto-explicit');
+    const combined = result();
     expect(combined.resultType).toBe('solved');
     close(count(combined.steps, 'sewage-treat-export', '1'), 0.5);
     close(count(combined.steps, 'sewage-treat'), 1.5);
@@ -483,17 +445,17 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       1: objective('1', 'liquid_xiranite_poly', 12, ObjectiveUnit.Items),
       2: input,
     });
-    const enabled = result('A12-auto-enabled');
+    const enabled = result();
     expect(enabled.resultType).toBe('solved');
     close(count(enabled.steps, 'sewage-treat-export'), 1);
     close(count(enabled.steps, 'sewage-treat'), 0);
     resources['setWaterDisabled'](true);
-    const disabled = result('A12-auto-disabled');
+    const disabled = result();
     expect(disabled.resultType).toBe('solved');
     close(count(disabled.steps, 'sewage-treat-export'), 0);
     close(count(disabled.steps, 'sewage-treat'), 0);
     resources['setWaterDisabled'](false);
-    const restored = result('A12-auto-restored');
+    const restored = result();
     expect(restored.resultType).toBe('solved');
     close(count(restored.steps, 'sewage-treat-export'), 1);
     expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();

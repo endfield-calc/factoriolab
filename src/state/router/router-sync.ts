@@ -312,7 +312,6 @@ export class RouterSync {
                 retryError = this.settingsStore.loadError();
                 retried = this.settingsStore.retryFailedResources();
                 if (retried) this.appRef.tick();
-                else retried = this.settingsStore.loading();
               }
               return this.resources.pipe(
                 filter((resources) => {
@@ -818,22 +817,8 @@ export class RouterSync {
       endfield = decodeEndfield(params.ef, modData);
     }
     if (ticket != null && !this.lifecycle.current(ticket)) return;
-    const previous = this.stable ?? this.snapshot();
-    try {
-      this.dispatch(state, ticket == null);
-      if (endfield != null) this.endfieldStore.set(endfield);
-    } catch (error) {
-      try {
-        this.restoreSnapshot(previous);
-      } catch (rollbackError) {
-        throw new AggregateError(
-          [error, rollbackError],
-          'Workspace commit and rollback failed',
-          { cause: rollbackError },
-        );
-      }
-      throw error;
-    }
+    this.dispatch(state, ticket == null);
+    if (endfield != null) this.endfieldStore.set(endfield);
     if (ticket != null) {
       this.lifecycle.complete(ticket);
       this.ready.set(true);

@@ -51,34 +51,3 @@ describe('FlowSettingsDialog', () => {
     });
   });
 });
-
-describe('FlowSettingsDialog with Endfield defaults', () => {
-  it('uses BoxLine for reset and modified', async () => {
-    const original = localStorage.getItem('preferences');
-    localStorage.removeItem('preferences');
-    try {
-      await TestBed.configureTestingModule({
-        imports: [TestModule, FlowSettingsDialog],
-      }).compileComponents();
-      const fixture = TestBed.createComponent(FlowSettingsDialog);
-      fixture.detectChanges();
-      const component = fixture.componentInstance;
-      expect(component['modified']()).toBeFalse();
-      component.apply({ diagram: FlowDiagram.Sankey });
-      expect(component['modified']()).toBeTrue();
-      component.reset();
-      expect(component['editValue']().diagram).toBe(FlowDiagram.BoxLine);
-      expect(component['modified']()).toBeFalse();
-      component['editValue']().diagram = FlowDiagram.Sankey;
-      expect(initialPreferencesState.flowSettings.diagram).toBe(
-        FlowDiagram.BoxLine,
-      );
-      component.reset();
-      expect(component['editValue']().diagram).toBe(FlowDiagram.BoxLine);
-    } finally {
-      TestBed.resetTestingModule();
-      if (original == null) localStorage.removeItem('preferences');
-      else localStorage.setItem('preferences', original);
-    }
-  });
-});

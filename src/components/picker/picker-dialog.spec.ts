@@ -47,20 +47,6 @@ describe('PickerDialog', () => {
     expect(component).toBeTruthy();
   });
 
-  it('does not inspect recipe flags when rendering ordinary items', () => {
-    const data = { ...mocks.getDataset() };
-    Object.defineProperty(data, 'recipeRecord', {
-      get: () => {
-        throw new Error('Unexpected recipe access');
-      },
-    });
-    spyOn<any>(component, 'data').and.returnValue(data);
-    fixture.componentRef.changeDetectorRef.markForCheck();
-    expect(() => {
-      fixture.detectChanges();
-    }).not.toThrow();
-  });
-
   describe('allSelected', () => {
     it('should determine the checkbox state for the select all', () => {
       expect(component['allSelected']()).toBeTrue();
@@ -345,7 +331,7 @@ describe('PickerDialog', () => {
 });
 
 describe('PickerDialog name presentation', () => {
-  it('shows recipe names only while the name toggle is enabled', async () => {
+  it('shows recipe names only while enabled and resets the toggle when reopened', async () => {
     PickerDialog['lastCategory'] = null;
     PickerDialog['lastQuality'] = null;
     let label = '';
@@ -379,67 +365,22 @@ describe('PickerDialog name presentation', () => {
     checkbox.click();
     fixture.detectChanges();
     expect(button?.textContent).not.toContain(label);
-  });
+    checkbox.click();
+    fixture.detectChanges();
+    expect(button?.textContent).toContain(label);
+    fixture.destroy();
 
-  it('starts each picker closed and leaves legacy display storage untouched', async () => {
-    const key = 'endfield.presentation';
-    const backup = 'preferences.recovery.endfield.presentation';
-    const prior = localStorage.getItem(key);
-    const priorBackup = localStorage.getItem(backup);
-    const raw = '{"showNames":true,"hideDuplicateIcons":false}';
-    localStorage.setItem(key, raw);
-    localStorage.setItem(backup, 'legacy display backup');
-    const set = spyOn(Storage.prototype, 'setItem').and.callThrough();
-    const remove = spyOn(Storage.prototype, 'removeItem').and.callThrough();
-    try {
-      await TestBed.configureTestingModule({
-        imports: [TestModule, PickerDialog],
-        providers: [
-          {
-            provide: DIALOG_DATA,
-            useFactory: (): PickerData => {
-              const data = inject(SettingsStore).dataset();
-              return { type: 'item', allIds: data.itemIds };
-            },
-          },
-        ],
-      }).compileComponents();
-      const first = TestBed.createComponent(PickerDialog);
-      first.detectChanges();
-      expect(first.componentInstance['showNames']()).toBeFalse();
-      const checkbox = first.nativeElement.querySelector(
-        'lab-checkbox input',
-      ) as HTMLInputElement;
-      checkbox.click();
-      first.detectChanges();
-      expect(first.componentInstance['showNames']()).toBeTrue();
-      first.destroy();
-      const reopened = TestBed.createComponent(PickerDialog);
-      reopened.detectChanges();
-      expect(reopened.componentInstance['showNames']()).toBeFalse();
-      expect(
-        (
-          reopened.nativeElement.querySelector(
-            'lab-checkbox input',
-          ) as HTMLInputElement
-        ).checked,
-      ).toBeFalse();
-      TestBed.tick();
-      expect(localStorage.getItem(key)).toBe(raw);
-      expect(localStorage.getItem(backup)).toBe('legacy display backup');
-      expect(
-        set.calls.allArgs().some(([name]) => name === key || name === backup),
-      ).toBeFalse();
-      expect(
-        remove.calls
-          .allArgs()
-          .some(([name]) => name === key || name === backup),
-      ).toBeFalse();
-    } finally {
-      if (prior == null) localStorage.removeItem(key);
-      else localStorage.setItem(key, prior);
-      if (priorBackup == null) localStorage.removeItem(backup);
-      else localStorage.setItem(backup, priorBackup);
-    }
+    const reopened = TestBed.createComponent(PickerDialog);
+    reopened.detectChanges();
+    const reopenedElement = reopened.nativeElement as HTMLElement;
+    const reopenedButton = Array.from(
+      reopenedElement.querySelectorAll('button'),
+    ).find((value) => value.getAttribute('aria-label') === label);
+    expect(reopenedButton).toBeDefined();
+    expect(reopenedButton?.textContent).not.toContain(label);
+    expect(
+      reopenedElement.querySelector<HTMLInputElement>('lab-checkbox input')!
+        .checked,
+    ).toBeFalse();
   });
 });

@@ -20,10 +20,6 @@ describe('landingGuard', () => {
       providers: [
         provideRouter([
           {
-            path: 'urltree',
-            component: MockComponent,
-          },
-          {
             path: ':id',
             children: [
               {
@@ -67,10 +63,23 @@ describe('landingGuard', () => {
     expect(router.url).toEqual('/aef/list');
   });
 
-  it('should navigate to the list', async () => {
+  it('gives explicit root queries priority over cache and does not restore cache for a bare dataset route', async () => {
     spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
-    await RouterTestingHarness.create('/?v=6');
-    expect(router.url).toEqual('/aef/list?v=6');
+    spyOn(routerSync, 'stored').and.returnValue('/aef/list?old=1');
+    const harness = await RouterTestingHarness.create('/?v=11&o=a&o=b');
+    expect(router.url).toEqual('/aef/list?v=11&o=a&o=b');
+    await harness.navigateByUrl('/aef');
+    expect(router.url).toEqual('/aef/list');
+  });
+
+  it('preserves an explicit root query with landing enabled without consulting cache', async () => {
+    spyOn(preferencesStore, 'bypassLanding').and.returnValue(false);
+    const stored = spyOn(routerSync, 'stored').and.returnValue(
+      '/aef/list?old=1',
+    );
+    await RouterTestingHarness.create('/?v=11&o=a&o=b');
+    expect(router.url).toEqual('/aef?v=11&o=a&o=b');
+    expect(stored).not.toHaveBeenCalled();
   });
 
   it('should allow navigating to the landing page', async () => {

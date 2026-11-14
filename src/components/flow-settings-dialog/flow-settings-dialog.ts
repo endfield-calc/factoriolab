@@ -18,10 +18,8 @@ import {
   FlowDiagram,
   flowDiagramOptions,
 } from '~/state/preferences/flow-diagram';
-import {
-  FlowSettings,
-  initialFlowSettings,
-} from '~/state/preferences/flow-settings';
+import { FlowSettings } from '~/state/preferences/flow-settings';
+import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { sankeyAlignOptions } from '~/state/preferences/sankey-align';
 import { SettingsStore } from '~/state/settings/settings-store';
@@ -53,7 +51,7 @@ export class FlowSettingsDialog implements DialogData {
   );
   protected readonly modified = computed(() => {
     const edit = this.editValue();
-    const init = initialFlowSettings;
+    const init = initialPreferencesState.flowSettings;
     const keys = Object.keys(init) as (keyof FlowSettings)[];
     return keys.some((k) => init[k] !== edit[k]);
   });
@@ -73,7 +71,7 @@ export class FlowSettingsDialog implements DialogData {
   }
 
   reset(): void {
-    this.editValue.set({ ...initialFlowSettings });
+    this.editValue.set(initialPreferencesState.flowSettings);
   }
 
   save(): void {

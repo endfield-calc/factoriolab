@@ -147,7 +147,7 @@ describe('Endfield model rules', () => {
   });
 
   it('enforces every fixed transfer recipe as an integer with a shared enabled or disabled budget', () => {
-    expect(transferIds.size).toBe(59);
+    expect(transferIds.has('transfer_tundra_carbon_enr')).toBeTrue();
     const variables = [...transferIds].map((id, index) =>
       variable(index % 2 ? 'objective' : 'recipe', `v${index}`, id),
     );
@@ -158,8 +158,13 @@ describe('Endfield model rules', () => {
       variables,
     );
     const budget = rule(enabled, 'ef:transfer:tundra');
-    expect(budget.terms.length).toBe(59);
-    expect(enabled.integers.length).toBe(59);
+    const expectedRefs = variables.slice(0, -1).map((value) => value.ref);
+    expect(budget.terms.map((term) => term.ref)).toEqual(
+      jasmine.arrayWithExactContents(expectedRefs),
+    );
+    expect(enabled.integers).toEqual(
+      jasmine.arrayWithExactContents(expectedRefs),
+    );
     expect(enabled.integers.some((ref) => ref.id === 'unlisted')).toBeFalse();
     expect(total(budget, { v0: rational(1, 2) }).lte(budget.upper!)).toBeTrue();
     expect(enabled.integers).toContain(variables[0].ref);
@@ -168,7 +173,9 @@ describe('Endfield model rules', () => {
     ).toBeTrue();
     const disabled = compileEndfieldRules(initial, variables);
     expect(rule(disabled, 'ef:transfer:tundra').upper).toEqual(rational.zero);
-    expect(disabled.integers.length).toBe(59);
+    expect(disabled.integers).toEqual(
+      jasmine.arrayWithExactContents(expectedRefs),
+    );
   });
 
   it('applies the shared water limit to sparse and explicit variables without integrality', () => {

@@ -1,19 +1,8 @@
-import {
-  provideZonelessChangeDetection,
-  signal,
-  WritableSignal,
-} from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  SwUpdate,
-  UnrecoverableStateEvent,
-  VersionEvent,
-} from '@angular/service-worker';
 import { select } from 'd3';
 import ELK from 'elkjs';
-import { of, Subject } from 'rxjs';
 
-import { App } from '~/app/app';
 import { Flow, SVG_ID } from '~/app/main/flow/flow';
 import { Main } from '~/app/main/main';
 import { FlowBuilder } from '~/flow/flow-builder';
@@ -63,55 +52,6 @@ describe('workspace recovery interaction', () => {
     expect(
       host.querySelector('router-outlet')?.parentElement?.hasAttribute('inert'),
     ).toBeFalse();
-  });
-});
-
-describe('App update recovery', () => {
-  let component: App;
-  let fixture: ComponentFixture<App>;
-
-  const swUpdate = {
-    unrecoverable: new Subject<UnrecoverableStateEvent>(),
-    versionUpdates: new Subject<VersionEvent>(),
-  };
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, App],
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: SwUpdate, useValue: swUpdate },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(App);
-    component = fixture.componentInstance;
-    spyOn<any, any>(component, 'log');
-    fixture.detectChanges();
-  });
-  it('keeps upstream update behavior without download or installation-failure prompts', () => {
-    spyOn(component['windowClient'], 'reload');
-    spyOn(component['confirm'], 'open').and.returnValue(of(true));
-    swUpdate.versionUpdates.next({ type: 'VERSION_DETECTED' } as any);
-    swUpdate.versionUpdates.next({
-      type: 'VERSION_INSTALLATION_FAILED',
-    } as any);
-    expect(component['confirm'].open).not.toHaveBeenCalled();
-    expect(component['windowClient'].reload).not.toHaveBeenCalled();
-  });
-  it('keeps a ready update deferred when its refresh is cancelled', () => {
-    spyOn(component['windowClient'], 'reload');
-    spyOn(component['confirm'], 'open').and.returnValue(of(false));
-    swUpdate.versionUpdates.next({ type: 'VERSION_READY' } as any);
-    expect(component['windowClient'].reload).not.toHaveBeenCalled();
-  });
-  it('requires a refresh for unrecoverable state', () => {
-    spyOn(component['windowClient'], 'reload');
-    spyOn(component['confirm'], 'open').and.returnValue(of(true));
-    swUpdate.unrecoverable.next({} as any);
-    expect(component['confirm'].open).toHaveBeenCalledWith(
-      jasmine.objectContaining({ header: 'app.updateRequired' }),
-    );
-    expect(component['windowClient'].reload).toHaveBeenCalledTimes(1);
   });
 });
 

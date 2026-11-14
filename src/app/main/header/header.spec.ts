@@ -55,20 +55,8 @@ describe('Header', () => {
       expect(component['router'].navigate).toHaveBeenCalledWith(['spa']);
     });
   });
-});
-
-describe('Header with Endfield dataset', () => {
-  it('links to the product source and hides unavailable game and editor links', async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, Header],
-    }).compileComponents();
+  it('links to the product source and hides unavailable game and editor links', () => {
     TestBed.inject(SettingsStore).apply({ modId: 'aef' });
-    const fixture = TestBed.createComponent(Header);
-    setInputs(fixture, {
-      preferencesOpen: false,
-      settingsOpen: false,
-      settingsXlHidden: false,
-    });
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
     expect(

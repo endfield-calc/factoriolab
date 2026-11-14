@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
@@ -7,12 +8,10 @@ import {
   Router,
   UrlTree,
 } from '@angular/router';
-import { RouterTestingHarness } from '@angular/router/testing';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
-import { Id } from '~/app/id/id';
 import { ModData } from '~/data/schema/mod-data';
 import { encodeEndfield } from '~/endfield/compat/codec';
 import {
@@ -21,7 +20,7 @@ import {
 } from '~/endfield/domain/model';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
-import { ObjectivesStore } from '~/state/objectives/objectives-store';
+import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
@@ -31,7 +30,6 @@ import { ObjectiveType } from '../objectives/objective-type';
 import { ObjectiveUnit } from '../objectives/objective-unit';
 import { initialSettingsState } from '../settings/settings-state';
 import { initialTableState } from '../table/table-state';
-import { Compression } from './compression';
 import { LabParams } from './lab-params';
 import { Params } from './params';
 import { RouterSync, ZipState } from './router-sync';
@@ -349,6 +347,75 @@ describe('RouterSync current Endfield restoration and writes', () => {
     expect(navigate).not.toHaveBeenCalled();
     expect(endfield.state().electric).toEqual(rational(2));
     expect(service.stored()).toEqual(stored);
+  });
+
+  it('ignores queued resource snapshots after a successful reload', async () => {
+    const settings = TestBed.inject(SettingsStore);
+    const http = TestBed.inject(HttpTestingController);
+    TestBed.inject(PreferencesStore).apply({ language: 'en' });
+    const dataResource = settings['modDataResource'];
+    expect(dataResource.reload()).toBeTrue();
+    TestBed.tick();
+    http.expectOne('data/aef/data.json').flush('unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable',
+    });
+    await flush();
+    TestBed.tick();
+    await flush();
+    const error = settings.loadError();
+    expect(error).toBeDefined();
+    expect(dataResource.isLoading()).toBeFalse();
+    endfield.set({ ...endfield.snapshot(), electric: rational(2) });
+    const previous = service['objectivesStore'].state();
+    const stored = service.stored();
+
+    // Control the queued snapshots while retaining the real HTTP reload.
+    resources.next({
+      modId: 'aef',
+      data: settings.modData(),
+      hash: rawHash,
+      loading: settings.loading(),
+      error,
+    });
+    const retry = spyOn(settings, 'retryFailedResources').and.callThrough();
+    open({ v: '12', ef: encoded(3), o: ['xiranite_powder*5'] });
+    await flush();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(retry.calls.mostRecent().returnValue).toBeTrue();
+    expect(settings.loading()).toBeTrue();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual([]);
+    expect(service['objectivesStore'].state()).toBe(previous);
+    expect(endfield.state().electric).toEqual(rational(2));
+    expect(service.stored()).toBe(stored);
+    expect(navigate).not.toHaveBeenCalled();
+
+    http.expectOne('data/aef/data.json').flush(rawData);
+    await flush();
+    TestBed.tick();
+    await flush();
+    const latest = {
+      modId: 'aef',
+      data: settings.modData(),
+      hash: rawHash,
+      loading: settings.loading(),
+      error: settings.loadError(),
+    };
+    expect(latest.data).toBeDefined();
+    expect(settings.modHash()).toBe(rawHash);
+    expect(latest.loading).toBeFalse();
+    expect(latest.error).toBeUndefined();
+    resources.next({ ...latest, data: { ...data } });
+    resources.next({ ...latest, hash: { ...rawHash } });
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual([]);
+    expect(service['objectivesStore'].state()).toBe(previous);
+    expect(endfield.state().electric).toEqual(rational(2));
+    resources.next(latest);
+    expect(lifecycle.ready()).toBeTrue();
+    expect(endfield.state().electric).toEqual(rational(3));
+    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5));
   });
 
   it('does not commit until the matching resources finish loading', async () => {
@@ -1394,108 +1461,5 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(service['objectivesStore'].state()['1'].value).toEqual(rational(4n));
     await changeObjective(5n);
     expect(service.stored()).toEqual(router.url);
-  });
-});
-
-/** Fault injection: these hooks deliberately violate the extension purity contract. */
-describe('RouterSync public retry and product boundaries', () => {
-  let router: Router;
-  let service: RouterSync;
-  let lifecycle: WorkspaceLifecycle;
-  let settings: SettingsStore;
-  let objectives: ObjectivesStore;
-  const loading = signal(false);
-  const loadError = signal<Error | undefined>(undefined);
-
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 40; i++) await Promise.resolve();
-  }
-
-  beforeEach(async () => {
-    loading.set(false);
-    loadError.set(undefined);
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        provideRouter([
-          {
-            path: ':id',
-            component: Id,
-            children: [{ path: 'list', component: NavigationFixture }],
-          },
-        ]),
-      ],
-    });
-    settings = TestBed.inject(SettingsStore);
-    spyOn(settings, 'modData').and.returnValue(mockModData);
-    spyOn(settings, 'modHash').and.returnValue(mockModHash);
-    spyOn(settings, 'loading').and.callFake(loading);
-    spyOn(settings, 'loadError').and.callFake(loadError);
-    objectives = TestBed.inject(ObjectivesStore);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
-    router = TestBed.inject(Router);
-    service = TestBed.inject(RouterSync);
-    spyOn(service, 'getHash').and.callFake((value) =>
-      Promise.resolve({
-        ...value.objectives.bare,
-        ...value.config.bare,
-        v: '12',
-      }),
-    );
-    await RouterTestingHarness.create('/aef/list?v=12&o=wood*2');
-    for (let i = 0; i < 8; i++) {
-      TestBed.tick();
-      await Promise.resolve();
-    }
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(objectives.state()['1'].value).toEqual(rational(2n));
-  });
-
-  it('waits for current resources when retry is unavailable and a cached snapshot is stale', async () => {
-    // Simulate a resource adapter declining a reload while another request is
-    // already loading; its public signals change before the queued effect runs.
-    const retry = spyOn(settings, 'retryFailedResources').and.returnValue(
-      false,
-    );
-    const compression = TestBed.inject(Compression);
-    let finishInflate: ((value: string) => void) | undefined;
-    spyOn(compression, 'inflate').and.callFake(
-      () =>
-        new Promise<string>((resolve) => {
-          finishInflate = resolve;
-        }),
-    );
-    const previous = objectives.state();
-    const stored = service.stored();
-    const navigate = spyOn(router, 'navigate').and.callThrough();
-    const url = '/aef/list?v=12&z=slow';
-    expect(await router.navigateByUrl(url)).toBeTrue();
-    await flush();
-    expect(finishInflate).toBeDefined();
-    const error = new Error('data request failed');
-    loadError.set(error);
-    loading.set(true);
-    const token = compression.nToId(mockModHash.items.indexOf('wood'));
-    finishInflate?.(`v=12&o=${token}*8`);
-    await flush();
-    expect(retry).toHaveBeenCalledTimes(1);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(objectives.state()).toBe(previous);
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
-    TestBed.tick();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(objectives.state()).toBe(previous);
-    loadError.set(undefined);
-    loading.set(false);
-    TestBed.tick();
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(objectives.state()['1'].targetId).toEqual('wood');
-    expect(objectives.state()['1'].value).toEqual(rational(8n));
   });
 });

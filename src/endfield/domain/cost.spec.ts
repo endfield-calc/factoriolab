@@ -5,11 +5,9 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { RecipeDetail } from '~/app/main/data/recipe-detail/recipe-detail';
 import { ModData } from '~/data/schema/mod-data';
-import { Recipe } from '~/data/schema/recipe';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
-import { Adjustment } from '~/state/adjustment';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -117,41 +115,6 @@ describe('Endfield recipe costs', () => {
         area: rational(25),
       }),
     ).toEqual(input.weights.machine);
-  });
-});
-
-describe('neutral upstream recipe costs', () => {
-  it('uses the public upstream adjustment and its output-based and default formulas', () => {
-    TestBed.configureTestingModule({ imports: [TestModule] });
-    const adjustment = TestBed.inject(Adjustment);
-    const declared: Recipe = {
-      id: 'declared',
-      name: 'declared',
-      row: 0,
-      time: rational(2),
-      in: {},
-      out: { item: rational(6) },
-      cost: rational(4),
-      flags: new Set(),
-    };
-    const defaulted: Recipe = {
-      ...declared,
-      id: 'defaulted',
-      cost: undefined,
-    };
-    adjustment.adjustCosts(
-      { declared, defaulted },
-      { declared: {}, defaulted: {} },
-      {
-        ...initialSettingsState.costs,
-        factor: rational(3),
-        machine: rational(5),
-        footprint: rational.zero,
-      },
-      TestBed.inject(SettingsStore).dataset(),
-    );
-    expect(declared.cost).toEqual(rational(36));
-    expect(defaulted.cost).toEqual(rational(5));
   });
 });
 

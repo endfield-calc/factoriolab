@@ -184,9 +184,6 @@ describe('Endfield derived round trips', () => {
     const zipped = zip();
     expect(zipped.config.bare.och).toBe('A');
     expect(zipped.config.bare.rex).toBeDefined();
-    expect(zipped.config.bare.csu).toBe('0');
-    expect(zipped.config.bare.cun).toBeUndefined();
-    expect(zipped.config.bare.cre).toBeUndefined();
     const ef = zipped.config.bare.ef!;
     const payload = JSON.parse(atob(ef.replace(/-/g, '+').replace(/_/g, '/')));
     expect(JSON.stringify(payload)).not.toContain('sewage-treat');

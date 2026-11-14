@@ -6,7 +6,6 @@ import { of, Subject } from 'rxjs';
 import { Preferences } from '~/app/main/preferences/preferences';
 import { Select } from '~/components/select/select';
 import { provideEndfield } from '~/endfield/providers';
-import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
@@ -17,41 +16,6 @@ describe('saved states during recovery', () => {
   });
   afterEach(() => {
     localStorage.removeItem('preferences');
-  });
-
-  it('uses the normal reset confirmation for valid saved preferences and keeps their archives', async () => {
-    localStorage.setItem(
-      'preferences',
-      JSON.stringify({
-        language: 'ja',
-        states: { aef: { safe: '/aef/list?v=12&o=iron_ore' } },
-      }),
-    );
-    await TestBed.configureTestingModule({
-      imports: [TestModule, Preferences],
-      providers: provideEndfield(),
-    }).compileComponents();
-    const component = TestBed.createComponent(Preferences).componentInstance;
-    const store = component['preferencesStore'];
-    const defaultTheme = initialPreferencesState.theme;
-    expect(store.restoreError()).toBeUndefined();
-    store.apply({ theme: defaultTheme === 'light' ? 'dark' : 'light' });
-    const open = spyOn(component['confirm'], 'open').and.returnValue(of(1));
-    component.reset();
-    expect(open).toHaveBeenCalledOnceWith(
-      jasmine.objectContaining({
-        header: 'preferences.resetHeader',
-        message: 'preferences.resetMessage',
-      }),
-    );
-    expect(store.state().theme).toBe(defaultTheme);
-    expect(store.state().states['aef']['safe']).toBe(
-      '/aef/list?v=12&o=iron_ore',
-    );
-    TestBed.tick();
-    expect(
-      JSON.parse(localStorage.getItem('preferences')!).states.aef.safe,
-    ).toBe('/aef/list?v=12&o=iron_ore');
   });
 
   for (const [label, raw] of [
@@ -203,7 +167,12 @@ describe('Preferences recovery and saved state selection', () => {
     const navigate = spyOn(component['router'], 'navigate');
     expect(TestBed.inject(WorkspaceLifecycle).ready()).toBeTrue();
     component.reset();
-    expect(open).toHaveBeenCalled();
+    expect(open).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        header: 'preferences.resetHeader',
+        message: 'preferences.resetMessage',
+      }),
+    );
     expect(reply.observed).toBeTrue();
     TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=bad');
     reply.next(2);

@@ -16,10 +16,24 @@ import { getStoredValue, storeValue } from '~/utils/stored-signal';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
 import { ColumnsState, copyColumnsState } from './columns-state';
+import { elkAlgorithmOptions } from './elk-algorithm';
+import { flowDiagramOptions } from './flow-diagram';
+import { glpkAlgorithmOptions } from './glpk-algorithm';
+import { LinkValue } from './link-value';
+import { powerUnitOptions } from './power-unit';
 import { initialPreferencesState, PreferencesState } from './preferences-state';
+import { sankeyAlignOptions } from './sankey-align';
+import { themeOptions } from './theme';
 
 function object(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasOptionValue(
+  options: { value: unknown }[],
+  value: unknown,
+): boolean {
+  return options.some((option) => option.value === value);
 }
 
 /** Validate one current document before loading any of its fields. */
@@ -36,16 +50,16 @@ function currentPreferences(value: unknown): Partial<PreferencesState> {
       return fail();
     switch (key) {
       case 'language':
-        if (!languageOptions.some((option) => option.value === entry)) fail();
+        if (!hasOptionValue(languageOptions, entry)) fail();
         break;
       case 'powerUnit':
-        if (![0, 1, 2, 3].includes(entry as number)) fail();
+        if (!hasOptionValue(powerUnitOptions, entry)) fail();
         break;
       case 'theme':
-        if (!['system', 'light', 'dark'].includes(entry as string)) fail();
+        if (!hasOptionValue(themeOptions, entry)) fail();
         break;
       case 'glpkAlgorithm':
-        if (entry !== 'simplex' && entry !== 'exact') fail();
+        if (!hasOptionValue(glpkAlgorithmOptions, entry)) fail();
         break;
       case 'hue':
       case 'chroma':
@@ -90,19 +104,20 @@ function currentPreferences(value: unknown): Partial<PreferencesState> {
       case 'flowSettings':
         if (!object(entry)) return fail();
         for (const [field, setting] of Object.entries(entry)) {
+          // LinkValue UI options are dataset-filtered; storage accepts the full enum.
           const valid =
             field === 'diagram'
-              ? [0, 1].includes(setting as number)
+              ? hasOptionValue(flowDiagramOptions, setting)
               : field === 'linkSize' || field === 'linkText'
-                ? [0, 1, 2, 3, 4, 5].includes(setting as number)
+                ? Object.values(LinkValue).some(
+                    (value) => typeof value === 'number' && value === setting,
+                  )
                 : field === 'sankeyAlign'
-                  ? [0, 1, 2, 3].includes(setting as number)
+                  ? hasOptionValue(sankeyAlignOptions, setting)
                   : field === 'hideExcluded'
                     ? typeof setting === 'boolean'
                     : field === 'elkAlgorithm' &&
-                      ['layered', 'force', 'stress'].includes(
-                        setting as string,
-                      );
+                      hasOptionValue(elkAlgorithmOptions, setting);
           if (!valid) fail();
         }
         break;
@@ -128,8 +143,8 @@ function currentPreferences(value: unknown): Partial<PreferencesState> {
 export class PreferencesStore extends Store<PreferencesState> {
   private readonly document = inject(DOCUMENT);
   private readonly defaultLanguage = this.initial.language;
-  readonly restoreError = signal<string | undefined>(undefined);
-  private readonly canPersist = signal(true);
+  private readonly restoreErrorState = signal<string | undefined>(undefined);
+  readonly restoreError = this.restoreErrorState.asReadonly();
 
   readonly stored = signal(getStoredValue('preferences'));
 
@@ -177,13 +192,12 @@ export class PreferencesStore extends Store<PreferencesState> {
         });
       } catch (ex) {
         console.warn('Failed to restore stored preferences', ex);
-        this.restoreError.set('Invalid preferences');
-        this.canPersist.set(false);
+        this.restoreErrorState.set('Invalid preferences');
       }
     }
 
     effect(() => {
-      if (this.canPersist())
+      if (this.restoreError() == null)
         storeValue('preferences', JSON.stringify(this.state()));
     });
 
@@ -230,8 +244,7 @@ export class PreferencesStore extends Store<PreferencesState> {
       flowSettings: { ...initialPreferencesState.flowSettings },
       sections: { ...initialPreferencesState.sections },
     });
-    this.restoreError.set(undefined);
-    this.canPersist.set(true);
+    this.restoreErrorState.set(undefined);
   }
 
   saveState(modId: string, id: string, value: string): void {

@@ -1,26 +1,16 @@
 import rawData from '/public/data/aef/data.json';
 import { ModData } from '~/data/schema/mod-data';
 import { parseRecipe } from '~/data/schema/recipe';
+import { tundraTransferRecipeIds } from '~/endfield/adapters/calculation-extension';
+import { Rational, rational } from '~/rational/rational';
 import type {
   CalculationVariable,
   LinearRule,
   ModelRules,
-} from '~/extensions/calculation-extension';
-import { Rational, rational } from '~/rational/rational';
-import { ObjectiveType } from '~/state/objectives/objective-type';
-import { ObjectiveUnit } from '~/state/objectives/objective-unit';
+} from '~/solver/model-extension';
 
-import {
-  createEndfieldState,
-  EndfieldState,
-  ovenId,
-  resourceIds,
-} from './model';
-import {
-  compileEndfieldRules as compileRules,
-  deriveEndfieldObjectives,
-  tundraTransferRecipeIds,
-} from './rules';
+import { createEndfieldState, EndfieldState, ovenId } from './model';
+import { compileEndfieldRules as compileRules } from './rules';
 
 const transferIds = tundraTransferRecipeIds(
   Object.fromEntries(
@@ -74,77 +64,6 @@ function total(
     rational.zero,
   );
 }
-
-describe('Endfield objective declarations', () => {
-  it('distinguishes disabled resource limits, enabled zeroes, and positive physical rates', () => {
-    const initial = createEndfieldState();
-    const disabled = deriveEndfieldObjectives(initial);
-    expect(disabled.map((d) => d.objective.id)).toEqual([
-      'ef:transfer:tundra:limit',
-    ]);
-    const zero = deriveEndfieldObjectives({
-      ...initial,
-      resourceLimits: { ...initial.resourceLimits, enabled: true },
-    });
-    const limits = zero.filter(
-      (d) => d.objective.unit === ObjectiveUnit.Machines,
-    );
-    expect(limits.length).toBe(6);
-    expect(
-      limits.every(
-        (d) =>
-          d.objective.type === ObjectiveType.Limit &&
-          d.objective.value.isZero(),
-      ),
-    ).toBeTrue();
-    expect(limits.map((d) => d.objective.id)).toEqual(
-      resourceIds.map((id) => `ef:limit:${id}`),
-    );
-
-    const rate = rational(510, 60);
-    const positive = deriveEndfieldObjectives({
-      ...initial,
-      resourceLimits: {
-        enabled: true,
-        rates: { ...initial.resourceLimits.rates, copper_ore: rate },
-      },
-      resourceRecipeSettings: {
-        copper_ore: { machineId: 'chosen-miner', overclock: rational(125) },
-      },
-    });
-    const output = positive.find(
-      (d) => d.objective.id === 'ef:resource:copper_ore',
-    )!;
-    expect(output.objective.targetId).toBe('copper_ore-liquid_water');
-    expect(output.objective.type).toBe(ObjectiveType.Output);
-    expect(output.objective.machineId).toBe('chosen-miner');
-    expect(output.objective.overclock).toEqual(rational(125));
-    expect(output.fixedOutput).toEqual({
-      itemId: 'copper_ore',
-      perSecond: rate,
-    });
-    expect(output.objective.value).toEqual(rational.zero);
-  });
-
-  it('declares transfer key input and limit in fixed per-second units', () => {
-    const initial = createEndfieldState();
-    const disabled = deriveEndfieldObjectives(initial);
-    expect(disabled[0].objective.type).toBe(ObjectiveType.Limit);
-    expect(disabled[0].fixedRate).toEqual(rational.zero);
-    const enabled = deriveEndfieldObjectives({
-      ...initial,
-      transfer: { enabled: true, source: 'tundra' },
-    });
-    expect(enabled.map((d) => d.objective.type)).toEqual([
-      ObjectiveType.Input,
-      ObjectiveType.Limit,
-    ]);
-    expect(
-      enabled.every((d) => d.objective.targetId === 'domain_key_tundra'),
-    ).toBeTrue();
-    expect(enabled.every((d) => d.fixedRate?.eq(rational(1, 3600)))).toBeTrue();
-  });
-});
 
 describe('Endfield model rules', () => {
   it('counts actual machines for ordinary and explicit variables and keeps the exception fractional', () => {
@@ -211,14 +130,8 @@ describe('Endfield model rules', () => {
     expect(compileEndfieldRules(enabled, [water]).integers).toEqual([]);
   });
 
-  it('identifies transfers from positive original key input rather than recipe names', () => {
-    const ids = tundraTransferRecipeIds({
-      renamed: { id: 'renamed', in: { domain_key_tundra: rational.one } },
-      transfer_tundra_fake: { id: 'transfer_tundra_fake', in: {} },
-      zero: { id: 'zero', in: { domain_key_tundra: rational.zero } },
-      negative: { id: 'negative', in: { domain_key_tundra: rational(-1) } },
-    });
-    expect(ids).toEqual(new Set(['renamed']));
+  it('applies transfer rules to identified recipe IDs rather than recipe names', () => {
+    const ids = new Set(['renamed']);
     const result = compileRules(
       createEndfieldState(),
       [
@@ -329,7 +242,9 @@ describe('Endfield model rules', () => {
       state,
       rows,
       availability,
-    ).constraints.filter((constraint) => constraint.source === 'availability');
+    ).constraints.filter((constraint) =>
+      constraint.id.startsWith('ef:availability:'),
+    );
     expect(sameRegion.map((constraint) => constraint.terms[0].ref.id)).toEqual([
       'elsewhere',
     ]);
@@ -337,35 +252,23 @@ describe('Endfield model rules', () => {
     const missingMachine = compileEndfieldRules(state, rows, {
       ...availability,
       machineIds: new Set(),
-    }).constraints.filter((constraint) => constraint.source === 'availability');
+    }).constraints.filter((constraint) =>
+      constraint.id.startsWith('ef:availability:'),
+    );
     expect(
       missingMachine.map((constraint) => constraint.terms[0].ref.id),
     ).toEqual(['automatic', 'explicit', 'elsewhere']);
     const emptyRegion = compileEndfieldRules(state, rows, {
       recipeIds: new Set(),
       machineIds: new Set(),
-    }).constraints.filter((constraint) => constraint.source === 'availability');
+    }).constraints.filter((constraint) =>
+      constraint.id.startsWith('ef:availability:'),
+    );
     expect(emptyRegion.length).toBe(4);
     expect(
-      compileEndfieldRules(state, rows).constraints.some(
-        (constraint) => constraint.source === 'availability',
+      compileEndfieldRules(state, rows).constraints.some((constraint) =>
+        constraint.id.startsWith('ef:availability:'),
       ),
     ).toBeFalse();
-  });
-
-  it('creates a positive supply without inventing recipe settings', () => {
-    const initial = createEndfieldState();
-    const state = {
-      ...initial,
-      resourceLimits: {
-        enabled: true,
-        rates: { ...initial.resourceLimits.rates, iron_ore: rational(5) },
-      },
-    };
-    const output = deriveEndfieldObjectives(state).find(
-      (item) => item.objective.id === 'ef:resource:iron_ore',
-    );
-    expect(output?.fixedOutput?.perSecond).toEqual(rational(5));
-    expect(output?.objective.machineId).toBeUndefined();
   });
 });

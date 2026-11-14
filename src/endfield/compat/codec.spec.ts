@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import rawData from '/public/data/aef/data.json';
 import { ModData } from '~/data/schema/mod-data';
 import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
 import { Zip } from '~/state/router/zip';
 
@@ -22,22 +21,8 @@ function payload(value: unknown): string {
     .replace(/=+$/, '');
 }
 
-function expectDiagnostic(
-  action: () => unknown,
-  field: string,
-  code = 'invalid-endfield-state',
-): void {
-  let thrown: unknown;
-  try {
-    action();
-  } catch (error) {
-    thrown = error;
-  }
-  expect(thrown).toBeInstanceOf(WorkspaceRestoreError);
-  if (thrown instanceof WorkspaceRestoreError)
-    expect(thrown.diagnostics).toEqual([
-      jasmine.objectContaining({ field, code, severity: 'error' }),
-    ]);
+function expectRestoreError(action: () => unknown, context: string): void {
+  expect(action).withContext(context).toThrowError(Error);
 }
 
 describe('Endfield ef codec', () => {
@@ -53,7 +38,7 @@ describe('Endfield ef codec', () => {
         'settlement-jinlong_coupon',
         'miner_2',
       ])
-        expectDiagnostic(() => {
+        expectRestoreError(() => {
           validateRecipeReferences({ machineId }, data, 'recipe', id);
         }, 'recipe.machineId');
     }
@@ -67,7 +52,7 @@ describe('Endfield ef codec', () => {
         'copper_ore',
       );
     }).not.toThrow();
-    expectDiagnostic(() => {
+    expectRestoreError(() => {
       validateRecipeReferences(
         { modules: [{ id: 'missing-module' }] },
         data,
@@ -106,7 +91,7 @@ describe('Endfield ef codec', () => {
         }),
         data,
       ),
-    ).toThrowError(WorkspaceRestoreError, /overclock must be positive/);
+    ).toThrowError(Error, /overclock must be positive/);
   });
   it('distinguishes disabled from enabled zero, fills only omitted defaults', () => {
     const defaults = createEndfieldState();
@@ -210,9 +195,9 @@ describe('Endfield ef codec', () => {
       'eyJ2ZXJzaW9uIjoxfS',
       'eyJ2ZXJzaW9uIjoxfT',
     ])
-      expectDiagnostic(() => decodeEndfield(input, data), 'ef');
+      expectRestoreError(() => decodeEndfield(input, data), 'ef');
     for (const value of [null, [], 3, 'value'])
-      expectDiagnostic(() => decodeEndfield(payload(value), data), 'ef');
+      expectRestoreError(() => decodeEndfield(payload(value), data), 'ef');
     for (const [value, field] of [
       [{ version: 1, unknown: 1 }, 'ef.unknown'],
       [{ version: 1, resourceLimits: null }, 'ef.resourceLimits'],
@@ -250,16 +235,15 @@ describe('Endfield ef codec', () => {
         'ef.resourceRecipeSettings.copper_ore.unknown',
       ],
     ] as const)
-      expectDiagnostic(() => decodeEndfield(payload(value), data), field);
+      expectRestoreError(() => decodeEndfield(payload(value), data), field);
     for (const version of [undefined, null, '1', 1.5])
-      expectDiagnostic(
+      expectRestoreError(
         () => decodeEndfield(payload({ version }), data),
         'ef.version',
       );
-    expectDiagnostic(
+    expectRestoreError(
       () => decodeEndfield(payload({ version: 2 }), data),
       'ef.version',
-      'unsupported-endfield-version',
     );
   });
 
@@ -294,7 +278,7 @@ describe('Endfield ef codec', () => {
     expect(restored.transfer.enabled).toBeTrue();
     expect(restored.electric).toEqual(rational.zero);
     for (const value of ['', 'abc', '1/0', '-1'])
-      expectDiagnostic(
+      expectRestoreError(
         () => decodeEndfield(payload({ version: 1, electric: value }), data),
         'ef.electric',
       );
@@ -304,13 +288,14 @@ describe('Endfield ef codec', () => {
       '1e9007199254740992',
       '1.0e-10000',
     ])
-      expectDiagnostic(
-        () => decodeEndfield(payload({ version: 1, electric: value }), data),
-        'ef.electric',
-        'numeric-limit',
+      expect(() =>
+        decodeEndfield(payload({ version: 1, electric: value }), data),
+      ).toThrowError(
+        Error,
+        'Decimal shift exceeds the supported range at ef.electric',
       );
     for (const value of ['0', '-1'])
-      expectDiagnostic(
+      expectRestoreError(
         () =>
           decodeEndfield(
             payload({
@@ -325,7 +310,7 @@ describe('Endfield ef codec', () => {
 
   it('diagnoses a non-producer or unknown machine reference', () => {
     for (const machineId of ['miner_2', 'unknown'])
-      expectDiagnostic(
+      expectRestoreError(
         () =>
           decodeEndfield(
             payload({
@@ -357,23 +342,18 @@ describe('Endfield ef codec', () => {
       }),
     ];
     for (const input of inputs)
-      expect(() => decodeEndfield(input, data)).toThrowError(
-        WorkspaceRestoreError,
-      );
+      expect(() => decodeEndfield(input, data)).toThrowError(Error);
   });
 
   it('distinguishes an unknown version from malformed data', () => {
-    for (const [input, code] of [
-      [payload({ version: 2 }), 'unsupported-endfield-version'],
-      [payload({ version: '1' }), 'invalid-endfield-state'],
-    ]) {
-      try {
-        decodeEndfield(input, data);
-        fail('Expected a restore error');
-      } catch (error) {
-        expect((error as WorkspaceRestoreError).diagnostics[0].code).toBe(code);
-      }
-    }
+    expect(() => decodeEndfield(payload({ version: 2 }), data)).toThrowError(
+      Error,
+      'Unsupported ef version: 2',
+    );
+    expect(() => decodeEndfield(payload({ version: '1' }), data)).toThrowError(
+      Error,
+      'Invalid ef version',
+    );
   });
 });
 
@@ -414,20 +394,12 @@ describe('Zip strict imports', () => {
   it('rejects malformed, missing, and retired-null hash indices', () => {
     for (const token of ['?', 'B', 'C', 'AAAAAAAAAA'])
       expect(() => service.parseNString(token, ['one', null])).toThrowError(
-        WorkspaceRestoreError,
+        Error,
       );
-    expect(() => service.parseNArray('A~?', ['one'])).toThrowError(
-      WorkspaceRestoreError,
-    );
-    expect(() => service.parseIndices('0~2', [{}])).toThrowError(
-      WorkspaceRestoreError,
-    );
-    expect(() => service.parseIndices('0~NaN', [{}])).toThrowError(
-      WorkspaceRestoreError,
-    );
-    expect(() => service.parseIndices('0~-1', [{}])).toThrowError(
-      WorkspaceRestoreError,
-    );
+    expect(() => service.parseNArray('A~?', ['one'])).toThrowError(Error);
+    expect(() => service.parseIndices('0~2', [{}])).toThrowError(Error);
+    expect(() => service.parseIndices('0~NaN', [{}])).toThrowError(Error);
+    expect(() => service.parseIndices('0~-1', [{}])).toThrowError(Error);
   });
 
   it('validates subset endpoints and preserves all non-null slots in a sparse range', () => {
@@ -437,39 +409,29 @@ describe('Zip strict imports', () => {
     for (const token of ['B', 'A~E', 'D~A', 'A~C~D', 'A~?'])
       expect(() =>
         service.parseSubset(token, ['one', null, 'retired', 'two']),
-      ).toThrowError(WorkspaceRestoreError);
+      ).toThrowError(Error);
   });
 
-  it('reports the settings field for invalid short IDs', () => {
+  it('preserves the invalid short ID in the error message', () => {
     const read = service.get({ mmr: '?' })(service.parseArray.bind(service));
-    try {
-      read('mmr', ['one']);
-      fail('expected an invalid index');
-    } catch (error) {
-      expect((error as WorkspaceRestoreError).diagnostics[0].field).toEqual(
-        'mmr',
-      );
-    }
+    expect(() => read('mmr', ['one'])).toThrowError(
+      Error,
+      'Invalid workspace index: ?',
+    );
   });
 
-  it('rejects malformed boolean and numeric settings with their field names', () => {
+  it('rejects malformed boolean and numeric settings with the original token', () => {
     const get = service.get({ orm: 'yes', omt: 'NaN' });
     const boolean = get(service.parseBool.bind(service));
     const number = get(service.parseNumber.bind(service));
-    for (const [name, read] of [
-      ['orm', (): unknown => boolean('orm')],
-      ['omt', (): unknown => number('omt')],
-    ] as const) {
-      try {
-        read();
-        fail(`expected invalid ${name}`);
-      } catch (error) {
-        expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
-        expect((error as WorkspaceRestoreError).diagnostics[0].field).toEqual(
-          name,
-        );
-      }
-    }
+    expect(() => boolean('orm')).toThrowError(
+      Error,
+      'Invalid workspace index: yes',
+    );
+    expect(() => number('omt')).toThrowError(
+      Error,
+      'Invalid workspace index: NaN',
+    );
     expect(service.parseBool('0')).toBeFalse();
     expect(service.parseBool('1')).toBeTrue();
     expect(service.parseNumber('0')).toEqual(0);
@@ -483,17 +445,15 @@ describe('Zip strict imports', () => {
   });
 
   it('never writes an entity that is absent from its hash', () => {
-    expect(() => service.zipNString('missing', ['one'])).toThrowError(
-      WorkspaceRestoreError,
-    );
+    expect(() => service.zipNString('missing', ['one'])).toThrowError(Error);
     expect(() => service.zipDiffString('missing', '', ['one'])).toThrowError(
-      WorkspaceRestoreError,
+      Error,
     );
     expect(() => service.zipDiffArray(['missing'], [], ['one'])).toThrowError(
-      WorkspaceRestoreError,
+      Error,
     );
     expect(() =>
       service.zipDiffSubset(new Set(['missing']), undefined, ['one']),
-    ).toThrowError(WorkspaceRestoreError);
+    ).toThrowError(Error);
   });
 });

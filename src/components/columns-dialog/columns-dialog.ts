@@ -13,11 +13,11 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import {
   ColumnKey,
   columnsInfo,
   copyColumnsState,
+  initialColumnsState,
 } from '~/state/preferences/columns-state';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
@@ -44,7 +44,6 @@ export class ColumnsDialog implements DialogData {
   protected readonly dialogRef = inject(DialogRef);
   protected readonly preferencesStore = inject(PreferencesStore);
   protected readonly settingsStore = inject(SettingsStore);
-  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
 
   protected readonly columnsInfo = columnsInfo;
   protected readonly faCheck = faCheck;
@@ -60,16 +59,13 @@ export class ColumnsDialog implements DialogData {
   get modified(): boolean {
     return (Object.keys(this.value) as ColumnKey[]).some(
       (k) =>
-        this.value[k]?.precision !==
-          this.defaults.preferences.columns[k].precision ||
-        this.value[k].show !== this.defaults.preferences.columns[k].show,
+        this.value[k]?.precision !== initialColumnsState[k].precision ||
+        this.value[k].show !== initialColumnsState[k].show,
     );
   }
 
   reset(): void {
-    this.value = copyColumnsState(
-      cloneDefaults(this.defaults).preferences.columns,
-    );
+    this.value = copyColumnsState(initialColumnsState);
     this.powerUnit.set(this.preferencesStore.state().powerUnit);
   }
 

@@ -1,10 +1,10 @@
 # 后续上游同步与当前差异
 
-本页以 `00bdb91c2442cd8d715501b9469cec115735645f` 为固定上游，以签名提交 `2e158990fda780d69e2e91bc80e205c61fa4ac2c` 为本轮起点。01–08 记录最初迁移方案及历史验收；涉及旧默认值、兼容层和扩展框架的描述已由以下当前决策取代。本轮工作树暂不提交、不推送，排除本地 `.agents/`、`.codex/`。
+本页以 `00bdb91c2442cd8d715501b9469cec115735645f` 为固定上游，以签名提交 `8e06beadbb1db901bc560c379349071d376b1244` 为本轮起点。01–08 记录最初迁移方案及历史验收；涉及旧默认值、兼容层和扩展框架的描述已由以下当前决策取代。本轮工作树暂不提交、不推送，排除本地 `.agents/`、`.codex/`。
 
 ## 当前产品与兼容边界
 
-1. 发布应用仅开放 `aef`。完整上游游戏目录、`modHash` / `modHashV0` 身份及顺序保留，供原生算法、数据工具和测试使用。`PINNED_MOD_ID` 在应用组合处固定为 `aef`，请求、路由及缓存统一受此边界约束。
+1. 发布应用仅开放 `aef`，直接使用原生 `DEFAULT_MOD`。完整上游游戏目录、`modHash` / `modHashV0` 身份及顺序保留，供原生算法、数据工具和测试使用。路由、缓存恢复及 HTTP 请求入口限制为 `aef`；内部算法和可信测试夹具保持原生接口，不再给每个读取方法叠加产品检查。
 2. 旧目标类型 11–14 和 `cet` 沿上游当前默认忽略，不新增转换、拒载、警告或重编号。普通旧格式仅使用上游 `Migration`；不另外承诺已删除 ID 的迁移。三个内置示例已一次性改成当前编码器生成的链接。
 3. 省略的无法生产及回收成本统一采用当前上游默认 `1e8 / 1`，不保留迁移阶段的 `1e6 / 1000` 补丁。保留终末地 surplus=1、电力=1、kW、light、BoxLine 和浏览器语言初始化。
 4. 资源满额采集及盈余是当前功能。额度 560/min、需求 540/min 时仍采集 560/min，产生盈余 20/min；矿机、用水和功耗均按真实满额采集计算。
@@ -22,16 +22,16 @@
 
 ## 保留的运行接点
 
-| 责任             | 当前实现与必要性                                                                                                                                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 默认值与产品装配 | `extensions/defaults.ts` 仅提供 settings/preferences 快照、副本和 dataset pin；`endfield/product/product.ts` 提供具体默认值。品牌直接读取产品 manifest。没有 ProductProfile 或多产品回调。                          |
-| 当前状态         | `EndfieldStore` 保留小型只读状态、六资源机器/超频、checked、电力及资源/洪炉/传输配置。普通状态仍由原生各 Store 管理。                                                                                               |
-| 恢复与链接       | `compat/codec.ts` 编解码当前 ef；`restore.ts` 验证当前工作区。RouterSync 直接调用，保留异步代次、writeSequence、导航取消/重定向/离开、HTTP 失败重试和回滚。没有 StateExtension、preflight 或 WorkspacePreparation。 |
-| 计算             | ObjectivesStore 直接调用纯派生及规则函数，只给 Solver 小型状态和可用性上下文；不复制整份 dataset/settings/objectives。`extensions/calculation-extension.ts` 仅保必要求解 DTO，没有可插拔 token。                    |
-| 模型安全         | `solver/model-extension.ts` 绑定约束和整数列，校验数值、最终 MIP 解、原始约束和实际输入量。公开 Solver 在建模前拒绝负机器数量。                                                                                     |
-| 成本             | `EndfieldAdjustment` 仅覆写原生公开 `adjustCosts`，调用当前成本函数。没有 settlement alias 或无消费者的 objective 成本重算。                                                                                        |
-| 展示             | 主页面静态加载资源和指南；步骤、详情、Flow 与链接使用严格的六个来源目标 ID。没有 PresentationExtension 或泛型 owner/面板协议。                                                                                      |
-| 当前可靠性       | 保留 UI 首次 HTTP 失败时的静态英文 fallback、当前错误 URL 原文导出，以及成本草稿的恢复门禁。构建期词典补缺与运行时网络失败分别验证。                                                                                |
+| 责任             | 当前实现与必要性                                                                                                                                                                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 默认值与产品装配 | 直接修改原生 settings/preferences/flow 默认常量和 `DEFAULT_MOD`，品牌读取产品 manifest。没有默认值注入、产品默认值覆盖、dataset pin token 或第二套 neutral 默认值。初始化语言使用已有 language 模块中的具体函数。                                                            |
+| 当前状态         | `EndfieldStore` 保留资源、洪炉、传输、电力和来源设置。写入时复制实际可变容器，来源仅保留机器/超频；Rational 沿用原生只读值。普通状态由原生各 Store 管理，不再依赖通用递归快照或 Set 包装框架。                                                                               |
+| 恢复与链接       | `compat/codec.ts` 编解码当前 ef；`restore.ts` 验证原生 `PartialState`。错误直接保存可显示的消息。`state/workspace-lifecycle.ts` 保留代次和恢复门禁，RouterSync 继续负责 writeSequence、导航取消/重定向/离开、HTTP 重试和回滚。没有额外的状态协议、诊断代码/字段/严重性协议。 |
+| 计算             | 原生目标、配方和调整设置的映射集中在现有 `endfield/adapters/calculation-extension.ts`。domain/rules 只编译业务约束；所需模型类型归属实际消费者 `solver/model-extension.ts`。不复制整份 dataset/settings/objectives，不维护独立扩展类型文件或无消费者的规则来源元数据。       |
+| 模型安全         | `solver/model-extension.ts` 绑定约束和整数列，校验数值、最终 MIP 解、原始约束和实际输入量。公开 Solver 在建模前拒绝负机器数量。                                                                                                                                              |
+| 成本             | `EndfieldAdjustment` 覆写原生公开 `adjustCosts` 并提取成本函数实际所需的值；业务成本函数不接收完整原生 Recipe/Machine/RecipeSettings。没有 settlement alias 或无消费者的 objective 成本重算。                                                                                |
+| 展示             | 主页面静态加载资源和指南；步骤、详情、Flow 与链接使用严格的六个来源目标 ID。没有 PresentationExtension 或泛型 owner/面板协议。                                                                                                                                               |
+| 当前可靠性       | 保留 UI 首次 HTTP 失败时的静态英文 fallback、当前错误 URL 原文导出，以及成本草稿的恢复门禁。构建期词典补缺与运行时网络失败分别验证。                                                                                                                                         |
 
 来源配方只保存实际生效的 `machineId` 和 `overclock`，移除 source 的 fuel/modules/beacons/cost/productivity 编解码与复制机制。普通配方和显式目标的原生完整设置保留。来源链接继续保存完整工作区并定位资源面板，Flow 中同配方的多个目标按目标 ID 区分。
 
@@ -41,7 +41,11 @@
 
 ## 差异数量与测试责任
 
-统计必须使用同一个上游基线，计入新建但尚未暂存的文件，并将运行代码、测试和数据分别列出。本轮起点的 `src` 为 119 个差异文件：86 个运行文件（56 修改、30 新增），33 个规格/夹具（6 修改、27 新增）。当前数量和逐文件清单以本轮验收目录 `.tmp/convergence-impl-2e158990/validation/current-src-inventory.json` 为准；不能只统计 tracked diff 或把迁移前 golden 行数当功能覆盖。
+统计必须使用同一个上游基线，计入新建但尚未暂存的文件，并将运行代码、测试和数据分别列出。本轮起点的 `src` 为 115 个差异文件：75 个运行文件（53 修改、22 新增），40 个规格/夹具（17 修改、23 新增）。当前数量和逐文件清单以本轮验收目录 `.tmp/native-simplify-8e06bead/validation/current-src-inventory.json` 为准；不能只统计 tracked diff 或把迁移前 golden 行数当功能覆盖。评价收敛还须检查上游结构在多少处被解释，以及一次上游变更会牵动多少调用点，不能只统计新增文件或 import 数。
+
+本轮完成后为 119 个差异文件：74 个运行文件（57 修改、17 新增），45 个规格/夹具（24 修改、21 新增）。运行新增文件减少 5 个，但原生默认常量及语言模块需要直接修改；测试从已删除的 product/extensions 规格迁回对应的原生规格，已有测试文件的修改增加 7 个、新增测试文件减少 2 个。因此总文件数增加 4 个，不能宣称总修改面已减少。实际收敛是删去默认值注入和第二产品模式、通用状态诊断协议、递归快照与独立扩展类型，将原生 Recipe/Objective 映射集中在一个现有适配器。生命周期文件迁移本身不计为消除机制。
+
+资源 UI、步骤/Flow 中的来源目标交互、Router 的工作区原子恢复和 Solver 的实际模型绑定仍需接入原生流程；这些是现有业务功能的接点，上游改动对应流程时仍需复核。业务 domain 不再直接解释原生 Recipe/Objective 设置，也不以新框架隐藏这些必要耦合。
 
 删除旧 golden、旧生成 oracle、旧字段兼容及任意插件重入测试。以下当前责任继续由真实组件、Router 和 GLPK 回归验证；共享组件行为的断言放回已有组件规格，避免为已删除 adapter 单独保留规格文件。
 
@@ -52,10 +56,14 @@
 | 成本、负值与零、草稿事务                             | cost、calculation-integration、cost-settings-dialog、electric-cost         |
 | P2 当前输入拒绝和失败不提交                          | restore、Router、公开 Solver/model-extension                               |
 | 当前链接、例子、原始索引、迟到读写、取消及 HTTP 重试 | codec、guide、router-sync、extension-sync、resource-retry、zip             |
-| 坏偏好原文保护和显式 Reset、native 工具边界          | product、preferences、resources、extensions                                |
+| 坏偏好原文保护和显式 Reset、native 工具边界          | preferences、resources、settings-store、id、landing、extension-sync        |
 | 当前数据与交付                                       | Node delivery 检查、根路径/子路径打包和最终 SW 哈希                        |
 
 不降低覆盖门槛，不删除原生测试来掩盖行为改变；实现变化时更新断言并保留有辨别力的当前责任。完整 scripts 类型检查的既存诊断、初始 bundle 预算警告与实际失败分别记录，不能以 app/spec 类型成功代指全项目成功。
+
+当前验收为 Chrome 1434 项全部成功，语句、分支、函数、行覆盖率均为 100%；app/spec 类型、全量 lint/格式、13 项交付检查通过。完整 scripts 类型检查与本轮基线同为 30 条诊断，逐条一致、无新增或消失。根路径及 `/endfield-review/` 均完成双站生产打包，每站各 109 个最终 SW 哈希通过验证；初始 bundle 仍有既有的 950 kB 预算警告，实际约 1.04 MB。独立 Reviewer 未发现缺陷，并对成本、整数格点/混合约束和解析器做了独立有界对照；这些实验不作为一般性的最优性证明。
+
+生产页面使用 Playwright（当前没有 Browser 插件）验证了默认中文/浅色/kW/BoxLine、de-DE 和 pt-PT 语言匹配、成本 Cancel/Save、谷地满额采集和真实机器/功耗显示，以及四份根路径/子路径站点的外部游戏入口转回 aef 再进入列表。桌面 1366×900、移动 390×844 均有页面证据；移动表格沿原生设计横向滚动，无页面横向溢出。未观察到控制台错误/警告或其他游戏数据请求；未验证其他浏览器。
 
 ## 后续同步
 

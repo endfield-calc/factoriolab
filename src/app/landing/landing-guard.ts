@@ -2,14 +2,11 @@ import { inject } from '@angular/core';
 import { CanActivateFn, PRIMARY_OUTLET, Router } from '@angular/router';
 
 import { DEFAULT_MOD } from '~/data/datasets';
-import { PINNED_MOD_ID } from '~/extensions/defaults';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RouterSync } from '~/state/router/router-sync';
 
 export const landingGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const pinnedModId = inject(PINNED_MOD_ID);
-  const defaultId = pinnedModId ?? DEFAULT_MOD;
   const bypassLanding = inject(PreferencesStore).bypassLanding();
   if (bypassLanding) {
     const queryState = inject(RouterSync).stored();
@@ -21,11 +18,11 @@ export const landingGuard: CanActivateFn = (route) => {
     ) {
       const cached = router.parseUrl(queryState);
       const id = cached.root.children[PRIMARY_OUTLET]?.segments[0]?.path;
-      if (pinnedModId == null || id === pinnedModId) return cached;
+      if (id === DEFAULT_MOD) return cached;
     }
 
     // Navigate to list, preserving query params from target route
-    const id = route.paramMap.get('id') ?? defaultId;
+    const id = route.paramMap.get('id') ?? DEFAULT_MOD;
     return router.createUrlTree([id, 'list'], {
       queryParams: route.queryParams,
     });
@@ -33,7 +30,7 @@ export const landingGuard: CanActivateFn = (route) => {
 
   // If we are at root, redirect to default mod
   if (route.params['id'] == null)
-    return router.createUrlTree([defaultId], {
+    return router.createUrlTree([DEFAULT_MOD], {
       queryParams: route.queryParams,
     });
 

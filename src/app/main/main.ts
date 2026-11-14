@@ -12,8 +12,8 @@ import { Tabs } from '~/components/tabs/tabs';
 import { Release } from '~/data/release';
 import { EndfieldGuide } from '~/endfield/ui/guide';
 import { EndfieldResources } from '~/endfield/ui/resources';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
 import { Header } from './header/header';

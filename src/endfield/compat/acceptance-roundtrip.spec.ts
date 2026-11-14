@@ -5,7 +5,6 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
 import { MachinesStore } from '~/state/machines/machines-store';
@@ -20,6 +19,7 @@ import { Params } from '~/state/router/params';
 import { RouterSync, ZipState } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
 import {
@@ -116,7 +116,7 @@ describe('Endfield derived round trips', () => {
       ticket,
     );
     expect(lifecycle.ready())
-      .withContext(JSON.stringify(lifecycle.diagnostics()))
+      .withContext(JSON.stringify(lifecycle.errors()))
       .toBeTrue();
   }
 

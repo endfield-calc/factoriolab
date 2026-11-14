@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
-import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
-import { mutableValue } from '~/extensions/immutable';
+import {
+  createEndfieldState,
+  ovenId,
+  resourceOwner,
+} from '~/endfield/domain/model';
 import { rational } from '~/rational/rational';
 
 import { EndfieldStore } from './endfield-store';
@@ -11,36 +14,71 @@ describe('EndfieldStore', () => {
     TestBed.configureTestingModule({ providers: [EndfieldStore] }),
   );
 
-  it('owns immutable snapshots and projects resource settings to the supported fields', () => {
+  it('owns every input container and projects resource settings to supported fields', () => {
     const store = TestBed.inject(EndfieldStore);
+    const initial = createEndfieldState();
     const owners = new Set([resourceOwner('copper_ore')]);
     const source = {
       machineId: 'miner_4',
       overclock: rational(125),
       cost: rational(-1),
     };
-    store.set({
-      ...createEndfieldState(),
+    const rates = { ...initial.resourceLimits.rates, copper_ore: rational(5) };
+    const limits = { [ovenId]: rational(7) };
+    const resourceLimits = { enabled: true, rates };
+    const machineLimits = { enabled: true, limits };
+    const transfer = { enabled: true, source: 'tundra' as const };
+    const sourceSettings = { copper_ore: source };
+    const input = {
+      ...initial,
+      resourceLimits,
+      machineLimits,
+      transfer,
       checkedDerived: owners,
-      resourceRecipeSettings: { copper_ore: source },
-    });
+      resourceRecipeSettings: sourceSettings,
+      electric: rational(2),
+    };
+    store.set(input);
+
     owners.clear();
     source.machineId = 'other';
-    expect(
-      store.snapshot().checkedDerived.has(resourceOwner('copper_ore')),
-    ).toBeTrue();
-    expect(Reflect.get(store.snapshot().checkedDerived, 'add')).toBeUndefined();
-    expect(store.snapshot().resourceRecipeSettings.copper_ore).toEqual({
+    source.overclock = rational(200);
+    sourceSettings.copper_ore = { ...source, machineId: 'replacement' };
+    rates.copper_ore = rational(50);
+    limits[ovenId] = rational(70);
+    resourceLimits.enabled = false;
+    machineLimits.enabled = false;
+    transfer.enabled = false;
+    input.electric = rational(3);
+
+    const snapshot = store.snapshot();
+    expect(snapshot.checkedDerived.has(resourceOwner('copper_ore'))).toBeTrue();
+    expect(snapshot.resourceRecipeSettings.copper_ore).toEqual({
       machineId: 'miner_4',
       overclock: rational(125),
     });
-    expect(() =>
-      Object.assign(store.snapshot().resourceRecipeSettings.copper_ore!, {
-        machineId: 'bad',
-      }),
-    ).toThrow();
+    expect(snapshot.resourceLimits).toEqual({
+      enabled: true,
+      rates: { ...initial.resourceLimits.rates, copper_ore: rational(5) },
+    });
+    expect(snapshot.machineLimits).toEqual({
+      enabled: true,
+      limits: { [ovenId]: rational(7) },
+    });
+    expect(snapshot.transfer.enabled).toBeTrue();
+    expect(snapshot.electric).toEqual(rational(2));
+
     store.reset();
-    expect(mutableValue(store.snapshot())).toEqual(createEndfieldState());
+    expect(store.snapshot()).toEqual(createEndfieldState());
+    store.set(snapshot);
+    store.setResourceChecked('copper_ore', false);
+    store.updateResourceRecipeField('copper_ore', 'machineId', 'miner_2');
+    expect(snapshot.checkedDerived.has(resourceOwner('copper_ore'))).toBeTrue();
+    expect(snapshot.resourceRecipeSettings.copper_ore?.machineId).toBe(
+      'miner_4',
+    );
+    store.set(snapshot);
+    expect(store.snapshot()).toEqual(snapshot);
   });
 
   it('isolates per-resource edits and resets without changing physical rates or checks', () => {

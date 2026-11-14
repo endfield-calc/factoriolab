@@ -1,5 +1,4 @@
 import { Rational, rational } from '~/rational/rational';
-import { RecipeState } from '~/state/recipes/recipe-state';
 
 /** Resource IDs are also the stable keys of supply settings and owners. */
 export const resourceRecipes = {
@@ -16,9 +15,10 @@ export const resourceIds: readonly ResourceId[] = Object.keys(
   resourceRecipes,
 ) as ResourceId[];
 export const ovenId = 'xiranite_oven_1';
-export type SourceRecipeSettings = Readonly<
-  Pick<RecipeState, 'machineId' | 'overclock'>
->;
+export interface SourceRecipeSettings {
+  readonly machineId?: string;
+  readonly overclock?: Rational;
+}
 
 export interface EndfieldState {
   readonly version: 1;

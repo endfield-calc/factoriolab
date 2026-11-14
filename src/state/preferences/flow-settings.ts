@@ -13,7 +13,7 @@ export interface FlowSettings {
 }
 
 export const initialFlowSettings: FlowSettings = {
-  diagram: FlowDiagram.Sankey,
+  diagram: FlowDiagram.BoxLine,
   linkSize: LinkValue.Items,
   linkText: LinkValue.Items,
   sankeyAlign: SankeyAlign.Justify,

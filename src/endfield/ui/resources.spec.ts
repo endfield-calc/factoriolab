@@ -1,9 +1,9 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
 import { createEndfieldState } from '../domain/model';
@@ -13,9 +13,7 @@ import { EndfieldResources, perMinute, perSecond } from './resources';
 describe('EndfieldResources', () => {
   let fixture: ComponentFixture<EndfieldResources>;
   const ready = signal(true);
-  const diagnostics = signal([
-    { code: 'bad', message: 'Unable to restore', severity: 'error' as const },
-  ]);
+  const errors = signal(['Unable to restore']);
   const originalInput = signal('/aef/list?z=bad&v=11');
   const state = signal(createEndfieldState());
   const settings = signal({
@@ -48,7 +46,7 @@ describe('EndfieldResources', () => {
         },
         {
           provide: WorkspaceLifecycle,
-          useValue: { diagnostics, originalInput },
+          useValue: { errors, originalInput },
         },
         {
           provide: PreferencesStore,
@@ -84,7 +82,7 @@ describe('EndfieldResources', () => {
     });
   });
 
-  it('disables editing during restore and exposes warnings and the original URL', async () => {
+  it('disables editing during restore and exposes errors and the original URL', async () => {
     ready.set(false);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -239,7 +237,7 @@ describe('EndfieldResources preference recovery integration', () => {
           },
           {
             provide: WorkspaceLifecycle,
-            useValue: { diagnostics: signal([]), originalInput: signal('') },
+            useValue: { errors: signal([]), originalInput: signal('') },
           },
         ],
       }).compileComponents();

@@ -4,7 +4,6 @@ import { defer, of, Subject } from 'rxjs';
 
 import { Confirm } from '~/components/confirm/confirm';
 import { DEFAULT_MOD } from '~/data/datasets';
-import { WorkspaceState } from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
 import { ItemId } from '~/tests/item-id';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
@@ -29,6 +28,7 @@ import { ZTRUE } from './constants';
 import { LabParams } from './lab-params';
 import {
   MIN_ZIP,
+  PartialState,
   RouterSync,
   ZipMachineSettings,
   ZipState,
@@ -146,6 +146,7 @@ const mockZipPartial: ZipData<LabParams> = {
     cma: '10',
     cun: '0',
     cex: '100',
+    csu: '0',
     cmx: '-1000',
     iex: 'C',
     och: 'A',
@@ -177,6 +178,7 @@ const mockZipPartial: ZipData<LabParams> = {
     cma: '10',
     cun: '0',
     cex: '100',
+    csu: '0',
     cmx: '-1000',
     iex: 'C',
     och: 'A',
@@ -188,7 +190,7 @@ const mockZipPartial: ZipData<LabParams> = {
   },
 };
 
-const mockEmpty: WorkspaceState = {
+const mockEmpty: PartialState = {
   objectivesState: undefined,
   itemsState: undefined,
   recipesState: undefined,
@@ -197,7 +199,7 @@ const mockEmpty: WorkspaceState = {
   tableState: undefined,
 };
 
-const mockState: WorkspaceState = {
+const mockState: PartialState = {
   objectivesState: mockObjectivesState,
   itemsState: mockItemsState,
   recipesState: mockRecipesState,
@@ -309,7 +311,7 @@ describe('RouterSync', () => {
       expect(result).toEqual(mockZipData());
     });
 
-    it('uses native serialization defaults for the neutral product', () => {
+    it('emits costs that differ from the native serialization defaults', () => {
       const result = service.zipState({
         objectives: {},
         items: {},
@@ -498,7 +500,7 @@ describe('RouterSync', () => {
     delete mockStateV10.settingsState?.costs?.recycling;
     delete mockStateV10.settingsState?.recipeCostMultiplier;
 
-    const mockStateV8: WorkspaceState = spread(mockStateV10, {
+    const mockStateV8: PartialState = spread(mockStateV10, {
       settingsState: spread(mockStateV10.settingsState),
     });
     delete mockStateV8.settingsState?.checkedObjectiveIds;
@@ -507,7 +509,7 @@ describe('RouterSync', () => {
     delete mockStateV8.settingsState?.checkedRecipeIds;
     delete mockStateV8.settingsState?.researchedTechnologyIds;
 
-    const mockStateV6: WorkspaceState = spread(mockStateV8, {
+    const mockStateV6: PartialState = spread(mockStateV8, {
       objectivesState: mockMigratedObjectivesState,
       settingsState: spread(mockStateV8.settingsState, {
         costs: spread(mockStateV8.settingsState?.costs),
@@ -518,17 +520,17 @@ describe('RouterSync', () => {
     delete mockStateV6.settingsState?.costs?.surplus;
     delete mockStateV6.settingsState?.costs?.maximize;
 
-    const mockStateV3: WorkspaceState = spread(mockStateV6, {
+    const mockStateV3: PartialState = spread(mockStateV6, {
       settingsState: spread(mockStateV6.settingsState),
     });
     delete mockStateV3.settingsState?.netProductionOnly;
 
-    const mockStateV1: WorkspaceState = spread(mockStateV3, {
+    const mockStateV1: PartialState = spread(mockStateV3, {
       objectivesState: mockState.objectivesState,
       settingsState: spread(mockStateV3.settingsState),
     });
 
-    const mockStateV0: WorkspaceState = spread(mockStateV3, {
+    const mockStateV0: PartialState = spread(mockStateV3, {
       objectivesState: mockMigratedObjectivesState,
       settingsState: spread(mockStateV1.settingsState),
     });
@@ -538,18 +540,19 @@ describe('RouterSync', () => {
 
     beforeEach(() => {
       dispatch = spyOn(service, 'dispatch');
-      spyOn(service['appRef'], 'tick');
-      spyOn(service['settingsStore'], 'apply').and.callThrough();
-      (service as any).resources = defer(() =>
-        of({
-          modId: service['settingsStore'].modId(),
-          data: mockModData,
-          hash: mockModHash,
-          loading: false,
-          error: undefined,
-        }),
-      );
     });
+
+    async function restoreNative(params: Params, query: Params): Promise<void> {
+      const unpacked = await service.unzipQueryParams(query);
+      const migrated = service['migration'].migrate(params['id'], unpacked);
+      service.updateState(
+        migrated.modId,
+        migrated.params,
+        migrated.isBare,
+        mockModData,
+        mockModHash,
+      );
+    }
 
     it('should skip if loading empty, current state', () => {
       spyOn(service['ready'], 'set');
@@ -557,41 +560,28 @@ describe('RouterSync', () => {
       expect(service['ready'].set).toHaveBeenCalled();
     });
 
-    it('should unzip empty v0', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrsAUAAR8Arg==' });
+    it('should unzip empty v0', async () => {
+      await restoreNative({}, { z: 'eJwrsAUAAR8Arg==' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v0', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV0);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v0', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJxtUMsKwjAQ.BpzWIgkLYiX4MX.KHlsaiBNah5KL367SCu0WvayO8wOMzOKXBA91TfMBThwct8iRAlO3A-rJBnyGFOhCn0BLVMf6VP2MZC0ocqccVDehZ4OUt9cQNoAWuu0w6AnOkRTPb7-EOCQR0TzJawPUCh1DNAwBpwxOBMrOIwpmqqLe7gy7X5tFReRbs9gNyewNQWpkWTBjwwO7XUneJQe-MdIe1rczLNqBKyvziz75Q02PYE.',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV0, true);
     });
 
-    it('should unzip empty v1', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { p: '', v: '1' });
+    it('should unzip empty v1', async () => {
+      await restoreNative({}, { p: '', v: '1' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v1', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV1);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v1', async () => {
+      await restoreNative(
         {},
         {
           p: 'steel-chest*1*1',
@@ -608,64 +598,46 @@ describe('RouterSync', () => {
           v: '1',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV1, true);
     });
 
-    it('should unzip empty v2', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCszAgADVAE.' });
+    it('should unzip empty v2', async () => {
+      await restoreNative({}, { z: 'eJwrUCszAgADVAE.' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v2', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV1);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v2', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwdjDEKgDAQBH9zxVR3qWxELgmIYOcDAhaC2IiCdnm7xG52FuZMGCZrlL2R43IlZnLNRLw6TlDFVOlkM8bq7cDLXCa5A0ZPU8tLPHAU.UORgYD9swUY5QkfxkgZkw__',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV1, true);
     });
 
-    it('should unzip empty v3', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCszBgADVQFA' });
+    it('should unzip empty v3', async () => {
+      await restoreNative({}, { z: 'eJwrUCszBgADVQFA' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v3', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV3);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v3', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwlzD0KAjEQQOHbTPGqmdjYyDKTQBDSeYAFiwWx8QfcLmdfEssPHu-VMUzeGZN7yGPQcflkGqWXwe44SRVT5SybUbv.u7WtV.kmjAtOcNuJJ46iMwgWEjY5BlT5nQ5Gmhqn',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
     });
 
-    it('should unzip empty v4', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { p: '', v: '4' });
+    it('should unzip empty v4', async () => {
+      await restoreNative({}, { p: '', v: '4' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v4', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV3);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v4', async () => {
+      await restoreNative(
         {},
         {
           p: 'steel-chest*1*1',
@@ -681,44 +653,32 @@ describe('RouterSync', () => {
           v: '4',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
     });
 
-    it('should unzip empty v5', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCszBQADVwFC', v: '5' });
+    it('should unzip empty v5', async () => {
+      await restoreNative({}, { z: 'eJwrUCszBQADVwFC', v: '5' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v5', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV3);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v5', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwlyzsKgDAQRdHdTHGrmYBgYzGJIIKdCxAsBLHxA9pl7RLt3oF394RhciRM5ihroeNyJgba3BZmxwmqmCq1LEaX.f9Nw9TLFTAanMj4EDccRT8TsLJLaXRyVy.3cxoP',
           v: '5',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
     });
 
-    it('should unzip empty v6', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { p: '', v: '6' });
+    it('should unzip empty v6', async () => {
+      await restoreNative({}, { p: '', v: '6' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v6', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV6);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v6', async () => {
+      await restoreNative(
         {},
         {
           p: 'steel-chest*1*1',
@@ -737,83 +697,63 @@ describe('RouterSync', () => {
           v: '6',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV6, true);
     });
 
-    it('should unzip empty v7', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCszBwADWQFE', v: '7' });
+    it('should unzip empty v7', async () => {
+      await restoreNative({}, { z: 'eJwrUCszBwADWQFE', v: '7' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v7', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV6);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v7', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwli70Kg0AQBt9mi6n2u0abFHsnSMDOBxACCiFNfsB09-xy2s0wzLsgZJ-CbBVRg6C3R7ZnK0HYtzAx1AEnuSN328RY4-rLtNztlxA3gsz8J78IHD-dhBqrvYzI9u4AgQEbJw__',
           v: '7',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV6, true);
     });
 
-    it('should unzip empty v8', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCuzAAADWgFF', v: '8' });
+    it('should unzip empty v8', async () => {
+      await restoreNative({}, { z: 'eJwrUCuzAAADWgFF', v: '8' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v8', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV8);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v8', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwlirEKwkAUBP.mFQPC7lXp5F0CQUjnBwQEBbERBe3u2-XOZmFm9jljHFeTLUmmuNS4d5lkvGbYWNqCKBKW4mbWlv.Dvu2neB8pAyvnL.VBIjQYs45UcHdW34MlxWf6ARkEG.w_',
           v: '8',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV8, true);
     });
 
-    it('should unzip empty v9', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJwrUCuzBAADWwFG', v: '9' });
+    it('should unzip empty v9', async () => {
+      await restoreNative({}, { z: 'eJwrUCuzBAADWwFG', v: '9' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v9', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV8);
-        done();
-      });
-      mockRoute.next(
+    it('should unzip v9', async () => {
+      await restoreNative(
         {},
         {
           z: 'eJwlijEKwzAQBH9zxYBhT5VTmZMNJuAuDxAEHAhuTAJJp7cHKVsszOyeM47b7kQNgtHu2Z5NBmGvGTaWuiCShEslaLGHs9b4.8pWrvaeSB0zty.5IBDqjLP2KeHNuVoPLsk-lx.byh1v',
           v: '9',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV8, true);
     });
 
-    it('should unzip empty v10', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmptyV10);
-        done();
-      });
-      mockRoute.next({}, { z: 'eJyrsjU0AAADNQEZ', v: '10' });
+    it('should unzip empty v10', async () => {
+      await restoreNative({}, { z: 'eJyrsjU0AAADNQEZ', v: '10' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
     });
 
-    it('should unzip v10', (done) => {
+    it('should unzip v10', async () => {
       // void service['compression']
       //   .inflate(
       //     'eJw1j82KQzEIhd.GhVDQrGZzFpkMlIG-RJPJpVnYe7F.d9VnLwbGhRz184hPqNKKwsrKEbS2CzINFM6c6aky-o4yRbugkKPwiZWFkwirSIz8n.HJmDlO71-yxfFN1h3HdyarHRrQ3TvKgdY.RyLbHEqj9ri6ODSJULWBsK7eIVRHg5CNO4RGe03wFcY1Vm274Uh-3aC0WjBtOSNRszNUqD2u0er7NGy3R1S246AiQh2J88w.1MGZKuK1zF9TJc4fagVRSA__',
@@ -821,32 +761,23 @@ describe('RouterSync', () => {
       //   .then((x) => {
       //     console.log(x);
       //   });
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV10);
-        done();
-      });
-      mockRoute.next(
+
+      await restoreNative(
         {},
         {
           z: 'eJwdjL0KwkAQhN9miw8CO1vZWOxFCEI6H-BAMBBEEAXtfHbZGxgY5u85I8SA7Cac5NBFkHZttleeJLJXyZWqhDsq2nZk-SWi9bWf7T1PxFhcvrQ7iY.HBmIZQaDyau5Mcnf7yO0RZA9OnfwDX7ggSw__',
           v: '10',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV10, true);
     });
 
-    it('should unzip empty v11', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockEmpty);
-        done();
-      });
-      mockRoute.next({ id: '1.0' }, { z: 'eJyrsjU0BAADNgEa', v: '11' });
+    it('should unzip empty v11', async () => {
+      await restoreNative({ id: '1.0' }, { z: 'eJyrsjU0BAADNgEa', v: '11' });
+      expect(dispatch).toHaveBeenCalledWith(mockEmpty, true);
     });
 
-    it('should unzip v11', (done) => {
-      dispatch.and.callFake((v) => {
-        expect(v).toEqual(mockStateV10);
-        done();
-      });
+    it('should unzip v11', async () => {
       // void service['compression']
       //   .inflate(
       //     'eJwdjL0KwkAQhN9miw8CO1vZWOxFCEI6H-BAMBBEEAXtfHbZGxgY5u85I8SA7Cac5NBFkHZttleeJLJXyZWqhDsq2nZk-SWi9bWf7T1PxFhcvrQ7iY.HBmIZQaDyau5Mcnf7yO0RZA9OnfwDX7ggSw__',
@@ -861,13 +792,14 @@ describe('RouterSync', () => {
       //   .then((x) => {
       //     console.log(x);
       //   });
-      mockRoute.next(
+      await restoreNative(
         { id: '1.0' },
         {
           z: 'eJw1j82KQzEIhd.GhVDQrGZzFpkMlIG-RJPJpVnYe7F.d9VnLwbGhRz184hPqNKKwsrKEbS2CzINFM6c6aky-o4yRbugkKPwiZWFkwirSIz8n.HJmDlO71-yxfFN1h3HdyarHRrQ3TvKgdY.RyLbHEqj9ri6ODSJULWBsK7eIVRHg5CNO4RGe03wFcY1Vm274Uh-3aC0WjBtOSNRszNUqD2u0er7NGy3R1S246AiQh2J88w.1MGZKuK1zF9TJc4fagVRSA__',
           v: '11',
         },
       );
+      expect(dispatch).toHaveBeenCalledWith(mockStateV10, true);
     });
   });
 

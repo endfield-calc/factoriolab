@@ -4,9 +4,8 @@ import { loadModule } from 'glpk-ts';
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { RecipeDetail } from '~/app/main/data/recipe-detail/recipe-detail';
-import { Machine } from '~/data/schema/machine';
 import { ModData } from '~/data/schema/mod-data';
-import { Recipe, RecipeFlag } from '~/data/schema/recipe';
+import { Recipe } from '~/data/schema/recipe';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
@@ -24,12 +23,11 @@ import { setInputs } from '~/tests/utils';
 import { calculateEndfieldRecipeCost, EndfieldRecipeCostInput } from './cost';
 
 describe('Endfield recipe costs', () => {
-  const machine: Machine = { usage: rational(50), size: [5, 5] };
   const defaults = (): EndfieldRecipeCostInput => ({
-    raw: { flags: new Set<RecipeFlag>() },
-    recipeSettings: {},
-    machine,
-    costs: { ...initialSettingsState.costs, recycling: rational(1000) },
+    usage: rational(50),
+    area: rational(25),
+    recycling: false,
+    weights: { ...initialSettingsState.costs, recycling: rational(1000) },
     electric: rational.one,
   });
 
@@ -38,33 +36,43 @@ describe('Endfield recipe costs', () => {
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        raw: { flags: new Set(['recycling']), cost: rational(-30) },
-        recipeSettings: { cost: rational.zero },
+        recycling: true,
+        declaredCost: rational(-30),
+        overrideCost: rational.zero,
       }),
     ).toEqual(rational.zero);
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        raw: { flags: new Set(['recycling']), cost: rational(2) },
+        recycling: true,
+        declaredCost: rational(2),
       }),
     ).toEqual(rational(2000));
+    expect(
+      calculateEndfieldRecipeCost({
+        ...input,
+        recycling: true,
+        declaredCost: rational(2),
+        overrideCost: rational(-3),
+      }),
+    ).toEqual(rational(-3000));
   });
 
   it('uses raw zero and negative declared cost regardless of output or machine', () => {
     const input = defaults();
-    const costs = { ...input.costs, factor: rational(2) };
+    const weights = { ...input.weights, factor: rational(2) };
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        costs,
-        raw: { flags: new Set(), cost: rational(-30) },
+        weights,
+        declaredCost: rational(-30),
       }),
     ).toEqual(rational(-60));
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        costs,
-        raw: { flags: new Set(), cost: rational.zero },
+        weights,
+        declaredCost: rational.zero,
       }),
     ).toEqual(rational.zero);
   });
@@ -78,34 +86,37 @@ describe('Endfield recipe costs', () => {
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        costs: { ...input.costs, footprint: rational.zero },
+        weights: { ...input.weights, footprint: rational.zero },
       }),
     ).toEqual(rational(50));
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        costs: { ...input.costs, footprint: rational(5) },
+        weights: { ...input.weights, footprint: rational(5) },
       }),
     ).toEqual(rational(75));
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        machine: { usage: rational(-50) },
+        usage: rational(-50),
+        area: undefined,
       }),
     ).toEqual(rational(-50));
     expect(
       calculateEndfieldRecipeCost({
         ...input,
         electric: rational.zero,
-        machine: {},
+        usage: undefined,
+        area: undefined,
       }),
-    ).toEqual(input.costs.machine);
+    ).toEqual(input.weights.machine);
     expect(
       calculateEndfieldRecipeCost({
         ...input,
-        machine: { usage: rational(-25), size: [5, 5] },
+        usage: rational(-25),
+        area: rational(25),
       }),
-    ).toEqual(input.costs.machine);
+    ).toEqual(input.weights.machine);
   });
 });
 

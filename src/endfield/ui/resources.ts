@@ -12,9 +12,9 @@ import { Button } from '~/components/button/button';
 import { Checkbox } from '~/components/checkbox/checkbox';
 import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
 import { ovenId, ResourceId, resourceIds } from '../domain/model';

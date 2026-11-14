@@ -1,7 +1,7 @@
 import { inject, Service, signal } from '@angular/core';
 
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 
 import {
   applyEndfieldAction,

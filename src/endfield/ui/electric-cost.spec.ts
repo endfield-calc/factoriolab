@@ -6,14 +6,12 @@ import { By } from '@angular/platform-browser';
 import { CostSettingsDialog } from '~/app/main/settings/cost-settings-dialog/cost-settings-dialog';
 import { Button } from '~/components/button/button';
 import { Modules } from '~/components/modules/modules';
-import { createEndfieldDefaults } from '~/endfield/product/product';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import { EFFECTIVE_DEFAULTS, PINNED_MOD_ID } from '~/extensions/defaults';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { ItemId } from '~/tests/item-id';
 import { mockModI18n } from '~/tests/mocks/data';
 import { mockModuleSettings } from '~/tests/mocks/settings';
@@ -70,10 +68,7 @@ describe('CostSettingsDialog with Endfield defaults', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: [
-        ...provideEndfield(),
-        { provide: PINNED_MOD_ID, useValue: undefined },
-      ],
+      providers: provideEndfield(),
     }).compileComponents();
     settings = TestBed.inject(SettingsStore);
     endfield = TestBed.inject(EndfieldStore);
@@ -242,10 +237,7 @@ describe('CostSettingsDialog with Endfield defaults', () => {
     const restore = preservePreferences();
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: [
-        ...provideEndfield(),
-        { provide: PINNED_MOD_ID, useValue: undefined },
-      ],
+      providers: provideEndfield(),
     }).compileComponents();
     const cost = TestBed.createComponent(CostSettingsDialog);
     cost.detectChanges();
@@ -273,11 +265,10 @@ describe('CostSettingsDialog with Endfield defaults', () => {
 
     await createModules();
     expect(TestBed.inject(PreferencesStore).language()).toBe('zh');
-    const leakedRequest = TestBed.inject(HttpTestingController).expectOne(
-      'data/2.0/i18n/zh.json',
+    TestBed.inject(HttpTestingController).expectNone((request) =>
+      request.url.startsWith('data/2.0/'),
     );
     restore();
-    expect(leakedRequest.cancelled).toBeTrue();
     expect(localStorage.getItem('preferences')).toBe(original);
 
     const next = await createModules();
@@ -392,17 +383,11 @@ describe('CostSettingsDialog with Endfield defaults', () => {
   });
 });
 
-describe('CostSettingsDialog effective defaults', () => {
+describe('CostSettingsDialog native defaults', () => {
   isolatePreferences();
-  it('compares rational values and resets to the effective product costs', async () => {
+  it('compares rational values and resets to the native costs', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: [
-        {
-          provide: EFFECTIVE_DEFAULTS,
-          useValue: createEndfieldDefaults(false, 'zh'),
-        },
-      ],
     }).compileComponents();
     const fixture = TestBed.createComponent(CostSettingsDialog);
     fixture.detectChanges();

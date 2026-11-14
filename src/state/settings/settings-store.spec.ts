@@ -1,10 +1,18 @@
+import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { CUSTOM_MOD, Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { EnergyType } from '~/data/schema/energy-type';
+import { emptyModData } from '~/data/schema/mod-data';
 import { QualityJson } from '~/data/schema/quality';
 import { rational } from '~/rational/rational';
+import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { ItemId } from '~/tests/item-id';
 import {
   mockDefaults11,
@@ -42,6 +50,13 @@ describe('SettingsStore', () => {
     expect(service).toBeTruthy();
   });
 
+  it('keeps a store cost and its sets separate from native defaults', () => {
+    service.state().costs.surplus = rational(5);
+    service.state().checkedItemIds.add('test');
+    expect(initialSettingsState.costs.surplus.eq(rational.one)).toBeTrue();
+    expect(initialSettingsState.checkedItemIds.size).toBe(0);
+  });
+
   describe('customIconsUrl', () => {
     it('should return an object url', () => {
       spyOn(service.customIcons, 'value').and.returnValue({} as any);
@@ -61,18 +76,24 @@ describe('SettingsStore', () => {
   });
 
   describe('modDataResource', () => {
-    it('should return undefined if custom', () => {
+    it('keeps a trusted fixture and makes no custom data request', () => {
       service.apply({ modId: CUSTOM_MOD });
       TestBed.tick();
-      expect(service['modDataResource'].value()).toBeUndefined();
+      expect(service['modDataResource'].value()).toEqual(mockModData);
+      TestBed.inject(HttpTestingController).expectNone(
+        `data/${CUSTOM_MOD}/data.json`,
+      );
     });
   });
 
   describe('modHashResource', () => {
-    it('should return undefined if custom', () => {
+    it('keeps a trusted fixture and makes no custom hash request', () => {
       service.apply({ modId: CUSTOM_MOD });
       TestBed.tick();
-      expect(service['modHashResource'].value()).toBeUndefined();
+      expect(service['modHashResource'].value()).toEqual(mockModHash);
+      TestBed.inject(HttpTestingController).expectNone(
+        `data/${CUSTOM_MOD}/hash.json`,
+      );
     });
   });
 
@@ -151,6 +172,14 @@ describe('SettingsStore', () => {
     });
   });
 
+  describe('modInfo', () => {
+    it('handles an unknown dataset without inventing registry metadata', () => {
+      service.apply({ modId: 'missing-dataset' });
+      expect(service.modInfo()).toBeUndefined();
+      expect(service.game()).toBe('factorio');
+    });
+  });
+
   describe('game', () => {
     it('should return the game or Factorio', () => {
       expect(service.game()).toEqual('factorio');
@@ -199,8 +228,23 @@ describe('SettingsStore', () => {
   });
 
   describe('modOptions', () => {
-    it('should get mod options for a game', () => {
-      expect(service.modOptions().length).toBeGreaterThan(0);
+    it('offers only the Endfield dataset', () => {
+      expect(service.modOptions()).toEqual([]);
+      service.apply({ modId: 'aef' });
+      expect(service.modOptions()).toEqual([
+        { value: 'aef', label: 'options.game.endfield' },
+      ]);
+    });
+
+    it('does not use unlisted dataset metadata as the Endfield option label', () => {
+      spyOn(service, 'modInfo').and.returnValue({
+        id: 'other-endfield-dataset',
+        game: 'endfield',
+        name: 'Unlisted dataset',
+      });
+      expect(service.modOptions()).toEqual([
+        { value: 'aef', label: 'options.game.endfield' },
+      ]);
     });
   });
 
@@ -808,5 +852,50 @@ describe('SettingsStore', () => {
       expect(result.researchProductivity).toEqual(rational(50n));
       expect(result.recipeBonus[RecipeId.SteelPlate]).toEqual(rational(80n));
     });
+  });
+});
+
+describe('SettingsStore dataset HTTP boundary', () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('loads aef and clears its resources without requesting foreign data', async () => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const settings = TestBed.inject(SettingsStore);
+    const preferences = TestBed.inject(PreferencesStore);
+    const http = TestBed.inject(HttpTestingController);
+    expect(settings.gameOptions.map((option) => option.value)).toEqual([
+      'endfield',
+    ]);
+    preferences.apply({ language: 'zh' });
+    settings.apply({ modId: 'aef' });
+    TestBed.tick();
+    const data = emptyModData();
+    data.version = { game: 'aef' };
+    http.expectOne('data/aef/data.json').flush(data);
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    http.expectOne('data/aef/i18n/zh.json').flush(mockModI18n);
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.modData()?.version).toEqual({ game: 'aef' });
+    expect(settings.modHash()).toEqual(mockModHash);
+    expect(settings.modI18n()).toEqual(mockModI18n);
+
+    settings.apply({ modId: '2x1' });
+    expect(settings.modData()).toBeUndefined();
+    expect(settings.modHash()).toBeUndefined();
+    expect(settings.modI18n()).toBeUndefined();
+    expect(settings.modInfo()?.id).toBe('2x1');
+    expect(settings.modOptions()).toEqual([]);
+    TestBed.tick();
+    http.expectNone((request) => request.url.startsWith('data/2x1/'));
+
+    settings.apply({ modId: CUSTOM_MOD });
+    TestBed.tick();
+    http.expectNone((request) => request.url.startsWith(`data/${CUSTOM_MOD}/`));
+    http.verify({ ignoreCancelled: true });
   });
 });

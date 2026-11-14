@@ -16,7 +16,6 @@ import { of, Subject } from 'rxjs';
 import { App } from '~/app/app';
 import { Flow, SVG_ID } from '~/app/main/flow/flow';
 import { Main } from '~/app/main/main';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { FlowBuilder } from '~/flow/flow-builder';
 import { FlowData } from '~/flow/flow-data';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
@@ -25,10 +24,13 @@ import {
   initialFlowSettings,
 } from '~/state/preferences/flow-settings';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { Mocks } from '~/tests/mocks/mocks';
 import { TestModule } from '~/tests/test-module';
 import { assert } from '~/tests/utils';
 import { spread } from '~/utils/object';
+
+const sankeySettings = { ...initialFlowSettings, diagram: FlowDiagram.Sankey };
 
 describe('workspace recovery interaction', () => {
   it('disables workspace editors until ready but leaves the header and panels usable', async () => {
@@ -126,7 +128,7 @@ describe('Flow recovery and source labels', () => {
 
     mocks = TestBed.inject(Mocks);
     liveFlow = signal<FlowData | null>(null);
-    liveSettings = signal(initialFlowSettings);
+    liveSettings = signal(sankeySettings);
     spyOn(TestBed.inject(FlowBuilder), 'flowData').and.callFake(liveFlow);
     spyOn(TestBed.inject(PreferencesStore), 'flowSettings').and.callFake(
       liveSettings,
@@ -236,7 +238,7 @@ describe('Flow recovery and source labels', () => {
     it('ignores an older layout after switching to Sankey', async () => {
       const layouts = delayedLayouts();
       const oldRender = component.rebuildChart(namedFlow('old'), boxSettings);
-      await component.rebuildChart(namedFlow('sankey'), initialFlowSettings);
+      await component.rebuildChart(namedFlow('sankey'), sankeySettings);
       await layouts.complete(0);
       await oldRender;
       expect(container().querySelectorAll(':scope > svg').length).toBe(1);
@@ -251,7 +253,7 @@ describe('Flow recovery and source labels', () => {
       await layouts.complete(0);
       await render;
       await component.rebuildChart(mocks.flow(), boxSettings);
-      component.rebuildSankey(mocks.flow(), initialFlowSettings);
+      component.rebuildSankey(mocks.flow(), sankeySettings);
       await component.rebuildBoxLine(mocks.flow(), boxSettings);
       expect(layouts.count()).toBe(1);
       expect(element.querySelector('svg')).toBeNull();
@@ -285,7 +287,7 @@ describe('Flow recovery and source labels', () => {
       await new Promise((resolve) => setTimeout(resolve, 250));
       expect(layouts.count()).toBe(1);
 
-      liveSettings.set(initialFlowSettings);
+      liveSettings.set(sankeySettings);
       await layouts.complete(0);
       expect(container().querySelector('svg')).toBeNull();
 
@@ -299,11 +301,11 @@ describe('Flow recovery and source labels', () => {
   describe('rebuildSankey', () => {
     beforeEach(() => {
       select(`#${SVG_ID} > *`).remove();
-      component.rebuildSankey(mocks.flow(), initialFlowSettings);
+      component.rebuildSankey(mocks.flow(), sankeySettings);
     });
     it('uses safe objective labels and keeps the selected step', () => {
       select(container()).selectAll('*').remove();
-      component.rebuildSankey(labeledFlow(), initialFlowSettings);
+      component.rebuildSankey(labeledFlow(), sankeySettings);
       expectSafeLabelsAndSelection();
     });
   });

@@ -8,10 +8,6 @@ import { ModHash } from '~/data/schema/mod-hash';
 import { createEndfieldState, EndfieldState } from '~/endfield/domain/model';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import {
-  WorkspaceRestoreError,
-  WorkspaceState,
-} from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
 import { MachinesStore } from '~/state/machines/machines-store';
@@ -20,7 +16,7 @@ import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { RecipesStore } from '~/state/recipes/recipes-store';
 import { Migration } from '~/state/router/migration';
-import { RouterSync } from '~/state/router/router-sync';
+import { type PartialState, RouterSync } from '~/state/router/router-sync';
 import { DisplayRate } from '~/state/settings/display-rate';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
@@ -65,22 +61,8 @@ const supportedData: ModData = {
   ],
 };
 
-function expectDiagnostic(
-  action: () => unknown,
-  field: string,
-  code = 'invalid-endfield-state',
-): void {
-  let thrown: unknown;
-  try {
-    action();
-  } catch (error) {
-    thrown = error;
-  }
-  expect(thrown).toBeInstanceOf(WorkspaceRestoreError);
-  if (thrown instanceof WorkspaceRestoreError)
-    expect(thrown.diagnostics).toEqual([
-      jasmine.objectContaining({ field, code, severity: 'error' }),
-    ]);
+function expectRestoreError(action: () => unknown, context: string): void {
+  expect(action).withContext(context).toThrowError(Error);
 }
 function objective(
   id: string,
@@ -100,9 +82,9 @@ function objective(
   };
 }
 function decode(
-  state: WorkspaceState,
+  state: PartialState,
   params: Record<string, string> = { v: '12' },
-): { state: WorkspaceState; extension: EndfieldState } {
+): { state: PartialState; extension: EndfieldState } {
   validateCurrentWorkspace(state, data);
   return { state, extension: decodeEndfield(params['ef'], data) };
 }
@@ -118,7 +100,10 @@ describe('Endfield workspace restoration', () => {
         ObjectiveUnit.Machines,
       );
       const state = { objectivesState: { 1: entry } };
-      expectDiagnostic(() => decode(state, { v: '12' }), 'objectives.1.value');
+      expect(() => decode(state, { v: '12' })).toThrowError(
+        Error,
+        'Expected a nonnegative rational at objectives.1.value',
+      );
       expect(state.objectivesState[1]).toBe(entry);
       expect(entry.value).toEqual(rational(-1));
     }
@@ -149,43 +134,43 @@ describe('Endfield workspace restoration', () => {
   });
 
   it('validates detached enum and table values, including custom preset IDs', () => {
-    const invalidCases: [WorkspaceState, string][] = [
+    const invalidCases: [PartialState, string][] = [
       ...[-1, 4, 999, 1.5, NaN, Infinity].map(
-        (value): [WorkspaceState, string] => [
+        (value): [PartialState, string] => [
           { settingsState: { displayRate: value } },
-          'settings.displayRate',
+          'Unknown display rate',
         ],
       ),
       ...[-1, 2, 999, 0.5, NaN, Infinity].map(
-        (value): [WorkspaceState, string] => [
+        (value): [PartialState, string] => [
           { settingsState: { maximizeType: value } },
-          'settings.maximizeType',
+          'Unknown maximize type',
         ],
       ),
       ...[-1, 1, 999, 0.5, NaN, Infinity].map(
-        (value): [WorkspaceState, string] => [
+        (value): [PartialState, string] => [
           { settingsState: { preset: value } },
-          'settings.preset',
+          'Unknown preset',
         ],
       ),
-      ...[-1, 0.5, NaN, Infinity].map((page): [WorkspaceState, string] => [
+      ...[-1, 0.5, NaN, Infinity].map((page): [PartialState, string] => [
         { tableState: { page } },
-        'table.page',
+        'Expected a nonnegative integer page',
       ]),
-      ...[-1, 0, 0.5, NaN, Infinity].map((rows): [WorkspaceState, string] => [
+      ...[-1, 0, 0.5, NaN, Infinity].map((rows): [PartialState, string] => [
         { tableState: { rows } },
-        'table.rows',
+        'Expected a positive integer row count',
       ]),
     ];
-    for (const [state, field] of invalidCases) {
-      expectDiagnostic(() => {
+    for (const [state, message] of invalidCases) {
+      expect(() => {
         validateCurrentWorkspace(state, data);
-      }, field);
-      expectDiagnostic(() => decode(state, { v: '12' }), field);
+      }).toThrowError(Error, message);
+      expect(() => decode(state, { v: '12' })).toThrowError(Error, message);
     }
     for (const displayRate of [0, 1, 2, 3])
       for (const maximizeType of [0, 1]) {
-        const state: WorkspaceState = {
+        const state: PartialState = {
           settingsState: { displayRate, maximizeType, preset: 0 },
           tableState: { page: 0, rows: 37 },
         };
@@ -198,7 +183,7 @@ describe('Endfield workspace restoration', () => {
       ...data,
       defaults: { presets: [{ id: 7, label: 'custom' }] },
     };
-    const state: WorkspaceState = { settingsState: { preset: 7 } };
+    const state: PartialState = { settingsState: { preset: 7 } };
     expect(() => {
       validateCurrentWorkspace(state, customData);
     }).not.toThrow();
@@ -218,14 +203,17 @@ describe('Endfield workspace restoration', () => {
         value,
       } as unknown as ObjectiveState;
       const input = { objectivesState: { 1: entry } };
-      expectDiagnostic(() => decode(input, { v: '12' }), 'objectives.1.value');
+      expect(() => decode(input, { v: '12' })).toThrowError(
+        Error,
+        'Expected a rational objective value',
+      );
       expect(input.objectivesState[1]).toBe(entry);
       expect(entry.value as unknown).toBe(value);
     }
   });
 
   it('validates ordinary setting IDs before commit and retains valid state', () => {
-    const state: WorkspaceState = {
+    const state: PartialState = {
       itemsState: { copper_ore: { beltId: 'belt', wagonId: 'test-wagon' } },
       recipesState: {
         'copper_ore-liquid_water': {
@@ -269,7 +257,7 @@ describe('Endfield workspace restoration', () => {
   });
 
   it('reports the field of invalid ordinary and global setting references', () => {
-    const cases: [WorkspaceState, string][] = [
+    const cases: [PartialState, string][] = [
       [
         { itemsState: { copper_ore: { beltId: 'missing' } } },
         'items.copper_ore.beltId',
@@ -353,7 +341,7 @@ describe('Endfield workspace restoration', () => {
       ],
     ];
     for (const [state, field] of cases)
-      expectDiagnostic(() => {
+      expectRestoreError(() => {
         validateCurrentWorkspace(state, supportedData);
       }, field);
   });
@@ -362,7 +350,7 @@ describe('Endfield workspace restoration', () => {
     const invalid = objective('1', 'missing', 0, -1, ObjectiveUnit.Machines, {
       overclock: rational.zero,
     });
-    expectDiagnostic(() => {
+    expectRestoreError(() => {
       validateCurrentWorkspace({ objectivesState: { 1: invalid } }, data);
     }, 'objectives.1.targetId');
     const invalidUnit = objective(
@@ -372,7 +360,7 @@ describe('Endfield workspace restoration', () => {
       1,
       999 as ObjectiveUnit,
     );
-    expectDiagnostic(() => {
+    expectRestoreError(() => {
       validateCurrentWorkspace({ objectivesState: { 1: invalidUnit } }, data);
     }, 'objectives.1.unit');
     const unsupported = [11, 12, 13, 14, 999].map((type, index) =>
@@ -385,7 +373,7 @@ describe('Endfield workspace restoration', () => {
         { overclock: rational.zero },
       ),
     );
-    const state: WorkspaceState = {
+    const state: PartialState = {
       objectivesState: Object.fromEntries(
         unsupported.map((entry) => [entry.id, entry]),
       ),
@@ -418,7 +406,7 @@ describe('Endfield workspace restoration', () => {
       );
       expect(() => {
         validateCurrentWorkspace({ objectivesState: { 1: entry } }, data);
-      }).toThrowError(WorkspaceRestoreError);
+      }).toThrowError(Error);
     }
   });
 });
@@ -529,7 +517,7 @@ describe('Endfield router validation', () => {
         restore(`v=12&${input}`);
       })
         .withContext(input)
-        .toThrowError(WorkspaceRestoreError);
+        .toThrowError(Error);
       expect(objectives.state()).toBe(before.objectives);
       expect(items.state()).toBe(before.items);
       expect(recipes.state()).toBe(before.recipes);

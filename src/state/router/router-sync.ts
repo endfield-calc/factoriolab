@@ -33,6 +33,7 @@ import {
   tap,
 } from 'rxjs';
 
+import { DEFAULT_MOD } from '~/data/datasets';
 import { Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { ModData } from '~/data/schema/mod-data';
@@ -44,17 +45,6 @@ import {
   resourceFromObjectiveId,
 } from '~/endfield/domain/model';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-  PINNED_MOD_ID,
-} from '~/extensions/defaults';
-import {
-  RestoreDiagnostic,
-  WorkspaceRestoreError,
-  WorkspaceState,
-} from '~/extensions/state-extension';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { asString } from '~/utils/coercion';
@@ -77,12 +67,14 @@ import { RecipesStore } from '../recipes/recipes-store';
 import { CostSettings } from '../settings/cost-settings';
 import { Dataset } from '../settings/dataset';
 import {
+  initialSettingsState,
   PartialSettingsState,
   SettingsState,
 } from '../settings/settings-state';
 import { SettingsStore } from '../settings/settings-store';
 import { initialTableState, TableState } from '../table/table-state';
 import { TableStore } from '../table/table-store';
+import { WorkspaceLifecycle } from '../workspace-lifecycle';
 import { Compression } from './compression';
 import { ZFIELDSEP } from './constants';
 import { LabParams } from './lab-params';
@@ -93,6 +85,15 @@ import { ZipData } from './zip-data';
 import { ZipVersion } from './zip-version';
 
 export const MIN_ZIP = 200;
+
+export interface PartialState {
+  objectivesState?: Record<string, ObjectiveState>;
+  itemsState?: Record<string, ItemState>;
+  recipesState?: Record<string, RecipeState>;
+  machinesState?: Record<string, MachineState>;
+  settingsState?: PartialSettingsState;
+  tableState?: Partial<TableState>;
+}
 
 interface ZipRecipeSettingsInfo {
   idMap: Record<string, number>;
@@ -138,7 +139,7 @@ interface LiveSnapshot {
 interface NavigationStatus {
   readonly ready: boolean;
   readonly lifecycleReady: boolean;
-  readonly diagnostics: readonly RestoreDiagnostic[];
+  readonly errors: readonly string[];
   readonly originalInput: string;
   readonly retry?: RouteInput;
 }
@@ -163,8 +164,6 @@ export class RouterSync {
   private readonly zip = inject(Zip);
   private readonly endfieldStore = inject(EndfieldStore);
   private readonly lifecycle = inject(WorkspaceLifecycle);
-  private readonly effectiveDefaults = inject(EFFECTIVE_DEFAULTS);
-  private readonly pinnedModId = inject(PINNED_MOD_ID, { optional: true });
 
   private readonly state = new Subject<State>();
   readonly zipConfig = signal(this.empty);
@@ -192,7 +191,7 @@ export class RouterSync {
   private navigationStatus: NavigationStatus = {
     ready: false,
     lifecycleReady: false,
-    diagnostics: [],
+    errors: [],
     originalInput: '',
   };
   private navigationHadRoute = false;
@@ -300,18 +299,10 @@ export class RouterSync {
               ),
             ),
             switchMap((migrated) => {
-              if (
-                this.pinnedModId != null &&
-                migrated.modId !== this.pinnedModId
-              )
-                throw new WorkspaceRestoreError([
-                  {
-                    code: 'mod-not-allowed',
-                    message: `Workspace mod is not available: ${String(migrated.modId)}`,
-                    field: 'modId',
-                    severity: 'error',
-                  },
-                ]);
+              if (migrated.modId !== DEFAULT_MOD)
+                throw new Error(
+                  `Workspace mod is not available: ${String(migrated.modId)}`,
+                );
               let retryError: unknown;
               let retried = false;
               if (this.settingsStore.modId() !== migrated.modId) {
@@ -442,7 +433,7 @@ export class RouterSync {
       this.navigationStatus = {
         ready: this.ready(),
         lifecycleReady: wasReady,
-        diagnostics: this.lifecycle.diagnostics(),
+        errors: this.lifecycle.errors(),
         originalInput: this.lifecycle.originalInput(),
         retry: this.restoring ? this.lastRouteInput : undefined,
       };
@@ -512,9 +503,8 @@ export class RouterSync {
     let restored = false;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
-      if (target.lifecycleReady)
-        this.lifecycle.complete(ticket, target.diagnostics);
-      else this.lifecycle.fail(ticket, target.diagnostics);
+      if (target.lifecycleReady) this.lifecycle.complete(ticket);
+      else this.lifecycle.fail(ticket, target.errors);
       this.ready.set(target.ready);
       if (target.retry == null) this.stable = undefined;
       restored = true;
@@ -564,16 +554,7 @@ export class RouterSync {
   private failRestore(ticket: number, error: unknown): void {
     if (!this.lifecycle.current(ticket)) return;
     this.restoring = false;
-    const diagnostics: RestoreDiagnostic[] =
-      error instanceof WorkspaceRestoreError
-        ? [...error.diagnostics]
-        : [
-            {
-              code: 'workspace-restore',
-              message: this.errorMessage(error),
-              severity: 'error',
-            },
-          ];
+    const errors = [this.errorMessage(error)];
     let rollbackError: unknown;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
@@ -581,16 +562,14 @@ export class RouterSync {
       rollbackError = cause;
     }
     if (rollbackError != null)
-      diagnostics.push({
-        code: 'workspace-rollback',
-        message: this.errorMessage(
+      errors.push(
+        this.errorMessage(
           rollbackError,
           'Failed to restore the previous workspace',
         ),
-        severity: 'error',
-      });
+      );
     this.ready.set(false);
-    this.lifecycle.fail(ticket, diagnostics);
+    this.lifecycle.fail(ticket, errors);
   }
 
   async updateUrl(zState: ZipState, ticket?: number): Promise<void> {
@@ -791,14 +770,7 @@ export class RouterSync {
         if (outerVersion != null) queryParams['v'] = outerVersion;
       } catch (err) {
         console.error(err);
-        throw new WorkspaceRestoreError([
-          {
-            code: 'invalid-compression',
-            message: 'RouterService failed to parse url',
-            field: 'z',
-            severity: 'error',
-          },
-        ]);
+        throw new Error('RouterService failed to parse url', { cause: err });
       }
     }
     return queryParams;
@@ -821,7 +793,7 @@ export class RouterSync {
     const hash = isBare ? undefined : modHash;
     const ms = this.unzipModules(params, hash);
     const bs = this.unzipBeacons(params, ms, hash);
-    const state: WorkspaceState = {};
+    const state: PartialState = {};
     state.objectivesState = this.unzipObjectives(params, ms, bs, hash);
     state.itemsState = this.unzipItems(params, hash);
     state.recipesState = this.unzipRecipes(params, ms, bs, hash);
@@ -873,7 +845,7 @@ export class RouterSync {
     }
   }
 
-  dispatch(state: WorkspaceState, markReady = true): void {
+  dispatch(state: PartialState, markReady = true): void {
     this.objectivesStore.load(state.objectivesState);
     this.itemsStore.load(state.itemsState);
     this.recipesStore.load(state.recipesState);
@@ -1384,7 +1356,7 @@ export class RouterSync {
     data: Dataset,
     hash: ModHash,
   ): void {
-    const init = cloneDefaults(this.effectiveDefaults).settings;
+    const init = initialSettingsState;
 
     // Set up shorthand functions to zip state
     const set = this.zip.set(zState.config, state, init);

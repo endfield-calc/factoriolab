@@ -10,7 +10,6 @@ import {
 } from 'glpk-ts';
 
 import { AdjustedRecipe, Recipe } from '~/data/schema/recipe';
-import { CalculationModelContext } from '~/extensions/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
 import {
   isRecipeObjective,
@@ -37,6 +36,7 @@ import {
   addModelRow,
   addModelVariable,
   bindModelRules,
+  CalculationModelContext,
   finiteNumber,
   INTEGER_TOLERANCE,
   ModelBinding,

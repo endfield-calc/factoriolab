@@ -2,13 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { ConstraintProperties, loadModule, Model, Variable } from 'glpk-ts';
 
 import { AdjustedRecipe } from '~/data/schema/recipe';
-import {
-  CalculationModelContext,
-  CalculationVariable,
-  LinearRule,
-  ModelRules,
-  ModelVariableRef,
-} from '~/extensions/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
 import { ObjectiveState, RecipeObjective } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
@@ -22,10 +15,15 @@ import {
   addModelRow,
   addModelVariable,
   bindModelRules,
+  CalculationModelContext,
+  CalculationVariable,
   finiteNumber,
+  LinearRule,
   ModelBinding,
   ModelRow,
+  ModelRules,
   ModelSimplexState as SimplexState,
+  ModelVariableRef,
   validateModelSolution,
 } from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
@@ -128,7 +126,6 @@ function budget(
     constraints: [
       {
         id: 'budget',
-        source: 'fixture',
         terms: selected.map(({ ref }) => ({ ref, coefficient: rational.one })),
         upper,
       },
@@ -299,7 +296,6 @@ describe('Solver model extension', () => {
           constraints: [
             {
               id: 'signed',
-              source: 'fixture',
               terms: [
                 { ref: objectiveRef('x'), coefficient: rational(-2n, 3n) },
                 { ref: objectiveRef('y'), coefficient: rational(4n, 9n) },
@@ -504,7 +500,7 @@ describe('Solver model extension', () => {
     expect(result.status).toBe('no_feasible');
   });
 
-  it('uses prepared selected machines and passes immutable snapshots to the compiler', () => {
+  it('uses prepared selected machines for automatic and explicit variables', () => {
     const r = recipe('r');
     const s = state([r]);
     s.recipeObjectives = [
@@ -514,9 +510,6 @@ describe('Solver model extension', () => {
     let descriptions: readonly CalculationVariable[] = [];
     s.modelContext = context((variables) => {
       descriptions = variables;
-      expect(Object.isFrozen(variables)).toBeTrue();
-      expect(Object.isFrozen(variables[0])).toBeTrue();
-      expect(Object.isFrozen(variables[0].ref)).toBeTrue();
       return budget(variables, rational.zero);
     });
     const result = solver['glpk'](s);
@@ -590,7 +583,6 @@ describe('Solver model extension', () => {
       constraints: [
         {
           id: 'mixed',
-          source: 'fixture',
           upper: cap,
           terms: variables.map(({ ref }) => ({
             ref,
@@ -638,7 +630,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'mixed-fixed',
-            source: 'fixture',
             upper: cap,
             terms: [
               { ref: objectiveRef('x'), coefficient: rational.one },
@@ -666,7 +657,6 @@ describe('Solver model extension', () => {
       constraints: [
         {
           id: 'negative',
-          source: 'fixture',
           upper: rational.zero,
           terms: [
             { ref: objectiveRef('fixed'), coefficient: rational.one },
@@ -725,7 +715,6 @@ describe('Solver model extension', () => {
             constraints: [
               {
                 id: 'enumerated',
-                source: 'fixture',
                 lower,
                 upper,
                 terms: [
@@ -773,7 +762,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'shared',
-            source: 'fixture',
             terms: variables.map(({ ref, recipeId }) => ({
               ref,
               coefficient: rational(recipeId === 'remote' ? 3 : 1),
@@ -798,7 +786,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'shared',
-            source: 'fixture',
             terms: variables.map(({ ref }) => ({
               ref,
               coefficient: rational.one,
@@ -823,7 +810,6 @@ describe('Solver model extension', () => {
     };
     const empty: LinearRule = {
       id: 'empty',
-      source: 'fixture',
       terms: [],
       lower: rational.one,
     };
@@ -1061,7 +1047,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'unsafe-coefficient',
-            source: 'fixture',
             upper: rational.one,
             terms: [
               { ref: refs[0], coefficient: rational(9007199254740992n) },
@@ -1080,7 +1065,6 @@ describe('Solver model extension', () => {
       constraints: [
         {
           id: 'unsafe-bound',
-          source: 'fixture',
           upper: rational(9007199254740992n),
           terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
         },
@@ -1256,6 +1240,38 @@ describe('Solver model extension', () => {
       ).toThrowError(/variable bound more than once/);
     });
 
+    it('gives the compiler descriptions independent of the bindings', () => {
+      const model = new Model();
+      const variable = addModelVariable(model, { name: 'x', lb: 0 });
+      const description = {
+        ref: { kind: 'recipe' as const, id: 'x' },
+        recipeId: 'x',
+        machineId: 'first',
+      };
+      const binding: ModelBinding = {
+        variable,
+        description,
+        lower: rational.zero,
+      };
+      let captured: readonly CalculationVariable[] = [];
+      bindModelRules(
+        model,
+        context((variables) => {
+          captured = variables;
+          expect(variables[0]).not.toBe(description);
+          expect(variables[0].ref).not.toBe(description.ref);
+          return { constraints: [], integers: [] };
+        }),
+        [binding],
+        [],
+      );
+      description.ref.id = 'changed';
+      description.machineId = 'second';
+      expect(captured).toEqual([
+        { ref: recipeRef('x'), recipeId: 'x', machineId: 'first' },
+      ]);
+    });
+
     it('rejects malformed compiler output, constraint metadata, references, and terms', () => {
       const attempt = (rules: unknown): boolean => {
         const s = state();
@@ -1272,9 +1288,8 @@ describe('Solver model extension', () => {
       }
       for (const constraint of [
         null,
-        { id: '', source: 'fixture', terms: [] },
-        { id: 'id', source: '', terms: [] },
-        { id: 'id', source: 'fixture', terms: null },
+        { id: '', terms: [] },
+        { id: 'id', terms: null },
       ]) {
         expect(() =>
           attempt({ constraints: [constraint], integers: [] }),
@@ -1292,11 +1307,11 @@ describe('Solver model extension', () => {
       }
       expect(() =>
         attempt({
-          constraints: [{ id: 'id', source: 'fixture', terms: [null] }],
+          constraints: [{ id: 'id', terms: [null] }],
           integers: [],
         }),
       ).toThrowError(/Invalid term/);
-      const duplicate = { id: 'id', source: 'fixture', terms: [] };
+      const duplicate = { id: 'id', terms: [] };
       expect(() =>
         attempt({ constraints: [duplicate, duplicate], integers: [] }),
       ).toThrowError(/Duplicate model constraint/);
@@ -1308,7 +1323,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'tiny',
-            source: 'fixture',
             terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
             upper: rational(1n, 10n ** 400n),
           },
@@ -1324,7 +1338,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'collapsed',
-            source: 'fixture',
             terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
             lower: rational(99999999999999999n, 100000000000000000n),
             upper: rational.one,
@@ -1351,7 +1364,6 @@ describe('Solver model extension', () => {
           constraints: [
             {
               id: 'constant',
-              source: 'fixture',
               lower,
               upper,
               terms: [{ ref: objectiveRef('fixed'), coefficient: rational(2) }],
@@ -1370,7 +1382,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'zero',
-            source: 'fixture',
             terms: [{ ref: recipeRef('r'), coefficient: rational.zero }],
             lower: rational.zero,
             upper: rational.zero,
@@ -1387,7 +1398,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'gap',
-            source: 'fixture',
             terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
             lower: rational(1n, 5n),
             upper: rational(4n, 5n),
@@ -1696,7 +1706,6 @@ describe('Solver model extension', () => {
         constraints: [
           {
             id: 'minimum',
-            source: 'fixture',
             lower: rational.one,
             terms: [{ ref: recipeRef('r'), coefficient: rational.one }],
           },

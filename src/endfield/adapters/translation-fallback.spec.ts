@@ -13,7 +13,6 @@ import { SettingsStore } from '~/state/settings/settings-store';
 import { mockModHash } from '~/tests/mocks/data';
 import { Translate, TRANSLATION_FALLBACK } from '~/translate/translate';
 
-import { provideEndfieldDefaults } from '../product/product';
 import {
   endfieldTranslationFallback,
   mergeTranslation,
@@ -32,7 +31,6 @@ describe('Endfield interface translation fallback', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        ...provideEndfieldDefaults(),
         {
           provide: TRANSLATION_FALLBACK,
           useValue: endfieldTranslationFallback,
@@ -108,11 +106,7 @@ describe('SettingsStore Endfield game translations', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        ...provideEndfieldDefaults(),
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     service = TestBed.inject(SettingsStore);
     preferences = TestBed.inject(PreferencesStore);

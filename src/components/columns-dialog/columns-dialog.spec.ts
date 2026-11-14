@@ -30,6 +30,14 @@ describe('ColumnsDialog', () => {
       component.reset();
       expect(component['value']).toEqual(initialColumnsState);
     });
+
+    it('keeps column edits separate from subsequent resets', () => {
+      component.reset();
+      component['value'].items!.show = false;
+      expect(initialColumnsState.items.show).toBeTrue();
+      component.reset();
+      expect(component['value'].items!.show).toBeTrue();
+    });
   });
 
   describe('save', () => {

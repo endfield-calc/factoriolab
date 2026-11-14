@@ -13,13 +13,7 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import rawI18n from '/public/data/aef/i18n/zh.json';
 import { emptyModData } from '~/data/schema/mod-data';
-import {
-  createEndfieldDefaults,
-  provideEndfieldDefaults,
-} from '~/endfield/product/product';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import { EFFECTIVE_DEFAULTS, PINNED_MOD_ID } from '~/extensions/defaults';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
 import { MachinesStore } from '~/state/machines/machines-store';
@@ -30,6 +24,7 @@ import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RecipesStore } from '~/state/recipes/recipes-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
@@ -148,7 +143,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
 
   function expectRecovered(value = 2n): void {
     expect(lifecycle.ready())
-      .withContext(JSON.stringify(lifecycle.diagnostics()))
+      .withContext(JSON.stringify(lifecycle.errors()))
       .toBeTrue();
     expect(settings.loadError()).toBeUndefined();
     const objective = objectives.state()['1'];
@@ -162,7 +157,6 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        ...provideEndfieldDefaults(),
         // TestModule otherwise supplies a mock resource-backed SettingsStore.
         { provide: SettingsStore, useClass: SettingsStore },
       ],
@@ -201,6 +195,23 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     localStorage.clear();
   });
 
+  it('rejects a foreign route before requesting its resources or changing any store', async () => {
+    attachRouter();
+    const oldSettings = settings.state();
+    const oldObjectives = objectives.state();
+    const oldExtension = endfield.state();
+    const url = '/1.1/list?v=12';
+    currentUrl = url;
+    params.next({ id: '1.1' });
+    queryParams.next({ v: '12' });
+    await settle();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual(['Workspace mod is not available: 1.1']);
+    expect(lifecycle.originalInput()).toBe(url);
+    expectPreserved(oldSettings, oldObjectives, oldExtension);
+    http.expectNone((request) => request.url.startsWith('data/'));
+  });
+
   for (const failure of ['data', 'hash'] as const) {
     const failedUrl = failure === 'data' ? dataUrl : hashUrl;
 
@@ -227,7 +238,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       expect(settings.loadError()).toBeTruthy();
       expect(settings.loading()).toBeTrue();
       expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics().length).toBeGreaterThan(0);
+      expect(lifecycle.errors().length).toBeGreaterThan(0);
       expect(lifecycle.originalInput()).toBe(badAttemptUrl);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
       requests
@@ -257,7 +268,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       );
       expect(lifecycle.ready()).toBeFalse();
       expect(lifecycle.originalInput()).toBe(badAttemptUrl);
-      expect(lifecycle.diagnostics().length).toBeGreaterThan(0);
+      expect(lifecycle.errors().length).toBeGreaterThan(0);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
 
       open(retryUrl, '2');
@@ -290,7 +301,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       expectPreserved(oldSettings, oldObjectives, oldExtension);
       const requests = answerAefRequests('same-aef navigation after error');
       console.info(
-        `[resource-retry] same-aef state: mod=${String(settings.modId())}, error=${String(settings.loadError())}, ready=${String(lifecycle.ready())}, diagnostics=${JSON.stringify(lifecycle.diagnostics())}`,
+        `[resource-retry] same-aef state: mod=${String(settings.modId())}, error=${String(settings.loadError())}, ready=${String(lifecycle.ready())}, diagnostics=${JSON.stringify(lifecycle.errors())}`,
       );
       expect(requests).toContain(failedUrl);
       await settle();
@@ -313,7 +324,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       expect(settings.loadError()).toBeTruthy();
       expect(lifecycle.ready()).toBeFalse();
       expect(lifecycle.originalInput()).toBe(badAttemptUrl);
-      expect(lifecycle.diagnostics().length).toBeGreaterThan(0);
+      expect(lifecycle.errors().length).toBeGreaterThan(0);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
 
       open(retryUrl, '2');
@@ -509,12 +520,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
       await settle();
       expect(settings.loading()).toBeTrue();
       expect(lifecycle.ready()).toBeFalse();
-      expect(
-        lifecycle
-          .diagnostics()
-          .map((diagnostic) => diagnostic.message)
-          .join(' '),
-      ).toContain(failed);
+      expect(lifecycle.errors().join(' ')).toContain(failed);
       expect(lifecycle.originalInput()).toBe(retryUrl);
       expectPreserved(oldSettings, oldObjectives, oldExtension);
       const other = pending === dataUrl ? data : hash;
@@ -567,7 +573,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     const translation = http.expectOne(i18nUrl);
     answer(data, dataUrl);
     await settle();
-    expect(lifecycle.diagnostics().length).toBeGreaterThan(0);
+    expect(lifecycle.errors().length).toBeGreaterThan(0);
 
     open(retryUrl, '2');
     await settle();
@@ -580,7 +586,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     expect(settings.loadError()).toBeTruthy();
     expect(settings.loading()).toBeTrue();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics().length).toBeGreaterThan(0);
+    expect(lifecycle.errors().length).toBeGreaterThan(0);
     expect(lifecycle.originalInput()).toBe(retryUrl);
     expectPreserved(oldSettings, oldObjectives, oldExtension);
 
@@ -630,15 +636,7 @@ describe('SettingsStore resource retries', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        {
-          provide: EFFECTIVE_DEFAULTS,
-          useValue: createEndfieldDefaults(false, 'zh'),
-        },
-        { provide: PINNED_MOD_ID, useValue: 'aef' },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     service = TestBed.inject(SettingsStore);
     TestBed.inject(PreferencesStore).apply({ language: 'zh' });

@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { createEndfieldDefaults } from '~/endfield/product/product';
-import { EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
 import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { TestModule } from '~/tests/test-module';
@@ -61,12 +59,6 @@ describe('FlowSettingsDialog with Endfield defaults', () => {
     try {
       await TestBed.configureTestingModule({
         imports: [TestModule, FlowSettingsDialog],
-        providers: [
-          {
-            provide: EFFECTIVE_DEFAULTS,
-            useValue: createEndfieldDefaults(false, 'zh'),
-          },
-        ],
       }).compileComponents();
       const fixture = TestBed.createComponent(FlowSettingsDialog);
       fixture.detectChanges();
@@ -77,6 +69,12 @@ describe('FlowSettingsDialog with Endfield defaults', () => {
       component.reset();
       expect(component['editValue']().diagram).toBe(FlowDiagram.BoxLine);
       expect(component['modified']()).toBeFalse();
+      component['editValue']().diagram = FlowDiagram.Sankey;
+      expect(initialPreferencesState.flowSettings.diagram).toBe(
+        FlowDiagram.BoxLine,
+      );
+      component.reset();
+      expect(component['editValue']().diagram).toBe(FlowDiagram.BoxLine);
     } finally {
       TestBed.resetTestingModule();
       if (original == null) localStorage.removeItem('preferences');

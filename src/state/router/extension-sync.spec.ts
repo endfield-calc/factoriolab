@@ -19,23 +19,17 @@ import {
   createEndfieldState,
   resourceObjectiveId,
 } from '~/endfield/domain/model';
-import { provideEndfieldDefaults } from '~/endfield/product/product';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-  initialDefaults,
-  PINNED_MOD_ID,
-} from '~/extensions/defaults';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import { ObjectiveType } from '../objectives/objective-type';
 import { ObjectiveUnit } from '../objectives/objective-unit';
+import { initialSettingsState } from '../settings/settings-state';
 import { initialTableState } from '../table/table-state';
 import { Compression } from './compression';
 import { LabParams } from './lab-params';
@@ -136,7 +130,9 @@ describe('RouterSync current Endfield restoration and writes', () => {
     TestBed.tick();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('retired-item');
+    expect(lifecycle.errors()[0]).toEqual(
+      'Invalid workspace index: retired-item',
+    );
     expect(endfield.state().electric).toEqual(rational(2));
     expect(service.stored()).toEqual('/aef/list?preserved=1');
     expect(navigate).not.toHaveBeenCalled();
@@ -165,7 +161,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
       resources.error(failure);
       await flush();
       expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()[0].message).toEqual(message);
+      expect(lifecycle.errors()[0]).toEqual(message);
       expect(service.stored()).toEqual('/aef/list?preserved=1');
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -199,8 +195,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
       route.queryParams.next({ v: '12', ef: 'bad' });
       await flush();
       expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()[1].code).toBe('workspace-rollback');
-      expect(lifecycle.diagnostics()[1].message).toBe(message);
+      expect(lifecycle.errors()[1]).toBe(message);
       expect(service['objectivesStore'].state()).toBe(previous);
       set.and.callThrough();
       route.queryParams.next({ v: '12', ef: encoded(3) });
@@ -220,7 +215,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
     route.queryParams.next({ v: '12', ef: 'bad' });
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('ef');
+    expect(lifecycle.errors()[0]).toEqual('Invalid ef encoding');
     expect(endfield.state().electric).toEqual(rational(2));
     expect(service['objectivesStore'].state()).toBe(previous);
     expect(service.stored()).toEqual(stored);
@@ -230,7 +225,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
     route.queryParams.next({ v: '12', z: 'bad' });
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('z');
+    expect(lifecycle.errors()[0]).toEqual('RouterService failed to parse url');
     expect(service['objectivesStore'].state()).toBe(previous);
     route.queryParams.next({ v: '12', r: ['originium_ore**4'] });
     await flush();
@@ -301,7 +296,7 @@ describe('RouterSync current Endfield restoration and writes', () => {
     expect(lifecycle.ready()).toBeFalse();
     rejectWrite(new Error('obsolete write'));
     await flush();
-    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(lifecycle.errors()).toEqual([]);
     expect(service.stored()).toEqual('/aef/list?preserved=1');
     expect(navigate).not.toHaveBeenCalled();
     finishInflate(`v=12&ef=${encoded(3)}`);
@@ -391,15 +386,18 @@ describe('RouterSync current Endfield restoration and writes', () => {
 });
 
 describe('RouterSync real Endfield restoration', () => {
-  for (const [section, id, field] of [
-    ['i', 'retired-item', 'items.retired-item'],
-    ['r', 'retired-recipe', 'recipes.retired-recipe'],
-    ['m', 'retired-machine', 'machines.retired-machine'],
+  for (const [section, id, message] of [
+    ['i', 'retired-item', 'Unknown item ID: retired-item'],
+    ['r', 'retired-recipe', 'Unknown recipe ID: retired-recipe'],
+    [
+      'm',
+      'retired-machine',
+      'Unknown machine ID at machines.retired-machine: retired-machine',
+    ],
   ] as const) {
     it(`reports an unknown ${section} record even when it has no settings`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -427,7 +425,7 @@ describe('RouterSync real Endfield restoration', () => {
       queryParams.next({ v: '12', [section]: [id] });
       for (let i = 0; i < 15; i++) await Promise.resolve();
       expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()[0].field).toEqual(field);
+      expect(lifecycle.errors()[0]).toEqual(message);
       expect(service['objectivesStore'].state()).toBe(previous);
       expect(lifecycle.originalInput()).toEqual(url);
       expect(service.stored()).toEqual('/aef/list?v=12&o=xiranite_powder*5');
@@ -446,7 +444,6 @@ describe('RouterSync real Endfield restoration', () => {
     it(`preserves the existing workspace for invalid ${target} overclock`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -511,9 +508,7 @@ describe('RouterSync real Endfield restoration', () => {
       for (let i = 0; i < 15; i++) await Promise.resolve();
       expect(lifecycle.ready()).toBeFalse();
       expect(
-        lifecycle
-          .diagnostics()
-          .some((diagnostic) => diagnostic.field?.includes('overclock')),
+        lifecycle.errors().some((message) => message.includes('overclock')),
       ).toBeTrue();
       expect(service['settingsStore'].state()).toBe(previous.settings);
       expect(service['objectivesStore'].state()).toBe(previous.objectives);
@@ -532,7 +527,6 @@ describe('RouterSync real Endfield restoration', () => {
     it(`rejects a migrated disallowed mod from a ${compressed ? 'compressed' : 'bare'} legacy link`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -557,8 +551,9 @@ describe('RouterSync real Endfield restoration', () => {
       );
       for (let i = 0; i < 15; i++) await Promise.resolve();
       expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()[0]?.code).toEqual('mod-not-allowed');
-      expect(lifecycle.diagnostics()[0]?.message).toContain('1.1');
+      expect(lifecycle.errors()[0]).toEqual(
+        'Workspace mod is not available: 1.1',
+      );
       expect(lifecycle.originalInput()).toEqual(url);
       expect(settings.state()).toBe(previousSettings);
       expect(service['objectivesStore'].state()).toBe(previousObjectives);
@@ -569,11 +564,16 @@ describe('RouterSync real Endfield restoration', () => {
     });
   }
 
-  it('allows an upstream mod when no product allowlist is configured', async () => {
+  it('rejects an upstream mod without applying or replacing the workspace', async () => {
     TestBed.configureTestingModule({ imports: [TestModule] });
     const service = TestBed.inject(RouterSync);
     const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    spyOn(service['appRef'], 'tick');
+    const settings = service['settingsStore'];
+    settings.apply({ modId: 'aef' });
+    const previousSettings = settings.state();
+    const previousObjectives = service['objectivesStore'].state();
+    const previousEndfield = TestBed.inject(EndfieldStore).state();
+    const apply = spyOn(settings, 'apply').and.callThrough();
     (service as any).resources = new BehaviorSubject({
       modId: '1.1',
       data: mockModData,
@@ -587,20 +587,22 @@ describe('RouterSync real Endfield restoration', () => {
     params.next({ id: '2.0' });
     queryParams.next({ v: '10', b: '1.1' });
     for (let i = 0; i < 15; i++) await Promise.resolve();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['settingsStore'].modId()).toEqual('1.1');
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual(['Workspace mod is not available: 1.1']);
+    expect(apply).not.toHaveBeenCalled();
+    expect(settings.state()).toBe(previousSettings);
+    expect(service['objectivesStore'].state()).toBe(previousObjectives);
+    expect(TestBed.inject(EndfieldStore).state()).toEqual(previousEndfield);
   });
 
   it('round trips ordinary and derived links with multiple checked objectives', async () => {
-    const defaults = cloneDefaults(initialDefaults);
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     const service = TestBed.inject(RouterSync);
     const data = rawData as unknown as ModData;
     const settings = {
-      ...defaults.settings,
+      ...initialSettingsState,
       modId: 'aef',
       checkedObjectiveIds: new Set(['2']),
     };
@@ -679,10 +681,8 @@ describe('RouterSync real Endfield restoration', () => {
   });
 
   it('round trips real multi-item and multi-recipe subsets around retired slots', () => {
-    const defaults = cloneDefaults(initialDefaults);
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     const service = TestBed.inject(RouterSync);
     const data = rawData as unknown as ModData;
@@ -706,7 +706,7 @@ describe('RouterSync real Endfield restoration', () => {
     ]);
     service.zipSettings(
       zip,
-      { ...defaults.settings, excludedRecipeIds, checkedItemIds },
+      { ...initialSettingsState, excludedRecipeIds, checkedItemIds },
       [],
       service['settingsStore'].dataset(),
       rawHash,
@@ -727,7 +727,6 @@ describe('RouterSync real Endfield restoration', () => {
   it('keeps unsupported objective types and cet under native semantics', async () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [...provideEndfieldDefaults()],
     });
     const service = TestBed.inject(RouterSync);
     const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -758,7 +757,7 @@ describe('RouterSync real Endfield restoration', () => {
     });
     for (let i = 0; i < 15; i++) await Promise.resolve();
     expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(lifecycle.errors()).toEqual([]);
     expect(
       Object.values(service['objectivesStore'].state()).map(
         (objective): number => objective.type,
@@ -796,7 +795,6 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        ...provideEndfieldDefaults(),
         provideRouter([
           {
             path: ':id',
@@ -920,13 +918,13 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     expect(await router.navigateByUrl('/aef/list?v=12&ef=bad')).toBeTrue();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    const diagnostics = lifecycle.diagnostics();
+    const diagnostics = lifecycle.errors();
     expect(diagnostics.length).toBeGreaterThan(0);
     expect(await router.navigateByUrl('/aef/flow?v=12&ef=bad')).toBeTrue();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
     expect(service['ready']()).toBeFalse();
-    expect(lifecycle.diagnostics()).toEqual(diagnostics);
+    expect(lifecycle.errors()).toEqual(diagnostics);
     expect(lifecycle.originalInput()).toEqual('/aef/flow?v=12&ef=bad');
     expect(service['objectivesStore'].state()).toBe(previous);
     expect(TestBed.inject(EndfieldStore).state().electric).toEqual(rational(2));
@@ -991,7 +989,7 @@ describe('RouterSync real Router navigation timing', () => {
       loading: boolean;
       error: unknown;
     }>({
-      modId: '2.0',
+      modId: 'aef',
       data: mockModData,
       hash: mockModHash,
       loading: false,
@@ -1001,7 +999,7 @@ describe('RouterSync real Router navigation timing', () => {
     spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
     spyOn(service['state'], 'next');
     navigate = spyOn(router, 'navigate').and.callThrough();
-    await router.navigateByUrl('/2.0/start?v=12');
+    await router.navigateByUrl('/aef/start?v=12');
     const route = router.routerState.root.firstChild;
     if (route == null) throw new Error('Missing activated route');
     service.route$.next(route);
@@ -1022,18 +1020,18 @@ describe('RouterSync real Router navigation timing', () => {
       new Promise<boolean>((resolve) => {
         releaseGuard = resolve;
       });
-    const external = router.navigateByUrl('/2.0/guarded?v=12');
+    const external = router.navigateByUrl('/aef/guarded?v=12');
     await flush();
     expect(service['navigationPending']()).toBeTrue();
     expect(lifecycle.ready()).toBeFalse();
     finishHash({ v: '12' });
     await oldWrite;
     expect(navigate).not.toHaveBeenCalled();
-    expect(router.url).toEqual('/2.0/start?v=12');
+    expect(router.url).toEqual('/aef/start?v=12');
     releaseGuard(true);
     expect(await external).toBeTrue();
     await flush();
-    expect(router.url).toEqual('/2.0/guarded?v=12');
+    expect(router.url).toEqual('/aef/guarded?v=12');
     expect(service['navigationPending']()).toBeFalse();
     expect(lifecycle.ready()).toBeTrue();
   });
@@ -1045,12 +1043,12 @@ describe('RouterSync real Router navigation timing', () => {
       new Promise<boolean>((resolve) => {
         releaseGuard = resolve;
       });
-    const external = router.navigateByUrl('/2.0/cancel?v=12');
+    const external = router.navigateByUrl('/aef/cancel?v=12');
     await flush();
     expect(lifecycle.ready()).toBeFalse();
     releaseGuard(false);
     expect(await external).toBeFalse();
-    expect(router.url).toEqual('/2.0/start?v=12');
+    expect(router.url).toEqual('/aef/start?v=12');
     expect(service['settingsStore'].state()).toBe(previous);
     expect(service['navigationPending']()).toBeFalse();
     expect(lifecycle.ready()).toBeTrue();
@@ -1063,13 +1061,13 @@ describe('RouterSync real Router navigation timing', () => {
       'rollback failed',
     );
     guard = (): boolean => false;
-    expect(await router.navigateByUrl('/2.0/cancel?v=12')).toBeFalse();
+    expect(await router.navigateByUrl('/aef/cancel?v=12')).toBeFalse();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('rollback failed');
+    expect(lifecycle.errors()[0]).toContain('rollback failed');
     expect(service['objectivesStore'].state()).toBe(previous);
     set.and.callThrough();
     guard = (): boolean => true;
-    expect(await router.navigateByUrl('/2.0/next?v=12&o=wood')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/next?v=12&o=wood')).toBeTrue();
     await flush();
     expect(lifecycle.ready()).toBeTrue();
   });
@@ -1077,11 +1075,11 @@ describe('RouterSync real Router navigation timing', () => {
   it('keeps the gate through a redirect and restores on guard error', async () => {
     guard = (route): boolean | UrlTree =>
       route.params['view'] === 'redirect'
-        ? router.parseUrl('/2.0/target?v=12')
+        ? router.parseUrl('/aef/target?v=12')
         : true;
-    expect(await router.navigateByUrl('/2.0/redirect?v=12')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/redirect?v=12')).toBeTrue();
     await flush();
-    expect(router.url).toEqual('/2.0/target?v=12');
+    expect(router.url).toEqual('/aef/target?v=12');
     expect(service['navigationPending']()).toBeFalse();
     expect(lifecycle.ready()).toBeTrue();
 
@@ -1089,9 +1087,9 @@ describe('RouterSync real Router navigation timing', () => {
       throw new Error('guard failed');
     };
     await expectAsync(
-      router.navigateByUrl('/2.0/error?v=12'),
+      router.navigateByUrl('/aef/error?v=12'),
     ).toBeRejectedWithError('guard failed');
-    expect(router.url).toEqual('/2.0/target?v=12');
+    expect(router.url).toEqual('/aef/target?v=12');
     expect(service['navigationPending']()).toBeFalse();
     expect(lifecycle.ready()).toBeTrue();
   });
@@ -1099,11 +1097,11 @@ describe('RouterSync real Router navigation timing', () => {
   it('releases the gate when a redirect to the current URL is skipped', async () => {
     guard = (route): boolean | UrlTree =>
       route.params['view'] === 'redirect'
-        ? router.parseUrl('/2.0/start?v=12')
+        ? router.parseUrl('/aef/start?v=12')
         : true;
-    await router.navigateByUrl('/2.0/redirect?v=12');
+    await router.navigateByUrl('/aef/redirect?v=12');
     await flush();
-    expect(router.url).toEqual('/2.0/start?v=12');
+    expect(router.url).toEqual('/aef/start?v=12');
     expect(service['navigationPending']()).toBeFalse();
     expect(lifecycle.ready()).toBeTrue();
   });
@@ -1127,22 +1125,24 @@ describe('RouterSync real Router navigation timing', () => {
           finish = resolve;
         }),
     );
-    expect(await router.navigateByUrl('/1.0/load?z=slow&v=12')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/load?z=slow&v=12')).toBeTrue();
     await flush();
     const originalInflates = inflate.calls.count();
     const migrate = spyOn(service['migration'], 'migrate').and.callThrough();
     const apply = spyOn(service['settingsStore'], 'apply').and.callThrough();
+    const update = spyOn(service, 'updateState').and.callThrough();
     let releaseGuard!: (value: boolean) => void;
     guard = (): Promise<boolean> =>
       new Promise<boolean>((resolve) => {
         releaseGuard = resolve;
       });
-    const external = router.navigateByUrl('/2.0/guarded?v=12');
+    const external = router.navigateByUrl('/aef/guarded?v=12');
     await flush();
     finish('v=12');
     await flush();
     expect(migrate).not.toHaveBeenCalled();
     expect(apply).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
     spyOn(service['appRef'], 'tick');
     releaseGuard(false);
     expect(await external).toBeFalse();
@@ -1151,16 +1151,40 @@ describe('RouterSync real Router navigation timing', () => {
     finish('v=12');
     await flush();
     expect(migrate).toHaveBeenCalledTimes(1);
-    expect(apply).toHaveBeenCalledWith({ modId: '1.0' });
-    resources.next({
-      modId: '1.0',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(apply).not.toHaveBeenCalled();
     expect(lifecycle.ready()).toBeTrue();
-    expect(router.url).toEqual('/1.0/load?z=slow&v=12');
+    expect(router.url).toEqual('/aef/load?z=slow&v=12');
+  });
+});
+
+describe('Workspace recovery lifecycle', () => {
+  it('rejects obsolete navigation completions and errors', () => {
+    const lifecycle = TestBed.inject(WorkspaceLifecycle);
+    const old = lifecycle.begin('?old');
+    const current = lifecycle.begin('?current');
+    expect(lifecycle.complete(old)).toBeFalse();
+    lifecycle.fail(old, ['obsolete']);
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual([]);
+    expect(lifecycle.originalInput()).toBe('?current');
+    expect(lifecycle.complete(current)).toBeTrue();
+    expect(lifecycle.ready()).toBeTrue();
+  });
+
+  it('keeps failed input and errors until a new restoration succeeds', () => {
+    const lifecycle = TestBed.inject(WorkspaceLifecycle);
+    const ticket = lifecycle.begin('?invalid');
+    lifecycle.fail(ticket, ['Invalid input']);
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.originalInput()).toBe('?invalid');
+    expect(lifecycle.errors()).toEqual(['Invalid input']);
+    expect(lifecycle.complete(ticket)).toBeFalse();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.errors()).toEqual(['Invalid input']);
+    expect(lifecycle.complete(lifecycle.begin('?valid'))).toBeTrue();
+    expect(lifecycle.ready()).toBeTrue();
+    expect(lifecycle.errors()).toEqual([]);
   });
 });
 
@@ -1225,7 +1249,7 @@ describe('RouterSync leaving the workspace route tree', () => {
     lifecycle = TestBed.inject(WorkspaceLifecycle);
     router = TestBed.inject(Router);
     (service as any).resources = new BehaviorSubject({
-      modId: '2.0',
+      modId: 'aef',
       data: mockModData,
       hash: mockModHash,
       loading: false,
@@ -1241,7 +1265,7 @@ describe('RouterSync leaving the workspace route tree', () => {
       }),
     );
     navigate = spyOn(router, 'navigate').and.callThrough();
-    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*2')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*2')).toBeTrue();
     await attachWorkspace();
     expect(lifecycle.ready()).toBeTrue();
     await changeObjective(6n);
@@ -1285,11 +1309,11 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(service.stored()).toEqual(saved);
     expect(navigate).not.toHaveBeenCalled();
 
-    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*3')).toBeTrue();
     await attachWorkspace();
     expect(lifecycle.ready()).toBeTrue();
     expect(service['objectivesStore'].state()['1'].value).toEqual(rational(3n));
-    expect(router.url).toContain('/2.0/list');
+    expect(router.url).toContain('/aef/list');
     await changeObjective(8n);
     expect(service.stored()).toEqual(router.url);
     expect(navigate).toHaveBeenCalled();
@@ -1333,13 +1357,11 @@ describe('RouterSync leaving the workspace route tree', () => {
     await flush();
     expect(router.url).toEqual('/editor/items?tab=one');
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain(
-      'exit rollback failed',
-    );
+    expect(lifecycle.errors()[0]).toContain('exit rollback failed');
     expect(service.stored()).toEqual(saved);
     expect(navigate).not.toHaveBeenCalled();
     set.and.callThrough();
-    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*3')).toBeTrue();
     await attachWorkspace();
     expect(lifecycle.ready()).toBeTrue();
   });
@@ -1353,7 +1375,7 @@ describe('RouterSync leaving the workspace route tree', () => {
         finish = resolve;
       }),
     );
-    expect(await router.navigateByUrl('/2.0/list?z=slow&v=12')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/list?z=slow&v=12')).toBeTrue();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
     expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
@@ -1366,7 +1388,7 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(service['objectivesStore'].state()).toBe(previous);
     expect(lifecycle.ready()).toBeFalse();
     expect(navigate).not.toHaveBeenCalled();
-    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*4')).toBeTrue();
+    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*4')).toBeTrue();
     await attachWorkspace();
     expect(lifecycle.ready()).toBeTrue();
     expect(service['objectivesStore'].state()['1'].value).toEqual(rational(4n));
@@ -1395,10 +1417,6 @@ describe('RouterSync public retry and product boundaries', () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        {
-          provide: PINNED_MOD_ID,
-          useValue: '2.0',
-        },
         provideRouter([
           {
             path: ':id',
@@ -1424,7 +1442,7 @@ describe('RouterSync public retry and product boundaries', () => {
         v: '12',
       }),
     );
-    await RouterTestingHarness.create('/2.0/list?v=12&o=wood*2');
+    await RouterTestingHarness.create('/aef/list?v=12&o=wood*2');
     for (let i = 0; i < 8; i++) {
       TestBed.tick();
       await Promise.resolve();
@@ -1451,7 +1469,7 @@ describe('RouterSync public retry and product boundaries', () => {
     const previous = objectives.state();
     const stored = service.stored();
     const navigate = spyOn(router, 'navigate').and.callThrough();
-    const url = '/2.0/list?v=12&z=slow';
+    const url = '/aef/list?v=12&z=slow';
     expect(await router.navigateByUrl(url)).toBeTrue();
     await flush();
     expect(finishInflate).toBeDefined();
@@ -1469,14 +1487,14 @@ describe('RouterSync public retry and product boundaries', () => {
     TestBed.tick();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(lifecycle.errors()).toEqual([]);
     expect(objectives.state()).toBe(previous);
     loadError.set(undefined);
     loading.set(false);
     TestBed.tick();
     await flush();
     expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.diagnostics()).toEqual([]);
+    expect(lifecycle.errors()).toEqual([]);
     expect(objectives.state()['1'].targetId).toEqual('wood');
     expect(objectives.state()['1'].value).toEqual(rational(8n));
   });

@@ -6,16 +6,45 @@ import {
   VariableProperties,
 } from 'glpk-ts';
 
-import {
-  CalculationModelContext,
-  CalculationVariable,
-  ModelVariableRef,
-} from '~/extensions/calculation-extension';
-import { immutableValue } from '~/extensions/immutable';
 import { gcd, Rational, rational } from '~/rational/rational';
 
 import type { GlpkResult, GlpkReturnCode } from './glpk-result';
 import type { SimplexState } from './simplex-state';
+
+/** Semantic references deliberately contain no solver-library objects. */
+export interface ModelVariableRef {
+  readonly kind: 'recipe' | 'objective';
+  readonly id: string;
+}
+
+export interface CalculationVariable {
+  readonly ref: ModelVariableRef;
+  readonly recipeId: string;
+  readonly machineId?: string;
+}
+
+export interface LinearRule {
+  readonly id: string;
+  readonly terms: readonly {
+    readonly ref: ModelVariableRef;
+    readonly coefficient: Rational;
+  }[];
+  readonly lower?: Rational;
+  readonly upper?: Rational;
+}
+
+export interface ModelRules {
+  readonly constraints: readonly LinearRule[];
+  readonly integers: readonly ModelVariableRef[];
+}
+
+/** The selected machine for each automatic recipe and a pure rule compiler. */
+export interface CalculationModelContext {
+  readonly recipeSettings: Readonly<
+    Record<string, { readonly machineId?: string }>
+  >;
+  readonly compile: (variables: readonly CalculationVariable[]) => ModelRules;
+}
 
 export interface ModelSimplexState extends SimplexState {
   modelContext?: CalculationModelContext;
@@ -214,10 +243,15 @@ export function bindModelRules(
     boundVariables.add(binding.variable);
   }
 
-  const variables = immutableValue(
-    bindings.map((binding) => binding.description),
+  const variables = Object.freeze(
+    bindings.map(({ description }) =>
+      Object.freeze({
+        ...description,
+        ref: Object.freeze({ ...description.ref }),
+      }),
+    ),
   );
-  const rules = immutableValue(context.compile(variables));
+  const rules = context.compile(variables);
   if (!rules || !isArray(rules.constraints) || !isArray(rules.integers))
     throw new Error('Invalid model rules');
 
@@ -262,8 +296,6 @@ export function bindModelRules(
       !rule ||
       typeof rule.id !== 'string' ||
       rule.id.length === 0 ||
-      typeof rule.source !== 'string' ||
-      rule.source.length === 0 ||
       !isArray(rule.terms)
     )
       throw new Error('Invalid model constraint');

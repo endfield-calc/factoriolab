@@ -218,7 +218,7 @@ describe('Solver', () => {
         maximizeType: MaximizeType.Ratio,
         requireMachinesOutput: false,
         costs: initialSettingsState.costs,
-        hasSurplusCost: false,
+        hasSurplusCost: true,
         glpkAlgorithm: 'simplex',
       });
     });

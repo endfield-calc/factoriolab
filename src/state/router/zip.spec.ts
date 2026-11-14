@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
 
 import { ZEMPTY, ZFALSE, ZTRUE } from './constants';
@@ -298,7 +297,7 @@ describe('Zip', () => {
     it('parses defined indices and rejects indices outside the array', () => {
       expect(service.parseIndices('0', [{ a: 'a' }])).toEqual([{ a: 'a' }]);
       expect(() => service.parseIndices('0~1', [{ a: 'a' }])).toThrowError(
-        WorkspaceRestoreError,
+        Error,
       );
     });
   });
@@ -318,9 +317,7 @@ describe('Zip', () => {
     });
 
     it('rejects a value missing from the hash', () => {
-      expect(() => service.parseNString('A', [])).toThrowError(
-        WorkspaceRestoreError,
-      );
+      expect(() => service.parseNString('A', [])).toThrowError(Error);
     });
   });
 

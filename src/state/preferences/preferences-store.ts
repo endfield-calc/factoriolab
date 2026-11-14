@@ -1,14 +1,21 @@
-import { DOCUMENT, effect, inject, Service, signal } from '@angular/core';
+import {
+  DOCUMENT,
+  effect,
+  inject,
+  isDevMode,
+  Service,
+  signal,
+} from '@angular/core';
 
-import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { Store } from '~/state/store';
-import { languageOptions } from '~/translate/language';
+import { initialLanguage, languageOptions } from '~/translate/language';
 import { applyBackgroundLightness, applyHue } from '~/utils/color';
 import { log } from '~/utils/log';
 import { spread } from '~/utils/object';
 import { getStoredValue, storeValue } from '~/utils/stored-signal';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
+import { ColumnsState, copyColumnsState } from './columns-state';
 import { initialPreferencesState, PreferencesState } from './preferences-state';
 
 function object(value: unknown): value is Record<string, unknown> {
@@ -120,7 +127,7 @@ function currentPreferences(value: unknown): Partial<PreferencesState> {
 @Service()
 export class PreferencesStore extends Store<PreferencesState> {
   private readonly document = inject(DOCUMENT);
-  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
+  private readonly defaultLanguage = this.initial.language;
   readonly restoreError = signal<string | undefined>(undefined);
   private readonly canPersist = signal(true);
 
@@ -143,15 +150,24 @@ export class PreferencesStore extends Store<PreferencesState> {
   readonly glpkAlgorithm = this.select('glpkAlgorithm');
 
   constructor() {
-    super(cloneDefaults(inject(EFFECTIVE_DEFAULTS)).preferences, [
-      'states',
-      'flowSettings',
-    ]);
+    super(
+      {
+        ...initialPreferencesState,
+        language: initialLanguage(!isDevMode(), navigator.language),
+        states: {},
+        columns: copyColumnsState(
+          initialPreferencesState.columns,
+        ) as ColumnsState,
+        flowSettings: { ...initialPreferencesState.flowSettings },
+        sections: { ...initialPreferencesState.sections },
+      },
+      ['states', 'flowSettings'],
+    );
     const stored = this.stored();
     if (stored != null) {
       try {
         const restored = currentPreferences(JSON.parse(stored));
-        const defaults = cloneDefaults(inject(EFFECTIVE_DEFAULTS)).preferences;
+        const defaults = this.initial;
         this.set({
           ...defaults,
           ...restored,
@@ -204,10 +220,15 @@ export class PreferencesStore extends Store<PreferencesState> {
   }
 
   resetPreferences(preserveStates = true): void {
-    const defaults = cloneDefaults(this.defaults).preferences;
     this.set({
-      ...defaults,
-      ...(preserveStates ? { states: this.states() } : {}),
+      ...initialPreferencesState,
+      language: this.defaultLanguage,
+      states: preserveStates ? this.states() : {},
+      columns: copyColumnsState(
+        initialPreferencesState.columns,
+      ) as ColumnsState,
+      flowSettings: { ...initialPreferencesState.flowSettings },
+      sections: { ...initialPreferencesState.sections },
     });
     this.restoreError.set(undefined);
     this.canPersist.set(true);

@@ -38,10 +38,11 @@ describe('Flow', () => {
   describe('rebuildChart', () => {
     it('should call to rebuild the sankey', async () => {
       spyOn(component, 'rebuildSankey');
-      await component.rebuildChart(mocks.flow(), initialFlowSettings);
+      const settings = { ...initialFlowSettings, diagram: FlowDiagram.Sankey };
+      await component.rebuildChart(mocks.flow(), settings);
       expect(component.rebuildSankey).toHaveBeenCalledWith(
         mocks.flow(),
-        initialFlowSettings,
+        settings,
       );
     });
 

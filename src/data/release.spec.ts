@@ -34,6 +34,7 @@ describe('Release', () => {
       http.expectOne('release.json').flush({ version: '0.0.0' });
       await TestBed.inject(ApplicationRef).whenStable();
       expect(service.version()).toEqual('EndfieldLab 0.0.0');
+      http.expectNone('release.json');
     });
 
     it('should handle no version specified', async () => {

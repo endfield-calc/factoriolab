@@ -11,6 +11,7 @@ describe('Preferences', () => {
   let fixture: ComponentFixture<Preferences>;
 
   beforeEach(async () => {
+    localStorage.removeItem('preferences');
     await TestBed.configureTestingModule({
       imports: [TestModule, Preferences],
     }).compileComponents();
@@ -20,16 +21,19 @@ describe('Preferences', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    localStorage.removeItem('preferences');
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
   describe('currentState', () => {
     it('should find a state that matches params', () => {
-      spyOn(component, 'params').and.returnValue('params');
-      spyOn(component['settingsStore'], 'modStates').and.returnValue({
-        state: 'params',
-      });
+      const params = component.params();
+      expect(params).toBeDefined();
+      component['preferencesStore'].saveState('2.0', 'state', params!);
       expect(component.currentState()).toEqual('state');
     });
   });

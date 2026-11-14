@@ -10,23 +10,18 @@ import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
 import {
+  deriveEndfieldObjectives,
+  tundraTransferRecipeIds,
+} from '~/endfield/adapters/calculation-extension';
+import {
   resourceFromObjectiveId,
   resourceOwner,
 } from '~/endfield/domain/model';
-import {
-  compileEndfieldRules,
-  deriveEndfieldObjectives,
-  tundraTransferRecipeIds,
-} from '~/endfield/domain/rules';
+import { compileEndfieldRules } from '~/endfield/domain/rules';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import {
-  CalculationModelContext,
-  ModelRules,
-} from '~/extensions/calculation-extension';
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Option } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
+import { CalculationModelContext, ModelRules } from '~/solver/model-extension';
 import { SimplexResult } from '~/solver/simplex-result';
 import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
@@ -46,6 +41,7 @@ import { RecipesStore } from '../recipes/recipes-store';
 import { DisplayRate, displayRateInfo } from '../settings/display-rate';
 import { SettingsStore } from '../settings/settings-store';
 import { RecordStore } from '../store';
+import { WorkspaceLifecycle } from '../workspace-lifecycle';
 import { ItemSource } from './item-source';
 import { MessageData } from './message-data';
 import { isRecipeObjective, ObjectiveBase, ObjectiveState } from './objective';
@@ -135,12 +131,9 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         ? data.recipeRecord[base.targetId] != null
         : data.itemRecord[base.targetId] != null;
       if (!exists)
-        this.invalidDerived(
-          base.id,
-          `Unknown derived target: ${base.targetId}`,
-        );
+        this.invalidDerived(`Unknown derived target: ${base.targetId}`);
       if (ids.has(base.id))
-        this.invalidDerived(base.id, 'Duplicate derived objective ID');
+        this.invalidDerived('Duplicate derived objective ID');
       ids.add(base.id);
       let prepared = this.adjustment.adjustObjective(
         base,
@@ -153,10 +146,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
       if (declaration.fixedOutput != null) {
         const output = prepared.recipe?.output[declaration.fixedOutput.itemId];
         if (!output?.gt(rational.zero))
-          this.invalidDerived(
-            base.id,
-            'Derived supply has no positive adjusted output',
-          );
+          this.invalidDerived('Derived supply has no positive adjusted output');
         prepared = {
           ...prepared,
           value: declaration.fixedOutput.perSecond.div(output),
@@ -191,10 +181,8 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     };
   });
 
-  private invalidDerived(field: string, message: string): never {
-    throw new WorkspaceRestoreError([
-      { code: 'invalid-derived-objective', field, message, severity: 'error' },
-    ]);
+  private invalidDerived(message: string): never {
+    throw new Error(message);
   }
 
   readonly matrixResult = computed((): SimplexResult => {

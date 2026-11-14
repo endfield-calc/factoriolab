@@ -8,8 +8,8 @@ import chinese from '/public/endfield/i18n/zh.json';
 import { Preferences } from '~/app/main/preferences/preferences';
 import { Select } from '~/components/select/select';
 import { provideEndfield } from '~/endfield/providers';
-import { EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
+import { initialPreferencesState } from '~/state/preferences/preferences-state';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
 
@@ -35,7 +35,7 @@ describe('saved states during recovery', () => {
     }).compileComponents();
     const component = TestBed.createComponent(Preferences).componentInstance;
     const store = component['preferencesStore'];
-    const defaultTheme = TestBed.inject(EFFECTIVE_DEFAULTS).preferences.theme;
+    const defaultTheme = initialPreferencesState.theme;
     expect(store.restoreError()).toBeUndefined();
     store.apply({ theme: defaultTheme === 'light' ? 'dark' : 'light' });
     const open = spyOn(component['confirm'], 'open').and.returnValue(of(1));
@@ -75,6 +75,7 @@ describe('saved states during recovery', () => {
       }).compileComponents();
       const component = TestBed.createComponent(Preferences).componentInstance;
       const store = component['preferencesStore'];
+      const defaultLanguage = store.language();
       expect(store.restoreError()).toBeDefined();
       expect(store.states()).toEqual({});
       store.apply({ language: 'ja' });
@@ -115,9 +116,7 @@ describe('saved states during recovery', () => {
       expect(store.restoreError()).toBeUndefined();
       expect(localStorage.getItem('preferences')).not.toBe(raw);
       const saved = JSON.parse(localStorage.getItem('preferences')!);
-      expect(saved.language).toBe(
-        TestBed.inject(EFFECTIVE_DEFAULTS).preferences.language,
-      );
+      expect(saved.language).toBe(defaultLanguage);
       expect(saved.states).toEqual({
         aef: { 'in-memory': '/aef/list?v=12&o=iron_ore' },
       });

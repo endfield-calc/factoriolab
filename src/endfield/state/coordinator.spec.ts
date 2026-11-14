@@ -1,9 +1,9 @@
 import { effect, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 
 import { EndfieldCoordinator } from './coordinator';
 

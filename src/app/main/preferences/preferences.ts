@@ -40,13 +40,13 @@ import { FlowSettingsDialog } from '~/components/flow-settings-dialog/flow-setti
 import { FormField } from '~/components/form-field/form-field';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { glpkAlgorithmOptions } from '~/state/preferences/glpk-algorithm';
 import { powerUnitOptions } from '~/state/preferences/power-unit';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { themeOptions } from '~/state/preferences/theme';
 import { RouterSync } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { languageOptions } from '~/translate/language';
 import { TranslatePipe } from '~/translate/translate-pipe';
 import { WindowClient } from '~/utils/window-client';

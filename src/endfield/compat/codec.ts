@@ -9,18 +9,11 @@ import {
   resourceRecipes,
   SourceRecipeSettings,
 } from '~/endfield/domain/model';
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
 import { RecipeState } from '~/state/recipes/recipe-state';
 
-export function invalid(
-  field: string,
-  message: string,
-  code = 'invalid-endfield-state',
-): never {
-  throw new WorkspaceRestoreError([
-    { code, field, message, severity: 'error' },
-  ]);
+export function invalid(message: string): never {
+  throw new Error(message);
 }
 
 function record(
@@ -29,55 +22,48 @@ function record(
   keys: readonly string[],
 ): Record<string, unknown> {
   if (value == null || typeof value !== 'object' || Array.isArray(value))
-    return invalid(field, `Expected an object at ${field}`);
+    return invalid(`Expected an object at ${field}`);
   const obj = value as Record<string, unknown>;
   for (const key of Object.keys(obj))
-    if (!keys.includes(key))
-      invalid(`${field}.${key}`, `Unknown field ${field}.${key}`);
+    if (!keys.includes(key)) invalid(`Unknown field ${field}.${key}`);
   return obj;
 }
 
 function bool(value: unknown, field: string): boolean {
-  if (typeof value !== 'boolean')
-    invalid(field, `Expected a boolean at ${field}`);
+  if (typeof value !== 'boolean') invalid(`Expected a boolean at ${field}`);
   return value;
 }
 
 /** Parse without the floating-point conversion in Rational.fromString. */
 function parseSignedRational(value: unknown, field: string): Rational {
   if (typeof value !== 'string')
-    invalid(field, `Expected a rational string at ${field}`);
+    invalid(`Expected a rational string at ${field}`);
   const fraction = /^([+-]?\d+)\/(\d+)$/.exec(value);
   const decimal = /^([+-]?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(value);
+  const parts = fraction ?? decimal;
+  if (!parts) return invalid(`Invalid rational at ${field}`);
+  const exponent = fraction
+    ? 0
+    : Number(parts[4] ?? 0) - (parts[3]?.length ?? 0);
+  if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 10000)
+    return invalid(`Decimal shift exceeds the supported range at ${field}`);
   try {
-    let result: Rational;
-    if (fraction)
-      result = new Rational(BigInt(fraction[1]), BigInt(fraction[2]));
-    else if (decimal) {
-      const exponent = Number(decimal[4] ?? 0) - (decimal[3]?.length ?? 0);
-      if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 10000)
-        return invalid(
-          field,
-          `Decimal shift exceeds the supported range at ${field}`,
-          'numeric-limit',
-        );
-      const numerator = BigInt(`${decimal[1]}${decimal[2]}${decimal[3] ?? ''}`);
-      result =
-        exponent >= 0
-          ? new Rational(numerator * 10n ** BigInt(exponent))
-          : new Rational(numerator, 10n ** BigInt(-exponent));
-    } else return invalid(field, `Invalid rational at ${field}`);
-    return result;
-  } catch (error) {
-    if (error instanceof WorkspaceRestoreError) throw error;
-    return invalid(field, `Invalid rational at ${field}`);
+    const numerator = BigInt(
+      fraction ? parts[1] : `${parts[1]}${parts[2]}${parts[3] ?? ''}`,
+    );
+    if (fraction) return new Rational(numerator, BigInt(parts[2]));
+    return exponent >= 0
+      ? new Rational(numerator * 10n ** BigInt(exponent))
+      : new Rational(numerator, 10n ** BigInt(-exponent));
+  } catch {
+    return invalid(`Invalid rational at ${field}`);
   }
 }
 
 export function parseNonnegative(value: unknown, field: string): Rational {
   const result = parseSignedRational(value, field);
   if (result.lt(rational.zero))
-    invalid(field, `Expected a nonnegative rational at ${field}`);
+    invalid(`Expected a nonnegative rational at ${field}`);
   return result;
 }
 
@@ -99,7 +85,7 @@ export function validateEntity(
     typeof id !== 'string' ||
     !data.items.some((item) => item.id === id && item[kind] != null)
   )
-    invalid(field, `Unknown ${kind} ID at ${field}: ${String(id)}`);
+    invalid(`Unknown ${kind} ID at ${field}: ${String(id)}`);
 }
 
 /** Validate actual entity references for either ordinary or derived settings. */
@@ -114,12 +100,12 @@ export function validateRecipeReferences(
     (!(settings.overclock instanceof Rational) ||
       !settings.overclock.gt(rational.zero))
   )
-    invalid(`${field}.overclock`, 'Recipe overclock must be positive');
+    invalid('Recipe overclock must be positive');
   if (settings.machineId != null) {
     validateEntity(data, settings.machineId, 'machine', `${field}.machineId`);
     const recipe = data.recipes.find((entry) => entry.id === recipeId);
     if (recipeId != null && !recipe?.producers?.includes(settings.machineId))
-      invalid(`${field}.machineId`, `Machine is not a producer of ${recipeId}`);
+      invalid(`Machine is not a producer of ${recipeId}`);
   }
   if (settings.fuelId != null)
     validateEntity(data, settings.fuelId, 'fuel', `${field}.fuelId`);
@@ -218,7 +204,7 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
     !/^[A-Za-z0-9_-]+$/.test(encoded) ||
     encoded.length % 4 === 1
   )
-    invalid('ef', 'Invalid ef encoding');
+    invalid('Invalid ef encoding');
   let parsed: unknown;
   try {
     const binary = atob(
@@ -231,13 +217,13 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
         .replace(/\//g, '_')
         .replace(/=+$/, '') !== encoded
     )
-      return invalid('ef', 'Noncanonical ef encoding');
+      return invalid('Noncanonical ef encoding');
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
     parsed = JSON.parse(
       new TextDecoder('utf-8', { fatal: true }).decode(bytes),
     );
   } catch {
-    return invalid('ef', 'Invalid ef encoding');
+    return invalid('Invalid ef encoding');
   }
   const obj = record(parsed, 'ef', [
     'version',
@@ -249,13 +235,9 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
     'checkedDerived',
   ]);
   if (typeof obj['version'] !== 'number' || !Number.isInteger(obj['version']))
-    invalid('ef.version', 'Invalid ef version');
+    invalid('Invalid ef version');
   if (obj['version'] !== 1)
-    invalid(
-      'ef.version',
-      `Unsupported ef version: ${String(obj['version'])}`,
-      'unsupported-endfield-version',
-    );
+    invalid(`Unsupported ef version: ${String(obj['version'])}`);
   const defaults = createEndfieldState();
   let resourceLimits = defaults.resourceLimits;
   if ('resourceLimits' in obj) {
@@ -314,7 +296,7 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
   if ('transfer' in obj) {
     const input = record(obj['transfer'], 'ef.transfer', ['enabled', 'source']);
     if ('source' in input && input['source'] !== 'tundra')
-      invalid('ef.transfer.source', 'Unknown transfer source');
+      invalid('Unknown transfer source');
     transfer = {
       enabled:
         'enabled' in input
@@ -344,15 +326,14 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
   const checkedDerived = new Set<string>();
   if ('checkedDerived' in obj) {
     const input = obj['checkedDerived'];
-    if (!Array.isArray(input))
-      invalid('ef.checkedDerived', 'Expected an array of resource owners');
+    if (!Array.isArray(input)) invalid('Expected an array of resource owners');
     for (const owner of input) {
       if (
         typeof owner !== 'string' ||
         !resourceIds.some((id) => resourceOwner(id) === owner) ||
         checkedDerived.has(owner)
       )
-        invalid('ef.checkedDerived', `Invalid derived owner: ${String(owner)}`);
+        invalid(`Invalid derived owner: ${String(owner)}`);
       checkedDerived.add(owner);
     }
   }

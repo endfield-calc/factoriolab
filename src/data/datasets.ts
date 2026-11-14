@@ -3,7 +3,7 @@ import { ModInfo } from '~/data/mod';
 import { Option } from '~/option/option';
 import { toRecord } from '~/utils/record';
 
-export const DEFAULT_MOD = '2x1';
+export const DEFAULT_MOD = 'aef';
 
 export interface Datasets {
   mods: ModInfo[];

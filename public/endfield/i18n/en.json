@@ -54,8 +54,7 @@
       "failed": "The workspace could not be fully restored. The original URL was kept; reset it or open a new plan.",
       "original": "Original URL (select and copy)",
       "downloadUrl": "Export original URL",
-      "newPlan": "Open a new plan",
-      "warnings": "The workspace was restored with warnings."
+      "newPlan": "Open a new plan"
     },
     "guide": {
       "title": "Tips and guide",

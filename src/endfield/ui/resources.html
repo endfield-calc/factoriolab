@@ -13,20 +13,18 @@
     }
   </section>
 }
-@if (!coordinator.ready() || lifecycle.diagnostics().length) {
+@if (!coordinator.ready()) {
   <section role="alert" class="my-2 rounded p-3 border border-complement-400">
     <p>
       {{
-        (coordinator.ready()
-          ? 'endfield.recovery.warnings'
-          : lifecycle.diagnostics().length
-            ? 'endfield.recovery.failed'
-            : 'endfield.recovery.loading'
+        (lifecycle.errors().length
+          ? 'endfield.recovery.failed'
+          : 'endfield.recovery.loading'
         ) | translate
       }}
     </p>
-    @for (diagnostic of lifecycle.diagnostics(); track $index) {
-      <p>{{ diagnostic.message }}</p>
+    @for (error of lifecycle.errors(); track $index) {
+      <p>{{ error }}</p>
     }
     @if (lifecycle.originalInput(); as original) {
       <label class="block" for="endfield-original-url">{{

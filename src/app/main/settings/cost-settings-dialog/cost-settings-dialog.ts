@@ -19,15 +19,15 @@ import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
 import { Tooltip } from '~/components/tooltip/tooltip';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
 import {
   CostKey,
   costKeys,
   CostSettings,
 } from '~/state/settings/cost-settings';
+import { initialSettingsState } from '~/state/settings/settings-state';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
 interface CostDraft {
@@ -57,7 +57,6 @@ export class CostSettingsDialog implements DialogData {
   protected readonly ready = inject(WorkspaceLifecycle).ready;
   private readonly endfieldStore = inject(EndfieldStore);
   private readonly settingsStore = inject(SettingsStore);
-  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
 
   private readonly committedCosts = computed(
     () => this.settingsStore.state().costs,
@@ -82,7 +81,7 @@ export class CostSettingsDialog implements DialogData {
   protected readonly editElectric = computed(() => this.draft().electric);
   protected readonly modified = computed(() => {
     const edit = this.editValue();
-    const init = this.defaults.settings.costs;
+    const init = initialSettingsState.costs;
     const keys = Object.keys(init) as CostKey[];
     return (
       keys.some((k) => !init[k].eq(edit[k])) ||
@@ -113,7 +112,7 @@ export class CostSettingsDialog implements DialogData {
   reset(): void {
     if (!this.ready()) return;
     this.draft.set({
-      costs: cloneDefaults(this.defaults).settings.costs,
+      costs: { ...initialSettingsState.costs },
       electric: rational.one,
     });
   }

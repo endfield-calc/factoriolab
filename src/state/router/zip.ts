@@ -1,6 +1,5 @@
 import { inject, Service } from '@angular/core';
 
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
 
 import { Compression } from './compression';
@@ -17,14 +16,7 @@ export class Zip {
   private readonly compression = inject(Compression);
 
   private invalid(token: string): never {
-    throw new WorkspaceRestoreError([
-      {
-        code: 'invalid-index',
-        message: `Invalid workspace index: ${token}`,
-        field: token,
-        severity: 'error',
-      },
-    ]);
+    throw new Error(`Invalid workspace index: ${token}`);
   }
 
   private encodeIndex(value: string, hash: (string | null)[]): string {
@@ -353,20 +345,7 @@ export class Zip {
       // Bind the method reference to this service before use.
       value = value.bind(this);
       // Run value function to get state value
-      return (name, ...args) => {
-        try {
-          return value(params[name], ...args);
-        } catch (error) {
-          if (error instanceof WorkspaceRestoreError)
-            throw new WorkspaceRestoreError(
-              error.diagnostics.map((diagnostic) => ({
-                ...diagnostic,
-                field: name,
-              })),
-            );
-          throw error;
-        }
-      };
+      return (name, ...args) => value(params[name], ...args);
     };
   }
 }

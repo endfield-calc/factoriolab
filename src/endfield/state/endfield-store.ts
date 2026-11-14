@@ -8,7 +8,6 @@ import {
   resourceOwner,
   SourceRecipeSettings,
 } from '~/endfield/domain/model';
-import { immutableValue } from '~/extensions/immutable';
 import { Rational } from '~/rational/rational';
 
 function assertResource(id: string): asserts id is ResourceId {
@@ -24,9 +23,7 @@ function assertOwner(owner: string): void {
 /** Independent resource state; ordinary objectives and settings remain upstream. */
 @Service()
 export class EndfieldStore {
-  private readonly _state = signal<EndfieldState>(
-    immutableValue(createEndfieldState()),
-  );
+  private readonly _state = signal<EndfieldState>(createEndfieldState());
   readonly state = this._state.asReadonly();
 
   snapshot(): EndfieldState {
@@ -48,7 +45,20 @@ export class EndfieldStore {
           ...(overclock == null ? {} : { overclock }),
         };
     }
-    this._state.set(immutableValue({ ...state, resourceRecipeSettings }));
+    this._state.set({
+      ...state,
+      resourceLimits: {
+        ...state.resourceLimits,
+        rates: { ...state.resourceLimits.rates },
+      },
+      machineLimits: {
+        ...state.machineLimits,
+        limits: { ...state.machineLimits.limits },
+      },
+      transfer: { ...state.transfer },
+      resourceRecipeSettings,
+      checkedDerived: new Set(state.checkedDerived),
+    });
   }
 
   reset(): void {

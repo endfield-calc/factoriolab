@@ -28,11 +28,6 @@ import { baseId, Quality, qualityId } from '~/data/schema/quality';
 import { parseRecipe, Recipe, recipeHasQuality } from '~/data/schema/recipe';
 import { Technology } from '~/data/schema/technology';
 import { Wagon } from '~/data/schema/wagon';
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-  PINNED_MOD_ID,
-} from '~/extensions/defaults';
 import { LinkOption } from '~/option/link-option';
 import { getIdOptions, Option, OptionParams } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
@@ -61,18 +56,15 @@ import { displayRateInfo } from './display-rate';
 import { Options } from './options';
 import { Preset, presetOptions } from './preset';
 import { Settings } from './settings';
-import { SettingsState } from './settings-state';
+import { initialSettingsState, SettingsState } from './settings-state';
 import { systemIconsRecord } from './system-icons';
 
 @Service()
 export class SettingsStore extends Store<SettingsState> {
   private readonly hydration = inject(Hydration);
   private readonly preferencesStore = inject(PreferencesStore);
-  private readonly pinnedModId = inject(PINNED_MOD_ID);
-  private readonly effectiveDefaults = inject(EFFECTIVE_DEFAULTS);
-
-  readonly gameOptions = gameOptions.filter((option) =>
-    this.isAllowed(gameInfo[option.value].modId),
+  readonly gameOptions = gameOptions.filter(
+    (option) => gameInfo[option.value].modId === DEFAULT_MOD,
   );
 
   readonly customData = localForageResource<ModData>('data');
@@ -101,23 +93,20 @@ export class SettingsStore extends Store<SettingsState> {
 
   private readonly modDataResource = httpResource<ModData>(() => {
     const modId = this.modId();
-    if (modId == null || !this.isAllowed(modId) || modId === CUSTOM_MOD)
-      return undefined;
+    if (modId !== DEFAULT_MOD) return undefined;
     return `data/${modId}/data.json`;
   });
 
   private readonly modHashResource = httpResource<ModHash>(() => {
     const modId = this.modId();
-    if (modId == null || !this.isAllowed(modId) || modId === CUSTOM_MOD)
-      return undefined;
+    if (modId !== DEFAULT_MOD) return undefined;
     return `data/${modId}/hash.json`;
   });
 
   private readonly modI18nResource = httpResource<ModI18n>(() => {
     const modId = this.modId();
     const lang = this.preferencesStore.language();
-    if (modId == null || !this.isAllowed(modId) || lang === 'en')
-      return undefined;
+    if (modId !== DEFAULT_MOD || lang === 'en') return undefined;
     return `data/${modId}/i18n/${lang}.json`;
   });
 
@@ -151,7 +140,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly modData = computed(() => {
     const modId = this.modId();
-    if (modId == null || !this.isAllowed(modId)) return undefined;
+    if (modId == null) return undefined;
 
     if (modId === CUSTOM_MOD) return this.customData.value() ?? undefined;
 
@@ -161,7 +150,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly modHash = computed(() => {
     const modId = this.modId();
-    if (modId == null || !this.isAllowed(modId)) return undefined;
+    if (modId == null) return undefined;
 
     if (modId === CUSTOM_MOD) return this.customHash.value() ?? undefined;
 
@@ -172,12 +161,7 @@ export class SettingsStore extends Store<SettingsState> {
   readonly modI18n = computed(() => {
     const modId = this.modId();
     const language = this.preferencesStore.language();
-    if (
-      modId == null ||
-      !this.isAllowed(modId) ||
-      language === 'en' ||
-      this.modI18nResource.isLoading()
-    )
+    if (modId == null || language === 'en' || this.modI18nResource.isLoading())
       return undefined;
     if (this.modI18nResource.error()) return undefined;
     return this.modI18nResource.value();
@@ -185,7 +169,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly modInfo = computed(() => {
     const modId = this.modId();
-    if (modId == null || !this.isAllowed(modId)) return undefined;
+    if (modId == null) return undefined;
     const info = modRecord[modId];
     if (!info) return undefined;
     return info;
@@ -224,7 +208,7 @@ export class SettingsStore extends Store<SettingsState> {
     const game = this.game();
     const info = this.modInfo();
     return modOptions(game)
-      .filter((option) => this.isAllowed(option.value))
+      .filter((option) => option.value === DEFAULT_MOD)
       .map((option) =>
         option.value === info?.id ? { ...option, label: info.name } : option,
       );
@@ -236,7 +220,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly iconPath = computed(() => {
     const info = this.modInfo();
-    const modId = coalesce(info?.id, this.pinnedModId ?? DEFAULT_MOD);
+    const modId = coalesce(info?.id, DEFAULT_MOD);
     if (modId === CUSTOM_MOD) return this.customIconsUrl();
     return `data/${modId}/icons.webp`;
   });
@@ -376,13 +360,23 @@ export class SettingsStore extends Store<SettingsState> {
 
     return {
       faIcon: faDatabase,
-      routerLink: `/${coalesce(mod?.id, this.pinnedModId ?? DEFAULT_MOD)}/data`,
+      routerLink: `/${coalesce(mod?.id, DEFAULT_MOD)}/data`,
       label: coalesce(mod?.name, ''),
     };
   });
 
   constructor() {
-    super(cloneDefaults(inject(EFFECTIVE_DEFAULTS)).settings, ['costs']);
+    super(
+      {
+        ...initialSettingsState,
+        checkedObjectiveIds: new Set(initialSettingsState.checkedObjectiveIds),
+        excludedItemIds: new Set(initialSettingsState.excludedItemIds),
+        checkedItemIds: new Set(initialSettingsState.checkedItemIds),
+        checkedRecipeIds: new Set(initialSettingsState.checkedRecipeIds),
+        costs: { ...initialSettingsState.costs },
+      },
+      ['costs'],
+    );
 
     effect(() => {
       const modId = this.modId();
@@ -393,10 +387,6 @@ export class SettingsStore extends Store<SettingsState> {
       const mod = this.modInfo();
       if (mod) log('set_game', mod.game);
     });
-  }
-
-  private isAllowed(modId: string): boolean {
-    return this.pinnedModId == null || modId === this.pinnedModId;
   }
 
   private computeDefaults(
@@ -849,7 +839,7 @@ export class SettingsStore extends Store<SettingsState> {
       (id) => technologyRecord[id].recipeProductivity,
     );
 
-    const modId = coalesce(info?.id, this.pinnedModId ?? DEFAULT_MOD);
+    const modId = coalesce(info?.id, DEFAULT_MOD);
     let file = `data/${modId}/icons.webp`;
     if (modId === CUSTOM_MOD) file = this.customIconsUrl();
 

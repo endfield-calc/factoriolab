@@ -55,19 +55,26 @@ describe('landingGuard', () => {
 
   it('should load the last saved state', async () => {
     spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
-    spyOn(routerSync, 'stored').and.returnValue('/urltree');
+    spyOn(routerSync, 'stored').and.returnValue('/aef/list?v=6');
     await RouterTestingHarness.create('/');
-    expect(router.url).toEqual('/urltree');
+    expect(router.url).toEqual('/aef/list?v=6');
+  });
+
+  it('rejects a foreign cached state', async () => {
+    spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
+    spyOn(routerSync, 'stored').and.returnValue('/2x1/list?v=6');
+    await RouterTestingHarness.create('/');
+    expect(router.url).toEqual('/aef/list');
   });
 
   it('should navigate to the list', async () => {
     spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
     await RouterTestingHarness.create('/?v=6');
-    expect(router.url).toEqual('/2x1/list?v=6');
+    expect(router.url).toEqual('/aef/list?v=6');
   });
 
   it('should allow navigating to the landing page', async () => {
     await RouterTestingHarness.create('/');
-    expect(router.url).toEqual('/2x1');
+    expect(router.url).toEqual('/aef');
   });
 });

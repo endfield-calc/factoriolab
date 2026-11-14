@@ -1,12 +1,23 @@
 import { inject, Service } from '@angular/core';
 
 import { Recipe } from '~/data/schema/recipe';
+import { Rational, rational } from '~/rational/rational';
 import { Adjustment } from '~/state/adjustment';
+import { ObjectiveState } from '~/state/objectives/objective';
+import { ObjectiveType } from '~/state/objectives/objective-type';
+import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { RecipeSettings } from '~/state/recipes/recipe-settings';
 import { CostSettings } from '~/state/settings/cost-settings';
 import { Dataset } from '~/state/settings/dataset';
 
 import { calculateEndfieldRecipeCost } from '../domain/cost';
+import {
+  EndfieldState,
+  resourceIds,
+  resourceLimitId,
+  resourceObjectiveId,
+  resourceRecipes,
+} from '../domain/model';
 import { EndfieldStore } from '../state/endfield-store';
 
 /** Apply product costs at the upstream adjustment points. */
@@ -23,16 +34,111 @@ export class EndfieldAdjustment extends Adjustment {
     const electric = this.endfieldStore.snapshot().electric;
     for (const recipe of Object.values(adjustedRecipe)) {
       const recipeSettings = recipes[recipe.id];
+      const raw = data.recipeRecord[recipe.id];
+      const machine =
+        recipeSettings.machineId == null
+          ? undefined
+          : data.machineRecord[recipeSettings.machineId];
       recipe.cost = calculateEndfieldRecipeCost({
-        raw: data.recipeRecord[recipe.id],
-        recipeSettings,
-        machine:
-          recipeSettings.machineId == null
-            ? undefined
-            : data.machineRecord[recipeSettings.machineId],
-        costs,
+        declaredCost: raw.cost,
+        overrideCost: recipeSettings.cost,
+        usage: machine?.usage,
+        area:
+          recipeSettings.cost == null &&
+          raw.cost == null &&
+          costs.footprint.nonzero() &&
+          machine?.size != null
+            ? rational(machine.size[0]).mul(rational(machine.size[1]))
+            : undefined,
+        recycling: raw.flags.has('recycling'),
+        weights: costs,
         electric,
       });
     }
   }
+}
+
+interface DerivedObjective {
+  readonly objective: Readonly<ObjectiveState>;
+  /** Physical rate converted after the objective recipe is adjusted. */
+  readonly fixedOutput?: {
+    readonly itemId: string;
+    readonly perSecond: Rational;
+  };
+  readonly fixedRate?: Rational;
+}
+
+const transferKey = 'domain_key_tundra';
+const hourlyTransfer = rational(1, 3600);
+
+/** Identify transfers from their original input, before recipe adjustment. */
+export function tundraTransferRecipeIds(
+  recipes: Readonly<Record<string, Pick<Recipe, 'id' | 'in'>>>,
+): ReadonlySet<string> {
+  return new Set(
+    Object.values(recipes)
+      .filter((recipe) => recipe.in[transferKey]?.gt(rational.zero))
+      .map((recipe) => recipe.id),
+  );
+}
+
+/** Values with fixedOutput stay physical rates until recipe adjustment. */
+export function deriveEndfieldObjectives(
+  state: EndfieldState,
+): DerivedObjective[] {
+  const result: DerivedObjective[] = [];
+  if (state.resourceLimits.enabled) {
+    for (const id of resourceIds) {
+      const targetId = resourceRecipes[id];
+      result.push({
+        objective: {
+          id: resourceLimitId(id),
+          targetId,
+          value: rational.zero,
+          unit: ObjectiveUnit.Machines,
+          type: ObjectiveType.Limit,
+        },
+      });
+      const rate = state.resourceLimits.rates[id];
+      if (rate.gt(rational.zero)) {
+        const settings = state.resourceRecipeSettings[id];
+        result.push({
+          objective: {
+            ...settings,
+            id: resourceObjectiveId(id),
+            targetId,
+            value: rational.zero,
+            unit: ObjectiveUnit.Machines,
+            type: ObjectiveType.Output,
+          },
+          fixedOutput: { itemId: id, perSecond: rate },
+        });
+      }
+    }
+  }
+
+  if (state.transfer.enabled) {
+    result.push({
+      objective: {
+        id: 'ef:transfer:tundra:input',
+        targetId: transferKey,
+        value: hourlyTransfer,
+        unit: ObjectiveUnit.Items,
+        type: ObjectiveType.Input,
+      },
+      fixedRate: hourlyTransfer,
+    });
+  }
+  const transferLimit = state.transfer.enabled ? hourlyTransfer : rational.zero;
+  result.push({
+    objective: {
+      id: 'ef:transfer:tundra:limit',
+      targetId: transferKey,
+      value: transferLimit,
+      unit: ObjectiveUnit.Items,
+      type: ObjectiveType.Limit,
+    },
+    fixedRate: transferLimit,
+  });
+  return result;
 }

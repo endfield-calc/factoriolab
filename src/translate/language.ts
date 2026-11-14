@@ -22,3 +22,20 @@ export const languageOptions: Option<Language>[] = [
   { label: 'русский (Russian)', value: 'ru' },
   { label: 'Español (Spanish)', value: 'es' },
 ];
+
+export function initialLanguage(
+  production: boolean,
+  browserLanguage: string,
+): Language {
+  if (!production) return 'en';
+  const value = browserLanguage.toLowerCase();
+  const languages = languageOptions.map((option) => option.value);
+  return (
+    languages.find((language) => language.toLowerCase() === value) ??
+    languages.find(
+      (language) =>
+        language.toLowerCase().split('-')[0] === value.split('-')[0],
+    ) ??
+    'en'
+  );
+}

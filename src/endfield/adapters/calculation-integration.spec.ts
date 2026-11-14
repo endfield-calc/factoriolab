@@ -6,7 +6,6 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { Main } from '~/app/main/main';
 import { ModData } from '~/data/schema/mod-data';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { Adjustment } from '~/state/adjustment';
@@ -21,6 +20,7 @@ import { RecipesStore } from '~/state/recipes/recipes-store';
 import { DisplayRate } from '~/state/settings/display-rate';
 import { MaximizeType } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { Translate } from '~/translate/translate';
 
@@ -28,12 +28,17 @@ import { decodeEndfield } from '../compat/codec';
 import {
   createEndfieldState,
   ovenId,
+  resourceIds,
   resourceObjectiveId,
   resourceOwner,
 } from '../domain/model';
 import { provideEndfield } from '../providers';
 import { EndfieldCoordinator } from '../state/coordinator';
 import { EndfieldStore } from '../state/endfield-store';
+import {
+  deriveEndfieldObjectives,
+  tundraTransferRecipeIds,
+} from './calculation-extension';
 
 function machineObjective(
   id: string,
@@ -48,6 +53,105 @@ function machineObjective(
     unit: ObjectiveUnit.Machines,
   };
 }
+
+describe('Endfield objective declarations', () => {
+  it('distinguishes disabled resource limits, enabled zeroes, and positive physical rates', () => {
+    const initial = createEndfieldState();
+    const disabled = deriveEndfieldObjectives(initial);
+    expect(disabled.map((d) => d.objective.id)).toEqual([
+      'ef:transfer:tundra:limit',
+    ]);
+    const zero = deriveEndfieldObjectives({
+      ...initial,
+      resourceLimits: { ...initial.resourceLimits, enabled: true },
+    });
+    const limits = zero.filter(
+      (d) => d.objective.unit === ObjectiveUnit.Machines,
+    );
+    expect(limits.length).toBe(6);
+    expect(
+      limits.every(
+        (d) =>
+          d.objective.type === ObjectiveType.Limit &&
+          d.objective.value.isZero(),
+      ),
+    ).toBeTrue();
+    expect(limits.map((d) => d.objective.id)).toEqual(
+      resourceIds.map((id) => `ef:limit:${id}`),
+    );
+
+    const rate = rational(510, 60);
+    const positive = deriveEndfieldObjectives({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, copper_ore: rate },
+      },
+      resourceRecipeSettings: {
+        copper_ore: { machineId: 'chosen-miner', overclock: rational(125) },
+      },
+    });
+    const output = positive.find(
+      (d) => d.objective.id === 'ef:resource:copper_ore',
+    )!;
+    expect(output.objective.targetId).toBe('copper_ore-liquid_water');
+    expect(output.objective.type).toBe(ObjectiveType.Output);
+    expect(output.objective.machineId).toBe('chosen-miner');
+    expect(output.objective.overclock).toEqual(rational(125));
+    expect(output.fixedOutput).toEqual({
+      itemId: 'copper_ore',
+      perSecond: rate,
+    });
+    expect(output.objective.value).toEqual(rational.zero);
+  });
+
+  it('declares transfer key input and limit in fixed per-second units', () => {
+    const initial = createEndfieldState();
+    const disabled = deriveEndfieldObjectives(initial);
+    expect(disabled[0].objective.type).toBe(ObjectiveType.Limit);
+    expect(disabled[0].fixedRate).toEqual(rational.zero);
+    const enabled = deriveEndfieldObjectives({
+      ...initial,
+      transfer: { enabled: true, source: 'tundra' },
+    });
+    expect(enabled.map((d) => d.objective.type)).toEqual([
+      ObjectiveType.Input,
+      ObjectiveType.Limit,
+    ]);
+    expect(
+      enabled.every((d) => d.objective.targetId === 'domain_key_tundra'),
+    ).toBeTrue();
+    expect(enabled.every((d) => d.fixedRate?.eq(rational(1, 3600)))).toBeTrue();
+  });
+
+  it('creates a positive supply without inventing recipe settings', () => {
+    const initial = createEndfieldState();
+    const state = {
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, iron_ore: rational(5) },
+      },
+    };
+    const output = deriveEndfieldObjectives(state).find(
+      (item) => item.objective.id === 'ef:resource:iron_ore',
+    );
+    expect(output?.fixedOutput?.perSecond).toEqual(rational(5));
+    expect(output?.objective.machineId).toBeUndefined();
+  });
+});
+
+describe('Endfield native recipe mapping', () => {
+  it('identifies transfers from positive original key input rather than recipe names', () => {
+    const ids = tundraTransferRecipeIds({
+      renamed: { id: 'renamed', in: { domain_key_tundra: rational.one } },
+      transfer_tundra_fake: { id: 'transfer_tundra_fake', in: {} },
+      zero: { id: 'zero', in: { domain_key_tundra: rational.zero } },
+      negative: { id: 'negative', in: { domain_key_tundra: rational(-1) } },
+    });
+    expect(ids).toEqual(new Set(['renamed']));
+  });
+});
 
 describe('Endfield calculation composition with the published aef data', () => {
   let settings: SettingsStore;

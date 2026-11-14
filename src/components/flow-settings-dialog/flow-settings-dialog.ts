@@ -13,13 +13,15 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { elkAlgorithmOptions } from '~/state/preferences/elk-algorithm';
 import {
   FlowDiagram,
   flowDiagramOptions,
 } from '~/state/preferences/flow-diagram';
-import { FlowSettings } from '~/state/preferences/flow-settings';
+import {
+  FlowSettings,
+  initialFlowSettings,
+} from '~/state/preferences/flow-settings';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { sankeyAlignOptions } from '~/state/preferences/sankey-align';
 import { SettingsStore } from '~/state/settings/settings-store';
@@ -44,7 +46,6 @@ import { Tooltip } from '../tooltip/tooltip';
 export class FlowSettingsDialog implements DialogData {
   protected readonly dialogRef = inject(DialogRef);
   private readonly preferencesStore = inject(PreferencesStore);
-  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
   protected readonly settingsStore = inject(SettingsStore);
 
   protected readonly editValue = linkedSignal(() =>
@@ -52,7 +53,7 @@ export class FlowSettingsDialog implements DialogData {
   );
   protected readonly modified = computed(() => {
     const edit = this.editValue();
-    const init = this.defaults.preferences.flowSettings;
+    const init = initialFlowSettings;
     const keys = Object.keys(init) as (keyof FlowSettings)[];
     return keys.some((k) => init[k] !== edit[k]);
   });
@@ -72,7 +73,7 @@ export class FlowSettingsDialog implements DialogData {
   }
 
   reset(): void {
-    this.editValue.set(cloneDefaults(this.defaults).preferences.flowSettings);
+    this.editValue.set({ ...initialFlowSettings });
   }
 
   save(): void {

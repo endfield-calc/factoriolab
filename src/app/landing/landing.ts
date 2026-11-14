@@ -19,6 +19,7 @@ import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
 import { ObjectiveForm } from '~/components/objective-form';
 import { Select } from '~/components/select/select';
+import { gameOptions } from '~/data/game';
 import { Release } from '~/data/release';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
@@ -61,7 +62,7 @@ export class Landing {
   protected readonly faForward = faForward;
   protected readonly faFileImport = faFileImport;
   protected readonly faQuestion = faQuestion;
-  protected readonly gameOptions = this.settingsStore.gameOptions;
+  protected readonly gameOptions = gameOptions;
   protected readonly stateOptions = this.settingsStore.stateOptions;
 
   openPicker(): void {

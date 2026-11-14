@@ -20,7 +20,7 @@ export type Game =
 
 export const CUSTOM_MOD = 'cst';
 
-export const gameOptions: Option<Game>[] = [
+const allGameOptions: Option<Game>[] = [
   {
     value: 'endfield',
     label: 'options.game.endfield',
@@ -118,3 +118,7 @@ export const gameOptions: Option<Game>[] = [
     iconType: 'system',
   },
 ];
+
+export const gameOptions = allGameOptions.filter(
+  (option) => option.value === 'endfield',
+);

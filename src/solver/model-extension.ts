@@ -1,12 +1,6 @@
-import {
-  Constraint,
-  ConstraintProperties,
-  Model,
-  Variable,
-  VariableProperties,
-} from 'glpk-ts';
+import { Constraint, ConstraintProperties, Model, Variable } from 'glpk-ts';
 
-import { gcd, Rational, rational } from '~/rational/rational';
+import { Rational, rational } from '~/rational/rational';
 
 import type { GlpkResult, GlpkReturnCode } from './glpk-result';
 import type { SimplexState } from './simplex-state';
@@ -27,10 +21,9 @@ export interface LinearRule {
   readonly id: string;
   readonly terms: readonly {
     readonly ref: ModelVariableRef;
-    readonly coefficient: Rational;
+    readonly coefficient: 1 | 3;
   }[];
-  readonly lower?: Rational;
-  readonly upper?: Rational;
+  readonly upper: Rational;
 }
 
 export interface ModelRules {
@@ -72,60 +65,32 @@ export interface ModelRow {
 interface ExactIntegerRow {
   readonly name: string;
   readonly coeffs: readonly [Variable, bigint][];
-  readonly lower?: bigint;
-  readonly upper?: bigint;
-}
-
-interface ExactOriginalRow {
-  readonly name: string;
-  readonly terms: readonly [ModelBinding, Rational][];
-  readonly lower?: Rational;
-  readonly upper?: Rational;
+  readonly upper: bigint;
 }
 
 export interface BoundModelRules {
-  readonly integerVariables: readonly Variable[];
-  readonly integerBindings: readonly ModelBinding[];
+  readonly integerVariables: ReadonlySet<Variable>;
   readonly integerRows: readonly ExactIntegerRow[];
-  readonly originalRows: readonly ExactOriginalRow[];
   readonly infeasible: boolean;
 }
 
-export function addModelVariable(
-  model: Model,
-  properties: VariableProperties,
-): Variable {
-  for (const [label, value] of [
-    ['objective', properties.obj],
-    ['lower bound', properties.lb],
-    ['upper bound', properties.ub],
-  ] as const) {
-    if (value !== undefined && !Number.isFinite(value))
-      throw new Error(
-        `Non-finite ${label} of model variable: ${properties.name ?? ''}`,
-      );
-  }
-  return model.addVar(properties);
-}
+export type ModelRowProperties = Omit<
+  ConstraintProperties,
+  'coeffs' | 'name'
+> & {
+  name: string;
+  coeffs: [Variable, number][];
+};
 
 /** Keep the actual coefficients for an independent check of the final solution. */
 export function addModelRow(
   model: Model,
-  properties: ConstraintProperties,
+  properties: ModelRowProperties,
   rows: ModelRow[],
 ): Constraint {
-  const coeffs = properties.coeffs;
-  if (coeffs == null || !Array.isArray(coeffs))
-    throw new Error('A model row must use an explicit coefficient list');
-  if (
-    (properties.lb !== undefined && !Number.isFinite(properties.lb)) ||
-    (properties.ub !== undefined && !Number.isFinite(properties.ub)) ||
-    coeffs.some(([, coefficient]) => !Number.isFinite(coefficient))
-  )
-    throw new Error(`Non-finite model row: ${properties.name ?? ''}`);
   rows.push({
-    name: properties.name ?? '',
-    coeffs: coeffs.slice(),
+    name: properties.name,
+    coeffs: properties.coeffs.slice(),
     lower: properties.lb,
     upper: properties.ub,
   });
@@ -133,13 +98,6 @@ export function addModelRow(
 }
 
 function refKey(ref: ModelVariableRef): string {
-  if (
-    ref == null ||
-    (ref.kind !== 'recipe' && ref.kind !== 'objective') ||
-    typeof ref.id !== 'string' ||
-    ref.id.length === 0
-  )
-    throw new Error('Invalid model variable reference');
   return JSON.stringify([ref.kind, ref.id]);
 }
 
@@ -150,15 +108,6 @@ export function finiteNumber(value: Rational, label: string): number {
   if (number === 0 && value.nonzero())
     throw new Error(`Unrepresentable ${label}: numeric underflow`);
   return number;
-}
-
-function exactRational(value: Rational, label: string): Rational {
-  if (!(value instanceof Rational)) throw new Error(`Invalid ${label}`);
-  return value;
-}
-
-function isArray(value: unknown): boolean {
-  return Array.isArray(value);
 }
 
 function floor(value: Rational): bigint {
@@ -176,53 +125,6 @@ function safeInteger(value: bigint, label: string): number {
   if (!Number.isSafeInteger(result))
     throw new Error(`Integer ${label} exceeds safe numeric range`);
   return result;
-}
-
-/** Normalize a rational integer row onto its exact attainable lattice. */
-function integerRow(
-  name: string,
-  terms: readonly [Variable, Rational][],
-  lower: Rational | undefined,
-  upper: Rational | undefined,
-): { readonly exact: ExactIntegerRow; readonly numeric: ConstraintProperties } {
-  let denominator = 1n;
-  for (const [, coefficient] of terms)
-    denominator =
-      (denominator / gcd(denominator, coefficient.q)) * coefficient.q;
-  const scaled = terms.map(([variable, coefficient]): [Variable, bigint] => [
-    variable,
-    coefficient.p * (denominator / coefficient.q),
-  ]);
-  const divisor = scaled.reduce(
-    (result, [, coefficient]) => gcd(result, coefficient),
-    0n,
-  );
-  const step = new Rational(divisor, denominator);
-  const coeffs = scaled.map(([variable, coefficient]): [Variable, bigint] => [
-    variable,
-    coefficient / divisor,
-  ]);
-  const exactLower = lower === undefined ? undefined : ceil(lower.div(step));
-  const exactUpper = upper === undefined ? undefined : floor(upper.div(step));
-  const numeric: ConstraintProperties = {
-    name,
-    coeffs: coeffs.map(([variable, coefficient]) => [
-      variable,
-      safeInteger(coefficient, `coefficient of ${name}`),
-    ]),
-    lb:
-      exactLower === undefined
-        ? undefined
-        : safeInteger(exactLower, `lower bound of ${name}`),
-    ub:
-      exactUpper === undefined
-        ? undefined
-        : safeInteger(exactUpper, `upper bound of ${name}`),
-  };
-  return {
-    exact: { name, coeffs, lower: exactLower, upper: exactUpper },
-    numeric,
-  };
 }
 
 /** Bind only actual model variables, with no product-specific knowledge. */
@@ -243,18 +145,7 @@ export function bindModelRules(
     boundVariables.add(binding.variable);
   }
 
-  const variables = Object.freeze(
-    bindings.map(({ description }) =>
-      Object.freeze({
-        ...description,
-        ref: Object.freeze({ ...description.ref }),
-      }),
-    ),
-  );
-  const rules = context.compile(variables);
-  if (!rules || !isArray(rules.constraints) || !isArray(rules.integers))
-    throw new Error('Invalid model rules');
-
+  const rules = context.compile(bindings.map(({ description }) => description));
   const lookup = (ref: ModelVariableRef): ModelBinding => {
     const key = refKey(ref);
     const binding = byRef.get(key);
@@ -262,7 +153,7 @@ export function bindModelRules(
     return binding;
   };
 
-  // Classify the complete integer set before examining any row.
+  // Classify all integer columns before constructing budget rows.
   const integerKeys = new Set<string>();
   const integers: { binding: ModelBinding; lower: number; upper?: number }[] =
     [];
@@ -273,11 +164,9 @@ export function bindModelRules(
       throw new Error(`Duplicate integer binding: ${key}`);
     integerKeys.add(key);
     const binding = lookup(ref);
-    const lower = ceil(exactRational(binding.lower, `lower bound of ${key}`));
+    const lower = ceil(binding.lower);
     const upper =
-      binding.upper === undefined
-        ? undefined
-        : floor(exactRational(binding.upper, `upper bound of ${key}`));
+      binding.upper === undefined ? undefined : floor(binding.upper);
     const numericLower = safeInteger(lower, `lower bound of ${key}`);
     const numericUpper =
       upper === undefined
@@ -287,174 +176,84 @@ export function bindModelRules(
     integers.push({ binding, lower: numericLower, upper: numericUpper });
   }
 
-  const preparedRows: ConstraintProperties[] = [];
+  const preparedRows: ModelRowProperties[] = [];
   const integerRows: ExactIntegerRow[] = [];
-  const originalRows: ExactOriginalRow[] = [];
-  const ruleIds = new Set<string>();
   for (const rule of rules.constraints) {
-    if (
-      !rule ||
-      typeof rule.id !== 'string' ||
-      rule.id.length === 0 ||
-      !isArray(rule.terms)
-    )
-      throw new Error('Invalid model constraint');
-    if (ruleIds.has(rule.id))
-      throw new Error(`Duplicate model constraint: ${rule.id}`);
-    ruleIds.add(rule.id);
-    const lower =
-      rule.lower === undefined
-        ? undefined
-        : exactRational(rule.lower, `lower bound of ${rule.id}`);
-    const upper =
-      rule.upper === undefined
-        ? undefined
-        : exactRational(rule.upper, `upper bound of ${rule.id}`);
-    if (rule.lower != null && rule.upper != null && rule.lower.gt(rule.upper))
-      throw new Error(`Inverted bounds of model constraint: ${rule.id}`);
-
-    const originalTerms: [ModelBinding, Rational][] = [];
-    const integerTerms: [Variable, Rational][] = [];
-    const continuousTerms: [ModelBinding, Rational][] = [];
+    const originalTerms: [Variable, number][] = [];
+    const integerTerms: [Variable, number][] = [];
     let fixed = rational.zero;
+    let minimum = rational.zero;
+    let hasFreeContinuous = false;
     const seen = new Set<string>();
     for (const term of rule.terms) {
-      if (!term || typeof term !== 'object')
-        throw new Error(`Invalid term in ${rule.id}`);
       const key = refKey(term.ref);
       if (seen.has(key))
         throw new Error(`Duplicate term in ${rule.id}: ${key}`);
       seen.add(key);
       const binding = lookup(term.ref);
-      const coefficient = exactRational(
-        term.coefficient,
-        `coefficient in ${rule.id}`,
-      );
-      if (coefficient.isZero()) continue;
-      originalTerms.push([binding, coefficient]);
+      const coefficient = term.coefficient;
+      originalTerms.push([binding.variable, coefficient]);
       if (integerKeys.has(key)) {
         integerTerms.push([binding.variable, coefficient]);
       } else if (
         binding.upper !== undefined &&
         binding.lower.eq(binding.upper)
       ) {
-        fixed = fixed.add(coefficient.mul(binding.lower));
+        fixed = fixed.add(rational(coefficient).mul(binding.lower));
       } else {
-        continuousTerms.push([binding, coefficient]);
+        hasFreeContinuous = true;
+        minimum = minimum.add(rational(coefficient).mul(binding.lower));
       }
     }
-    originalRows.push({ name: rule.id, terms: originalTerms, lower, upper });
-    const remainingLower = lower?.sub(fixed);
-    const remainingUpper = upper?.sub(fixed);
-    if (integerTerms.length === 0 && continuousTerms.length === 0) {
-      if (
-        remainingLower?.gt(rational.zero) ||
-        remainingUpper?.lt(rational.zero)
-      )
-        infeasible = true;
+
+    // Decide constants before converting the cap to a floating-point value.
+    if (integerTerms.length === 0 && !hasFreeContinuous) {
+      if (fixed.gt(rule.upper)) infeasible = true;
       continue;
     }
 
-    const addIntegerRow = (lo?: Rational, hi?: Rational): void => {
-      if (lo === undefined && hi === undefined) return;
-      const normalized = integerRow(`${rule.id}:integer`, integerTerms, lo, hi);
-      if (
-        normalized.exact.lower !== undefined &&
-        normalized.exact.upper !== undefined &&
-        normalized.exact.lower > normalized.exact.upper
-      )
-        infeasible = true;
-      integerRows.push(normalized.exact);
-      preparedRows.push(normalized.numeric);
-    };
-
-    if (continuousTerms.length === 0) {
-      // Fixed continuous terms were moved exactly; the remaining lattice row
-      // is equivalent for every integer assignment.
-      addIntegerRow(remainingLower, remainingUpper);
-      continue;
+    if (hasFreeContinuous) {
+      // Preserve the original numeric mixed row and its tolerance policy.
+      preparedRows.push({
+        name: rule.id,
+        coeffs: originalTerms,
+        ub: finiteNumber(rule.upper, `upper bound of ${rule.id}`),
+      });
     }
 
-    // Keep the original mixed/continuous row. Its floating-point continuous
-    // part is checked with tolerance, not claimed as an exact certificate.
-    const numericLower =
-      lower === undefined
-        ? undefined
-        : finiteNumber(lower, `lower bound of ${rule.id}`);
-    const numericUpper =
-      upper === undefined
-        ? undefined
-        : finiteNumber(upper, `upper bound of ${rule.id}`);
-    if (
-      lower !== undefined &&
-      upper !== undefined &&
-      !lower.eq(upper) &&
-      numericLower === numericUpper
-    )
-      throw new Error(
-        `Indistinguishable bounds of model constraint: ${rule.id}`,
-      );
-    preparedRows.push({
-      name: rule.id,
-      coeffs: originalTerms.map(([binding, coefficient]) => [
-        binding.variable,
-        finiteNumber(coefficient, `coefficient in ${rule.id}`),
-      ]),
-      lb: numericLower,
-      ub: numericUpper,
-    });
-
-    if (integerTerms.length === 0) continue;
-    let minimum: Rational | undefined = rational.zero;
-    let maximum: Rational | undefined = rational.zero;
-    for (const [binding, coefficient] of continuousTerms) {
-      const positive = coefficient.gt(rational.zero);
-      const minBound = positive ? binding.lower : binding.upper;
-      const maxBound = positive ? binding.upper : binding.lower;
-      minimum =
-        minimum === undefined || minBound === undefined
-          ? undefined
-          : minimum.add(coefficient.mul(minBound));
-      maximum =
-        maximum === undefined || maxBound === undefined
-          ? undefined
-          : maximum.add(coefficient.mul(maxBound));
+    if (integerTerms.length > 0) {
+      // Integer contributions have integral positive weights, so flooring the
+      // exact residual is equivalent without free continuous terms and a
+      // necessary projection when free continuous terms are present.
+      const name = `${rule.id}:integer`;
+      const upper = floor(rule.upper.sub(fixed).sub(minimum));
+      integerRows.push({
+        name,
+        coeffs: integerTerms.map(([variable, coefficient]) => [
+          variable,
+          BigInt(coefficient),
+        ]),
+        upper,
+      });
+      preparedRows.push({
+        name,
+        coeffs: integerTerms,
+        ub: safeInteger(upper, `upper bound of ${name}`),
+      });
     }
-    // These are necessary box projections only; no coupled-row inference.
-    addIntegerRow(
-      remainingLower === undefined || maximum === undefined
-        ? undefined
-        : remainingLower.sub(maximum),
-      remainingUpper === undefined || minimum === undefined
-        ? undefined
-        : remainingUpper.sub(minimum),
-    );
   }
 
-  const integerBindings = integers.map(({ binding }) => binding);
-  const integerVariables = integerBindings.map(({ variable }) => variable);
-  if (infeasible)
-    return {
-      integerVariables,
-      integerBindings,
-      integerRows,
-      originalRows,
-      infeasible: true,
-    };
+  const integerVariables = new Set(
+    integers.map(({ binding }) => binding.variable),
+  );
+  if (infeasible) return { integerVariables, integerRows, infeasible: true };
   for (const row of preparedRows) addModelRow(model, row, rows);
   for (const { binding, lower, upper } of integers) {
-    // GLPK requires integral bounds on integer columns. Tightening bounds this
-    // way is exactly equivalent over integers, including fractional limits.
+    // These exact safe integral bounds remain unchanged after binding.
     binding.variable.bounds = [lower, upper];
     binding.variable.type = 'integer';
   }
-  return {
-    integerVariables,
-    integerBindings,
-    integerRows,
-    originalRows,
-    infeasible: false,
-  };
+  return { integerVariables, integerRows, infeasible: false };
 }
 
 const SOLUTION_TOLERANCE = 1e-7;
@@ -464,16 +263,12 @@ export const INTEGER_TOLERANCE = 1e-7;
 export function validateModelSolution(
   model: Model,
   rows: readonly ModelRow[],
-  integerBindings: readonly ModelBinding[],
+  integerVariables: ReadonlySet<Variable>,
   integerRows: readonly ExactIntegerRow[],
-  originalRows: readonly ExactOriginalRow[],
   mip: boolean,
 ): { readonly cost: number; readonly values: ReadonlyMap<Variable, number> } {
   const valueOf = (variable: Variable): number =>
     mip ? variable.valueMIP : variable.value;
-  const integerByVariable = new Map(
-    integerBindings.map((binding) => [binding.variable, binding]),
-  );
   const values = new Map<Variable, number>();
   const closeEnough = (actual: number, bound: number, scale: number): boolean =>
     Math.abs(actual - bound) <=
@@ -486,9 +281,8 @@ export function validateModelSolution(
       throw new Error(
         `Non-finite solution value or objective coefficient: ${variable.name}`,
       );
-    const binding = integerByVariable.get(variable);
     let value = raw;
-    if (binding) {
+    if (integerVariables.has(variable)) {
       value = Math.round(raw);
       if (
         !Number.isSafeInteger(value) ||
@@ -497,12 +291,11 @@ export function validateModelSolution(
         throw new Error(
           `Solution violates integer constraint or safe range: ${variable.name}`,
         );
-      const exact = new Rational(BigInt(value));
-      if (exact.lt(binding.lower))
+      if (variable.lb !== undefined && value < variable.lb)
         throw new Error(
           `Solution violates exact integer lower bound: ${variable.name}`,
         );
-      if (binding.upper !== undefined && exact.gt(binding.upper))
+      if (variable.ub !== undefined && value > variable.ub)
         throw new Error(
           `Solution violates exact integer upper bound: ${variable.name}`,
         );
@@ -527,47 +320,13 @@ export function validateModelSolution(
     let activity = 0n;
     for (const [variable, coefficient] of row.coeffs) {
       const value = values.get(variable);
-      if (value === undefined || !integerByVariable.has(variable))
+      if (value === undefined || !integerVariables.has(variable))
         throw new Error(`Invalid exact integer row: ${row.name}`);
       activity += coefficient * BigInt(value);
     }
-    if (row.lower !== undefined && activity < row.lower)
-      throw new Error(
-        `Solution violates exact integer lower constraint: ${row.name}`,
-      );
-    if (row.upper !== undefined && activity > row.upper)
+    if (activity > row.upper)
       throw new Error(
         `Solution violates exact integer upper constraint: ${row.name}`,
-      );
-  }
-  for (const row of originalRows) {
-    let activity = rational.zero;
-    let exact = true;
-    for (const [binding, coefficient] of row.terms) {
-      let value: Rational;
-      if (integerByVariable.has(binding.variable)) {
-        const integer = values.get(binding.variable);
-        if (integer === undefined)
-          throw new Error(`Invalid exact row: ${row.name}`);
-        value = new Rational(BigInt(integer));
-      } else if (
-        binding.upper !== undefined &&
-        binding.lower.eq(binding.upper)
-      ) {
-        value = binding.lower;
-      } else {
-        exact = false;
-        break;
-      }
-      activity = activity.add(coefficient.mul(value));
-    }
-    if (exact && row.lower !== undefined && activity.lt(row.lower))
-      throw new Error(
-        `Solution violates exact original lower constraint: ${row.name}`,
-      );
-    if (exact && row.upper !== undefined && activity.gt(row.upper))
-      throw new Error(
-        `Solution violates exact original upper constraint: ${row.name}`,
       );
   }
   for (const row of rows) {

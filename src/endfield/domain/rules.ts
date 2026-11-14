@@ -34,7 +34,7 @@ export function compileEndfieldRules(
   const terms = (
     selected: readonly CalculationVariable[],
   ): LinearRule['terms'] =>
-    selected.map(({ ref }) => ({ ref, coefficient: rational.one }));
+    selected.map(({ ref }) => ({ ref, coefficient: 1 }));
 
   if (availability != null) {
     for (const variable of variables) {
@@ -45,7 +45,7 @@ export function compileEndfieldRules(
       )
         constraints.push({
           id: `ef:availability:${variable.ref.kind}:${variable.ref.id}`,
-          terms: [{ ref: variable.ref, coefficient: rational.one }],
+          terms: [{ ref: variable.ref, coefficient: 1 }],
           upper: rational.zero,
         });
     }
@@ -95,7 +95,7 @@ export function compileEndfieldRules(
     id: 'ef:water:shared',
     terms: [
       ...terms(water),
-      ...waterExport.map(({ ref }) => ({ ref, coefficient: rational(3) })),
+      ...waterExport.map(({ ref }) => ({ ref, coefficient: 3 as const })),
     ],
     upper: rational(3),
   });

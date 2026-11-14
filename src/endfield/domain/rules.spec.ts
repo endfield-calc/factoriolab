@@ -60,7 +60,9 @@ function total(
 ): Rational {
   return constraint.terms.reduce(
     (sum, term) =>
-      sum.add((values[term.ref.id] ?? rational.zero).mul(term.coefficient)),
+      sum.add(
+        (values[term.ref.id] ?? rational.zero).mul(rational(term.coefficient)),
+      ),
     rational.zero,
   );
 }
@@ -92,7 +94,7 @@ describe('Endfield model rules', () => {
         explicit: rational(2),
         fractional: rational(1, 2),
         'other-machine': rational(100),
-      }).gt(limit.upper!),
+      }).gt(limit.upper),
     ).toBeTrue();
     expect(result.integers).toEqual([variables[0].ref, variables[1].ref]);
     expect(compileEndfieldRules(initial, variables).integers).toEqual([]);
@@ -166,10 +168,10 @@ describe('Endfield model rules', () => {
       jasmine.arrayWithExactContents(expectedRefs),
     );
     expect(enabled.integers.some((ref) => ref.id === 'unlisted')).toBeFalse();
-    expect(total(budget, { v0: rational(1, 2) }).lte(budget.upper!)).toBeTrue();
+    expect(total(budget, { v0: rational(1, 2) }).lte(budget.upper)).toBeTrue();
     expect(enabled.integers).toContain(variables[0].ref);
     expect(
-      total(budget, { v0: rational.one, v1: rational.one }).gt(budget.upper!),
+      total(budget, { v0: rational.one, v1: rational.one }).gt(budget.upper),
     ).toBeTrue();
     const disabled = compileEndfieldRules(initial, variables);
     expect(rule(disabled, 'ef:transfer:tundra').upper).toEqual(rational.zero);
@@ -198,17 +200,13 @@ describe('Endfield model rules', () => {
       localExplicit.ref,
       exported.ref,
     ]);
-    expect(shared.terms.map((term) => term.coefficient)).toEqual([
-      rational.one,
-      rational.one,
-      rational(3),
-    ]);
+    expect(shared.terms.map((term) => term.coefficient)).toEqual([1, 1, 3]);
     expect(
       total(shared, {
         local: rational(2),
         'local-explicit': rational.one,
         export: rational(1, 10),
-      }).gt(shared.upper!),
+      }).gt(shared.upper),
     ).toBeTrue();
     expect(both.integers).toEqual([]);
 
@@ -216,9 +214,7 @@ describe('Endfield model rules', () => {
     expect(rule(justExport, 'ef:water:shared').terms[0].ref).toEqual(
       exported.ref,
     );
-    expect(rule(justExport, 'ef:water:shared').terms[0].coefficient).toEqual(
-      rational(3),
-    );
+    expect(rule(justExport, 'ef:water:shared').terms[0].coefficient).toEqual(3);
     const justLocal = compileEndfieldRules(state, [local]);
     expect(rule(justLocal, 'ef:water:shared').terms[0].ref).toEqual(local.ref);
     expect(

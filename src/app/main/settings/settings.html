@@ -183,8 +183,22 @@
     </ng-template>
   </lab-accordion-item>
 
-  <lab-accordion-item text="settings.factory" [expanded]="true">
+  <lab-accordion-item
+    text="settings.factory"
+    [note]="(settings().preset | option: settingsStore.presetOptions())?.label"
+    [expanded]="true"
+  >
     <ng-template>
+      <lab-form-field label="settings.preset">
+        <lab-select
+          [options]="settingsStore.presetOptions()"
+          labTooltip="settings.presetTooltip"
+          labTooltipPosition="adjacent"
+          [ngModel]="settings().preset"
+          (ngModelChange)="settingsStore.apply({ preset: $event })"
+        ></lab-select>
+      </lab-form-field>
+
       @if (options().locations.length > 1) {
         <lab-form-field label="settings.locations">
           <lab-select

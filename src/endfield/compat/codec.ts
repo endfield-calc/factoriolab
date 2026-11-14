@@ -312,14 +312,17 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
       'ef.resourceRecipeSettings',
       resourceIds,
     );
-    for (const id of resourceIds)
-      if (id in input)
-        resourceRecipeSettings[id] = recipeSettings(
-          input[id],
-          data,
-          id,
-          `ef.resourceRecipeSettings.${id}`,
-        );
+    for (const id of resourceIds) {
+      if (!(id in input)) continue;
+      const settings = recipeSettings(
+        input[id],
+        data,
+        id,
+        `ef.resourceRecipeSettings.${id}`,
+      );
+      if (settings.machineId != null || settings.overclock != null)
+        resourceRecipeSettings[id] = settings;
+    }
   }
   const checkedDerived = new Set<string>();
   if ('checkedDerived' in obj) {

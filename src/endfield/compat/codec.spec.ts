@@ -118,6 +118,31 @@ describe('Endfield ef codec', () => {
     expect(decodeEndfield(encodeEndfield(state), data)).toEqual(state);
   });
 
+  it('canonicalizes empty source settings at the decoding boundary', () => {
+    const settings = {
+      originium_ore: { overclock: '125' },
+      copper_ore: { machineId: 'miner_4' },
+    };
+    const state = decodeEndfield(
+      payload({
+        version: 1,
+        resourceRecipeSettings: { ...settings, iron_ore: {} },
+      }),
+      data,
+    );
+    const canonical = decodeEndfield(
+      payload({ version: 1, resourceRecipeSettings: settings }),
+      data,
+    );
+    expect(state.resourceRecipeSettings).toEqual({
+      originium_ore: { overclock: rational(125) },
+      copper_ore: { machineId: 'miner_4' },
+    });
+    expect(state).toEqual(canonical);
+    expect(encodeEndfield(state)).toBe(encodeEndfield(canonical));
+    expect(decodeEndfield(encodeEndfield(state), data)).toEqual(state);
+  });
+
   it('round trips exact rates, real settings and owners with stable encoding', () => {
     const defaults = createEndfieldState();
     const state = {
@@ -210,8 +235,28 @@ describe('Endfield ef codec', () => {
         'ef.checkedDerived',
       ],
       [
+        { version: 1, resourceRecipeSettings: null },
+        'ef.resourceRecipeSettings',
+      ],
+      [{ version: 1, resourceRecipeSettings: [] }, 'ef.resourceRecipeSettings'],
+      [
+        { version: 1, resourceRecipeSettings: { unknown: {} } },
+        'ef.resourceRecipeSettings.unknown',
+      ],
+      [
+        { version: 1, resourceRecipeSettings: { copper_ore: null } },
+        'ef.resourceRecipeSettings.copper_ore',
+      ],
+      [
         { version: 1, resourceRecipeSettings: { copper_ore: [] } },
         'ef.resourceRecipeSettings.copper_ore',
+      ],
+      [
+        {
+          version: 1,
+          resourceRecipeSettings: { copper_ore: { overclock: null } },
+        },
+        'ef.resourceRecipeSettings.copper_ore.overclock',
       ],
       [
         { version: 1, checkedDerived: 'resource:iron_ore' },
@@ -239,6 +284,10 @@ describe('Endfield ef codec', () => {
       [
         { version: 1, resourceRecipeSettings: { copper_ore: { unknown: 1 } } },
         'ef.resourceRecipeSettings.copper_ore.unknown',
+      ],
+      [
+        { version: 1, resourceRecipeSettings: { copper_ore: { cost: '-1' } } },
+        'ef.resourceRecipeSettings.copper_ore.cost',
       ],
     ] as const)
       expectRestoreError(() => decodeEndfield(payload(value), data), field);

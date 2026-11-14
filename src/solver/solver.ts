@@ -1,7 +1,6 @@
 import { inject, Service } from '@angular/core';
 import {
   Constraint,
-  ConstraintProperties,
   Model,
   Simplex,
   Status,
@@ -34,7 +33,6 @@ import { GlpkReturnCode } from './glpk-result';
 import { ItemValues } from './item-values';
 import {
   addModelRow,
-  addModelVariable,
   bindModelRules,
   CalculationModelContext,
   finiteNumber,
@@ -42,6 +40,7 @@ import {
   ModelBinding,
   ModelGlpkResult,
   ModelRow,
+  ModelRowProperties,
   ModelSimplexState,
   validateModelSolution,
 } from './model-extension';
@@ -425,7 +424,7 @@ export class Solver {
       lb: 0,
       name: 'maximize',
     };
-    const maximizeVar = addModelVariable(m, config);
+    const maximizeVar = m.addVar(config);
 
     // Used to track quantities from maximization ratio
     let maximizeFactor = rational.zero;
@@ -449,7 +448,7 @@ export class Solver {
         );
       }
 
-      recipeVarRecord[recipeId] = addModelVariable(m, config);
+      recipeVarRecord[recipeId] = m.addVar(config);
       if (state.modelContext) {
         bindings.push({
           description: {
@@ -478,7 +477,7 @@ export class Solver {
         config.lb = bound;
       }
 
-      recipeObjectiveVarRecord[obj.id] = addModelVariable(m, config);
+      recipeObjectiveVarRecord[obj.id] = m.addVar(config);
       if (state.modelContext) {
         bindings.push({
           description: {
@@ -503,12 +502,12 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            maximizeRecipeVarRecord[obj.id] = addModelVariable(m, varConfig);
+            maximizeRecipeVarRecord[obj.id] = m.addVar(varConfig);
             const coeffs: [Variable, number][] = [
               [recipeObjectiveVarRecord[obj.id], 1],
               [maximizeRecipeVarRecord[obj.id], -1],
             ];
-            const constrConfig: ConstraintProperties = {
+            const constrConfig: ModelRowProperties = {
               coeffs,
               lb: 0,
               name: obj.id,
@@ -532,7 +531,7 @@ export class Solver {
                 ),
               ],
             ];
-            const config: ConstraintProperties = {
+            const config: ModelRowProperties = {
               coeffs,
               lb: 0,
               name: obj.id,
@@ -552,7 +551,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      unproduceableVarRecord[itemId] = addModelVariable(m, config);
+      unproduceableVarRecord[itemId] = m.addVar(config);
     }
 
     // Add excluded vars to model
@@ -563,7 +562,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      excludedVarRecord[itemId] = addModelVariable(m, config);
+      excludedVarRecord[itemId] = m.addVar(config);
     }
 
     // Add input/output vars to model
@@ -574,7 +573,7 @@ export class Solver {
         lb: 0,
         name: itemId,
       };
-      surplusVarRecord[itemId] = addModelVariable(m, config);
+      surplusVarRecord[itemId] = m.addVar(config);
 
       const values = state.itemValues[itemId];
       if (values.in) {
@@ -583,7 +582,7 @@ export class Solver {
           ub: finiteNumber(values.in, `input upper bound of ${itemId}`),
           name: itemId,
         };
-        inputVarRecord[itemId] = addModelVariable(m, inputConfig);
+        inputVarRecord[itemId] = m.addVar(inputConfig);
       }
     }
 
@@ -678,7 +677,7 @@ export class Solver {
               lb: 0,
               name: itemId,
             };
-            maximizeItemVarRecord[itemId] = addModelVariable(m, config);
+            maximizeItemVarRecord[itemId] = m.addVar(config);
             netCoeffs.push([maximizeItemVarRecord[itemId], -1]);
             break;
           }
@@ -697,7 +696,7 @@ export class Solver {
       }
 
       const outputBound = finiteNumber(values.out, `output bound of ${itemId}`);
-      const netConfig: ConstraintProperties = {
+      const netConfig: ModelRowProperties = {
         coeffs: netCoeffs,
         lb: outputBound,
         ub: outputBound,
@@ -706,7 +705,7 @@ export class Solver {
       itemConstrRecord[itemId] = addModelRow(m, netConfig, rows);
 
       if (values.lim) {
-        const inputConfig: ConstraintProperties = {
+        const inputConfig: ModelRowProperties = {
           coeffs: inputCoeffs,
           ub: finiteNumber(values.lim, `input limit of ${itemId}`),
           name: itemId,
@@ -740,10 +739,8 @@ export class Solver {
     const extension = state.modelContext
       ? bindModelRules(m, state.modelContext, bindings, rows)
       : {
-          integerVariables: [],
-          integerBindings: [],
+          integerVariables: new Set<Variable>(),
           integerRows: [],
-          originalRows: [],
           infeasible: false,
         };
     if (extension.infeasible) {
@@ -762,7 +759,7 @@ export class Solver {
     // An optimal LP basis prepares either the final LP or the integer solve.
     const start = Date.now();
     let [returnCode, status] = this.glpkSimplex(m, state.glpkAlgorithm);
-    const mip = extension.integerVariables.length > 0;
+    const mip = extension.integerVariables.size > 0;
     if (returnCode === 'ok' && status === 'optimal' && mip) {
       returnCode = m.intopt({ msgLevel: 'off', tolInt: INTEGER_TOLERANCE });
       status = m.statusMIP;
@@ -807,9 +804,8 @@ export class Solver {
     const checked = validateModelSolution(
       m,
       rows,
-      extension.integerBindings,
+      extension.integerVariables,
       extension.integerRows,
-      extension.originalRows,
       mip,
     );
     cost = rational(mip ? checked.cost : modelObjective);

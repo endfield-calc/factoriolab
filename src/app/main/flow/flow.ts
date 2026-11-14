@@ -88,7 +88,6 @@ export class Flow {
   protected readonly FlowSettingsDialog = FlowSettingsDialog;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.renderGeneration++);
     combineLatest({
       data: toObservable(this.flowBuilder.flowData),
       settings: toObservable(this.preferencesStore.flowSettings),

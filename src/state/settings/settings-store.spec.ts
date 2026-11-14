@@ -6,7 +6,7 @@ import {
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { CUSTOM_MOD, Game } from '~/data/game';
+import { CUSTOM_MOD, Game, gameOptions } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { EnergyType } from '~/data/schema/energy-type';
 import { emptyModData } from '~/data/schema/mod-data';
@@ -850,9 +850,7 @@ describe('SettingsStore dataset HTTP boundary', () => {
     const settings = TestBed.inject(SettingsStore);
     const preferences = TestBed.inject(PreferencesStore);
     const http = TestBed.inject(HttpTestingController);
-    expect(settings.gameOptions.map((option) => option.value)).toEqual([
-      'endfield',
-    ]);
+    expect(gameOptions.map((option) => option.value)).toEqual(['endfield']);
     preferences.apply({ language: 'zh' });
     settings.apply({ modId: 'aef' });
     TestBed.tick();

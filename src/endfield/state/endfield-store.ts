@@ -33,33 +33,7 @@ export class EndfieldStore {
 
   set(state: EndfieldState): void {
     for (const owner of state.checkedDerived) assertOwner(owner);
-    const resourceRecipeSettings: Partial<
-      Record<ResourceId, SourceRecipeSettings>
-    > = {};
-    for (const [id, settings] of Object.entries(state.resourceRecipeSettings)) {
-      assertResource(id);
-      if (settings == null) continue;
-      const { machineId, overclock } = settings;
-      if (machineId != null || overclock != null)
-        resourceRecipeSettings[id] = {
-          ...(machineId == null ? {} : { machineId }),
-          ...(overclock == null ? {} : { overclock }),
-        };
-    }
-    this._state.set({
-      ...state,
-      resourceLimits: {
-        ...state.resourceLimits,
-        rates: { ...state.resourceLimits.rates },
-      },
-      machineLimits: {
-        ...state.machineLimits,
-        limits: { ...state.machineLimits.limits },
-      },
-      transfer: { ...state.transfer },
-      resourceRecipeSettings,
-      checkedDerived: new Set(state.checkedDerived),
-    });
+    this._state.set(state);
   }
 
   reset(): void {

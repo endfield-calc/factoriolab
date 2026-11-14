@@ -458,8 +458,8 @@ describe('Endfield calculation composition with the published aef data', () => {
     )) {
       settings.apply({ displayRate: displayRate });
       const transfer = objectives
-        .calculationContext()
-        .normalized.filter((o) => o.targetId === 'domain_key_tundra');
+        .normalizedObjectives()
+        .filter((o) => o.targetId === 'domain_key_tundra');
       expect(transfer.length).toBe(2);
       expect(transfer.every((o) => o.value.eq(rational(1, 3600)))).toBeTrue();
     }

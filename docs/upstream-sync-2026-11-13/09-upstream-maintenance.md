@@ -6,7 +6,7 @@
 
 1. 发布应用仅开放 `aef`，直接使用原生 `DEFAULT_MOD`。完整上游游戏目录、`modHash` / `modHashV0` 身份及顺序保留，供原生算法、数据工具和测试使用。路由、缓存恢复及 HTTP 请求入口限制为 `aef`；内部算法和可信测试夹具保持原生接口，不再给每个读取方法叠加产品检查。
 2. 旧目标类型 11–14 和 `cet` 沿上游当前默认忽略，不新增转换、拒载、警告或重编号。普通旧格式仅使用上游 `Migration`；不另外承诺已删除 ID 的迁移。三个内置示例已一次性改成当前编码器生成的链接。
-3. 省略的无法生产及回收成本统一采用当前上游默认 `1e8 / 1`，不保留迁移阶段的 `1e6 / 1000` 补丁。保留终末地 surplus=1、电力=1、kW、light、BoxLine 和浏览器语言初始化。
+3. 省略的无法生产及回收成本统一采用当前上游默认 `1e8 / 1`，不保留迁移阶段的 `1e6 / 1000` 补丁。保留终末地 surplus=1、电力=1、kW、light、BoxLine 和浏览器语言初始化。电力单位选择与单项设备预设显示使用上游原生控件；单位只影响显示。
 4. 资源满额采集及盈余是当前功能。额度 560/min、需求 540/min 时仍采集 560/min，产生盈余 20/min；矿机、用水和功耗均按真实满额采集计算。
 5. 来源、普通配方和显式机器目标的设置与勾选相互独立。关闭资源仅停止派生，重开保留来源设置；含 item 的合并步骤优先使用 item 勾选。
 
@@ -25,7 +25,7 @@
 | 责任             | 当前实现与必要性                                                                                                                                                                                                                                                             |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 默认值与产品装配 | 直接修改原生 settings/preferences/flow 默认常量和 `DEFAULT_MOD`，品牌读取产品 manifest。没有默认值注入、产品默认值覆盖、dataset pin token 或第二套 neutral 默认值。初始化语言使用已有 language 模块中的具体函数。                                                            |
-| 当前状态         | `EndfieldStore` 保留资源、洪炉、传输、电力和来源设置。写入时复制实际可变容器，来源仅保留机器/超频；Rational 沿用原生只读值。普通状态由原生各 Store 管理，不再依赖通用递归快照或 Set 包装框架。                                                                               |
+| 当前状态         | `EndfieldStore` 保留资源、洪炉、传输、电力和来源设置，沿用原生不可变调用约定：编辑时只复制实际修改的路径，`set` 直接接收状态。来源仅保存机器/超频，解码验证后省略空设置；Rational 沿用原生只读值。普通状态由原生各 Store 管理。                                              |
 | 恢复与链接       | `compat/codec.ts` 编解码当前 ef；`restore.ts` 验证原生 `PartialState`。错误直接保存可显示的消息。`state/workspace-lifecycle.ts` 保留代次和恢复门禁，RouterSync 继续负责 writeSequence、导航取消/重定向/离开、HTTP 重试和回滚。没有额外的状态协议、诊断代码/字段/严重性协议。 |
 | 计算             | 原生目标、配方和调整设置的映射集中在现有 `endfield/adapters/calculation-extension.ts`。domain/rules 只编译业务约束；所需模型类型归属实际消费者 `solver/model-extension.ts`。不复制整份 dataset/settings/objectives，不维护独立扩展类型文件或无消费者的规则来源元数据。       |
 | 模型安全         | `solver/model-extension.ts` 绑定约束和整数列，校验数值、最终 MIP 解、原始约束和实际输入量。公开 Solver 在建模前拒绝负机器数量。                                                                                                                                              |
@@ -39,7 +39,7 @@
 
 生产页面另复现签名起点已有的资源输入问题：560 改为 90 后立即 Tab/Enter，DOM 显示新值但仍按 560 计算。同一任务同步派发 input/blur 则成功，旧测试没有覆盖真实交错。原因是模板每次换算创建新 Rational，使原生 InputNumber 的 linkedSignal 文本在提交前被旧值覆盖。六个显示速率改为稳定 computed；保持原生 Control/InputNumber 不变，补 input→变更检测→blur/Enter 两项真实控件回归。修复后的生产页面已验证即时提交会同步改变实际表格、机器数及链接。
 
-适配器直接准备原生 `ObjectiveSettings`：来源机器数为物理速率除以调整后的正产率；传输先乘显示因子，再走原生 `normalizeRate`。保留原生普通 `normalizedObjectives`，删除 `DerivedObjective/fixedOutput/fixedRate` 与独立 rates Map。普通目标编辑 UI 仍只读取普通目标。来源 checked 和 modified 均由 ObjectivesStore 统一投影，Steps 直接读取原生结果，不再重算一次。成本适配器只依赖单个原生 computed 电价 selector；不为勾选变化另建计算状态投影框架。
+适配器直接准备原生 `ObjectiveSettings`：来源机器数为物理速率除以调整后的正产率；传输先乘显示因子，再走原生 `normalizeRate`。现有 `normalizedObjectives` 统一归一化完整计算目标，不在计算上下文中另存一份归一化列表。普通目标编辑 UI 仍只读取普通目标。来源 checked 和 modified 均由 ObjectivesStore 统一投影，Steps 直接读取原生结果，不再重算一次。成本适配器只依赖单个原生 computed 电价 selector；勾选重算沿用上游，不另建计算状态投影框架。
 
 `LabParams` 直接声明现行 `ef` 字段，RouterSync 直接读写，不再用 cast 和 Object.assign 绕开原生契约。ef 输出使用原生 `toFraction(false)`，精确 BigInt 输入解析仍保留整数、分数、十进制及科学计数法。当前预设只按 aef 的 `defaults.presets` 数据校验，不另列跨游戏后备值。Flow 布局完成始终检查当前输入引用，删除只为手工测试输入放行的第二种语义。
 
@@ -51,7 +51,7 @@
 | adapters/translation-fallback.ts                 | 首次 UI 词典请求失败时仍提供完整英文及产品词条                                            |
 | compat/codec.ts、compat/restore.ts               | 现行资源工作区精确往返，以及原生语法解析之后的当前数据/业务校验；不转换旧版 11–14/cet     |
 | domain/model.ts、domain/cost.ts、domain/rules.ts | 来源状态身份、成本公式和共享设备/整数预算；数据本身不能表达这些随所选机器及超频变化的约束 |
-| state/endfield-store.ts                          | 来源与普通/显式设置隔离，以及入站可变容器接管                                             |
+| state/endfield-store.ts                          | 来源与普通/显式设置隔离，以及实际编辑时的不可变更新                                       |
 | ui/resources.ts、ui/resources.html               | 资源面板及具体交互，直接使用原生组件和 Store                                              |
 | ui/guide.ts、ui/guide.html                       | 当前三个示例链接、地区/成本/资源说明和产品入口                                            |
 | providers.ts                                     | 实际应用与集成测试共用的两项具体 DI 装配，不声明插件协议                                  |

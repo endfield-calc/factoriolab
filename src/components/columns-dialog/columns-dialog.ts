@@ -19,6 +19,7 @@ import {
   copyColumnsState,
   initialColumnsState,
 } from '~/state/preferences/columns-state';
+import { powerUnitOptions } from '~/state/preferences/power-unit';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -27,11 +28,21 @@ import { spread } from '~/utils/object';
 import { Button } from '../button/button';
 import { Checkbox } from '../checkbox/checkbox';
 import { DialogData } from '../dialog/dialog';
+import { FormField } from '../form-field/form-field';
+import { Select } from '../select/select';
 import { PrecisionExamplePipe } from './precision-example-pipe';
 
 @Component({
   selector: 'lab-columns-dialog',
-  imports: [FormsModule, Button, Checkbox, PrecisionExamplePipe, TranslatePipe],
+  imports: [
+    FormsModule,
+    Button,
+    Checkbox,
+    FormField,
+    PrecisionExamplePipe,
+    Select,
+    TranslatePipe,
+  ],
   templateUrl: './columns-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -50,6 +61,7 @@ export class ColumnsDialog implements DialogData {
   protected readonly faRotateLeft = faRotateLeft;
   protected readonly faXmark = faXmark;
   readonly header = 'columns.header';
+  protected readonly powerUnitOptions = powerUnitOptions;
 
   protected value = copyColumnsState(this.settingsStore.columnsState());
   protected powerUnit = linkedSignal(

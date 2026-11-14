@@ -14,44 +14,32 @@ describe('EndfieldStore', () => {
     TestBed.configureTestingModule({ providers: [EndfieldStore] }),
   );
 
-  it('owns every input container and projects resource settings to supported fields', () => {
+  it('keeps earlier snapshots through source edits, reset and restore', () => {
     const store = TestBed.inject(EndfieldStore);
     const initial = createEndfieldState();
-    const owners = new Set([resourceOwner('copper_ore')]);
-    const source = {
-      machineId: 'miner_4',
-      overclock: rational(125),
-      cost: rational(-1),
-    };
-    const rates = { ...initial.resourceLimits.rates, copper_ore: rational(5) };
-    const limits = { [ovenId]: rational(7) };
-    const resourceLimits = { enabled: true, rates };
-    const machineLimits = { enabled: true, limits };
-    const transfer = { enabled: true, source: 'tundra' as const };
-    const sourceSettings = { copper_ore: source };
-    const input = {
+    store.set({
       ...initial,
-      resourceLimits,
-      machineLimits,
-      transfer,
-      checkedDerived: owners,
-      resourceRecipeSettings: sourceSettings,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, copper_ore: rational(5) },
+      },
+      machineLimits: { enabled: true, limits: { [ovenId]: rational(7) } },
+      transfer: { enabled: true, source: 'tundra' },
+      checkedDerived: new Set([resourceOwner('copper_ore')]),
+      resourceRecipeSettings: {
+        copper_ore: { machineId: 'miner_4', overclock: rational(125) },
+      },
       electric: rational(2),
-    };
-    store.set(input);
-
-    owners.clear();
-    source.machineId = 'other';
-    source.overclock = rational(200);
-    sourceSettings.copper_ore = { ...source, machineId: 'replacement' };
-    rates.copper_ore = rational(50);
-    limits[ovenId] = rational(70);
-    resourceLimits.enabled = false;
-    machineLimits.enabled = false;
-    transfer.enabled = false;
-    input.electric = rational(3);
-
+    });
     const snapshot = store.snapshot();
+    store.setResourceChecked('copper_ore', false);
+    store.updateResourceRecipeField('copper_ore', 'machineId', 'miner_2');
+    const edited = store.snapshot();
+    expect(edited.checkedDerived.has(resourceOwner('copper_ore'))).toBeFalse();
+    expect(edited.resourceRecipeSettings.copper_ore).toEqual({
+      machineId: 'miner_2',
+      overclock: rational(125),
+    });
     expect(snapshot.checkedDerived.has(resourceOwner('copper_ore'))).toBeTrue();
     expect(snapshot.resourceRecipeSettings.copper_ore).toEqual({
       machineId: 'miner_4',
@@ -70,13 +58,8 @@ describe('EndfieldStore', () => {
 
     store.reset();
     expect(store.snapshot()).toEqual(createEndfieldState());
-    store.set(snapshot);
-    store.setResourceChecked('copper_ore', false);
-    store.updateResourceRecipeField('copper_ore', 'machineId', 'miner_2');
+    expect(edited.resourceRecipeSettings.copper_ore?.machineId).toBe('miner_2');
     expect(snapshot.checkedDerived.has(resourceOwner('copper_ore'))).toBeTrue();
-    expect(snapshot.resourceRecipeSettings.copper_ore?.machineId).toBe(
-      'miner_4',
-    );
     store.set(snapshot);
     expect(store.snapshot()).toEqual(snapshot);
   });
@@ -100,6 +83,7 @@ describe('EndfieldStore', () => {
     });
     store.setResourceChecked('originium_ore', true);
     store.updateResourceRecipeField('originium_ore', 'machineId', 'miner_3');
+    const edited = store.snapshot();
     expect(store.snapshot().resourceRecipeSettings.originium_ore).toEqual({
       machineId: 'miner_3',
       overclock: rational(150),
@@ -119,6 +103,16 @@ describe('EndfieldStore', () => {
     expect(store.snapshot().resourceLimits.rates.originium_ore).toEqual(
       rational(560, 60),
     );
+    expect(edited.resourceRecipeSettings.originium_ore).toEqual({
+      machineId: 'miner_3',
+      overclock: rational(150),
+    });
+    expect(edited.resourceRecipeSettings.copper_ore).toEqual({
+      machineId: 'miner_4',
+    });
+    expect(
+      edited.checkedDerived.has(resourceOwner('originium_ore')),
+    ).toBeTrue();
   });
 
   it('removes value-equivalent defaults and keeps earlier snapshots unchanged', () => {
@@ -146,15 +140,6 @@ describe('EndfieldStore', () => {
       'miner_3',
     );
     expect(store.snapshot().resourceRecipeSettings.iron_ore).toBeUndefined();
-  });
-
-  it('omits empty optional entries when accepting a snapshot', () => {
-    const store = TestBed.inject(EndfieldStore);
-    store.set({
-      ...createEndfieldState(),
-      resourceRecipeSettings: { iron_ore: undefined, copper_ore: {} },
-    });
-    expect(store.snapshot().resourceRecipeSettings).toEqual({});
   });
 
   it('rejects unknown resources and unsupported fields without mutating state', () => {

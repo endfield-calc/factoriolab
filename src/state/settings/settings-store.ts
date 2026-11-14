@@ -3,7 +3,7 @@ import { computed, effect, inject, Service } from '@angular/core';
 import { faDatabase } from '@fortawesome/free-solid-svg-icons';
 
 import { DEFAULT_MOD, modOptions, modRecord } from '~/data/datasets';
-import { CUSTOM_MOD, Game, gameOptions } from '~/data/game';
+import { CUSTOM_MOD, Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { IconType } from '~/data/icon-type';
 import { ModInfo } from '~/data/mod';
@@ -63,10 +63,6 @@ import { systemIconsRecord } from './system-icons';
 export class SettingsStore extends Store<SettingsState> {
   private readonly hydration = inject(Hydration);
   private readonly preferencesStore = inject(PreferencesStore);
-  readonly gameOptions = gameOptions.filter(
-    (option) => gameInfo[option.value].modId === DEFAULT_MOD,
-  );
-
   readonly customData = localForageResource<ModData>('data');
   readonly customHash = localForageResource<ModHash>('hash');
   readonly customIcons = localForageResource<File>('icons');

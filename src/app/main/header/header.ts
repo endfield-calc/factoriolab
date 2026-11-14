@@ -13,11 +13,10 @@ import {
   faUserGear,
 } from '@fortawesome/free-solid-svg-icons';
 
-import product from '/public/endfield/product.json';
 import { Button } from '~/components/button/button';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { Game } from '~/data/game';
+import { Game, gameOptions } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -55,23 +54,10 @@ export class Header {
   protected readonly faUserGear = faUserGear;
   protected readonly game = this.settingsStore.game;
   protected readonly gameInfo = this.settingsStore.gameInfo;
-  protected readonly headerLinks = headerLinks
-    .map((link) =>
-      link.text === 'header.source'
-        ? { ...link, href: product.sourceUrl }
-        : link,
-    )
-    .filter(
-      (link) =>
-        !['header.editor', 'header.discord', 'header.sponsor'].includes(
-          link.text,
-        ),
-    );
+  protected readonly headerLinks = headerLinks;
 
   protected readonly gameOptions = computed(() =>
-    this.settingsStore.gameOptions.filter(
-      (o) => o.value !== this.settingsStore.game(),
-    ),
+    gameOptions.filter((o) => o.value !== this.settingsStore.game()),
   );
 
   togglePreferences(): void {

@@ -101,7 +101,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   });
 
   readonly normalizedObjectives = computed(() =>
-    this.objectives().map((o) =>
+    this.calculationContext().objectives.map((o) =>
       spread(o, { value: this.normalization.normalizeRate(o) }),
     ),
   );
@@ -146,17 +146,8 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
           )
         : [];
     const objectives = [...ordinary, ...derived];
-    const normalized = [
-      ...this.normalizedObjectives(),
-      ...derived.map((objective) =>
-        spread(objective, {
-          value: this.normalization.normalizeRate(objective),
-        }),
-      ),
-    ];
     return {
       objectives,
-      normalized,
       state,
       recipeSettings,
     };
@@ -165,7 +156,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   readonly matrixResult = computed((): SimplexResult => {
     if (!this.lifecycle.ready()) return { steps: [], resultType: 'paused' };
     const context = this.calculationContext();
-    const objectives = context.normalized;
+    const objectives = this.normalizedObjectives();
     const settings = this.settingsStore.settings();
     const data = this.recipesStore.adjustedDataset();
     const paused = this.preferencesStore.paused();

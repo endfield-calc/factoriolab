@@ -12,31 +12,5 @@
   "qqUrl": "https://qm.qq.com/cgi-bin/qm/qr?k=iC-fqNEQCr-Bk9bHnvXJcAsbtDr-Y9zO&jump_from=webapi&authKey=FLtoKahiWGJ9utHBluhDa0fqMTV6dUE6DNKy74lCf2wcQ1vUCaxqKAGBxdIUTZcr",
   "qqGroup": "1071155059",
   "logo": "endfield/logo.webp",
-  "loadingLogo": "endfield/logo.webp",
-  "uiLocaleOverrides": {
-    "de": {
-      "app": {
-        "updateDetected": "Neue Version erkannt",
-        "updateDetectedMessage": "Neue Version wird heruntergeladen, bitte warten..."
-      }
-    },
-    "fr": {
-      "app": {
-        "updateDetected": "Nouvelle version détectée",
-        "updateDetectedMessage": "Téléchargement de la nouvelle version en cours, veuillez patienter..."
-      }
-    },
-    "ja": {
-      "app": {
-        "updateDetected": "新しいバージョンを検出しました",
-        "updateDetectedMessage": "新しいバージョンをダウンロード中です。しばらくお待ちください..."
-      }
-    },
-    "ru": {
-      "app": {
-        "updateDetected": "Обнаружена новая версия",
-        "updateDetectedMessage": "Загружается новая версия, пожалуйста, подождите..."
-      }
-    }
-  }
+  "loadingLogo": "endfield/logo.webp"
 }

@@ -254,10 +254,46 @@ describe('Endfield workspace restoration', () => {
       data: supportedData,
       hash,
     });
-    expect(result.state).toEqual(state);
+    expect(result.state).toEqual({
+      ...state,
+      settingsState: {
+        ...state.settingsState,
+        costs: {
+          unproduceable: rational(1000000),
+          recycling: rational(1000),
+        },
+      },
+    });
+    expect(state.settingsState?.costs).toBeUndefined();
     expect(
       state.recipesState?.['copper_ore-liquid_water'].modules?.[0].id,
     ).toBe('test-module');
+  });
+
+  it('keeps a truly empty detached workspace sparse and fills historical costs without mutating input', () => {
+    const input: WorkspaceState = {};
+    const fresh = decode(input, {});
+    expect(fresh.state).toEqual({});
+    expect(Object.hasOwn(fresh.state, 'settingsState')).toBeFalse();
+    const historical = decode(input, { v: '12' });
+    expect(historical.state).toEqual({
+      settingsState: {
+        costs: {
+          unproduceable: rational(1000000),
+          recycling: rational(1000),
+        },
+      },
+    });
+    expect(input).toEqual({});
+
+    const explicit: WorkspaceState = {
+      settingsState: { costs: { recycling: rational.zero } },
+    };
+    expect(decode(explicit, { v: '12' }).state.settingsState?.costs).toEqual({
+      unproduceable: rational(1000000),
+      recycling: rational.zero,
+    });
+    expect(explicit.settingsState?.costs).toEqual({ recycling: rational.zero });
   });
 
   it('reports the field of invalid ordinary and global setting references', () => {

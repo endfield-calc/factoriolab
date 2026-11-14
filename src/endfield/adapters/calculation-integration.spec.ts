@@ -6,9 +6,14 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { Main } from '~/app/main/main';
 import { ModData } from '~/data/schema/mod-data';
+import { finalizeRecipe } from '~/data/schema/recipe';
 import { CALCULATION_EXTENSION } from '~/extensions/calculation-extension';
 import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import { STATE_EXTENSION, WorkspaceState } from '~/extensions/state-extension';
+import {
+  STATE_EXTENSION,
+  WorkspaceRestoreError,
+  WorkspaceState,
+} from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { WorkspacePreparation } from '~/extensions/workspace-preparation';
 import { rational } from '~/rational/rational';
@@ -24,13 +29,19 @@ import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { RecipeSettings } from '~/state/recipes/recipe-settings';
 import { RecipesStore } from '~/state/recipes/recipes-store';
+import { Migration } from '~/state/router/migration';
+import { Params } from '~/state/router/params';
+import { RouterSync } from '~/state/router/router-sync';
 import { DisplayRate } from '~/state/settings/display-rate';
 import { MaximizeType } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { TableStore } from '~/state/table/table-store';
 import { TestModule } from '~/tests/test-module';
 import { Translate } from '~/translate/translate';
 
+import { settlementRecipeAlias } from '../compat/codec';
 import {
   createEndfieldState,
   EndfieldState,
@@ -95,6 +106,307 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels.length).toBe(2);
     expect(objectives.calculationContext().objectives).toEqual([]);
     expect(objectives.matrixResult().resultType).toBe('skipped');
+  });
+
+  it('keeps the complete recipe availability set for every location subset', () => {
+    const current = rawData as unknown as ModData;
+    const previous: ModData = {
+      ...current,
+      recipes: current.recipes.map((recipe) => {
+        const alias = settlementRecipeAlias(recipe);
+        return alias == null
+          ? recipe
+          : { ...recipe, locations: undefined, producers: [alias] };
+      }),
+    };
+    for (const locations of [
+      [],
+      ['tundra'],
+      ['jinlong'],
+      ['tundra', 'jinlong'],
+    ]) {
+      settings.apply({ locationIds: new Set(locations) });
+      settings['modDataResource'].set(previous);
+      const oldAvailable = settings.settings().availableRecipeIds;
+      settings['modDataResource'].set(current);
+      const newAvailable = settings.settings().availableRecipeIds;
+      expect(newAvailable)
+        .withContext(locations.join('+') || 'none')
+        .toEqual(oldAvailable);
+      expect(newAvailable.has('tundra_coupon-glass_bottle')).toBe(
+        locations.includes('tundra'),
+      );
+      expect(newAvailable.has('jinlong_coupon-copper_cmpt')).toBe(
+        locations.includes('jinlong'),
+      );
+    }
+  });
+
+  it('matches upstream alias calculations for ordinary recipes and all explicit objective types', () => {
+    const baseline = TestBed.runInInjectionContext(() => new Adjustment());
+    const machineStore = TestBed.inject(MachinesStore);
+    const itemStore = TestBed.inject(ItemsStore);
+    const cases = [
+      {
+        global: 100,
+        machine: undefined,
+        recipe: undefined,
+        objective: undefined,
+      },
+      {
+        global: 150,
+        machine: undefined,
+        recipe: undefined,
+        objective: undefined,
+      },
+      { global: 150, machine: 125, recipe: 200, objective: undefined },
+      { global: 150, machine: 125, recipe: 200, objective: rational(175) },
+      { global: 150, machine: 125, recipe: 200, objective: rational(225, 2) },
+    ];
+    const actualAdjustment = TestBed.inject(Adjustment);
+    for (const [id, alias] of [
+      ['tundra_coupon-glass_bottle', 'settlement-tundra_coupon'],
+      ['jinlong_coupon-copper_cmpt', 'settlement-jinlong_coupon'],
+    ] as const) {
+      for (const example of cases) {
+        settings.apply({ overclock: rational(example.global) });
+        machineStore.set({
+          [alias]:
+            example.machine == null
+              ? {}
+              : { overclock: rational(example.machine) },
+        });
+        const saved = {
+          machineId: alias,
+          overclock:
+            example.recipe == null ? undefined : rational(example.recipe),
+          productivity: rational(25),
+          fuelId: 'ignored',
+          modules: [{ id: 'ignored' }],
+          beacons: [{ id: 'ignored' }],
+        };
+        recipes.set({ [id]: saved });
+        const machines = machineStore.settings();
+        const current = recipes.adjustedDataset();
+        const nativeRecipe = current.recipeRecord[id];
+        const oldRecipe = {
+          ...nativeRecipe,
+          producers: [alias],
+          locations: undefined,
+        };
+        const previous = {
+          ...current,
+          recipeRecord: { ...current.recipeRecord, [id]: oldRecipe },
+        };
+        const previousSettings: RecipeSettings = { ...saved };
+        baseline.computeRecipeSettings(
+          previousSettings,
+          oldRecipe,
+          machines,
+          settings.settings(),
+          previous,
+        );
+        const prepared = recipes.settings()[id];
+        expect(prepared.machineId).toBeUndefined();
+        expect(prepared.defaultMachineId).toBeUndefined();
+        expect(prepared.machineOptions).toBeUndefined();
+        for (const field of [
+          'overclock',
+          'defaultOverclock',
+          'productivity',
+          'fuelId',
+          'modules',
+          'beacons',
+        ] as const)
+          expect(prepared[field])
+            .withContext(`${id} ${field}`)
+            .toEqual(previousSettings[field]);
+        expect(recipes.state()[id]).toEqual(saved);
+        expect(nativeRecipe.producers).toBeUndefined();
+
+        const oldAdjusted = baseline.adjustRecipe(
+          id,
+          previousSettings,
+          itemStore.settings(),
+          settings.settings(),
+          previous,
+        );
+        finalizeRecipe(oldAdjusted);
+        const adjusted = current.adjustedRecipe[id];
+        for (const field of ['time', 'in', 'out', 'output', 'effects'] as const)
+          expect(adjusted[field])
+            .withContext(`${id} ordinary ${field}`)
+            .toEqual(oldAdjusted[field]);
+
+        for (const type of [
+          ObjectiveType.Output,
+          ObjectiveType.Input,
+          ObjectiveType.Maximize,
+          ObjectiveType.Limit,
+        ]) {
+          const objective: ObjectiveState = {
+            ...machineObjective('1', id),
+            type,
+            machineId: alias,
+            overclock: example.objective,
+            productivity: rational(99),
+          };
+          const oldObjective = baseline.adjustObjective(
+            objective,
+            itemStore.settings(),
+            { ...recipes.settings(), [id]: previousSettings },
+            machines,
+            settings.settings(),
+            previous,
+          );
+          const actual = actualAdjustment.adjustObjective(
+            objective,
+            itemStore.settings(),
+            recipes.settings(),
+            machines,
+            settings.settings(),
+            current,
+          );
+          expect(actual.machineId).toBeUndefined();
+          expect(actual.productivity).toEqual(rational(25));
+          expect(actual.overclock).toEqual(oldObjective.overclock);
+          for (const field of [
+            'time',
+            'in',
+            'out',
+            'output',
+            'effects',
+          ] as const)
+            expect(actual.recipe![field])
+              .withContext(`${id} objective ${type} ${field}`)
+              .toEqual(oldObjective.recipe![field]);
+          expect(objective.machineId).toBe(alias);
+          if (
+            example.recipe === 200 &&
+            example.machine === 125 &&
+            example.objective == null
+          )
+            expect(actual.overclock).toEqual(rational(125));
+        }
+      }
+    }
+  });
+
+  it('retains raw or overridden settlement costs independently of production rate', () => {
+    const id = 'tundra_coupon-bottled_food_3';
+    const adjustment = TestBed.inject(Adjustment);
+    settings.apply({
+      overclock: rational(200),
+      costs: {
+        ...settings.state().costs,
+        factor: rational(2),
+        machine: rational(50),
+        footprint: rational(50),
+      },
+    });
+    for (const override of [undefined, rational.zero, rational(-3)]) {
+      recipes.set({ [id]: { cost: override } });
+      const current = recipes.adjustedDataset();
+      const expected = override ?? rational(60);
+      expect(current.adjustedRecipe[id].cost).toEqual(expected);
+      const objective = adjustment.adjustObjective(
+        { ...machineObjective('1', id), cost: override },
+        TestBed.inject(ItemsStore).settings(),
+        recipes.settings(),
+        TestBed.inject(MachinesStore).settings(),
+        settings.settings(),
+        current,
+      );
+      expect(objective.recipe!.cost).toEqual(expected);
+    }
+  });
+
+  it('restores, re-encodes and resets v11 and v12 settlement alias settings', async () => {
+    const router = TestBed.inject(RouterSync);
+    const migration = TestBed.inject(Migration);
+    const lifecycle = TestBed.inject(WorkspaceLifecycle);
+    const extension = TestBed.inject(STATE_EXTENSION);
+    const machines = TestBed.inject(MachinesStore);
+    const id = 'tundra_coupon-glass_bottle';
+    const alias = 'settlement-tundra_coupon';
+    const restore = async (query: string): Promise<void> => {
+      const ticket = lifecycle.begin(query);
+      const params = await router.unzipQueryParams(router.toParams(query));
+      const plan = extension.prepare({ modId: 'aef', params });
+      const migrated = migration.migrate(
+        plan.modId,
+        plan.params,
+        plan.legacyModHashes,
+      );
+      router.updateState(
+        migrated.modId,
+        migrated.params,
+        migrated.isBare,
+        rawData as unknown as ModData,
+        rawHash,
+        plan,
+        ticket,
+      );
+      expect(lifecycle.ready())
+        .withContext(JSON.stringify(lifecycle.diagnostics()))
+        .toBeTrue();
+    };
+    const zip = (): Promise<unknown> =>
+      router.getHash(
+        router.zipState({
+          objectives: objectives.state(),
+          items: TestBed.inject(ItemsStore).state(),
+          recipes: recipes.state(),
+          machines: machines.state(),
+          settings: settings.state(),
+          table: TestBed.inject(TableStore).state(),
+          data: settings.dataset(),
+          hash: rawHash,
+          extension: store.snapshot(),
+        }),
+      );
+    for (const version of ['11', '12']) {
+      const query = `v=${version}&o=${id}**3**${alias}***175&r=${id}*${alias}***200***25&m=${alias}****125&moc=150`;
+      await restore(query);
+      expect(recipes.state()[id].machineId).toBe(alias);
+      expect(recipes.state()[id].overclock).toEqual(rational(200));
+      expect(recipes.state()[id].productivity).toEqual(rational(25));
+      expect(machines.state()[alias].overclock).toEqual(rational(125));
+      expect(settings.state().overclock).toEqual(rational(150));
+      expect(objectives.state()['1'].machineId).toBe(alias);
+      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
+      const adjusted = recipes.adjustedDataset().adjustedRecipe[id];
+      expect(adjusted.time).toEqual(rational.one);
+      expect(adjusted.output['tundra_coupon']).toEqual(rational(5, 2));
+      const encoded = router.toString((await zip()) as Params);
+      recipes.set({});
+      machines.set({});
+      objectives.set({});
+      await restore(encoded);
+      expect(recipes.state()[id].machineId).toBe(alias);
+      expect(recipes.state()[id].overclock).toEqual(rational(200));
+      expect(machines.state()[alias].overclock).toEqual(rational(125));
+      expect(objectives.state()['1'].machineId).toBe(alias);
+      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
+      expect(
+        recipes.adjustedDataset().adjustedRecipe[id].output['tundra_coupon'],
+      ).toEqual(rational(5, 2));
+      const before = {
+        recipes: recipes.state(),
+        machines: machines.state(),
+        objectives: objectives.state(),
+      };
+      await expectAsync(
+        restore(`v=${version}&o=${id}**3**settlement-jinlong_coupon`),
+      ).toBeRejectedWithError(WorkspaceRestoreError);
+      expect(recipes.state()).toBe(before.recipes);
+      expect(machines.state()).toBe(before.machines);
+      expect(objectives.state()).toBe(before.objectives);
+      recipes.resetId(id);
+      expect(recipes.state()[id]).toBeUndefined();
+      expect(recipes.settings()[id].machineId).toBeUndefined();
+      expect(recipes.settings()[id].overclock).toEqual(rational(125));
+    }
   });
 
   it('rejects a restoration without dataset identity and leaves live stores intact', () => {

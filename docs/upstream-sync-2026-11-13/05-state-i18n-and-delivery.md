@@ -69,7 +69,7 @@ StateExtension把额外状态的响应式快照纳入RouterSync.state/zipState�
 
 有效ef与旧字段混合时，ef中对应扩展字段优先，提示忽略重复的旧特殊字段，普通目标保留。ef格式错误或版本未知时保留原输入并显示诊断，不能静默回退到默认值或旧字段再覆盖存档。缺失ef、扩展关闭、启用全0和解码失败是不同状态。
 
-初始化、缺字段补全、URL省略和所有重置统一使用ProductProfile的EffectiveDefaults。ef版本1绑定04中的aef默认契约，旧v11仍用其冻结默认；后续默认契约变化须保留旧版本解释。用户显式设置为上游默认但不同于aef默认时必须编码，不能按initialSettingsState误省略。
+新建及重置使用ProductProfile的EffectiveDefaults；非空历史链接缺字段补全和URL省略基准独立冻结。v0–12省略的unproduceable/recycling仍解释为1000000/1000，显式值（含0）优先；新工作区沿上游100000000/1并显式编码。ef版本1扩展默认保持不变，当前无需升级v12/ef1。真空query的新默认变化不等于重新解释带状态的旧链接。
 
 新编码再次加载必须恢复同一业务状态。上游将来若引入同名参数，应通过版本化适配更换新写入字段并保留旧ef解码，按09接点M07验证，不能复用旧字段含义。
 
@@ -99,7 +99,7 @@ StateExtension把额外状态的响应式快照纳入RouterSync.state/zipState�
 | theme=black                       | 新版无同名选项，映射 dark，并告知该外观名称已变化                                                                   |
 | powerUnit                         | 旧数值编码与新版核对后映射，保留用户显式设置，新用户 kW                                                             |
 | flowSettings                      | 保留既有枚举含义，缺失 elkAlgorithm 使用上游 layered 默认                                                           |
-| hideDuplicateIcons                | 上游已无原同名偏好；保留用户意图，按新版行结构实现或以局部展示选项承接                                              |
+| hideDuplicateIcons                | 使用新版原生图标布局，旧字段仅保留为历史偏好数据，不重新建立不可操作的隐藏状态                                      |
 | columns / rows / disablePaginator | 新版表格和 TableStore 结构不同，迁移有效列显示/精度；旧分页设置若不再有对应能力，只废弃该 UI 偏好，不能删除整份存档 |
 | router                            | 只有不存在显式有效 URL 时作为恢复入口，避免跳回其他游戏                                                             |
 
@@ -111,10 +111,10 @@ StateExtension把额外状态的响应式快照纳入RouterSync.state/zipState�
 
 区分三个独立问题：界面语言默认值、游戏实体翻译、静态 HTML/manifest 元数据。
 
-1. **界面语言**：完整沿用当前分支机制，`DEFAULT_LANGUAGE=en`。仅在生产环境读取 `navigator.language` 并转小写，先匹配完整语言代码，未匹配再取第一个 `-` 前的语言前缀匹配；都不支持则保留英文。当前支持集合为 en/zh/de/fr/ru/ja，以此作为迁移验收基线；不改用 `navigator.languages`、站点域名或中文构建产物来决定界面语言。开发/测试环境不匹配浏览器，初始值为英文。构造时随后加载的已保存语言偏好覆盖该初始值，手动切换继续保存并在刷新后恢复。这里“生产环境”以当前分支的 `environment.production` 为准，staging同样为true；不是按域名、分支名称或界面文案判断。
+1. **界面语言**：支持集合直接复用上游languageOptions的九种语言。仅生产读取navigator.language，按大小写无关的完整代码、语言前缀依次匹配，返回规范代码（包括pt-BR）；都不支持则en。开发/测试初始en，保存偏好覆盖初始语言，手动切换继续持久化。保留environment.production而非域名、构建文案决定生产身份，不改用navigator.languages。
 2. **游戏翻译**：aef 原数据名称中文，英文环境也必须请求 en.json。旧 `i18nWithDefault` 的默认常量实际是 en，所以原版缺失翻译优先尝试缓存中的英文包，再由基础数据中文兜底；它没有保证加载默认包。因此新版应明确、可靠地加载 fallback：当前语言完整/逐实体缺项 → 中文基础数据（需要英文回退时必须显式加载英文包），不能依赖“用户先切过英文”这一偶然状态。
 3. **扩展名称**：游戏名称及版本文案可以继续由游戏包或品牌配置翻译；英文 EndfieldLab、中文“终末地量化计算器”。页面标题同时监听实体名称和当前界面语言，不只在目标数量变化时更新。
-4. **缺失/失败**：游戏包只有 en/zh/ja/ru；当前支持的德语/法语界面没有 aef 翻译包，切换时保留可理解的中文实体，不出现加载卡死、旧语言残留或空记录。界面翻译失败也应有可用 fallback，不把翻译 key 当成完成状态。
+4. **缺失/失败**：游戏包只有 en/zh/ja/ru；de/fr/ko/pt-BR/es界面没有aef翻译包，切换时使用中文基础实体，不出现加载卡死、旧语言残留或空记录。UI词典缺项使用英文fallback，与游戏名称的中文兜底分开处理。
 5. **新增文案**：资源面板和操作指南原来大量硬编码中文，新版至少完成中文与英文界面键；其他语言走明示兜底。QQ 入口只在界面语言 zh 时显示，一图流和源码链接始终可用。
 
 上游 `SettingsStore.modI18nResource` 在 lang=en 时直接不请求，这是必须改的具体落点。[源码](https://github.com/factoriolab/factoriolab/blob/00bdb91c2442cd8d715501b9469cec115735645f/src/state/settings/settings-store.ts#L103-L107)
@@ -136,7 +136,7 @@ StateExtension把额外状态的响应式快照纳入RouterSync.state/zipState�
 
 涉及两类 manifest：旧 `resource/webmanifest/site.webmanifest` 和 `site-zh.webmanifest`，新版用 `public/manifest.webmanifest`。统一使用上游的manifest.webmanifest目标文件名，并同步HTML、SW和构建流程；现有图标根路径须改成能在实际 base 下解析的路径。
 
-导出入口须区分现状：当前导出服务保留了CSV实现与项目文件名，但列表模板用 `false && steps().length` 禁用了CSV按钮，注释说明中文导出尚未适配。本方案保留并适配新上游导出能力，不声称旧分支已有可用CSV入口；验收应检查中文表头、实体名和编码可读性，同时保留已有JSON等导出行为。[源分支按钮条件](https://github.com/endfield-calc/factoriolab/blob/26a49e814f0570e050a19b726b3ba689d282aa3b/src/app/components/steps/steps.component.html#L30-L42)
+旧导出服务只改产品文件名，CSV按钮被禁用。当前沿新上游原生CSV字段、实体ID与编码，仅保留产品文件名前缀；取消迁移时额外增加的中文表头、名称替换和BOM层，保留JSON及图像导出。[源分支按钮条件](https://github.com/endfield-calc/factoriolab/blob/26a49e814f0570e050a19b726b3ba689d282aa3b/src/app/components/steps/steps.component.html#L30-L42)
 
 ## 6. 双站构建和发布顺序
 
@@ -158,13 +158,13 @@ push 的 paths 过滤必须覆盖 `public/**`、`src/**`、相关配置与工作
 
 ## 7. PWA 更新行为
 
-上游已有 VERSION_READY 确认更新和 unrecoverable 刷新路径，可复用。另补当前项目的 VERSION_DETECTED 提示、生产安装失败的刷新提示与翻译。一般就绪通知允许稍后操作，不循环强制刷新；不可恢复或安装失败给出明确恢复动作。
+沿上游VERSION_READY确认更新和unrecoverable刷新路径；就绪通知允许稍后操作，不循环强制刷新。不再另加下载检测确认框和生产安装失败确认框，避免本地维护平行通知流程。
 
 验证根 base 及子路径 base 的 index、404、manifest、图标、release、data、i18n、wasm 全部可加载，SW scope 与站点范围一致。上线前验证一个真实旧缓存客户端升级至新包的过程，尤其是 `assets/release.json`→`release.json`、旧图集坐标→新坐标、旧 JS→新数据组合不能混用。
 
 ## 8. 品牌与交付的集中边界
 
-品牌、链接、导出前缀由ProductProfile提供，初始化/编解码/modified/重置共享其EffectiveDefaults；页面只消费准备好的产品信息。专属词典以独立源文件合成，不在各个上游词典中手工维护同一组覆盖；静态标题、manifest和各站点元数据由同一配置生成。
+品牌、链接、导出前缀由ProductProfile提供，初始化/modified/重置共享EffectiveDefaults；历史省略成本采用两键冻结差量。名称开关仅属于当前Picker实例，不另建持久化显示Store；现存旧显示key与备份仍可导出，不新建或覆盖它们。专属词典构建时合成，静态标题、manifest和站点元数据由同一配置生成。
 
 本地打包入口只收集aef及必需系统资产，通用源码与隔离测试夹具保留。发布目的地、release、404和SW的差异放在 `scripts/endfield` 与独立发布工作流，保留上游安装、检查、测试和构建能力，不把旧CI整体覆盖新上游CI。接点与后续同步规则按09执行。
 

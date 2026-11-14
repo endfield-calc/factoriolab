@@ -1,15 +1,11 @@
-import type { ReadonlyValue } from '~/extensions/immutable';
 import { Rational, rational } from '~/rational/rational';
-import { RecipeState } from '~/state/recipes/recipe-state';
 
 import {
-  copyResourceRecipeSettings,
   createEndfieldState,
   EndfieldState,
   ovenId,
   ResourceId,
   resourceIds,
-  resourceOwner,
 } from './model';
 
 export const waterRecipeIds = ['sewage-treat', 'sewage-treat-export'] as const;
@@ -35,19 +31,7 @@ export type EndfieldAction =
       readonly enabled: boolean;
       readonly source: 'tundra';
     }
-  | { readonly type: 'waterDisabled'; readonly disabled: boolean }
-  | { readonly type: 'electric'; readonly value: Rational }
-  | {
-      readonly type: 'resourceRecipeSettings';
-      readonly id: ResourceId;
-      readonly value?: ReadonlyValue<RecipeState>;
-    }
-  | {
-      readonly type: 'derivedChecked';
-      readonly owner: string;
-      readonly checked: boolean;
-    }
-  | { readonly type: 'clearDerivedChecked' };
+  | { readonly type: 'waterDisabled'; readonly disabled: boolean };
 
 export interface EndfieldSettingsSnapshot {
   readonly defaultLocationIds: ReadonlySet<string>;
@@ -258,37 +242,5 @@ export function applyEndfieldAction(
         },
         diagnostics: [],
       };
-    case 'electric':
-      if (!nonnegative(action.value))
-        return invalid(
-          state,
-          'invalid-value',
-          'electric',
-          'Electric weight must be nonnegative',
-        );
-      return result({ ...state, electric: action.value });
-    case 'resourceRecipeSettings': {
-      if (!validResourceId(action.id))
-        return invalid(state, 'invalid-id', 'resource', 'Unknown resource ID');
-      const next = { ...state.resourceRecipeSettings };
-      if (action.value == null) delete next[action.id];
-      else next[action.id] = copyResourceRecipeSettings(action.value);
-      return result({ ...state, resourceRecipeSettings: next });
-    }
-    case 'derivedChecked': {
-      if (!resourceIds.some((id) => resourceOwner(id) === action.owner))
-        return invalid(
-          state,
-          'invalid-id',
-          'owner',
-          'Unknown derived resource owner',
-        );
-      const checkedDerived = new Set(state.checkedDerived);
-      if (action.checked) checkedDerived.add(action.owner);
-      else checkedDerived.delete(action.owner);
-      return result({ ...state, checkedDerived });
-    }
-    case 'clearDerivedChecked':
-      return result({ ...state, checkedDerived: new Set() });
   }
 }

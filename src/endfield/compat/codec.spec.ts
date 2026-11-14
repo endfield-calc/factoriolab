@@ -1,18 +1,38 @@
 import { TestBed } from '@angular/core/testing';
 
 import rawData from '/public/data/aef/data.json';
+import rawHash from '/public/data/aef/hash.json';
 import { EnergyType } from '~/data/schema/energy-type';
 import { ModData } from '~/data/schema/mod-data';
 import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
+import { provideEndfield } from '~/endfield/providers';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
   STATE_EXTENSION,
   upstreamState,
   WorkspaceRestoreError,
 } from '~/extensions/state-extension';
+import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
+import { ItemsStore } from '~/state/items/items-store';
+import { MachinesStore } from '~/state/machines/machines-store';
+import { ObjectivesStore } from '~/state/objectives/objectives-store';
+import { RecipesStore } from '~/state/recipes/recipes-store';
+import { Migration } from '~/state/router/migration';
+import { Params } from '~/state/router/params';
+import { RouterSync } from '~/state/router/router-sync';
 import { Zip } from '~/state/router/zip';
+import { SettingsStore } from '~/state/settings/settings-store';
+import { TableStore } from '~/state/table/table-store';
+import { TestModule } from '~/tests/test-module';
 
-import { decodeEndfield, encodeEndfield } from './codec';
+import {
+  decodeEndfield,
+  encodeEndfield,
+  settlementRecipeAlias,
+  validateRecipeReferences,
+} from './codec';
+import { preflightWorkspace, prepareEndfield } from './restore';
 
 const data = rawData as unknown as ModData;
 // This synthetic extension gives the real copper mining recipe a machine that
@@ -73,6 +93,70 @@ function expectDiagnostic(
 }
 
 describe('Endfield ef codec', () => {
+  it('rejects a historical coupon machine for another producerless settlement output during preflight', () => {
+    const id = 'jinlong_coupon-copper_cmpt';
+    const unrelated: ModData = {
+      ...data,
+      recipes: data.recipes.map((recipe) =>
+        recipe.id === id ? { ...recipe, out: { iron_ore: 1 } } : recipe,
+      ),
+    };
+    const state = {
+      recipesState: { [id]: { machineId: 'settlement-jinlong_coupon' } },
+      settingsState: { modId: 'aef' },
+    };
+    const plan = prepareEndfield({ modId: 'aef', params: { v: '11' } });
+    expectDiagnostic(
+      () => preflightWorkspace({ state, plan, data: unrelated }),
+      `recipes.${id}.machineId`,
+    );
+    expect(state.recipesState[id].machineId).toBe('settlement-jinlong_coupon');
+  });
+  it('recognizes only native settlement recipes and permits only their matching historical aliases', () => {
+    for (const [id, alias] of [
+      ['tundra_coupon-glass_bottle', 'settlement-tundra_coupon'],
+      ['jinlong_coupon-copper_cmpt', 'settlement-jinlong_coupon'],
+    ] as const) {
+      const recipe = data.recipes.find((entry) => entry.id === id)!;
+      expect(settlementRecipeAlias(recipe)).toBe(alias);
+      expect(() => {
+        validateRecipeReferences({ machineId: alias }, data, 'recipe', id);
+      }).not.toThrow();
+      const other = alias.includes('tundra')
+        ? 'settlement-jinlong_coupon'
+        : 'settlement-tundra_coupon';
+      for (const machineId of [other, 'miner_2', 'unknown'])
+        expectDiagnostic(() => {
+          validateRecipeReferences({ machineId }, data, 'recipe', id);
+        }, 'recipe.machineId');
+      expect(
+        settlementRecipeAlias({ ...recipe, producers: [] }),
+      ).toBeUndefined();
+      expect(
+        settlementRecipeAlias({ ...recipe, locations: [] }),
+      ).toBeUndefined();
+      expect(
+        settlementRecipeAlias({ ...recipe, out: { ...recipe.out, extra: 1 } }),
+      ).toBeUndefined();
+      expect(
+        settlementRecipeAlias({ ...recipe, category: 'other' }),
+      ).toBeUndefined();
+    }
+    const ordinary = data.recipes.find(
+      (entry) => entry.id === 'originium_ore',
+    )!;
+    expect(
+      settlementRecipeAlias({ ...ordinary, producers: undefined }),
+    ).toBeUndefined();
+    expectDiagnostic(() => {
+      validateRecipeReferences(
+        { machineId: 'settlement-tundra_coupon' },
+        data,
+        'recipe',
+        ordinary.id,
+      );
+    }, 'recipe.machineId');
+  });
   it('reads each whitelisted resource setting once and retains its captured value', () => {
     let reads = 0;
     const settings = Object.defineProperty({}, 'originium_ore', {
@@ -452,6 +536,119 @@ describe('Endfield ef codec', () => {
         fail('Expected a restore error');
       } catch (error) {
         expect((error as WorkspaceRestoreError).diagnostics[0].code).toBe(code);
+      }
+    }
+  });
+});
+
+describe('Endfield historical Jinlong coupon links', () => {
+  it('restores both versions and re-encodes matching recipe and objective aliases while rejecting mismatches', async () => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        ...provideEndfield(),
+        { provide: SettingsStore, useClass: SettingsStore },
+      ],
+    });
+    const settings = TestBed.inject(SettingsStore);
+    settings.apply({
+      modId: 'aef',
+      locationIds: new Set(['tundra', 'jinlong']),
+    });
+    settings['modDataResource'].set(data);
+    settings['modHashResource'].set(rawHash);
+    const router = TestBed.inject(RouterSync);
+    const extension = TestBed.inject(STATE_EXTENSION);
+    const migration = TestBed.inject(Migration);
+    const lifecycle = TestBed.inject(WorkspaceLifecycle);
+    const recipes = TestBed.inject(RecipesStore);
+    const machines = TestBed.inject(MachinesStore);
+    const objectives = TestBed.inject(ObjectivesStore);
+    const id = 'jinlong_coupon-copper_cmpt';
+    const alias = 'settlement-jinlong_coupon';
+    const restore = async (query: string): Promise<void> => {
+      const ticket = lifecycle.begin(query);
+      const params = await router.unzipQueryParams(router.toParams(query));
+      const plan = extension.prepare({ modId: 'aef', params });
+      const migrated = migration.migrate(
+        plan.modId,
+        plan.params,
+        plan.legacyModHashes,
+      );
+      router.updateState(
+        migrated.modId,
+        migrated.params,
+        migrated.isBare,
+        data,
+        rawHash,
+        plan,
+        ticket,
+      );
+      expect(lifecycle.ready())
+        .withContext(JSON.stringify(lifecycle.diagnostics()))
+        .toBeTrue();
+    };
+    const zip = async (): Promise<string> =>
+      router.toString(
+        (await router.getHash(
+          router.zipState({
+            objectives: objectives.state(),
+            items: TestBed.inject(ItemsStore).state(),
+            recipes: recipes.state(),
+            machines: machines.state(),
+            settings: settings.state(),
+            table: TestBed.inject(TableStore).state(),
+            data: settings.dataset(),
+            hash: rawHash,
+            extension: TestBed.inject(EndfieldStore).snapshot(),
+          }),
+        )) as Params,
+      );
+    for (const version of ['11', '12']) {
+      const query = `v=${version}&o=${id}**3**${alias}***175&r=${id}*${alias}***200***25&m=${alias}****125&moc=150`;
+      await restore(query);
+      expect(recipes.state()[id].machineId).toBe(alias);
+      expect(recipes.state()[id].overclock).toEqual(rational(200));
+      expect(recipes.state()[id].productivity).toEqual(rational(25));
+      expect(machines.state()[alias].overclock).toEqual(rational(125));
+      expect(settings.state().overclock).toEqual(rational(150));
+      expect(recipes.settings()[id].machineId).toBeUndefined();
+      expect(objectives.state()['1'].machineId).toBe(alias);
+      expect(objectives.objectives()[0].machineId).toBeUndefined();
+      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
+      expect(
+        objectives.objectives()[0].recipe!.output['jinlong_coupon'],
+      ).toEqual(rational(35, 32));
+      expect(
+        recipes.adjustedDataset().adjustedRecipe[id].output['jinlong_coupon'],
+      ).toEqual(rational(5, 4));
+      const encoded = await zip();
+      recipes.set({});
+      machines.set({});
+      objectives.set({});
+      await restore(encoded);
+      expect(recipes.state()[id].machineId).toBe(alias);
+      expect(machines.state()[alias].overclock).toEqual(rational(125));
+      expect(objectives.state()['1'].machineId).toBe(alias);
+      expect(
+        objectives.objectives()[0].recipe!.output['jinlong_coupon'],
+      ).toEqual(rational(35, 32));
+      const saved = {
+        recipes: recipes.state(),
+        machines: machines.state(),
+        objectives: objectives.state(),
+      };
+      for (const bad of [
+        `v=${version}&o=${id}**3**settlement-tundra_coupon`,
+        `v=${version}&r=${id}*settlement-tundra_coupon`,
+        `v=${version}&o=${id}**3**miner_2`,
+      ]) {
+        await expectAsync(restore(bad)).toBeRejectedWithError(
+          WorkspaceRestoreError,
+        );
+        expect(recipes.state()).toBe(saved.recipes);
+        expect(machines.state()).toBe(saved.machines);
+        expect(objectives.state()).toBe(saved.objectives);
       }
     }
   });

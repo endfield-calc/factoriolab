@@ -16,7 +16,6 @@ import { of, Subject } from 'rxjs';
 import { App } from '~/app/app';
 import { Flow, SVG_ID } from '~/app/main/flow/flow';
 import { Main } from '~/app/main/main';
-import { environment } from '~/environments/environment';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { FlowBuilder } from '~/flow/flow-builder';
 import { FlowData } from '~/flow/flow-data';
@@ -87,13 +86,14 @@ describe('App update recovery', () => {
     spyOn<any, any>(component, 'log');
     fixture.detectChanges();
   });
-  it('notifies about a detected download without reloading the workspace', () => {
+  it('keeps upstream update behavior without download or installation-failure prompts', () => {
     spyOn(component['windowClient'], 'reload');
     spyOn(component['confirm'], 'open').and.returnValue(of(true));
     swUpdate.versionUpdates.next({ type: 'VERSION_DETECTED' } as any);
-    expect(component['confirm'].open).toHaveBeenCalledWith(
-      jasmine.objectContaining({ header: 'app.updateDetected' }),
-    );
+    swUpdate.versionUpdates.next({
+      type: 'VERSION_INSTALLATION_FAILED',
+    } as any);
+    expect(component['confirm'].open).not.toHaveBeenCalled();
     expect(component['windowClient'].reload).not.toHaveBeenCalled();
   });
   it('keeps a ready update deferred when its refresh is cancelled', () => {
@@ -102,29 +102,14 @@ describe('App update recovery', () => {
     swUpdate.versionUpdates.next({ type: 'VERSION_READY' } as any);
     expect(component['windowClient'].reload).not.toHaveBeenCalled();
   });
-  it('offers a production refresh after installation fails and requires refresh for unrecoverable state', () => {
-    const original = environment.production;
+  it('requires a refresh for unrecoverable state', () => {
     spyOn(component['windowClient'], 'reload');
     spyOn(component['confirm'], 'open').and.returnValue(of(true));
-    try {
-      environment.production = false;
-      swUpdate.versionUpdates.next({
-        type: 'VERSION_INSTALLATION_FAILED',
-      } as any);
-      expect(component['confirm'].open).not.toHaveBeenCalled();
-      environment.production = true;
-      swUpdate.versionUpdates.next({
-        type: 'VERSION_INSTALLATION_FAILED',
-      } as any);
-      expect(component['confirm'].open).toHaveBeenCalledWith(
-        jasmine.objectContaining({ header: 'app.updateRequired' }),
-      );
-      expect(component['windowClient'].reload).toHaveBeenCalledTimes(1);
-      swUpdate.unrecoverable.next({} as any);
-      expect(component['windowClient'].reload).toHaveBeenCalledTimes(2);
-    } finally {
-      environment.production = original;
-    }
+    swUpdate.unrecoverable.next({} as any);
+    expect(component['confirm'].open).toHaveBeenCalledWith(
+      jasmine.objectContaining({ header: 'app.updateRequired' }),
+    );
+    expect(component['windowClient'].reload).toHaveBeenCalledTimes(1);
   });
 });
 

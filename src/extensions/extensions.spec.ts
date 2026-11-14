@@ -2,13 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
+import { editorGuard, idGuard } from '~/app/id/id-guard';
+import { landingGuard } from '~/app/landing/landing-guard';
 import { DEFAULT_MOD } from '~/data/datasets';
 import { createEndfieldProduct } from '~/endfield/product/product';
-import {
-  editorGuard,
-  endfieldIdGuard as idGuard,
-  endfieldLandingGuard as landingGuard,
-} from '~/endfield/providers';
 import { rational } from '~/rational/rational';
 import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
@@ -122,15 +119,8 @@ describe('Neutral extension defaults', () => {
 
   it('does not acquire editing or ownership effects from the default presentation', () => {
     const presentation = TestBed.inject(PRESENTATION_EXTENSION);
-    expect(presentation.costsModified()).toBeFalse();
-    presentation.resetCosts();
+    expect(presentation.additionalCost).toBeUndefined();
     const owner = { kind: 'objective', id: '1' } as const;
-    expect(presentation.showNames()).toBeFalse();
-    presentation.toggleNames();
-    expect(presentation.showNames()).toBeFalse();
-    expect(presentation.hideDuplicateIcons()).toBeFalse();
-    expect(presentation.hideProducer('recipe')).toBeFalse();
-    expect(presentation.forceLabel('recipe')).toBeFalse();
     expect(presentation.owner({ id: '1' })).toBeUndefined();
     expect(
       presentation.updateRecipeField(owner, 'cost', rational.one),

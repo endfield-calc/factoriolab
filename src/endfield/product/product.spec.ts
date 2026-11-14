@@ -18,7 +18,7 @@ import {
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Id } from '~/app/id/id';
-import { idGuard } from '~/app/id/id-guard';
+import { editorGuard, idGuard } from '~/app/id/id-guard';
 import { landingGuard } from '~/app/landing/landing-guard';
 import { DEFAULT_MOD } from '~/data/datasets';
 import { Release } from '~/data/release';
@@ -40,13 +40,7 @@ import { RouterSync } from '~/state/router/router-sync';
 import { MockComponent } from '~/tests/mocks/component';
 import { TestModule } from '~/tests/test-module';
 
-import {
-  configureEndfieldRoutes,
-  editorGuard,
-  endfieldIdGuard,
-  endfieldLandingGuard,
-  provideEndfield,
-} from '../providers';
+import { provideEndfield } from '../providers';
 import { createEndfieldProduct, provideEndfieldProduct } from './product';
 
 describe('Endfield release presentation', () => {
@@ -97,7 +91,11 @@ describe('Endfield product', () => {
       [true, 'FR-CA', 'fr'],
       [true, 'RU-ru', 'ru'],
       [true, 'JA-JP', 'ja'],
-      [true, 'ko-KR', 'en'],
+      [true, 'ko-KR', 'ko'],
+      [true, 'es-MX', 'es'],
+      [true, 'pt-BR', 'pt-BR'],
+      [true, 'PT-br', 'pt-BR'],
+      [true, 'pt-PT', 'pt-BR'],
       [true, 'x-zh', 'en'],
       [true, '', 'en'],
     ];
@@ -115,10 +113,16 @@ describe('Endfield product', () => {
     const snapshot = profile.defaults();
     const defaults = cloneDefaults(snapshot);
     expect(
-      snapshot.settings.costs.unproduceable.eq(rational(1000000)),
+      snapshot.settings.costs.unproduceable.eq(rational(100000000)),
     ).toBeTrue();
     expect(snapshot.settings.costs.surplus.eq(rational.one)).toBeTrue();
-    expect(snapshot.settings.costs.recycling.eq(rational(1000))).toBeTrue();
+    expect(snapshot.settings.costs.recycling.eq(rational.one)).toBeTrue();
+    expect(
+      profile.serializedCostDefaults?.unproduceable?.eq(rational(1000000)),
+    ).toBeTrue();
+    expect(
+      profile.serializedCostDefaults?.recycling?.eq(rational(1000)),
+    ).toBeTrue();
     expect(snapshot.preferences.powerUnit).toBe(PowerUnit.kW);
     expect(snapshot.preferences.theme).toBe('light');
     expect(snapshot.preferences.flowSettings.diagram).toBe(FlowDiagram.BoxLine);
@@ -174,17 +178,17 @@ describe('Endfield product', () => {
     const profile = createEndfieldProduct(false, 'zh');
     for (const lang of ['en', 'zh', 'ja', 'ru'] as const)
       expect(profile.loadGameI18n('aef', lang)).toBeTrue();
-    for (const lang of ['de', 'fr'] as const)
+    for (const lang of ['de', 'fr', 'ko', 'pt-BR', 'es'] as const)
       expect(profile.loadGameI18n('aef', lang)).toBeFalse();
     expect(profile.loadGameI18n('2x1', 'en')).toBeFalse();
-    expect(profile.languages.map((x) => x.value).sort()).toEqual([
-      'de',
-      'en',
-      'fr',
-      'ja',
-      'ru',
-      'zh',
-    ]);
+    expect(profile.languages.map((x): string => x.value).sort()).toEqual(
+      ['de', 'en', 'fr', 'ja', 'ko', 'pt-BR', 'ru', 'es', 'zh'].sort(),
+    );
+    for (const { value } of profile.languages) {
+      const restored = profile.migratePreferences({ language: value });
+      expect(restored.state.language).withContext(value).toBe(value);
+      expect(restored.warnings).withContext(value).toEqual([]);
+    }
   });
 
   it('salvages independent fields while rejecting damaged archives and preferences', () => {
@@ -324,6 +328,12 @@ describe('PreferencesStore with Endfield product', () => {
     expect(service.flowSettings().elkAlgorithm).toBe('layered');
   });
 
+  it('keeps a saved Portuguese preference over the browser default', () => {
+    const service = create(JSON.stringify({ language: 'pt-BR' }));
+    expect(service.language()).toBe('pt-BR');
+    expect(service.migrationWarnings).toEqual([]);
+  });
+
   it('backs up a partly damaged original before saving independently valid fields', () => {
     const raw = JSON.stringify({
       language: 'ru',
@@ -423,82 +433,6 @@ describe('PreferencesStore with Endfield product', () => {
   });
 });
 
-describe('Endfield route composition', () => {
-  it('preserves unknown guard order, route metadata and static and lazy children', () => {
-    const first: CanActivateFn = () => true;
-    const last: CanActivateFn = () => true;
-    const data = { marker: {} };
-    const resolve = { value: (): string => 'resolved' };
-    const loadComponent = jasmine
-      .createSpy('loadComponent')
-      .and.resolveTo(MockComponent);
-    const loadChildren = jasmine.createSpy('loadChildren').and.resolveTo([]);
-    const source: Routes = [
-      {
-        path: 'parent',
-        pathMatch: 'prefix',
-        title: 'Workspace',
-        canActivate: [first, idGuard, last, landingGuard],
-        data,
-        resolve,
-        runGuardsAndResolvers: 'always',
-        children: [
-          {
-            path: 'editor',
-            canActivate: [first, landingGuard, last],
-            loadComponent,
-            loadChildren,
-          },
-        ],
-      },
-      { path: 'plain', data, children: [] },
-    ];
-    const sourceGuards = source[0].canActivate;
-    const sourceChildren = source[0].children;
-    const childGuards = sourceChildren![0].canActivate;
-    const configured = configureEndfieldRoutes(source);
-    expect(configured).not.toBe(source);
-    expect(configured[0]).not.toBe(source[0]);
-    expect(configured[0].path).toBe('parent');
-    expect(configured[0].pathMatch).toBe('prefix');
-    expect(configured[0].title).toBe('Workspace');
-    expect(configured[0].resolve).toBe(resolve);
-    expect(configured[0].runGuardsAndResolvers).toBe('always');
-    expect(configured[0].canActivate).toEqual([
-      first,
-      endfieldIdGuard,
-      last,
-      endfieldLandingGuard,
-    ]);
-    expect(configured[0].data).toBe(data);
-    expect(configured[0].children).not.toBe(sourceChildren);
-    const child = configured[0].children![0];
-    expect(child.canActivate).toEqual([
-      first,
-      endfieldLandingGuard,
-      last,
-      editorGuard,
-    ]);
-    expect(child.loadComponent).toBe(loadComponent);
-    expect(child.loadChildren).toBe(loadChildren);
-    expect(configured[1].path).toBe('plain');
-    expect(configured[1].data).toBe(data);
-    expect(configured[1].canActivate).toBeUndefined();
-    expect(configured[1].children).toEqual([]);
-    expect(source[0].children).toBe(sourceChildren);
-    expect(source[0].canActivate).toBe(sourceGuards);
-    expect(source[0].children![0].canActivate).toBe(childGuards);
-    expect(source[0].canActivate).toEqual([first, idGuard, last, landingGuard]);
-    expect(source[0].children![0].canActivate).toEqual([
-      first,
-      landingGuard,
-      last,
-    ]);
-    expect(loadComponent).not.toHaveBeenCalled();
-    expect(loadChildren).not.toHaveBeenCalled();
-  });
-});
-
 describe('Endfield route navigation', () => {
   function setup(
     profile: ProductProfile,
@@ -527,6 +461,7 @@ describe('Endfield route navigation', () => {
     const source: Routes = [
       {
         path: 'editor',
+        canActivate: [editorGuard],
         loadComponent: loadEditor,
         children: [{ path: 'deep', component: MockComponent }],
       },
@@ -564,7 +499,7 @@ describe('Endfield route navigation', () => {
     const hash = jasmine.createSpy('getHashParams').and.resolveTo({});
     TestBed.configureTestingModule({
       providers: [
-        provideRouter(configureEndfieldRoutes(source)),
+        provideRouter(source),
         { provide: PRODUCT_PROFILE, useValue: profile },
         { provide: PreferencesStore, useValue: { bypassLanding: bypass } },
         {
@@ -679,7 +614,7 @@ describe('Endfield route navigation', () => {
       queryParams: {},
     } as unknown as ActivatedRouteSnapshot;
     const idResult = TestBed.runInInjectionContext(() =>
-      endfieldIdGuard(idRoute, state),
+      idGuard(idRoute, state),
     );
     expect(idResult instanceof UrlTree).toBeTrue();
     expect(fixture.router.serializeUrl(idResult as UrlTree)).toBe('/aef');
@@ -689,7 +624,7 @@ describe('Endfield route navigation', () => {
       paramMap: { get: () => null },
     } as unknown as ActivatedRouteSnapshot;
     const landingResult = TestBed.runInInjectionContext(() =>
-      endfieldLandingGuard(rootRoute, state),
+      landingGuard(rootRoute, state),
     );
     expect(fixture.router.serializeUrl(landingResult as UrlTree)).toBe(
       '/aef/list',
@@ -700,34 +635,29 @@ describe('Endfield route navigation', () => {
   it('preserves upstream shortcut, alias and ordinary-id behavior in neutral mode', async () => {
     const fixture = setup(upstreamProduct);
     const harness = await RouterTestingHarness.create('/ffy');
-    for (const url of [
-      '/list?v=10&o=a&o=b',
-      '/wizard?v=10&o=a&o=b',
-      '/flow?v=10&o=a&o=b',
-      '/data?v=10&o=a&o=b',
-      '/factorio?x=1',
-      '/final-factory?x=1',
-      '/custom/list?x=1',
+    for (const [url, expected] of [
+      ['/list?v=10&o=a&o=b', '/sfy/list?v=12&o=migrated&o=again'],
+      ['/wizard?v=10&o=a&o=b', '/sfy/wizard?v=12&o=migrated&o=again'],
+      ['/flow?v=10&o=a&o=b', '/sfy/flow?v=12&o=migrated&o=again'],
+      ['/data?v=10&o=a&o=b', '/sfy/data?v=12&o=migrated&o=again'],
+      ['/factorio?x=1', '/2x1'],
+      ['/final-factory?x=1', '/ffy'],
+      ['/custom/list?x=1', '/custom/list?x=1'],
     ]) {
-      fixture.router.resetConfig(fixture.source);
       await harness.navigateByUrl(url);
-      const upstreamUrl = fixture.router.url;
-      fixture.router.resetConfig(configureEndfieldRoutes(fixture.source));
-      if (upstreamUrl === url) await harness.navigateByUrl('/ffy');
-      await harness.navigateByUrl(url);
-      expect(fixture.router.url).withContext(url).toBe(upstreamUrl);
+      expect(fixture.router.url).withContext(url).toBe(expected);
     }
     expect(fixture.unzip).toHaveBeenCalled();
     expect(fixture.migrate).toHaveBeenCalled();
     expect(fixture.router.url).toBe('/custom/list?x=1');
   });
 
-  it('delegates neutral landing and editor behavior with the mapper installed', async () => {
+  it('preserves neutral landing and editor behavior', async () => {
     const fixture = setup(upstreamProduct, {
       stored: '/2x1/list?o=old',
     });
     const harness = await RouterTestingHarness.create('/?v=11&o=a&o=b');
-    expect(fixture.router.url).toBe(`/${DEFAULT_MOD}`);
+    expect(fixture.router.url).toBe(`/${DEFAULT_MOD}?v=11&o=a&o=b`);
     fixture.bypass.and.returnValue(true);
     await harness.navigateByUrl('/');
     expect(fixture.router.url).toBe('/2x1/list?o=old');
@@ -736,30 +666,6 @@ describe('Endfield route navigation', () => {
     await harness.navigateByUrl('/editor?x=1');
     expect(fixture.router.url).toBe('/editor?x=1');
     expect(fixture.loadEditor).toHaveBeenCalled();
-  });
-
-  it('delegates neutral idGuard with the same snapshot and async return form', async () => {
-    const fixture = setup(upstreamProduct);
-    const queryParams = { v: '10', o: ['a', 'b'] };
-    const route = {
-      params: { id: 'list' },
-      queryParams,
-    } as unknown as ActivatedRouteSnapshot;
-    const state = {} as RouterStateSnapshot;
-    const original = TestBed.runInInjectionContext(() => idGuard(route, state));
-    const delegated = TestBed.runInInjectionContext(() =>
-      endfieldIdGuard(route, state),
-    );
-    expect(original instanceof Promise).toBeTrue();
-    expect(delegated instanceof Promise).toBeTrue();
-    expect(fixture.unzip.calls.allArgs()).toEqual([
-      [queryParams],
-      [queryParams],
-    ]);
-    expect(fixture.unzip.calls.argsFor(1)[0]).toBe(queryParams);
-    expect(fixture.router.serializeUrl((await delegated) as UrlTree)).toBe(
-      fixture.router.serializeUrl((await original) as UrlTree),
-    );
   });
 });
 
@@ -781,16 +687,14 @@ describe('Shortcut forwarding to the Endfield codec', () => {
         provideEndfieldProduct(),
         ...provideEndfieldStateExtension(),
         { provide: Migration, useValue: { migrate } },
-        provideRouter(
-          configureEndfieldRoutes([
-            {
-              path: ':id',
-              component: Id,
-              canActivate: [idGuard],
-              children: [{ path: 'list', component: MockComponent }],
-            },
-          ]),
-        ),
+        provideRouter([
+          {
+            path: ':id',
+            component: Id,
+            canActivate: [idGuard],
+            children: [{ path: 'list', component: MockComponent }],
+          },
+        ]),
       ],
     });
     const router = TestBed.inject(Router);

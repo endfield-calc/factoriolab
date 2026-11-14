@@ -10,7 +10,7 @@ import {
   ModelVariableRef,
 } from '~/extensions/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
-import { RecipeObjective } from '~/state/objectives/objective';
+import { ObjectiveState, RecipeObjective } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { AdjustedDataset } from '~/state/settings/dataset';
@@ -29,6 +29,7 @@ import {
   validateModelSolution,
 } from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
+import { SimplexResult } from './simplex-result';
 import { Solver } from './solver';
 
 const recipeRef = (id: string): ModelVariableRef => ({ kind: 'recipe', id });
@@ -276,6 +277,116 @@ describe('Solver model extension', () => {
     ).toEqual(rational(1n, 2n));
   });
 
+  for (const algorithm of ['simplex', 'exact'] as const) {
+    it(`reports actual inputs consistently for equivalent LP and MIP solutions using ${algorithm}`, () => {
+      const r = recipe('r');
+      const supply = {
+        ...recipe('supply'),
+        out: { unused: rational.one },
+        output: { unused: rational.one },
+        produces: new Set(['unused']),
+      };
+      const data = {
+        itemIds: ['input', 'product', 'unused'],
+        itemAvailableRecipeIds: { input: [], product: ['r'], unused: [] },
+        itemAvailableIoRecipeIds: { input: [], product: ['r'], unused: [] },
+        adjustedRecipe: { r },
+        itemRecord: {
+          input: { stack: rational.one },
+          product: { stack: rational.one },
+          unused: { stack: rational.one },
+        },
+        flags: new Set(),
+      } as unknown as AdjustedDataset;
+      const settings = {
+        ...initialSettingsState,
+        costs: { ...initialSettingsState.costs, surplus: rational.one },
+        requireMachinesOutput: false,
+      } as Settings;
+      const objectives: ObjectiveState[] = [
+        {
+          id: 'input-budget',
+          targetId: 'input',
+          value: rational(10),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Input,
+        },
+        {
+          id: 'input-demand',
+          targetId: 'input',
+          value: rational(3),
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Output,
+        },
+        {
+          id: 'product-demand',
+          targetId: 'product',
+          value: rational.one,
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Output,
+        },
+        objective('recipe-limit', r, rational.one, ObjectiveType.Limit),
+        objective('unused-budget', supply, rational(7), ObjectiveType.Input),
+      ];
+      const solve = (
+        input: ObjectiveState[],
+        integer: boolean,
+      ): SimplexResult =>
+        solver.solve(
+          input,
+          settings,
+          data,
+          false,
+          algorithm,
+          context(() => ({
+            constraints: [],
+            integers: integer ? [recipeRef('r')] : [],
+          })),
+        );
+      const results = [false, true].map((integer) =>
+        solve(objectives, integer),
+      );
+
+      // r - surplus(product) = 1 and r <= 1 force r = 1 even in the LP,
+      // so marking r integer leaves the complete feasible domain unchanged.
+      for (const result of results) {
+        expect(result.resultType).toBe('solved');
+        expect(result.cost).toEqual(rational.one);
+        const input = result.steps.find((step) => step.itemId === 'input');
+        expect(input?.items).toEqual(rational(3));
+        expect(input?.output).toEqual(rational(3));
+        expect(input?.surplus).toBeUndefined();
+        expect(
+          result.steps.some((step) => step.itemId === 'unused'),
+        ).toBeFalse();
+        const product = result.steps.find((step) => step.itemId === 'product');
+        expect(product?.items).toEqual(rational.one);
+        expect(product?.machines).toEqual(rational.one);
+        expect(product?.surplus).toBeUndefined();
+      }
+      expect(results[0].steps).toEqual(results[1].steps);
+      expect(objectives[0].value).toEqual(rational(10));
+      expect(objectives[4].value).toEqual(rational(7));
+
+      // A smaller input budget requires one unit of unproduceable input, whose
+      // cost confirms that the original upper bound still limits the model.
+      const capped = objectives.map((obj) =>
+        obj.id === 'input-budget' ? { ...obj, value: rational(2) } : obj,
+      );
+      for (const integer of [false, true]) {
+        const result = solve(capped, integer);
+        expect(result.resultType).toBe('solved');
+        expect(result.cost).toEqual(
+          initialSettingsState.costs.unproduceable.add(rational.one),
+        );
+        expect(
+          result.steps.find((step) => step.itemId === 'input')?.items,
+        ).toEqual(rational(3));
+      }
+      expect(capped[0].value).toEqual(rational(2));
+    });
+  }
+
   it('rejects noninteger fixed objectives with exact rational bounds', () => {
     for (const amount of [rational(1n, 2n), rational(100000001n, 100000000n)]) {
       const r = recipe('r');
@@ -313,7 +424,7 @@ describe('Solver model extension', () => {
     s.modelContext = context((variables) => {
       descriptions = variables;
       expect(Object.isFrozen(variables)).toBeTrue();
-      expect(Object.isFrozen(variables[0].recipe)).toBeTrue();
+      expect(Object.isFrozen(variables[0])).toBeTrue();
       expect(Object.isFrozen(variables[0].ref)).toBeTrue();
       return budget(variables, rational.zero);
     });
@@ -321,11 +432,9 @@ describe('Solver model extension', () => {
     expect(result.error).toBeFalse();
     expect(result.recipes['r']).toBeUndefined();
     expect(result.cost).toEqual(rational.zero);
-    expect(
-      descriptions.map((v) => [v.ref.kind, v.ref.id, v.recipeId, v.machineId]),
-    ).toEqual([
-      ['recipe', 'r', 'r', 'limited'],
-      ['objective', 'external', 'r', 'other'],
+    expect(descriptions).toEqual([
+      { ref: recipeRef('r'), recipeId: 'r', machineId: 'limited' },
+      { ref: objectiveRef('external'), recipeId: 'r', machineId: 'other' },
     ]);
     expect(r.producers).toContain('limited');
   });
@@ -956,7 +1065,6 @@ describe('Solver model extension', () => {
               description: {
                 ref: recipeRef('r'),
                 recipeId: 'r',
-                recipe: recipe('r'),
               },
               lower: rational.zero,
               upper,
@@ -1044,7 +1152,7 @@ describe('Solver model extension', () => {
       const x = addModelVariable(model, { lb: 0 });
       const binding = (id: string): ModelBinding => ({
         variable: x,
-        description: { ref: recipeRef(id), recipeId: id, recipe: recipe(id) },
+        description: { ref: recipeRef(id), recipeId: id },
         lower: rational.zero,
       });
       expect(() =>
@@ -1348,7 +1456,6 @@ describe('Solver model extension', () => {
         description: {
           ref: recipeRef('foreign'),
           recipeId: 'foreign',
-          recipe: recipe('foreign'),
         },
         lower: rational.zero,
       };
@@ -1414,7 +1521,6 @@ describe('Solver model extension', () => {
         description: {
           ref: recipeRef('x'),
           recipeId: 'x',
-          recipe: recipe('x'),
         },
         lower: rational.one,
         upper: rational.one,

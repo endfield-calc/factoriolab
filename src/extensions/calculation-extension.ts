@@ -1,6 +1,5 @@
 import { InjectionToken } from '@angular/core';
 
-import { AdjustedRecipe } from '~/data/schema/recipe';
 import { Rational } from '~/rational/rational';
 import {
   ObjectiveSettings,
@@ -22,7 +21,6 @@ export interface CalculationVariable {
   readonly ref: ModelVariableRef;
   readonly recipeId: string;
   readonly machineId?: string;
-  readonly recipe: ReadonlyValue<AdjustedRecipe>;
 }
 
 export interface LinearRule {

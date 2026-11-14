@@ -443,7 +443,6 @@ export class Solver {
             ref: { kind: 'recipe', id: recipeId },
             recipeId,
             machineId: state.modelContext.recipeSettings[recipeId]?.machineId,
-            recipe: state.recipes[recipeId],
           },
           variable: recipeVarRecord[recipeId],
           lower: rational.zero,
@@ -473,7 +472,6 @@ export class Solver {
             ref: { kind: 'objective', id: obj.id },
             recipeId: obj.recipe.id,
             machineId: (obj as RecipeObjective & RecipeState).machineId,
-            recipe: obj.recipe,
           },
           variable: recipeObjectiveVarRecord[obj.id],
           lower: obj.type === ObjectiveType.Output ? obj.value : rational.zero,
@@ -814,8 +812,7 @@ export class Solver {
       const values = state.itemValues[itemId];
       const val = rational(valueOf(surplusVarRecord[itemId]));
       if (val.nonzero()) surplus[itemId] = val;
-      if (mip && values.in)
-        values.in = rational(valueOf(inputVarRecord[itemId]));
+      if (values.in) values.in = rational(valueOf(inputVarRecord[itemId]));
 
       if (recipeObjectiveOutput[itemId]) {
         for (const objId of Object.keys(recipeObjectiveOutput[itemId])) {

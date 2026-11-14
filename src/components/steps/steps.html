@@ -220,17 +220,11 @@
               <div
                 class="relative flex h-full flex-col items-center justify-center"
               >
-                @if (
-                  step.itemId &&
-                  step.recipeObjectiveId == null &&
-                  !presentation.hideDuplicateIcons()
-                ) {
+                @if (step.itemId && step.recipeObjectiveId == null) {
                   <lab-exclude-button
                     [itemId]="step.itemId"
                   ></lab-exclude-button>
-                } @else if (
-                  step.recipeId && !presentation.hideDuplicateIcons()
-                ) {
+                } @else if (step.recipeId) {
                   <lab-icon
                     [value]="step.recipeId"
                     type="recipe"
@@ -464,8 +458,7 @@
               step.recipeId &&
               step.machines &&
               step.machines.nonzero() &&
-              !data().machineRecord[machineId].hideRate &&
-              !presentation.hideProducer(step.recipeId)
+              !data().machineRecord[machineId].hideRate
             ) {
               <span class="flex justify-end font-mono whitespace-pre">
                 @if (
@@ -487,20 +480,14 @@
                   aria-hidden="true"
                   >{{ data().recipeRecord[step.recipeId].name }}</span
                 >
-                <lab-recipes-select
-                  [step]="step"
-                  [hideIcon]="duplicateRecipeIcon(step)"
-                ></lab-recipes-select>
+                <lab-recipes-select [step]="step"></lab-recipes-select>
                 @if (presentation.sourceLabel(step); as source) {
                   <span>{{ source | translate }}</span>
                 }
                 @if (presentation.showNameToggle) {
                   <span>{{ data().recipeRecord[step.recipeId].name }}</span>
                 }
-                @if (
-                  step.recipe.producers?.length &&
-                  !presentation.hideProducer(step.recipeId)
-                ) {
+                @if (step.recipe.producers?.length) {
                   <lab-select
                     [iconOnly]="true"
                     [options]="step.recipeSettings.machineOptions ?? []"
@@ -614,10 +601,7 @@
               step.recipeId && data().recipeRecord[step.recipeId];
               as recipe
             ) {
-              @if (
-                recipe.flags.has('showCount') &&
-                !presentation.hideProducer(step.recipeId)
-              ) {
+              @if (recipe.flags.has('showCount')) {
                 <span class="flex justify-end font-mono whitespace-pre">
                   @if (step.recipeId && recipe.flags.has('infinite')) {
                     {{ step.machines | rate: -2 }}%
@@ -630,10 +614,7 @@
           </td>
           <td>
             <div class="gap-1 flex items-center">
-              <lab-recipes-select
-                [step]="step"
-                [hideIcon]="duplicateRecipeIcon(step)"
-              ></lab-recipes-select>
+              <lab-recipes-select [step]="step"></lab-recipes-select>
               @if (presentation.sourceLabel(step); as source) {
                 <span>{{ source | translate }}</span>
               }

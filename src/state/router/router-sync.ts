@@ -1478,6 +1478,7 @@ export class RouterSync {
     hash: ModHash,
   ): void {
     const init = cloneDefaults(this.effectiveDefaults).settings;
+    init.costs = { ...init.costs, ...this.product.serializedCostDefaults };
 
     // Set up shorthand functions to zip state
     const set = this.zip.set(zState.config, state, init);

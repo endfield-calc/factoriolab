@@ -84,6 +84,7 @@ export class PickerDialog implements AfterViewInit {
    */
   readonly selection = signal(new Set<string>());
   protected readonly filter = signal('');
+  protected readonly showNames = signal(false);
 
   protected readonly allSelected = computed(() => {
     const selection = this.selection();

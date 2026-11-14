@@ -4,23 +4,23 @@
 
 ## 1. 有效数据集与 schema 转换
 
-有效输入为 `data.json`、`hash.json`、`icons.webp` 及 en/zh/ja/ru 四份游戏翻译。数据声明版本 `arknights-endfield: v1.5.3`，meta 指向本项目并标记来源 akedata。包含 161 个物品、257 条配方、254 个图标、5 个分类、2 个地点；其中有 34 个机器物品、59 条谷地传输配方、28 条 hideProducer 配方。
+有效输入为 `data.json`、`hash.json`、`icons.webp` 及 en/zh/ja/ru 四份游戏翻译。数据声明版本 `arknights-endfield: v1.5.3`，meta 指向本项目并标记来源 akedata。包含 161 个物品、257 条配方、254 个图标、5 个分类、2 个地点；其中有 34 个机器物品、59 条谷地传输配方、28 条使用原生无设备表示的据点供货配方。两种历史据点机器实体及hash槽保留用于旧设置解释。
 
 `data-dsp.json`、`data-sfy.json`、`data-spa.json`、`defaults-spa.json` 无有效运行引用，是遗留样例，不进入迁移数据。`resource/icons` 下的设计源文件可作为品牌素材来源，但无需全部进入浏览器包。
 
-| 旧字段/机制                                      | 新版对应                         | 转换规则                                                                                                   |
-| ------------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| flags 来自 `src/app/models/flags.ts` 的 aef 集合 | `ModData.flags`                  | 将 consumptionAsDrain、power、resourcePurity、hideMachineSettings 明确写入 aef 数据                        |
-| 图标 position，如 `-64px 0px`                    | 图标 x/y                         | 解析为正坐标 x=64、y=0；保留 color、id、图集像素尺寸；不能把负号直接传给 viewBox                           |
-| 物品 stack 缺失常被用来区分流体                  | `ItemJson.types`、物流 itemTypes | 实体物品通常为 item，液体/气体为 fluid；对虚拟 key、调度券、机器等逐类核对，不机械用“无 stack”推断所有实体 |
-| 独立 `pipe` 子对象                               | 统一 `belt`                      | pipe 物品仍保持 id=pipe、速度 2/s，声明接收 fluid；belt 速度 0.5/s，声明接收 item                          |
-| `minBelt/maxBelt/minPipe/maxPipe`                | beltRank 等 rank 数组            | 推荐单个自定义 preset：beltRank 包含 belt 与 pipe，locations 包含 tundra 与 jinlong，保留默认机器选择行为  |
-| 顶层 defaults.locations                          | 新版自定义 preset 路径           | 使用新版已支持的 locations 通路，避免写到不读取 locations 的旧硬编码 preset 分支                           |
-| `hideProducer`                                   | 新 schema 已移除                 | 保留其展示语义，见 [03](03-upstream-mapping.md)；不删除计算所需生产者                                      |
-| `forceShowLabel`                                 | 新 schema 已移除                 | 兼容展示开关/局部元数据；当前数据没有实际引用                                                              |
-| `ModI18n.name/version`                           | 新版只有实体名称映射             | 通过受控扩展或产品元数据恢复游戏名/版本翻译，不把名称翻译写成另一个游戏 id                                 |
-| hash 仅含当前用到的部分数组                      | 新 `ModHash` 定义更多数组        | 对不存在的 beacons/fuels/wagons/modules/technologies 补空数组；原有数组索引保持稳定                        |
-| meta、buildIcon 等生成器附加信息                 | 运行 schema 不直接消费           | 保留来源信息或明确放到构建元数据；图标叠加以实际图集为准，不承诺新运行时会读取旧扩展字段                   |
+| 旧字段/机制                                      | 新版对应                         | 转换规则                                                                                                            |
+| ------------------------------------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| flags 来自 `src/app/models/flags.ts` 的 aef 集合 | `ModData.flags`                  | 将 consumptionAsDrain、power、resourcePurity、hideMachineSettings 明确写入 aef 数据                                 |
+| 图标 position，如 `-64px 0px`                    | 图标 x/y                         | 解析为正坐标 x=64、y=0；保留 color、id、图集像素尺寸；不能把负号直接传给 viewBox                                    |
+| 物品 stack 缺失常被用来区分流体                  | `ItemJson.types`、物流 itemTypes | 实体物品通常为 item，液体/气体为 fluid；对虚拟 key、调度券、机器等逐类核对，不机械用“无 stack”推断所有实体          |
+| 独立 `pipe` 子对象                               | 统一 `belt`                      | pipe 物品仍保持 id=pipe、速度 2/s，声明接收 fluid；belt 速度 0.5/s，声明接收 item                                   |
+| `minBelt/maxBelt/minPipe/maxPipe`                | beltRank 等 rank 数组            | 推荐单个自定义 preset：beltRank 包含 belt 与 pipe，locations 包含 tundra 与 jinlong，保留默认机器选择行为           |
+| 顶层 defaults.locations                          | 新版自定义 preset 路径           | 使用新版已支持的 locations 通路，避免写到不读取 locations 的旧硬编码 preset 分支                                    |
+| `hideProducer`                                   | 新 schema 已移除                 | 对28条已验证虚拟设备配方省略producers并将机器地区迁入recipe.locations；旧设置内部复用原生机器计算，不再维护隐藏侧表 |
+| `forceShowLabel`                                 | 通用可选RecipeFlag               | Picker直接读取配方flag，名称开关为实例内状态；固定数据当前没有实际引用                                              |
+| `ModI18n.name/version`                           | 新版只有实体名称映射             | 通过受控扩展或产品元数据恢复游戏名/版本翻译，不把名称翻译写成另一个游戏 id                                          |
+| hash 仅含当前用到的部分数组                      | 新 `ModHash` 定义更多数组        | 对不存在的 beacons/fuels/wagons/modules/technologies 补空数组；原有数组索引保持稳定                                 |
+| meta、buildIcon 等生成器附加信息                 | 运行 schema 不直接消费           | 保留来源信息或明确放到构建元数据；图标叠加以实际图集为准，不承诺新运行时会读取旧扩展字段                            |
 
 转换后物品、配方、地点和图标的 ID 集合与有效数据一一对应，配方输入、输出、耗时、地点和功耗不得因 schema 改名而变化。对旧不存在的质量、插件、燃料、货车、火箭等字段用空值，不凭空补出游戏能力。
 
@@ -139,15 +139,15 @@
 
 注意：旧 footprint 在该分支中是“非零则启用占地项”，其数值并没有再次乘进面积；这和通常理解的连续权重不同。为达到当前效果先保持公式，若要改变应另立行为变更。electric 成本用的是机器 usage，不是最终配方覆盖的 usage，也不是已向上取整的总电量；不要把“电力权重”误实现成新的电力平衡硬约束。
 
-| 成本项                       | 当前默认   | 上游默认    | aef 迁移值 |
-| ---------------------------- | ---------- | ----------- | ---------- |
-| factor / machine / footprint | 1 / 1 / 1  | 1 / 1 / 1   | 1 / 1 / 1  |
-| electric                     | 1          | 无该项      | 1          |
-| unproduceable                | 1,000,000  | 100,000,000 | 1,000,000  |
-| excluded                     | 0          | 0           | 0          |
-| surplus                      | 1          | 0           | 1          |
-| maximize                     | -1,000,000 | -1,000,000  | -1,000,000 |
-| recycling                    | 1,000      | 1           | 1,000      |
+| 成本项                       | 旧分支默认 | 新上游默认  | 新建及重置aef |
+| ---------------------------- | ---------- | ----------- | ------------- |
+| factor / machine / footprint | 1 / 1 / 1  | 1 / 1 / 1   | 1 / 1 / 1     |
+| electric                     | 1          | 无该项      | 1             |
+| unproduceable                | 1,000,000  | 100,000,000 | 100,000,000   |
+| excluded                     | 0          | 0           | 0             |
+| surplus                      | 1          | 0           | 1             |
+| maximize                     | -1,000,000 | -1,000,000  | -1,000,000    |
+| recycling                    | 1,000      | 1           | 1             |
 
 例如机器 usage=50、尺寸5×5、machine=electric=footprint=1，无显式成本时结果为 75；electric=2 时为125；关闭 footprint 且 electric=1 时为50。声明 -30 的净水配方在 factor=2 时为 -60，即使 out 为空也不能变成 0。
 

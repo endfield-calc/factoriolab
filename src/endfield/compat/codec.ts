@@ -1,4 +1,5 @@
 import { ModData } from '~/data/schema/mod-data';
+import { Recipe, RecipeJson } from '~/data/schema/recipe';
 import {
   createEndfieldState,
   EndfieldState,
@@ -13,6 +14,38 @@ import { Rational, rational } from '~/rational/rational';
 import { BeaconSettings } from '~/state/beacon-settings';
 import { ModuleSettings } from '~/state/module-settings';
 import { RecipeState } from '~/state/recipes/recipe-state';
+import { CostSettings } from '~/state/settings/cost-settings';
+
+export const historicalCostDefaults: Readonly<
+  Pick<CostSettings, 'unproduceable' | 'recycling'>
+> = Object.freeze({
+  unproduceable: rational(1000000n),
+  recycling: rational(1000n),
+});
+
+/** Recognize the original machine identity from migrated settlement data. */
+export function settlementRecipeAlias(
+  recipe:
+    | Pick<Recipe | RecipeJson, 'category' | 'locations' | 'out' | 'producers'>
+    | undefined,
+): string | undefined {
+  if (recipe?.producers != null || recipe?.category !== 'settlement') return;
+  const outputs = Object.keys(recipe.out);
+  if (outputs.length !== 1) return;
+  const location =
+    outputs[0] === 'tundra_coupon'
+      ? 'tundra'
+      : outputs[0] === 'jinlong_coupon'
+        ? 'jinlong'
+        : undefined;
+  if (
+    location == null ||
+    recipe.locations?.length !== 1 ||
+    recipe.locations[0] !== location
+  )
+    return;
+  return `settlement-${location}_coupon`;
+}
 
 export function invalid(
   field: string,
@@ -163,7 +196,11 @@ export function validateRecipeReferences(
   if (settings.machineId != null) {
     validateEntity(data, settings.machineId, 'machine', `${field}.machineId`);
     const recipe = data.recipes.find((entry) => entry.id === recipeId);
-    if (recipeId != null && !recipe?.producers?.includes(settings.machineId))
+    if (
+      recipeId != null &&
+      !recipe?.producers?.includes(settings.machineId) &&
+      settlementRecipeAlias(recipe) !== settings.machineId
+    )
       invalid(`${field}.machineId`, `Machine is not a producer of ${recipeId}`);
   }
   if (settings.fuelId != null)

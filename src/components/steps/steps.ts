@@ -178,27 +178,6 @@ export class Steps {
     });
   }
 
-  /** Keep the recipe selector usable while avoiding a repeated item sprite. */
-  duplicateRecipeIcon(step: Step): boolean {
-    if (
-      !this.presentation.hideDuplicateIcons() ||
-      !step.itemId ||
-      !step.recipeId
-    )
-      return false;
-    const icons = this.data().iconRecord;
-    const item = icons.item[step.itemId];
-    const recipe = icons.recipe[step.recipeId];
-    return (
-      !!item &&
-      !!recipe &&
-      item.file === recipe.file &&
-      item.id === recipe.id &&
-      item.text === recipe.text &&
-      item.quality?.id === recipe.quality?.id
-    );
-  }
-
   // Store per-recipe preferences in component memory
   perMachine: Record<string, boolean | undefined> = {};
 

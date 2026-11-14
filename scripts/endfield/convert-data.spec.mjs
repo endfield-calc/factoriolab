@@ -34,7 +34,6 @@ const data = json('public/data/aef/data.json');
 const sourceHash = fromSource('hash.json');
 const frozen = json('src/endfield/compat/legacy-hash.json');
 const hash = json('public/data/aef/hash.json');
-const display = json('src/endfield/domain/display-metadata.json');
 const ids = (list) => list.map((entry) => entry.id);
 const byId = (list) =>
   Object.fromEntries(list.map((entry) => [entry.id, entry]));
@@ -338,26 +337,23 @@ test('entity sets, fields and physical quantities match the source', () => {
     else assert.equal(newBelt, undefined);
   }
   const convertedRecipes = byId(data.recipes);
+  const convertedLocations = { tundra: 0, jinlong: 0 };
   for (const old of sourceData.recipes) {
     const converted = { ...convertedRecipes[old.id] };
-    const hidden = (old.flags ?? []).filter((flag) =>
-      ['hideProducer', 'forceShowLabel'].includes(flag),
-    );
-    const flags = (old.flags ?? []).filter((flag) => !hidden.includes(flag));
-    if (old.flags && !hidden.length)
-      assert.deepEqual(converted.flags, old.flags, old.id);
-    if (hidden.length) {
-      assert.deepEqual(
-        display.recipes[old.id],
-        Object.fromEntries(hidden.map((flag) => [flag, true])),
-      );
-      if (flags.length) assert.deepEqual(converted.flags, flags, old.id);
-      else assert.equal(converted.flags, undefined, old.id);
-      if (old.flags) converted.flags = old.flags;
+    if (old.flags?.includes('hideProducer')) {
+      const location =
+        old.producers[0] === 'settlement-tundra_coupon' ? 'tundra' : 'jinlong';
+      convertedLocations[location]++;
+      assert.deepEqual(converted.locations, [location], old.id);
+      assert.equal(converted.producers, undefined, old.id);
+      assert.equal(converted.flags, undefined, old.id);
+      delete converted.locations;
+      converted.producers = old.producers;
+      converted.flags = old.flags;
     }
     assert.deepEqual(converted, old, old.id);
   }
-  assert.equal(Object.keys(display.recipes).length, 28);
+  assert.deepEqual(convertedLocations, { tundra: 14, jinlong: 14 });
   assert.ok(
     data.recipes.some((recipe) => Object.keys(recipe.out).length === 0),
   );
@@ -477,7 +473,7 @@ test('all calculation references and icon references resolve; hidden categories 
     for (const id of [...Object.keys(recipe.in), ...Object.keys(recipe.out)]) {
       assert.ok(items[id], `material: ${recipe.id} ${id}`);
     }
-    for (const id of recipe.producers)
+    for (const id of recipe.producers ?? [])
       assert.ok(items[id]?.machine, `producer: ${recipe.id} ${id}`);
   }
   assert.deepEqual(
@@ -515,7 +511,7 @@ test('atlas bytes, coordinates, colors and language packs are retained', () => {
   }
 });
 
-test('flags, defaults and extracted display flags preserve their intended meaning', () => {
+test('flags and defaults preserve their intended meaning', () => {
   assert.deepEqual(data.flags, [
     'consumptionAsDrain',
     'power',
@@ -527,27 +523,92 @@ test('flags, defaults and extracted display flags preserve their intended meanin
     locations: ['tundra', 'jinlong'],
     beltRank: ['belt', 'pipe'],
   });
-  // No machineRank means both versions use the first available producer.
   assert.equal(data.defaults.machineRank, undefined);
-  assert.deepEqual(
-    data.recipes.map((recipe) => recipe.producers),
-    sourceData.recipes.map((recipe) => recipe.producers),
-  );
   const sample = structuredClone(sourceData);
-  sample.recipes[0].flags = ['mining', 'hideProducer', 'forceShowLabel'];
-  const result = convertData(sample);
-  assert.deepEqual(result.displayMetadata.recipes[sample.recipes[0].id], {
-    hideProducer: true,
-    forceShowLabel: true,
-  });
-  assert.deepEqual(result.data.recipes[0].flags, ['mining']);
-  assert.deepEqual(
-    result.data.recipes[0].producers,
-    sample.recipes[0].producers,
+  const hidden = sample.recipes.find((recipe) =>
+    recipe.flags?.includes('hideProducer'),
   );
+  hidden.flags.push('forceShowLabel');
+  const result = convertData(sample);
+  const converted = result.data.recipes.find(
+    (recipe) => recipe.id === hidden.id,
+  );
+  assert.deepEqual(converted.flags, ['forceShowLabel']);
+  assert.equal(converted.producers, undefined);
+  assert.equal(result.displayMetadata, undefined);
 });
 
-test('actual machine selection retains the source producer order and location rules', () => {
+test('unsafe hidden producers and alias use fail closed', () => {
+  const mutations = [
+    (recipe) => {
+      recipe.producers = ['miner_2'];
+    },
+    (recipe) => {
+      recipe.producers.push('miner_2');
+    },
+    (recipe) => {
+      recipe.locations = ['tundra'];
+    },
+    (recipe) => {
+      recipe.out = { jinlong_coupon: 1 };
+    },
+    (recipe) => {
+      recipe.out = { tundra_coupon: 0 };
+    },
+    (recipe) => {
+      delete recipe.cost;
+    },
+    (recipe) => {
+      recipe.usage = 1;
+    },
+    (recipe) => {
+      recipe.catalyst = { tundra_coupon: 1 };
+    },
+    (recipe) => {
+      recipe.flags.push('mining');
+    },
+    (_recipe, source) => {
+      source.items.find(
+        (i) => i.id === 'settlement-tundra_coupon',
+      ).machine.speed = 2;
+    },
+    (_recipe, source) => {
+      source.items.find(
+        (i) => i.id === 'settlement-tundra_coupon',
+      ).machine.modules = 1;
+    },
+    (_recipe, source) => {
+      source.items.find(
+        (i) => i.id === 'settlement-tundra_coupon',
+      ).machine.locations = ['jinlong'];
+    },
+    (_recipe, source) => {
+      source.qualities = [{ id: 'higher' }];
+    },
+    (_recipe, source) => {
+      source.recipes[0].out['settlement-tundra_coupon'] = 1;
+    },
+    (_recipe, source) => {
+      source.recipes[0].producers = ['settlement-tundra_coupon'];
+    },
+  ];
+  for (const [index, mutate] of mutations.entries()) {
+    const sample = structuredClone(sourceData);
+    const recipe = sample.recipes.find(
+      (entry) =>
+        entry.flags?.includes('hideProducer') &&
+        entry.producers[0] === 'settlement-tundra_coupon',
+    );
+    mutate(recipe, sample);
+    assert.throws(
+      () => convertData(sample),
+      /settlement alias|hidden producer/i,
+      `case ${index}`,
+    );
+  }
+});
+
+test('actual machine selection keeps ordinary producers and omits migrated aliases', () => {
   const Options = loadClass('src/state/options.ts', 'Options', {
     fnPropsNotNullish:
       (...keys) =>
@@ -564,13 +625,21 @@ test('actual machine selection retains the source producer order and location ru
   );
   const dataset = { itemRecord: currentItems, machineRecord };
   const recipeRecord = byId(data.recipes);
-  for (const enabled of [['tundra', 'jinlong'], ['tundra'], ['jinlong']]) {
+  for (const enabled of [['tundra', 'jinlong'], ['tundra'], ['jinlong'], []]) {
     const locations = new Set(enabled);
     const settings = {
       availableItemIds: new Set(ids(data.items)),
       locationIds: locations,
     };
     for (const recipe of sourceData.recipes) {
+      if (recipe.flags?.includes('hideProducer')) {
+        assert.equal(
+          options.machineOptions(recipeRecord[recipe.id], settings, dataset)
+            .length,
+          0,
+        );
+        continue;
+      }
       const allowed = recipe.producers.filter((id) => {
         const machineLocations = oldItems[id].machine.locations;
         return (

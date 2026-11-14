@@ -47,6 +47,20 @@ describe('PickerDialog', () => {
     expect(component).toBeTruthy();
   });
 
+  it('does not inspect recipe flags when rendering ordinary items', () => {
+    const data = { ...mocks.getDataset() };
+    Object.defineProperty(data, 'recipeRecord', {
+      get: () => {
+        throw new Error('Unexpected recipe access');
+      },
+    });
+    spyOn<any>(component, 'data').and.returnValue(data);
+    fixture.componentRef.changeDetectorRef.markForCheck();
+    expect(() => {
+      fixture.detectChanges();
+    }).not.toThrow();
+  });
+
   describe('allSelected', () => {
     it('should determine the checkbox state for the select all', () => {
       expect(component['allSelected']()).toBeTrue();

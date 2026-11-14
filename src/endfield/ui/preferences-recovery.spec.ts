@@ -1,15 +1,34 @@
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { Preferences } from '~/app/main/preferences/preferences';
 import { Select } from '~/components/select/select';
+import { provideEndfield } from '~/endfield/providers';
+import { EFFECTIVE_DEFAULTS } from '~/extensions/product-profile';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
 
 describe('saved states during recovery', () => {
+  it('resets ordinary preferences while preserving saved archives', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModule, Preferences],
+      providers: provideEndfield(),
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Preferences);
+    const component = fixture.componentInstance;
+    const store = component['preferencesStore'];
+    const defaultTheme = TestBed.inject(EFFECTIVE_DEFAULTS).preferences.theme;
+    store.saveState('aef', 'safe', 'v=11&o=iron_ore');
+    store.apply({ theme: defaultTheme === 'light' ? 'dark' : 'light' });
+    spyOn(component['confirm'], 'open').and.returnValue(of(1));
+    component.reset();
+    expect(store.state().theme).toBe(defaultTheme);
+    expect(store.state().states['aef']['safe']).toBe('v=11&o=iron_ore');
+  });
+
   it('blocks archive writes while preserving loading and language selection', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, Preferences],

@@ -1,5 +1,5 @@
 import { DIALOG_DATA } from '@angular/cdk/dialog';
-import { inject, signal } from '@angular/core';
+import { inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import ELK from 'elkjs';
 
@@ -16,7 +16,7 @@ import {
   resourceOwner,
 } from '~/endfield/domain/model';
 import { createEndfieldProduct } from '~/endfield/product/product';
-import { EndfieldDisplayPreferences } from '~/endfield/state/display-preferences';
+import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
   PRESENTATION_EXTENSION,
@@ -46,13 +46,6 @@ import { createEndfieldPresentation } from './presentation-extension';
 
 describe('Endfield presentation extension', () => {
   let store: EndfieldStore;
-  const display = signal({ showNames: false, hideDuplicateIcons: true });
-  const preferences = {
-    state: display.asReadonly(),
-    toggleNames: (): void => {
-      display.update((value) => ({ ...value, showNames: !value.showNames }));
-    },
-  } as unknown as EndfieldDisplayPreferences;
   const derived: Step = {
     id: 'row',
     recipeId: 'iron_ore',
@@ -61,7 +54,6 @@ describe('Endfield presentation extension', () => {
   const owner = { kind: 'extension' as const, id: resourceOwner('iron_ore') };
 
   beforeEach(() => {
-    display.set({ showNames: false, hideDuplicateIcons: true });
     TestBed.configureTestingModule({
       providers: [
         {
@@ -76,39 +68,19 @@ describe('Endfield presentation extension', () => {
     store = TestBed.inject(EndfieldStore);
   });
 
-  it('keeps display preferences local and reads explicit per-recipe metadata', () => {
-    const view = createEndfieldPresentation(store, preferences, [], [], {
-      a: { hideProducer: true },
-      b: { forceShowLabel: true },
-    });
-    const snapshot = store.snapshot();
-    expect(view.showNames()).toBeFalse();
-    view.toggleNames();
-    expect(view.showNames()).toBeTrue();
-    expect(view.hideDuplicateIcons()).toBeTrue();
-    display.update((value) => ({ ...value, hideDuplicateIcons: false }));
-    expect(view.hideDuplicateIcons()).toBeFalse();
-    expect(view.hideProducer('a')).toBeTrue();
-    expect(view.hideProducer('b')).toBeFalse();
-    expect(view.forceLabel('b')).toBeTrue();
-    expect(view.forceLabel('unknown')).toBeFalse();
-    expect(store.snapshot()).toBe(snapshot);
-  });
-
-  it('resets the independent power weight without clearing resource configuration', () => {
-    const view = createEndfieldPresentation(store, preferences);
-    expect(view.costsModified()).toBeFalse();
+  it('saves the power weight without clearing resource configuration', () => {
+    const cost = createEndfieldPresentation(store).additionalCost!;
+    expect(cost.value().eq(rational.one)).toBeTrue();
     store.set({ ...store.state(), electric: rational(2) });
-    expect(view.costsModified()).toBeTrue();
+    expect(cost.value().eq(rational(2))).toBeTrue();
     const resources = store.state().resourceLimits;
-    view.resetCosts();
-    expect(view.costsModified()).toBeFalse();
+    cost.save(cost.defaultValue);
     expect(store.state().electric.eq(rational.one)).toBeTrue();
     expect(store.state().resourceLimits).toEqual(resources);
   });
 
   it('routes derived ownership and selection without capturing ordinary item rows', () => {
-    const view = createEndfieldPresentation(store, preferences);
+    const view = createEndfieldPresentation(store);
     const ordinary: Step = {
       id: 'ordinary',
       recipeId: 'iron_ore',
@@ -137,7 +109,7 @@ describe('Endfield presentation extension', () => {
   });
 
   it('updates and resets only the matching resource owner and fields', () => {
-    const view = createEndfieldPresentation(store, preferences);
+    const view = createEndfieldPresentation(store);
     const other = {
       kind: 'extension' as const,
       id: resourceOwner('copper_ore'),
@@ -230,10 +202,9 @@ describe('PickerDialog name presentation', () => {
   it('toggles names while keeping a forced recipe label visible', async () => {
     PickerDialog['lastCategory'] = null;
     PickerDialog['lastQuality'] = null;
-    const names = signal(false);
-    const forced = signal(true);
     let recipeId = '';
     let label = '';
+    let flags: Set<'forceShowLabel'>;
     await TestBed.configureTestingModule({
       imports: [TestModule, PickerDialog],
       providers: [
@@ -243,11 +214,6 @@ describe('PickerDialog name presentation', () => {
             ...upstreamPresentation,
             showNameToggle: true,
             nameToggleLabel: 'Sample name control',
-            showNames: (): boolean => names(),
-            toggleNames: (): void => {
-              names.update((value) => !value);
-            },
-            forceLabel: (id: string): boolean => id === recipeId && forced(),
           },
         },
         {
@@ -256,6 +222,8 @@ describe('PickerDialog name presentation', () => {
             const data = inject(SettingsStore).dataset();
             recipeId = data.recipeIds[0];
             label = data.recipeRecord[recipeId].name;
+            data.recipeRecord[recipeId].flags.add('forceShowLabel');
+            flags = data.recipeRecord[recipeId].flags as Set<'forceShowLabel'>;
             return { type: 'recipe', allIds: [recipeId] };
           },
         },
@@ -277,14 +245,77 @@ describe('PickerDialog name presentation', () => {
     );
     checkbox.click();
     fixture.detectChanges();
-    expect(names()).toBeTrue();
-    forced.set(false);
+    expect(fixture.componentInstance['showNames']()).toBeTrue();
+    flags!.delete('forceShowLabel');
     fixture.detectChanges();
     expect(button?.textContent).toContain(label);
     checkbox.click();
     fixture.detectChanges();
-    expect(names()).toBeFalse();
+    expect(fixture.componentInstance['showNames']()).toBeFalse();
     expect(button?.textContent).not.toContain(label);
+  });
+
+  it('starts each picker closed and leaves legacy display storage untouched', async () => {
+    const key = 'endfield.presentation';
+    const backup = 'preferences.recovery.endfield.presentation';
+    const prior = localStorage.getItem(key);
+    const priorBackup = localStorage.getItem(backup);
+    const raw = '{"showNames":true,"hideDuplicateIcons":false}';
+    localStorage.setItem(key, raw);
+    localStorage.setItem(backup, 'legacy display backup');
+    const set = spyOn(Storage.prototype, 'setItem').and.callThrough();
+    const remove = spyOn(Storage.prototype, 'removeItem').and.callThrough();
+    try {
+      await TestBed.configureTestingModule({
+        imports: [TestModule, PickerDialog],
+        providers: [
+          ...provideEndfield(),
+          {
+            provide: DIALOG_DATA,
+            useFactory: (): PickerData => {
+              const data = inject(SettingsStore).dataset();
+              return { type: 'item', allIds: data.itemIds };
+            },
+          },
+        ],
+      }).compileComponents();
+      const first = TestBed.createComponent(PickerDialog);
+      first.detectChanges();
+      expect(first.componentInstance['showNames']()).toBeFalse();
+      const checkbox = first.nativeElement.querySelector(
+        'lab-checkbox input',
+      ) as HTMLInputElement;
+      checkbox.click();
+      first.detectChanges();
+      expect(first.componentInstance['showNames']()).toBeTrue();
+      first.destroy();
+      const reopened = TestBed.createComponent(PickerDialog);
+      reopened.detectChanges();
+      expect(reopened.componentInstance['showNames']()).toBeFalse();
+      expect(
+        (
+          reopened.nativeElement.querySelector(
+            'lab-checkbox input',
+          ) as HTMLInputElement
+        ).checked,
+      ).toBeFalse();
+      TestBed.tick();
+      expect(localStorage.getItem(key)).toBe(raw);
+      expect(localStorage.getItem(backup)).toBe('legacy display backup');
+      expect(
+        set.calls.allArgs().some(([name]) => name === key || name === backup),
+      ).toBeFalse();
+      expect(
+        remove.calls
+          .allArgs()
+          .some(([name]) => name === key || name === backup),
+      ).toBeFalse();
+    } finally {
+      if (prior == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, prior);
+      if (priorBackup == null) localStorage.removeItem(backup);
+      else localStorage.setItem(backup, priorBackup);
+    }
   });
 });
 
@@ -307,10 +338,7 @@ describe('DetailRow source labels', () => {
     fixture.detectChanges();
   });
   it('labels derived sources on both icons while retaining ordinary numbering', () => {
-    const endfield = createEndfieldPresentation(
-      {} as EndfieldStore,
-      {} as EndfieldDisplayPreferences,
-    );
+    const endfield = createEndfieldPresentation({} as EndfieldStore);
     spyOn(component['presentation'], 'sourceLabel').and.callFake(
       endfield.sourceLabel,
     );
@@ -344,8 +372,8 @@ describe('DetailRow source labels', () => {
   });
 });
 
-describe('TotalCell with a hidden producer', () => {
-  it('excludes hidden machines while preserving power and displays machine names with fallback', async () => {
+describe('TotalCell with a producerless recipe', () => {
+  it('excludes producerless recipes while preserving power and displays machine names with fallback', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, TotalCell],
       providers: [
@@ -354,7 +382,6 @@ describe('TotalCell with a hidden producer', () => {
           useValue: {
             ...upstreamPresentation,
             showNameToggle: true,
-            hideProducer: (id: string): boolean => id === 'hidden-recipe',
           },
         },
       ],
@@ -366,8 +393,8 @@ describe('TotalCell with a hidden producer', () => {
       {
         id: 'hidden',
         recipeId: 'hidden-recipe',
-        recipe,
-        recipeSettings: { machineId: ItemId.ElectricMiningDrill },
+        recipe: { ...recipe, producers: undefined },
+        recipeSettings: {},
         machines: rational(9),
         power: rational(5),
       },
@@ -437,10 +464,7 @@ describe('FlowBuilder objective presentation', () => {
     expect(service['recipeNodeId']('', '')).toEqual('r|');
   });
   it('keeps same-recipe objective nodes, their labels and links distinct', async () => {
-    const endfield = createEndfieldPresentation(
-      {} as EndfieldStore,
-      {} as EndfieldDisplayPreferences,
-    );
+    const endfield = createEndfieldPresentation({} as EndfieldStore);
     spyOn(service['presentation'], 'sourceLabel').and.callFake(
       endfield.sourceLabel,
     );

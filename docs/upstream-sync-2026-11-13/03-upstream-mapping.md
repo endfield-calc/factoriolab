@@ -52,13 +52,13 @@ CalculationExtension的derive/rules阶段只接收不可变值，不注入Adjust
 
 ### 3.1 统一的有效默认快照
 
-ProductProfile通过默认值工厂生成只读EffectiveDefaults，含通用Settings、Preferences及扩展状态；每个产品/协议上下文一份快照，初始化时克隆，不修改上游模块级常量。无终末地提供者时返回上游原默认值。
+ProductProfile通过默认值工厂生成新建及重置工作区使用的只读EffectiveDefaults，含通用Settings、Preferences及扩展状态；初始化时克隆，不修改上游模块级常量。无终末地提供者时返回上游原默认值。
 
-Store初始值、缺字段恢复、RouterSync差分编码、modified判断、成本/流图对话框及全局重置必须使用同一有效默认快照。数据集/preset已有的派生默认机制继续复用；不能把用户当前状态当作默认值，也不能只改Store初始化而保留其他路径读取上游initial常量。Rational等按值比较，重置后modified为false。
+Store初始值、modified判断、成本/流图对话框及全局重置使用同一有效默认快照。数据集/preset已有的派生默认机制继续复用，Rational按值比较。旧链接缺字段解释与差分编码基准单独冻结：ProductProfile的serializedCostDefaults只提供历史unproduceable/recycling两项差量，其余普通字段仍由上游schema与编解码器处理。
 
-反例：aef默认surplus=1，用户设回0时必须编码csu=0；unproduceable设回100000000、recycling设回1也不能因恰等于上游默认值而省略。成本重置回aef的1/1000000/1000等实际默认，流图重置回BoxLine，偏好重置遵循现行语言初始化机制。
+新建及重置沿上游unproduceable=100000000、recycling=1，保留终末地surplus=1、电力权重1、BoxLine和kW。v12的省略基准仍为旧上游的1000000/1000，所以新默认显式写cun/cre；用户将surplus设0仍须写csu=0。对话框普通成本和电力权重共同暂存，Reset只改草稿，确认才提交，取消不写状态。
 
-旧v11的省略字段按固定源分支默认值解码；新ef版本1绑定相应产品默认值契约。将来默认契约变化要版本化并保留旧解释，不能让新Profile把旧短链接的省略值重新解释。偏好语言的初始快照在生产按浏览器规则生成，再由已保存偏好覆盖。
+已支持的非空v0–12链接在普通解码后补历史两项成本，再由显式值覆盖；旧hash仍只用于v11及更早。ef版本1扩展字段继续使用固定默认值。真空query使用新工作区默认；无query旧书签与新空工作区无法区分，属于明确的默认变化。只有改变省略基准时才需增加协议标记，当前保持v12/ef1。偏好语言的初始快照在生产按浏览器规则生成，再由已保存偏好覆盖。
 
 ## 4. 资源状态、命令和恢复
 

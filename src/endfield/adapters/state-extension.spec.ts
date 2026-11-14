@@ -114,7 +114,22 @@ describe('SettingsStore with Endfield product', () => {
     );
     expect(result.data.modId).toBe('aef');
     expect(result.settings.costs.surplus.eq(rational.zero)).toBeTrue();
-    expect(result.settings.costs.recycling.eq(rational(1000))).toBeTrue();
+    expect(
+      result.settings.costs.unproduceable.eq(rational(100000000)),
+    ).toBeTrue();
+    expect(result.settings.costs.recycling.eq(rational.one)).toBeTrue();
+    const historical = service.prepareState(
+      {
+        modId: 'aef',
+        costs: { unproduceable: rational(1000000), recycling: rational(1000) },
+      },
+      mockModData,
+      mockModHash,
+    );
+    expect(
+      historical.settings.costs.unproduceable.eq(rational(1000000)),
+    ).toBeTrue();
+    expect(historical.settings.costs.recycling.eq(rational(1000))).toBeTrue();
     expect(service.state()).toBe(before);
     expect(() =>
       service.prepareState({ modId: '2x1' }, mockModData, mockModHash),

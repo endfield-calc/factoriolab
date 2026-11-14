@@ -343,10 +343,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         step.recipeSettings != null
       ) {
         // Total Machines & Modules
-        if (
-          step.machines?.nonzero() &&
-          !this.presentation.hideProducer(step.recipeId)
-        ) {
+        if (step.machines?.nonzero()) {
           const recipe = step.recipe;
           // Don't include silos from launch recipes
           if (!recipe.part && recipe.producers?.length) {

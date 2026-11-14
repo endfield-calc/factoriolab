@@ -172,25 +172,12 @@
       @if (onlyTundra() && !coordinator.state().transfer.enabled) {
         <p>{{ 'endfield.resources.transferSelf' | translate }}</p>
       }
-      <lab-form-field
-        class="max-w-80"
-        label="endfield.resources.transferSource"
-      >
-        <lab-select
-          [disabled]="
-            !coordinator.ready() || !coordinator.state().transfer.enabled
-          "
-          [options]="sourceOptions"
-          [value]="coordinator.state().transfer.source"
-          (valueChange)="
-            coordinator.dispatch({
-              type: 'transfer',
-              enabled: true,
-              source: 'tundra',
-            })
-          "
-        ></lab-select>
-      </lab-form-field>
+      <div class="inline-flex flex-col">
+        <span class="mx-1 text-sm text-gray-300">{{
+          'endfield.resources.transferSource' | translate
+        }}</span>
+        <span>{{ 'endfield.resources.tundra' | translate }}</span>
+      </div>
       <lab-checkbox
         label="endfield.resources.disableWater"
         [disabled]="!coordinator.ready()"

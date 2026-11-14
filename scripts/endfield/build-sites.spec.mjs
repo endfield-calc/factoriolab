@@ -88,6 +88,7 @@ test('wires product guards into the real exported application routes', async () 
   };
   const routeSource = await parse('src/app/app.routes.ts');
   imported(routeSource, 'idGuard', './id/id-guard');
+  imported(routeSource, 'editorGuard', './id/id-guard');
   imported(routeSource, 'landingGuard', './landing/landing-guard');
   const routes = exported(routeSource, 'routes');
   const all = flatten(routes);
@@ -117,6 +118,7 @@ test('wires product guards into the real exported application routes', async () 
     (route) => property(route, 'path')?.text === 'editor',
   );
   assert.equal(editors.length, 1);
+  assert.deepEqual(guards(editors[0]), ['editorGuard']);
   assert.ok(ts.isArrowFunction(property(editors[0], 'loadComponent')));
   assert.ok(ts.isArrowFunction(property(editors[0], 'loadChildren')));
   assert.equal(
@@ -131,7 +133,6 @@ test('wires product guards into the real exported application routes', async () 
   const configSource = await parse('src/app/app.config.ts');
   imported(configSource, 'routes', './app.routes');
   imported(configSource, 'provideRouter', '@angular/router');
-  imported(configSource, 'configureEndfieldRoutes', '~/endfield/providers');
   const providers = property(exported(configSource, 'appConfig'), 'providers');
   assert.ok(ts.isArrayLiteralExpression(providers));
   const routerProviders = providers.elements.filter(
@@ -142,10 +143,8 @@ test('wires product guards into the real exported application routes', async () 
   );
   assert.equal(routerProviders.length, 1);
   const input = routerProviders[0].arguments[0];
-  assert.ok(ts.isCallExpression(input));
-  assert.equal(input.expression.getText(), 'configureEndfieldRoutes');
-  assert.equal(input.arguments.length, 1);
-  assert.equal(input.arguments[0].getText(), 'routes');
+  assert.ok(ts.isIdentifier(input));
+  assert.equal(input.text, 'routes');
   assert.equal(
     routerProviders[0].arguments[1].getText(),
     'withComponentInputBinding()',

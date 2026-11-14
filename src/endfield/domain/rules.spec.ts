@@ -1,4 +1,3 @@
-import { AdjustedRecipe } from '~/data/schema/recipe';
 import type {
   CalculationVariable,
   LinearRule,
@@ -25,7 +24,6 @@ function variable(
     ref: { kind, id },
     recipeId,
     machineId,
-    recipe: {} as AdjustedRecipe,
   };
 }
 

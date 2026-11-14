@@ -33,7 +33,6 @@ export class RecipesSelect {
   protected readonly settingsStore = inject(SettingsStore);
 
   readonly step = input.required<Step>();
-  readonly hideIcon = input(false);
 
   protected readonly recipes = computed<StepRecipes | undefined>(
     () => this.objectivesStore.stepRecipes()[this.step().id],

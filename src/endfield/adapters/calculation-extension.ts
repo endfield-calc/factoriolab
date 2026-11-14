@@ -1,19 +1,22 @@
 import { inject, Service } from '@angular/core';
 
-import { Recipe } from '~/data/schema/recipe';
+import { AdjustedRecipe, Recipe } from '~/data/schema/recipe';
 import { CalculationExtension } from '~/extensions/calculation-extension';
 import { Adjustment } from '~/state/adjustment';
 import { ItemSettings } from '~/state/items/item-settings';
+import { ItemState } from '~/state/items/item-state';
 import { MachineSettings } from '~/state/machines/machine-settings';
 import {
   ObjectiveSettings,
   ObjectiveState,
 } from '~/state/objectives/objective';
 import { RecipeSettings } from '~/state/recipes/recipe-settings';
+import { RecipeState } from '~/state/recipes/recipe-state';
 import { CostSettings } from '~/state/settings/cost-settings';
 import { AdjustedDataset, Dataset } from '~/state/settings/dataset';
 import { Settings } from '~/state/settings/settings';
 
+import { settlementRecipeAlias } from '../compat/codec';
 import { calculateEndfieldRecipeCost } from '../domain/cost';
 import { EndfieldState } from '../domain/model';
 import {
@@ -26,6 +29,40 @@ import { EndfieldStore } from '../state/endfield-store';
 @Service()
 export class EndfieldAdjustment extends Adjustment {
   private readonly endfieldStore = inject(EndfieldStore);
+
+  override computeRecipeSettings(
+    s: RecipeSettings,
+    recipe: Recipe,
+    machines: Record<string, MachineSettings>,
+    settings: Settings,
+    data: Dataset,
+  ): void {
+    const alias = settlementRecipeAlias(recipe);
+    if (alias != null) s.machineId = alias;
+    super.computeRecipeSettings(s, recipe, machines, settings, data);
+    if (alias != null) {
+      delete s.machineId;
+      delete s.defaultMachineId;
+      delete s.machineOptions;
+    }
+  }
+
+  override adjustRecipe(
+    recipeId: string,
+    recipeState: RecipeState,
+    itemsState: Record<string, ItemState>,
+    settings: Settings,
+    data: Dataset,
+  ): AdjustedRecipe {
+    const alias = settlementRecipeAlias(data.recipeRecord[recipeId]);
+    return super.adjustRecipe(
+      recipeId,
+      alias == null ? recipeState : { ...recipeState, machineId: alias },
+      itemsState,
+      settings,
+      data,
+    );
+  }
 
   override adjustCosts(
     adjustedRecipe: Record<string, Recipe>,

@@ -1,14 +1,8 @@
 import { InjectionToken, Type } from '@angular/core';
 
-import type { FlowData } from '~/flow/flow-data';
-import type { Node } from '~/flow/node';
+import { Rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { RecipeState } from '~/state/recipes/recipe-state';
-
-export type PresentationNode = Node & { objectiveLabel?: string };
-export type PresentationFlowData = Omit<FlowData, 'nodes'> & {
-  nodes: PresentationNode[];
-};
 
 export type StepOwner =
   | { readonly kind: 'objective'; readonly id: string }
@@ -17,18 +11,17 @@ export type StepOwner =
 
 export interface PresentationExtension {
   readonly mainPanels: readonly Type<unknown>[];
-  readonly costPanels: readonly Type<unknown>[];
+  readonly additionalCost?: {
+    readonly label: string;
+    readonly description: string;
+    readonly defaultValue: Rational;
+    value(): Rational;
+    save(value: Rational): void;
+  };
   readonly showPreset: boolean;
   readonly showPowerUnit: boolean;
   readonly showNameToggle: boolean;
   readonly nameToggleLabel: string;
-  costsModified(): boolean;
-  resetCosts(): void;
-  showNames(): boolean;
-  toggleNames(): void;
-  hideDuplicateIcons(): boolean;
-  hideProducer(recipeId: string): boolean;
-  forceLabel(recipeId: string): boolean;
   owner(step: Step): StepOwner | undefined;
   updateRecipeField<K extends keyof RecipeState>(
     owner: StepOwner,
@@ -50,18 +43,10 @@ export interface PresentationExtension {
 
 export const upstreamPresentation: PresentationExtension = {
   mainPanels: [],
-  costPanels: [],
   showPreset: true,
   showPowerUnit: true,
   showNameToggle: false,
   nameToggleLabel: 'Name',
-  costsModified: () => false,
-  resetCosts: () => undefined,
-  showNames: () => false,
-  toggleNames: () => undefined,
-  hideDuplicateIcons: () => false,
-  hideProducer: () => false,
-  forceLabel: () => false,
   owner: (step) =>
     step.recipeObjectiveId
       ? { kind: 'objective', id: step.recipeObjectiveId }

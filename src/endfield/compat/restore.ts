@@ -25,6 +25,7 @@ import { RecipeState } from '~/state/recipes/recipe-state';
 
 import {
   decodeEndfield,
+  historicalCostDefaults,
   invalid,
   parseNonnegative,
   validateEntity,
@@ -34,8 +35,8 @@ import legacyDatasets from './legacy-datasets.json';
 import legacyHash from './legacy-hash.json';
 
 interface EndfieldRestoreContext {
-  readonly originalVersion?: string;
   readonly legacy: boolean;
+  readonly useHistoricalCostDefaults: boolean;
 }
 
 const frozenHash = immutableValue(legacyHash) as unknown as ModHash;
@@ -47,14 +48,17 @@ export function prepareEndfield(input: RestoreInput): RestorePlan {
   const raw = input.params['v'];
   if (raw != null && typeof raw !== 'string')
     invalid('v', 'Invalid workspace version');
-  const originalVersion = raw;
+  const hasUrlState = Object.keys(input.params).length > 0;
   const legacy =
-    raw == null
-      ? Object.keys(input.params).length > 0
-      : /^\d+$/.test(raw) && Number(raw) <= 11;
+    raw == null ? hasUrlState : /^\d+$/.test(raw) && Number(raw) <= 11;
+  const useHistoricalCostDefaults =
+    hasUrlState && (raw == null || /^(?:[0-9]|1[0-2])$/.test(raw));
   return {
     ...input,
-    context: { originalVersion, legacy } satisfies EndfieldRestoreContext,
+    context: {
+      legacy,
+      useHistoricalCostDefaults,
+    } satisfies EndfieldRestoreContext,
     ...(legacy
       ? {
           hash: frozenHash,
@@ -187,8 +191,14 @@ export function decodeWorkspace(
   input: Parameters<StateExtension['decode']>[0],
 ): DecodedWorkspace {
   const { state, params, plan, data, preparedObjectives } = input;
-  const legacy =
-    (plan.context as EndfieldRestoreContext | undefined)?.legacy === true;
+  const context = plan.context as EndfieldRestoreContext | undefined;
+  const legacy = context?.legacy === true;
+  let settingsState = state.settingsState;
+  if (context?.useHistoricalCostDefaults)
+    settingsState = {
+      ...settingsState,
+      costs: { ...historicalCostDefaults, ...settingsState?.costs },
+    };
   const rawEf = (params as Record<string, unknown>)['ef'];
   const hasEf = rawEf != null;
   let extension: EndfieldState = hasEf
@@ -205,7 +215,7 @@ export function decodeWorkspace(
   }
   validateOrdinarySettings(state, data);
   const ordinary: Record<string, ObjectiveState> = {};
-  const checked = state.settingsState?.checkedObjectiveIds;
+  const checked = settingsState?.checkedObjectiveIds;
   const checkedOrdinary = new Set<string>();
   const checkedDerived = new Set(extension.checkedDerived);
   const rates = { ...extension.resourceLimits.rates };
@@ -361,12 +371,14 @@ export function decodeWorkspace(
     state: {
       ...state,
       ...(state.objectivesState == null ? {} : { objectivesState: ordinary }),
-      ...(state.settingsState == null || checked == null
+      ...(settingsState == null
         ? {}
         : {
             settingsState: {
-              ...state.settingsState,
-              checkedObjectiveIds: checkedOrdinary,
+              ...settingsState,
+              ...(checked == null
+                ? {}
+                : { checkedObjectiveIds: checkedOrdinary }),
             },
           }),
     },

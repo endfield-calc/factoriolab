@@ -1,11 +1,11 @@
 import { DialogRef } from '@angular/cdk/dialog';
-import { NgComponentOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
   linkedSignal,
+  Signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -16,6 +16,7 @@ import {
 
 import { Button } from '~/components/button/button';
 import { DialogData } from '~/components/dialog/dialog';
+import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
 import { Tooltip } from '~/components/tooltip/tooltip';
 import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
@@ -25,16 +26,25 @@ import {
 } from '~/extensions/product-profile';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
-import { CostKey, costKeys } from '~/state/settings/cost-settings';
+import {
+  CostKey,
+  costKeys,
+  CostSettings,
+} from '~/state/settings/cost-settings';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
+
+interface CostDraft {
+  costs: CostSettings;
+  additional: Rational | undefined;
+}
 
 @Component({
   selector: 'lab-cost-settings-dialog',
   imports: [
     FormsModule,
-    NgComponentOutlet,
     Button,
+    FormField,
     InputNumber,
     Tooltip,
     TranslatePipe,
@@ -53,16 +63,42 @@ export class CostSettingsDialog implements DialogData {
   private readonly settingsStore = inject(SettingsStore);
   private readonly defaults = inject(EFFECTIVE_DEFAULTS);
 
-  protected readonly editValue = linkedSignal(
-    () => this.settingsStore.settings().costs,
+  private readonly committedCosts = computed(
+    () => this.settingsStore.state().costs,
+  );
+  private readonly additionalCost = ((): Signal<Rational> | undefined => {
+    const cost = this.presentation.additionalCost;
+    return cost == null
+      ? undefined
+      : computed(() => cost.value(), { equal: (a, b) => a.eq(b) });
+  })();
+  private readonly draft = linkedSignal<
+    CostDraft & { ready: boolean },
+    CostDraft
+  >({
+    source: () => ({
+      costs: this.committedCosts(),
+      additional: this.additionalCost?.(),
+      ready: this.ready(),
+    }),
+    computation: ({ costs, additional, ready }, previous) =>
+      !ready && previous ? previous.value : { costs, additional },
+  });
+  protected readonly editValue = computed(() => this.draft().costs);
+  protected readonly editAdditionalCost = computed(
+    () => this.draft().additional,
   );
   protected readonly modified = computed(() => {
     const edit = this.editValue();
     const init = this.defaults.settings.costs;
     const keys = Object.keys(init) as CostKey[];
+    const additional = this.presentation.additionalCost;
+    const additionalValue = this.editAdditionalCost();
     return (
       keys.some((k) => !init[k].eq(edit[k])) ||
-      this.presentation.costsModified()
+      (additional != null &&
+        additionalValue != null &&
+        !additional.defaultValue.eq(additionalValue))
     );
   });
 
@@ -74,19 +110,30 @@ export class CostSettingsDialog implements DialogData {
   protected readonly rational = rational;
 
   apply(key: CostKey, value: Rational): void {
-    this.editValue.update((e) => ({ ...e, ...{ [key]: value } }));
+    this.draft.update((draft) => ({
+      ...draft,
+      costs: { ...draft.costs, [key]: value },
+    }));
+  }
+
+  applyAdditionalCost(value: Rational | undefined): void {
+    if (value?.gte(rational.zero))
+      this.draft.update((draft) => ({ ...draft, additional: value }));
   }
 
   reset(): void {
     if (!this.ready()) return;
-    this.editValue.set(cloneDefaults(this.defaults).settings.costs);
-    this.presentation.resetCosts();
+    this.draft.set({
+      costs: cloneDefaults(this.defaults).settings.costs,
+      additional: this.presentation.additionalCost?.defaultValue,
+    });
   }
 
   save(): void {
     if (!this.ready()) return;
-    const costs = this.editValue();
+    const { costs, additional } = this.draft();
     this.settingsStore.apply({ costs });
+    if (additional != null) this.presentation.additionalCost?.save(additional);
     this.dialogRef.close();
   }
 }

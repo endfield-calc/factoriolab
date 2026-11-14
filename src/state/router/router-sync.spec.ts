@@ -309,6 +309,30 @@ describe('RouterSync', () => {
       expect(result).toEqual(mockZipData());
     });
 
+    it('uses native serialization defaults for the neutral product', () => {
+      const result = service.zipState({
+        objectives: {},
+        items: {},
+        recipes: {},
+        machines: {},
+        settings: {
+          ...initialSettingsState,
+          costs: {
+            ...initialSettingsState.costs,
+            unproduceable: rational(1000000),
+            recycling: rational(1000),
+          },
+        },
+        data: service['settingsStore'].dataset(),
+        hash: mockModHash,
+        table: initialTableState,
+      });
+      for (const format of ['bare', 'hash'] as const) {
+        expect(result.config[format].cun).toBe('1000000');
+        expect(result.config[format].cre).toBe('1000');
+      }
+    });
+
     it('should zip full state', () => {
       const result = service.zipState({
         objectives: mockObjectivesState,

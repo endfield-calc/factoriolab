@@ -9,14 +9,12 @@ import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { RecipeState } from '~/state/recipes/recipe-state';
 
-import display from '../domain/display-metadata.json';
 import {
   ResourceId,
   resourceIds,
   resourceObjectiveId,
   resourceOwner,
 } from '../domain/model';
-import { EndfieldDisplayPreferences } from '../state/display-preferences';
 import { EndfieldStore } from '../state/endfield-store';
 
 function ownerResource(owner: StepOwner | undefined): ResourceId | undefined {
@@ -33,32 +31,24 @@ function derivedResource(step: Step): ResourceId | undefined {
 
 export function createEndfieldPresentation(
   store: EndfieldStore,
-  preferences: EndfieldDisplayPreferences,
   mainPanels: readonly Type<unknown>[] = [],
-  costPanels: readonly Type<unknown>[] = [],
-  metadata: Readonly<
-    Record<string, { hideProducer?: boolean; forceShowLabel?: boolean }>
-  > = display.recipes,
 ): PresentationExtension {
   return {
     ...upstreamPresentation,
     mainPanels,
-    costPanels,
+    additionalCost: {
+      label: 'endfield.electric.title',
+      description: 'endfield.electric.description',
+      defaultValue: rational.one,
+      value: () => store.state().electric,
+      save: (value): void => {
+        store.set({ ...store.state(), electric: value });
+      },
+    },
     showPreset: false,
     showPowerUnit: false,
     showNameToggle: true,
     nameToggleLabel: 'endfield.picker.showNames',
-    costsModified: () => !store.state().electric.eq(rational.one),
-    resetCosts: (): void => {
-      store.set({ ...store.state(), electric: rational.one });
-    },
-    showNames: () => preferences.state().showNames,
-    toggleNames: (): void => {
-      preferences.toggleNames();
-    },
-    hideDuplicateIcons: () => preferences.state().hideDuplicateIcons,
-    hideProducer: (id) => metadata[id]?.hideProducer === true,
-    forceLabel: (id) => metadata[id]?.forceShowLabel === true,
     owner: (step): StepOwner | undefined => {
       const resource = derivedResource(step);
       return resource == null

@@ -1,6 +1,7 @@
 import { Provider } from '@angular/core';
 
 import manifest from '/public/endfield/product.json';
+import { historicalCostDefaults } from '~/endfield/compat/codec';
 import { createEndfieldState } from '~/endfield/domain/model';
 import { environment } from '~/environments/environment';
 import { immutableValue } from '~/extensions/immutable';
@@ -18,12 +19,7 @@ import { PowerUnit } from '~/state/preferences/power-unit';
 import { PreferencesState } from '~/state/preferences/preferences-state';
 import { Language, languageOptions } from '~/translate/language';
 
-import { endfieldCsv } from './csv';
-
-const languages: readonly Language[] = ['en', 'zh', 'de', 'fr', 'ru', 'ja'];
-const endfieldLanguageOptions = languageOptions.filter((option) =>
-  languages.includes(option.value),
-);
+const languages = languageOptions.map((option) => option.value);
 
 function initialLanguage(
   production: boolean,
@@ -32,8 +28,11 @@ function initialLanguage(
   if (!production) return 'en';
   const value = browserLanguage.toLowerCase();
   return (
-    languages.find((language) => language === value) ??
-    languages.find((language) => language === value.split('-')[0]) ??
+    languages.find((language) => language.toLowerCase() === value) ??
+    languages.find(
+      (language) =>
+        language.toLowerCase().split('-')[0] === value.split('-')[0],
+    ) ??
     'en'
   );
 }
@@ -176,9 +175,7 @@ export function createEndfieldProduct(
   browserLanguage: string,
 ): ProductProfile {
   const defaults = cloneDefaults(upstreamProduct.defaults());
-  defaults.settings.costs.unproduceable = rational(1000000);
   defaults.settings.costs.surplus = rational.one;
-  defaults.settings.costs.recycling = rational(1000);
   defaults.preferences.language = initialLanguage(production, browserLanguage);
   defaults.preferences.powerUnit = PowerUnit.kW;
   defaults.preferences.theme = 'light';
@@ -191,10 +188,7 @@ export function createEndfieldProduct(
   return {
     name: manifest.name,
     exportPrefix: manifest.exportPrefix,
-    csv: endfieldCsv,
     sourceUrl: manifest.sourceUrl,
-    issuesUrl: manifest.issuesUrl,
-    logo: manifest.logo,
     loadingLogo: manifest.loadingLogo,
     systemIcons: [
       {
@@ -208,8 +202,8 @@ export function createEndfieldProduct(
     allowedModIds: ['aef'],
     defaultModId: 'aef',
     allowEditor: false,
-    analytics: false,
-    languages: endfieldLanguageOptions,
+    languages: languageOptions,
+    serializedCostDefaults: historicalCostDefaults,
     defaults: () => snapshot,
     loadGameI18n: (modId, language) =>
       modId === 'aef' && ['en', 'zh', 'ja', 'ru'].includes(language),

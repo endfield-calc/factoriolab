@@ -7,7 +7,6 @@ import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { Adjustment } from '~/state/adjustment';
 import { ItemsStore } from '~/state/items/items-store';
-import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RecipesStore } from '~/state/recipes/recipes-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { coalesce, fnPropsNotNullish, notNullish } from '~/utils/nullish';
@@ -26,7 +25,6 @@ export class Exporter {
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly product = inject(PRODUCT_PROFILE);
-  private readonly preferences = inject(PreferencesStore);
 
   private readonly itemsState = this.itemsStore.settings;
   private readonly recipesState = this.recipesStore.settings;
@@ -36,23 +34,10 @@ export class Exporter {
   stepsToCsv(steps: Step[]): void {
     const json = steps.map((s) => this.stepToJson(s, steps));
     const fields = StepKeys.filter((k) => json.some((s) => s[k] != null));
-    const csv = json.map((row) =>
-      fields.map((field) => this.csvValue(field, row[field])).join(','),
-    );
-    csv.unshift(
-      fields
-        .map(
-          (field) =>
-            this.product.csv?.columnLabel(field, this.preferences.language()) ??
-            field,
-        )
-        .join(','),
-    );
+    const csv = json.map((row) => fields.map((f) => row[f]).join(','));
+    csv.unshift(fields.join(','));
     csv.unshift(`"${window.location.href}"`);
-    this.saveAsCsv(
-      (this.product.csv?.bom ? '\uFEFF' : '') + csv.join('\r\n'),
-      `${this.product.exportPrefix}_list`,
-    );
+    this.saveAsCsv(csv.join('\r\n'), `${this.product.exportPrefix}_list`);
   }
 
   flowToJson(flowData: FlowData): void {
@@ -60,32 +45,6 @@ export class Exporter {
       JSON.stringify(flowData),
       `${this.product.exportPrefix}_flow`,
     );
-  }
-
-  private csvValue(
-    field: keyof StepExport,
-    value: string | undefined,
-  ): string | undefined {
-    if (value == null || !this.product.csv?.entityNames) return value;
-    const data = this.data();
-    const name = (id: string, recipe = false): string =>
-      (recipe ? data.recipeRecord[id]?.name : data.itemRecord[id]?.name) ?? id;
-    if (['Item', 'Belt', 'Wagon', 'Machine'].includes(field))
-      value = name(value);
-    else if (field === 'Recipe') value = name(value, true);
-    else if (['Inputs', 'Outputs', 'Targets'].includes(field))
-      value = value
-        .replace(/^"|"$/g, '')
-        .split(',')
-        .map((entry) => {
-          const separator = entry.lastIndexOf(':');
-          return separator < 0
-            ? entry
-            : name(entry.slice(0, separator), field === 'Targets') +
-                entry.slice(separator);
-        })
-        .join(',');
-    return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
   }
 
   // istanbul ignore next: Don't test dependencies (file-saver)

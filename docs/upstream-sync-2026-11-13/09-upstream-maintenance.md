@@ -17,17 +17,17 @@
 
 ## 3. 接点清单与审计信息
 
-以下以 `00bdb91c2442cd8d715501b9469cec115735645f` 为上游基线，登记 `3da0e41b8c111c8ed1080e6190f3439b88a8f8f8` 起点及其工作树收敛后的接点；包括未跟踪的实际产物，排除 `.agents/`、`.codex/`、`.tmp/`、`dist/`。按路径去重，起点为 114 个修改和 105 个新增，合计 219；第一轮收敛为 69 个修改和 116 个新增，合计 185；公开接口收敛后的快照为 64 个修改和 116 个新增，合计 180。数量用于识别维护面，不能替代对行为的审查。工作树继续变化时应重新计算。
+以下以 `00bdb91c2442cd8d715501b9469cec115735645f` 为上游基线，登记 `3da0e41b8c111c8ed1080e6190f3439b88a8f8f8` 起点及其后收敛的接点；排除 `.agents/`、`.codex/`、`.tmp/`、`dist/`。按路径去重，起点为 114 个修改和 105 个新增，合计 219；第一轮为 69 个修改和 116 个新增，合计 185；公开接口收敛为 64 个修改和 116 个新增，合计 180。本次基于 `64e4881b` 修复一致性后的工作树为 72 个修改和 109 个新增，合计 181；其中 `src` 为 62 个修改和 57 个新增，合计 119（本次 `64e4881b` 起点为 54/64，合计 118）。新增运行文件由35降为30，新增规格及夹具由29降为27；删除7个独立文件，未新建生产文件。共享 guard、节点字段和配方 flag 等接点及其真实组件规格增加了上游触点，换取消除并行策略；不能表述为总体差异文件数下降。数量用于识别维护面，不能替代行为审查。
 
 ### M01 组合与注册
 
-`src/app/app.config.ts` 使用 `src/endfield/providers.ts` 的 `provideEndfield` 装配产品、状态、计算、展示与翻译 fallback，并把原 Routes 交给同模块的 `configureEndfieldRoutes`。该纯函数递归静态 children，按 guard 函数引用替换 id/landing 策略，并为 editor 添加产品 gate；保留其它 guard 顺序、route 字段及 lazy loader。`app.routes.ts`、`id/id-guard.ts`、`landing/landing-guard.ts` 已恢复上游字节。产品 guard 在 `allowedModIds` 缺省时直接委托原 guard；Endfield 启用时自己处理 shortcut、允许列表、默认入口和 last-good，不先执行上游旧迁移。`id.ts` 和 `SettingsStore` 继续负责事务交接及资源边界。`src/extensions/product-profile.ts` 定义产品契约，`src/data/{datasets,game,game-info}.ts` 保留 aef / endfield 身份注册。中立产品不限制 mod、允许 editor，沿上游目录工作。
+`src/app/app.config.ts` 使用 `src/endfield/providers.ts` 的 `provideEndfield` 装配产品、状态、计算、展示与翻译 fallback，并直接 `provideRouter(routes)`。产品入口策略并入原生 `id/id-guard.ts`、`landing/landing-guard.ts`，`app.routes.ts` 为 editor 使用同一共享 guard 模块的产品 gate；删除本地 guard 与递归路由替换机制。`allowedModIds` 缺省时保留上游行为；Endfield 启用时处理保留 shortcut、允许列表、默认入口和 last-good，原样转交 query，由 RouterSync 单次迁移。`id.ts` 和 `SettingsStore` 继续负责事务交接及资源边界。`src/extensions/product-profile.ts` 定义产品契约，`src/data/{datasets,game,game-info}.ts` 保留 aef / endfield 身份注册。中立产品不限制 mod、允许 editor，沿上游目录工作。
 
 **验证及同步边界：** `src/extensions/extensions.spec.ts`、`src/app/id/id.spec.ts`、`src/endfield/product/product.spec.ts`。上游若提供等价产品目录能力，可替换筛选，仍须保持身份和单游戏边界。
 
 ### M02 默认值与语言选择
 
-`product-profile.ts` 的 `EffectiveDefaults`、`EFFECTIVE_DEFAULTS`、`cloneDefaults` 与 `immutable.ts` 提供不可变默认快照和写入副本；PreferencesStore、SettingsStore、RouterSync 和偏好、成本、列、流图设置消费同一有效默认值。未提供产品覆盖时使用 `initialPreferencesState` / `initialSettingsState`。
+`product-profile.ts` 的 `EffectiveDefaults`、`EFFECTIVE_DEFAULTS`、`cloneDefaults` 与 `immutable.ts` 提供不可变默认快照和写入副本；PreferencesStore、SettingsStore 和偏好、成本、列、流图设置消费同一有效默认值。新工作区采用上游无法生产1e8、回收1，保留终末地 surplus1、电力1等专属默认。历史 v12/ef1 省略字段仍固定解释为1e6/1000，`serializedCostDefaults` 只覆盖这两个协议字段；RouterSync 对新的1e8/1显式编码。恢复在解码后补足历史默认，再应用显式值（含0）。无 query 的旧书签无法与新工作区区分，按新默认处理。未提供产品覆盖时使用 `initialPreferencesState` / `initialSettingsState`。语言选项及持久化跟随上游九语，浏览器精确及主语言匹配返回规范语言代码。游戏译包只有en/zh/ja/ru，其余界面语言不请求游戏译包，名称使用中文基础数据；英文fallback用于UI词典，不代表游戏名称自动落到英文。
 
 **验证及同步边界：** `src/extensions/extensions.spec.ts`、`src/endfield/product/product.spec.ts`、`src/endfield/ui/{preferences-recovery,electric-cost}.spec.ts`、`src/endfield/adapters/presentation-extension.spec.ts`。上游初始化、差分或重置变化时保留显式设回上游默认与产品默认的区别。
 
@@ -39,7 +39,7 @@ SettingsStore 按 `ProductProfile.loadGameI18n` / `gameMetadata` 选择资源和
 
 ### M04 配方成本出口
 
-`src/endfield/adapters/calculation-extension.ts` 的小型 `EndfieldAdjustment` 由产品 provider 注册，覆写上游公开的 `Adjustment.adjustCosts` 和 `adjustObjective`，调用 `calculateEndfieldRecipeCost`；其它配方调整、水合和 finalize 流程沿用上游。普通配方在 `adjustDataset` 的原生成本阶段处理，显式和派生配方目标在 `super.adjustObjective` 后使用同一策略；仅覆写前者会漏掉目标成本。`RecipesStore` 不再二次映射成本，`ObjectivesStore` 不再补调用成本包装；`CalculationExtension` 只保留 derive/rules，不保留 cost 或 `RecipeCostInput`。停用产品 provider 时使用原 `Adjustment`，保留上游成本公式。
+`src/endfield/adapters/calculation-extension.ts` 的小型 `EndfieldAdjustment` 由产品 provider 注册，覆写上游公开的 `Adjustment.adjustCosts` 和 `adjustObjective`，调用 `calculateEndfieldRecipeCost`。普通配方在 `adjustDataset` 的原生成本阶段处理，显式和派生配方目标在 `super.adjustObjective` 后使用同一策略；仅覆写前者会漏掉目标成本。另在公开 `computeRecipeSettings` / `adjustRecipe` 中为28条无 producer 据点配方暂时提供匹配的历史中性机器别名后委托 `super`，计算后清除展示机器字段；原始设置、超频与产能继承不丢失。数据采用原生无 `producers` 加 `recipe.locations`，历史机器与hash槽位保留，错误别名拒绝。其它调整、水合和 finalize 流程沿用上游。`RecipesStore` 不再二次映射成本，`ObjectivesStore` 不再补调用成本包装；`CalculationExtension` 只保留 derive/rules，不保留 cost 或 `RecipeCostInput`。停用产品 provider 时使用原 `Adjustment`，保留上游成本公式。
 
 成本规则保留 raw 声明成本、选中机器的原始 usage/size、显式零或负覆盖、电力系数、面积启用及 recycling 语义。实时计算读取 Endfield 的电力快照并形成响应依赖；`WorkspacePreparation` 在自己的注入上下文直接构造原 `Adjustment`，准备候选时不读取实时产品成本或电力状态。通用成本接口原先允许读取 finalized dataset，本轮按实际产品纯函数收窄这一内部能力，不承诺任意未来插件与原接口等价。
 
@@ -53,7 +53,7 @@ SettingsStore 按 `ProductProfile.loadGameI18n` / `gameMetadata` 选择资源和
 
 ### M06 模型与 MIP
 
-`Solver.solve` 接收上下文并在 `src/solver/solver.ts` 建模；`src/solver/model-extension.ts` 的 `ModelSimplexState` 承载可选上下文，`ModelGlpkResult` 表达可缺 returnCode 的求解前不可行结果；该模块还负责绑定变量、约束和整数标记并校验解。非零 Rational 转换为零时拒绝建模；整数模型读取并验证最终 MIP 解。无扩展规则时不增加扩展约束或整数标记。`glpk-result.ts`、`simplex-state.ts` 与 `solver.spec.ts` 已恢复上游原字节；本轮对 `solver.ts` 仅调整类型，其生成的 JavaScript 与本轮起点一致，但它相对上游仍含模型扩展逻辑。
+`Solver.solve` 接收上下文并在 `src/solver/solver.ts` 建模；`src/solver/model-extension.ts` 的 `ModelSimplexState` 承载可选上下文，`ModelGlpkResult` 表达可缺 returnCode 的求解前不可行结果；该模块还负责绑定变量、约束和整数标记并校验解。非零 Rational 转换为零时拒绝建模；整数模型读取并验证最终 MIP 解。LP 与 MIP 的结果 `values.in` 均读取已校验的最终输入变量，表示实际用量，输入预算保留在原 ObjectiveState，未用额度不再被误报为消耗。无扩展规则时不增加扩展约束或整数标记。`glpk-result.ts`、`simplex-state.ts` 与 `solver.spec.ts` 保持上游原字节；本次 `solver.ts` 有上述必要运行行为修复，不再声称生成的 JavaScript 不变。
 
 **验证及同步边界：** `src/solver/model-extension.spec.ts`、`src/endfield/adapters/{constraint-acceptance,calculation-integration}.spec.ts`、`src/endfield/compat/golden.spec.ts`。上游提供等价约束后必须重证变量覆盖、不可行处理、数值边界、整数容差及最终目标值。
 
@@ -65,9 +65,11 @@ SettingsStore 按 `ProductProfile.loadGameI18n` / `gameMetadata` 选择资源和
 
 ### M08 展示、流图与产品元数据
 
-`src/extensions/presentation-extension.ts` 提供插槽、名称、owner、编辑、勾选、成本重置和链接契约；共享组件及模板消费，中立默认无插槽、隐藏名称开关、`stepFragment` 为 `undefined`，普通目标和配方保留中立 owner。该独立模块的展示节点/图结构类型复用上游 `Node` 和 `FlowData`，承载可选来源标签，`src/flow/node.ts` 已恢复上游字节；ELK 类型仅在既有 Flow 内细化。`src/flow/flow-builder.ts` 复用上游 `recipeStepNodeType` 前缀 helper，以目标 ID 区分同配方节点并提供安全标签；`src/app/main/flow/flow.ts` 继续用代次与销毁状态阻止过期异步布局。`src/components/select/select.ts` 对同值显式单选发出 `optionSelected`，不改变原表单和多选路径。`src/data/release.ts` 已恢复上游，`src/endfield/providers.ts` 的小型 `EndfieldRelease` 只覆盖公开 `version` 并复用继承的 config HTTP 资源；`src/exporter/exporter.ts` 消费产品导出选项。
+`src/extensions/presentation-extension.ts` 提供插槽、owner、编辑、勾选、来源标签及链接契约；共享组件及模板消费，中立默认无插槽，`stepFragment` 为 `undefined`，普通目标和配方保留中立 owner。可选 `additionalCost` 描述现有成本弹窗中的电力字段，和原生成本共用草稿及 Reset/OK/Cancel；独立电力组件和 Apply 已删除。草稿只随已提交成本或完成恢复变化，无关语言、地区及数据调整不会覆盖编辑。Picker 名称是实例内状态，删除独立展示偏好持久化；旧原文仍可导出且不改写。图标排列沿用上游，配方强制标签通过原 schema 的通用 `forceShowLabel` flag读取，不再保留展示 sidecar。
 
-**验证及同步边界：** `src/endfield/adapters/presentation-extension.spec.ts`、`src/endfield/ui/{main-recovery,preferences-recovery,electric-cost}.spec.ts`、`src/endfield/product/{product,csv}.spec.ts`、`src/components/steps/steps.spec.ts`。上游演进时核对 owner、勾选、链接、图节点身份和标签、异步取消、同值单选、功耗及无障碍行为。
+流图直接使用上游 `Node` / `FlowData` / `BoxNode`，仅在原生 Node 增加可选 `objectiveLabel`，删除三份并行展示类型；ELK 类型在既有 Flow 内细化。`src/flow/flow-builder.ts` 复用上游 `recipeStepNodeType` 前缀 helper，以目标 ID 区分同配方节点并提供安全标签；`src/app/main/flow/flow.ts` 继续用代次与销毁状态阻止过期异步布局。`src/components/select/select.ts` 对同值显式单选发出 `optionSelected`，不改变原表单和多选路径。`src/data/release.ts` 保持上游，`src/endfield/providers.ts` 的小型 `EndfieldRelease` 只覆盖公开 `version` 并复用继承的 config HTTP 资源。`src/exporter/exporter.ts` 只读取产品文件名前缀，CSV内容、英文表头、ID及无BOM格式使用原生实现；删除本地转换器及仅供其使用的profile字段。
+
+**验证及同步边界：** `src/endfield/adapters/presentation-extension.spec.ts`、`src/endfield/ui/{main-recovery,preferences-recovery,electric-cost}.spec.ts`、`src/endfield/product/product.spec.ts`、`src/components/steps/{steps,detail-row/detail-row}.spec.ts` 及原生picker与成本弹窗规格。上游演进时核对 owner、勾选、链接、图节点身份和标签、异步取消、同值单选、功耗及无障碍行为。
 
 ### M09 通用小改动
 
@@ -81,19 +83,19 @@ SettingsStore 按 `ProductProfile.loadGameI18n` / `gameMetadata` 选择资源和
 
 **验证及同步边界：** `scripts/endfield/{build-sites,prepare-i18n}.spec.mjs`、`src/utils/log.spec.ts`；根路径与子路径产物、最终 SW 哈希按 [06](06-execution-and-acceptance.md) 复核。上游机制改变时保留发布目的地、数据过滤、最终元数据后生成 SW 和质量检查。
 
-`npm run test:delivery` 同时执行数据/hash、词典、路由装配结构和双站工具的21项Node测试。build与tests工作流先浅获取固定旧源提交 `26a49e814f0570e050a19b726b3ba689d282aa3b`，供数据测试读取九个经摘要校验的源blob，再运行该入口；不检出或执行旧源码。路由结构测试通过TypeScript AST绑定真实导出、guard导入来源、父子路由关系及 `appConfig.providers` 中的实际 `provideRouter(configureEndfieldRoutes(routes))`；Jasmine测试负责运行行为和原配置不变。这样迁入Node的hash及结构断言仍受CI约束。修改旧源读取方式时应同时核对浅克隆环境，不能只用具有完整本地历史的仓库证明CI可用。
+`npm run test:delivery` 同时执行数据/hash、词典、路由装配结构和双站工具的22项Node测试。build与tests工作流先浅获取固定旧源提交 `26a49e814f0570e050a19b726b3ba689d282aa3b`，供数据测试读取九个经摘要校验的源blob，再运行该入口；不检出或执行旧源码。路由结构测试通过TypeScript AST绑定真实导出、原生guard导入来源、editor gate、父子路由关系及 `appConfig.providers` 中的实际 `provideRouter(routes)`；Jasmine测试负责运行行为。这样迁入Node的hash及结构断言仍受CI约束。修改旧源读取方式时应同时核对浅克隆环境，不能只用具有完整本地历史的仓库证明CI可用。
 
 ### 词典、资产和测试的上游边界
 
-`public/i18n/{de,en,fr,ja,ru,zh}.json` 已恢复上游原字节。`public/endfield/i18n/{en,zh}.json` 补充两条更新检测文案，`public/endfield/product.json` 的 `uiLocaleOverrides` 仅覆盖 de、fr、ja、ru。`prepare-i18n.mjs` 在独立目录合成九种语言；本轮比较显示合成值与起点一致。`src/endfield/adapters/translation-fallback.ts` 静态合并上游 English 与本地 English，离线 fallback 仍包含这两条文案。更新通知由 `src/app/app.ts` 消费 `VERSION_DETECTED` 和 `VERSION_INSTALLATION_FAILED`，后者仅在 production 启用；其本地场景验证位于 `src/endfield/ui/main-recovery.spec.ts`；上游提供等价通知后再核对恢复动作和翻译回退。
+上游九份 UI 词典保持原字节；`prepare-i18n.mjs` 在独立目录按上游英文、目标语言、本地英文、本地目标语言四层合成九语，删除 `uiLocaleOverrides` 及两条额外更新检测文案。`src/endfield/adapters/translation-fallback.ts` 静态合并上游 English 与本地 English。更新通知仅保留上游 `VERSION_READY` 和 unrecoverable 流程，删除 `VERSION_DETECTED` / `VERSION_INSTALLATION_FAILED` 的额外弹窗；其恢复与通知场景验证位于 `src/endfield/ui/main-recovery.spec.ts`。九语选项不等于九份终末地游戏译包，非en/zh/ja/ru的游戏名称使用中文基础数据。
 
 八个 PWA PNG 位于 `public/endfield/icons/`，favicon 与 manifest 位于 `public/endfield/`；`angular.json` 显式映射到原有 `icons/`、`favicon.ico` 和 `manifest.webmanifest` 输出路径，使用本轮起点相同字节。对应上游 `public/icons/` 和根目录 favicon、manifest 已恢复；两个不由 Endfield 产品引用的 `public/factoriolab*.webp` 也恢复上游，产品继续使用独立 logo。同步时既要检查资产装配规则，也要检查输出路径和字节，不能依赖输入覆盖顺序。
 
-起点相对于上游修改过的 24 个 spec，本轮已逐字节恢复 21 个；本地断言按职责迁入既有独立规格。仍相对上游修改的三个是 `src/app/id/id.spec.ts`、`src/components/steps/steps.spec.ts`、`src/state/router/router-sync.spec.ts`，分别承接事务恢复、owner 处理和路由同步的实际契约变化。恢复原测试文件不意味着删除验证：本地入口见上文和独立的产品、状态、兼容、模型与 UI 规格。不能只统计某一分组后相加，因为同一文件可能跨组。
+首次起点相对于上游修改过24个spec，历史收敛阶段恢复21个。本次重新在原生成本弹窗、picker和detail-row规格增加实际共享行为验证，当前仍相对上游修改6个spec：这三个及 `src/app/id/id.spec.ts`、`src/components/steps/steps.spec.ts`、`src/state/router/router-sync.spec.ts`。名称持久化删除、Reset/Cancel事务、无producer展示等必须由真实组件覆盖。独立的产品、状态、兼容、模型与UI规格继续保留；语言用例在销毁组件/effect后逐字恢复存储，防止跨用例异步翻译请求污染。不能以历史恢复数量代指当前数量，或只统计某一分组后相加。
 
-除共享接点外，`src/endfield` 的 domain、adapters、compat、product、state、ui 及其测试和夹具集中承载业务；`public/data/aef`、`public/endfield`、`scripts/endfield` 分别保存数据、配置素材及工具。`compat/{legacy-hash,legacy-datasets}.json` 冻结旧索引，`domain/display-metadata.json` 保存展示标记。现有 README 与项目文档按原用途核对，不把同步记录扩写进原有主题。
+除共享接点外，`src/endfield` 的 domain、adapters、compat、product、state、ui 及其测试和夹具集中承载业务；`public/data/aef`、`public/endfield`、`scripts/endfield` 分别保存数据、配置素材及工具。`compat/{legacy-hash,legacy-datasets}.json` 冻结旧索引；展示sidecar、独立display preferences和CSV转换器均已删除。现有README与项目文档按原用途核对，不把同步记录扩写进原有主题。
 
-公开接口收敛后ChromeHeadless全量1421/1421、Node21/21通过，四项覆盖率均100%；app/spec类型、lint、格式及根/子路径双站构建校验通过。完整scripts项目仍有30项既存类型诊断，本轮同环境起点30项，无新增；不得表述为该项目全量类型检查通过。当前输入、运行范围和浏览器证据按 [06](06-execution-and-acceptance.md) 第9节、[08](08-independent-review.md) 及 `.tmp/upstream-design-impl-3da0e41b/` 核对。第一轮1404/1404、Node20/20和模型138/138、状态270/270、UI187/187是此前阶段证据，保留在06第8节及 `.tmp/upstream-footprint-3da0e41b/`，不代替本轮验证。
+一致性修复后的完整Chrome测试1434/1434、Node22/22通过，四项覆盖率均100%；验收输入、运行范围、类型/lint/格式、四站产物及浏览器和独立复核按 [06第10节](06-execution-and-acceptance.md#10-一致性修复与原生机制收敛验收)、[08](08-independent-review.md) 及 `.tmp/consistency-impl-64e4881b/` 核对。完整scripts项目的既存类型诊断单独与同环境起点比较，不以app/spec成功代指全项目类型检查通过。1421/1421和Node21/21为公开接口阶段历史证据，1404/1404及Node20/20为第一轮证据，均不代替本次验证。
 
 ## 4. 避免长期漂移的实现约束
 

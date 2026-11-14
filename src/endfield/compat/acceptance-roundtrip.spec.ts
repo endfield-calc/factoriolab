@@ -112,7 +112,9 @@ describe('Remaining Endfield legacy and derived round trips', () => {
     dataset: ModData = data,
   ): Promise<void> {
     const ticket = lifecycle.begin(query);
-    const params = await router.unzipQueryParams(router.toParams(query));
+    const params = await router.unzipQueryParams(
+      query ? router.toParams(query) : {},
+    );
     const plan = TestBed.inject(STATE_EXTENSION).prepare({
       modId: 'aef',
       params,
@@ -197,6 +199,150 @@ describe('Remaining Endfield legacy and derived round trips', () => {
       },
     };
   }
+
+  it('keeps historical wire defaults while new empty workspaces round trip with current defaults', async () => {
+    const sparseEf = btoa(JSON.stringify({ version: 1 }))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const fullEf = TestBed.inject(STATE_EXTENSION).encode(
+      createEndfieldState(),
+    )['ef'] as string;
+    const compressedEmpty = router.toString(
+      (await router.getHashParams({})) as Params,
+    );
+    const compressedV11 = router.toString({
+      ...(await router.getHashParams({ v: '11' })),
+      v: '11',
+    });
+    const cases: [string, string, string, string][] = [
+      ['empty', '', '100000000', '1'],
+      ['version only', 'v=12', '1000000', '1000'],
+      ['v11 bare', 'v=11', '1000000', '1000'],
+      ['v11 compressed', compressedV11, '1000000', '1000'],
+      ['compressed empty', compressedEmpty, '1000000', '1000'],
+      ['v12 without ef', 'v=12&o=iron_ore*2', '1000000', '1000'],
+      ['v12 full ef', `v=12&ef=${fullEf}`, '1000000', '1000'],
+      ['v12 sparse ef', `v=12&ef=${sparseEf}`, '1000000', '1000'],
+      ['ef only', `ef=${sparseEf}`, '1000000', '1000'],
+      ['explicit old', 'v=12&cun=1000000&cre=1000', '1000000', '1000'],
+      ['explicit new', 'v=12&cun=100000000&cre=1', '100000000', '1'],
+      ['explicit zero', 'v=12&cun=0&cre=0&csu=0', '0', '0'],
+      ['one explicit', 'v=12&cun=0', '0', '1000'],
+      ['other explicit', 'v=12&cre=0', '1000000', '0'],
+      ['unknown version', 'v=13', '100000000', '1'],
+      ['noncanonical version', 'v=012', '100000000', '1'],
+      ['exponent version', 'v=1e1', '100000000', '1'],
+    ];
+    for (const [label, query, unproduceable, recycling] of cases) {
+      await restore(query);
+      expect(settings.state().costs.unproduceable.toString())
+        .withContext(label)
+        .toBe(unproduceable);
+      expect(settings.state().costs.recycling.toString())
+        .withContext(label)
+        .toBe(recycling);
+      expect(settings.state().costs.surplus.toString())
+        .withContext(label)
+        .toBe(label === 'explicit zero' ? '0' : '1');
+      expect(endfield.state().electric.eq(rational.one))
+        .withContext(label)
+        .toBeTrue();
+      if (label === 'v12 sparse ef') {
+        const state = endfield.state();
+        expect({ ...state, checkedDerived: [...state.checkedDerived] }).toEqual(
+          {
+            ...createEndfieldState(),
+            checkedDerived: [],
+          },
+        );
+      }
+      const serialized = zip();
+      for (const format of ['bare', 'hash'] as const) {
+        expect(serialized.config[format].cun)
+          .withContext(`${label}: ${format} unproduceable`)
+          .toBe(unproduceable === '1000000' ? undefined : unproduceable);
+        expect(serialized.config[format].cre)
+          .withContext(`${label}: ${format} recycling`)
+          .toBe(recycling === '1000' ? undefined : recycling);
+      }
+      const encoded = await router.getHash(serialized);
+      await restore(router.toString(encoded as Params));
+      expect(settings.state().costs.unproduceable.toString())
+        .withContext(`${label}: restored`)
+        .toBe(unproduceable);
+      expect(settings.state().costs.recycling.toString())
+        .withContext(`${label}: restored`)
+        .toBe(recycling);
+    }
+  });
+
+  it('keeps omitted costs after checked-objective renumbering and retains sparse ef zeros', async () => {
+    const ef = btoa(
+      JSON.stringify({
+        version: 1,
+        electric: '0',
+        machineLimits: { enabled: false, limits: { xiranite_oven_1: '0' } },
+        resourceLimits: { enabled: false, rates: { iron_ore: '0' } },
+      }),
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    await restore(`v=11&o=iron_ore*0*3*11&o=copper_nugget*2&och=A~B&ef=${ef}`);
+    expect([...settings.state().checkedObjectiveIds]).toEqual(['1']);
+    expect(
+      settings.state().costs.unproduceable.eq(rational(1000000)),
+    ).toBeTrue();
+    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
+    expect(endfield.state().electric.eq(rational.zero)).toBeTrue();
+    expect(
+      endfield
+        .state()
+        .machineLimits.limits['xiranite_oven_1'].eq(rational.zero),
+    ).toBeTrue();
+    expect(
+      endfield.state().resourceLimits.rates.iron_ore.eq(rational.zero),
+    ).toBeTrue();
+    expect(endfield.state().resourceLimits.enabled).toBeFalse();
+    expect(endfield.state().transfer.source).toBe('tundra');
+  });
+
+  it('waits for legacy settings migration before filling omitted costs', async () => {
+    const parts = ['aef', ...Array<string>(24).fill('')];
+    parts[19] = '23'; // v10 settings unproduceable cost
+    await restore(`v=10&s=${parts.join('*')}`);
+    expect(settings.state().costs.unproduceable.eq(rational(23))).toBeTrue();
+    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
+    await restore('cet=0');
+    expect(
+      settings.state().costs.unproduceable.eq(rational(1000000)),
+    ).toBeTrue();
+    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
+    expect(endfield.state().electric.eq(rational.zero)).toBeTrue();
+  });
+
+  it('restores the G01 compressed and G02 bare legacy links with their recorded costs', async () => {
+    for (const fixture of golden.cases.filter((entry) =>
+      ['G01', 'G02'].includes(entry.id),
+    )) {
+      await restore(fixture.url.slice(fixture.url.indexOf('?') + 1));
+      expect(stateSummary().costs['unproduceable'])
+        .withContext(fixture.id)
+        .toBe('1000000');
+      expect(stateSummary().costs['recycling'])
+        .withContext(fixture.id)
+        .toBe('1000');
+      const encoded = await router.getHash(zip());
+      await restore(router.toString(encoded as Params));
+      expect(stateSummary().costs['unproduceable'])
+        .withContext(fixture.id)
+        .toBe('1000000');
+      expect(stateSummary().costs['recycling'])
+        .withContext(fixture.id)
+        .toBe('1000');
+    }
+  });
 
   it('A20 restores complete v11 types, edits ordinary goals, then restores the edited URL', async () => {
     // G06 uses legacy serialized fields; add a second ordinary goal and checked indices.

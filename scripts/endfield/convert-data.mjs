@@ -175,7 +175,6 @@ export function appendOnlyHash(previous, data, frozen) {
 
 export function convertData(old) {
   const buildIcons = {};
-  const recipes = {};
   const items = old.items.map((item) => {
     const { pipe, buildIcon, ...result } = item;
     if (buildIcon) buildIcons[item.id] = buildIcon;
@@ -190,16 +189,72 @@ export function convertData(old) {
   for (const id of fluidIds) {
     if (!found.has(id)) throw new Error(`Missing classified fluid ${id}`);
   }
+  const aliases = {
+    'settlement-tundra_coupon': 'tundra',
+    'settlement-jinlong_coupon': 'jinlong',
+  };
   const convertedRecipes = old.recipes.map((recipe) => {
     const result = { ...recipe };
-    const displayFlags = (recipe.flags ?? []).filter(
-      (flag) => flag === 'hideProducer' || flag === 'forceShowLabel',
-    );
-    if (displayFlags.length) {
-      recipes[recipe.id] = Object.fromEntries(
-        displayFlags.map((flag) => [flag, true]),
-      );
-      const flags = recipe.flags.filter((flag) => !displayFlags.includes(flag));
+    const hidden = recipe.flags?.includes('hideProducer');
+    if (!hidden && recipe.producers?.some((id) => Object.hasOwn(aliases, id)))
+      throw new Error(`Unexpected settlement alias producer: ${recipe.id}`);
+    if (Object.keys(recipe.out).some((id) => Object.hasOwn(aliases, id)))
+      throw new Error(`Settlement alias has a production recipe: ${recipe.id}`);
+    if (hidden) {
+      const alias = recipe.producers?.[0];
+      const location = Object.hasOwn(aliases, alias)
+        ? aliases[alias]
+        : undefined;
+      const machineItems = old.items.filter((item) => item.id === alias);
+      const machine = machineItems[0]?.machine;
+      const expectedMachine = {
+        speed: 1,
+        type: 'electric',
+        usage: 0,
+        hideRate: true,
+        locations: [location],
+      };
+      const allowedKeys = new Set([
+        'id',
+        'name',
+        'category',
+        'row',
+        'time',
+        'in',
+        'out',
+        'producers',
+        'flags',
+        'cost',
+        'icon',
+        'iconText',
+      ]);
+      const output = Object.entries(recipe.out);
+      if (
+        location == null ||
+        recipe.producers.length !== 1 ||
+        recipe.category !== 'settlement' ||
+        recipe.locations != null ||
+        Object.keys(recipe).some((key) => !allowedKeys.has(key)) ||
+        recipe.flags.some(
+          (flag) => !['hideProducer', 'forceShowLabel'].includes(flag),
+        ) ||
+        output.length !== 1 ||
+        output[0][0] !== `${location}_coupon` ||
+        typeof output[0][1] !== 'number' ||
+        !Number.isFinite(output[0][1]) ||
+        output[0][1] <= 0 ||
+        typeof recipe.cost !== 'number' ||
+        !Number.isFinite(recipe.cost) ||
+        machineItems.length !== 1 ||
+        machineItems[0].quality != null ||
+        (old.qualities != null &&
+          (!Array.isArray(old.qualities) || old.qualities.length > 0)) ||
+        !isDeepStrictEqual(machine, expectedMachine)
+      )
+        throw new Error(`Unsupported hidden producer recipe: ${recipe.id}`);
+      result.locations = [...machine.locations];
+      delete result.producers;
+      const flags = recipe.flags.filter((flag) => flag !== 'hideProducer');
       if (flags.length) result.flags = flags;
       else delete result.flags;
     }
@@ -234,7 +289,7 @@ export function convertData(old) {
       'build-icons': buildIcons,
     },
   };
-  return { data, displayMetadata: { recipes } };
+  return { data };
 }
 
 function writeJson(path, value) {
@@ -262,7 +317,7 @@ export function generate(sourceRoot) {
   const files = readSource(sourceRoot);
   const oldData = parseJson(files['src/data/aef/data.json']);
   const frozen = legacyHash(parseJson(files['src/data/aef/hash.json']));
-  const { data, displayMetadata } = convertData(oldData);
+  const { data } = convertData(oldData);
   const frozenPath = join(root, 'src/endfield/compat/legacy-hash.json');
   const hashPath = join(root, 'public/data/aef/hash.json');
   if (
@@ -285,10 +340,6 @@ export function generate(sourceRoot) {
   writeArrayObject(
     join(root, 'src/endfield/compat/legacy-datasets.json'),
     global,
-  );
-  writeJson(
-    join(root, 'src/endfield/domain/display-metadata.json'),
-    displayMetadata,
   );
   const atlasPath = join(root, 'public/data/aef/icons.webp');
   writeFileSync(atlasPath, files['src/data/aef/icons.webp']);

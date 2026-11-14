@@ -1,7 +1,8 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { rational } from '~/rational/rational';
+import { Dataset } from '~/state/settings/dataset';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
 import { TestModule } from '~/tests/test-module';
@@ -31,6 +32,63 @@ describe('DetailRow', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows a detail count only for a visible machine or a producerless showCount recipe', () => {
+    const initial = mocks.getDataset();
+    const recipeId = initial.recipeIds[0];
+    const machineId = initial.machineIds[0];
+    const data = signal<Dataset>({
+      ...initial,
+      recipeRecord: {
+        ...initial.recipeRecord,
+        [recipeId]: {
+          ...initial.recipeRecord[recipeId],
+          producers: undefined,
+          flags: new Set(),
+        },
+      },
+      machineRecord: {
+        ...initial.machineRecord,
+        [machineId]: { ...initial.machineRecord[machineId], hideRate: false },
+      },
+    });
+    spyOn<any>(component, 'data').and.callFake(data);
+    const countCell = (): string => {
+      const cells = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'td',
+      );
+      return cells[cells.length - 2].textContent.trim();
+    };
+    setInputs(fixture, { value: { recipeId, machines: rational(777) } });
+    expect(countCell()).toBe('');
+    setInputs(fixture, {
+      value: { recipeId, machineId, machines: rational(777) },
+    });
+    expect(countCell()).toContain('777');
+    data.update((value) => ({
+      ...value,
+      machineRecord: {
+        ...value.machineRecord,
+        [machineId]: { ...value.machineRecord[machineId], hideRate: true },
+      },
+    }));
+    fixture.detectChanges();
+    expect(countCell()).toBe('');
+    data.update((value) => ({
+      ...value,
+      recipeRecord: {
+        ...value.recipeRecord,
+        [recipeId]: {
+          ...value.recipeRecord[recipeId],
+          flags: new Set(['showCount']),
+        },
+      },
+    }));
+    fixture.detectChanges();
+    expect(countCell()).toBe('');
+    setInputs(fixture, { value: { recipeId, machines: rational(777) } });
+    expect(countCell()).toContain('777');
   });
 
   describe('safeFactor', () => {

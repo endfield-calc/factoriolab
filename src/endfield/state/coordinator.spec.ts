@@ -89,7 +89,11 @@ describe('EndfieldCoordinator', () => {
     expect(settings()).toBe(settingsBefore);
     lifecycle.complete(ticket);
     expect(
-      coordinator.dispatch({ type: 'electric', value: rational(-1) }),
+      coordinator.dispatch({
+        type: 'resourceRate',
+        id: 'iron_ore',
+        value: rational(-1),
+      }),
     ).toBeFalse();
     expect(coordinator.diagnostics()[0].code).toBe('invalid-value');
     expect(coordinator.state()).toBe(before);

@@ -8,7 +8,6 @@ import { TestModule } from '~/tests/test-module';
 
 import { createEndfieldState } from '../domain/model';
 import { EndfieldCoordinator } from '../state/coordinator';
-import { EndfieldDisplayPreferences } from '../state/display-preferences';
 import { EndfieldResources, perMinute, perSecond } from './resources';
 
 describe('EndfieldResources', () => {
@@ -24,11 +23,14 @@ describe('EndfieldResources', () => {
     excludedRecipeIds: new Set<string>(),
   });
   const dispatch = jasmine.createSpy('dispatch').and.returnValue(true);
-  const displayWarnings = signal<readonly string[]>([]);
 
   beforeEach(async () => {
     ready.set(true);
-    displayWarnings.set([]);
+    state.set(createEndfieldState());
+    settings.set({
+      locationIds: new Set(['tundra']),
+      excludedRecipeIds: new Set<string>(),
+    });
     dispatch.calls.reset();
     await TestBed.configureTestingModule({
       imports: [TestModule, EndfieldResources],
@@ -54,10 +56,6 @@ describe('EndfieldResources', () => {
             migrationWarnings: ['Theme black was renamed dark'],
             stored: (): string => '{"theme":"black"}',
           },
-        },
-        {
-          provide: EndfieldDisplayPreferences,
-          useValue: { migrationWarnings: displayWarnings.asReadonly() },
         },
       ],
     }).compileComponents();
@@ -139,6 +137,29 @@ describe('EndfieldResources', () => {
     expect(checkbox.querySelector('input')?.disabled).toBeTrue();
   });
 
+  it('shows Tundra as read-only and preserves it in transfer actions', async () => {
+    settings.set({
+      locationIds: new Set(['jinlong']),
+      excludedRecipeIds: new Set(),
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const html: HTMLElement = fixture.nativeElement;
+    expect(html.querySelector('lab-select')).toBeNull();
+    expect(html.textContent).toContain('endfield.resources.transferSource');
+    expect(html.textContent).toContain('endfield.resources.tundra');
+    const checkbox = html.querySelectorAll('lab-checkbox')[2];
+    const input = checkbox.querySelector('input');
+    expect(input?.disabled).toBeFalse();
+    input?.click();
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'transfer',
+      enabled: true,
+      source: 'tundra',
+    });
+  });
+
   it('recovers all backed-up preference versions and falls back when storage is unavailable', () => {
     spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(4);
     spyOn(Storage.prototype, 'key').and.callFake(
@@ -189,9 +210,8 @@ describe('EndfieldResources', () => {
     ]);
   });
 
-  it('offers the still-readable original when backing up display preferences fails', () => {
+  it('offers the still-readable legacy display original', () => {
     fixture.componentInstance['preferences'].migrationWarnings.length = 0;
-    displayWarnings.set(['endfield.recovery.displayBackupFailed']);
     spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(0);
     spyOn(Storage.prototype, 'getItem').and.callFake(
       (key: string): string | null =>
@@ -204,7 +224,6 @@ describe('EndfieldResources', () => {
 
   it('does not offer a second copy of an original already present in a recovery backup', () => {
     fixture.componentInstance['preferences'].migrationWarnings.length = 0;
-    displayWarnings.set(['endfield.recovery.displayBackupFailed']);
     spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(1);
     const key = 'preferences.recovery.endfield.presentation';
     spyOn(Storage.prototype, 'key').and.returnValue(key);
@@ -242,7 +261,6 @@ describe('EndfieldResources preference recovery integration', () => {
   const legacyBackup = 'preferences.recovery.97';
   let original: Map<string, string>;
   let set: jasmine.Spy;
-  let realSet: (key: string, value: string) => void;
 
   function relevantKeys(): string[] {
     return Array.from({ length: localStorage.length }, (_, index) =>
@@ -262,7 +280,6 @@ describe('EndfieldResources preference recovery integration', () => {
       relevantKeys().map((key) => [key, localStorage.getItem(key) ?? '']),
     );
     for (const key of relevantKeys()) localStorage.removeItem(key);
-    realSet = Storage.prototype.setItem;
     spyOn(Storage.prototype, 'getItem').and.callThrough();
     set = spyOn(Storage.prototype, 'setItem').and.callThrough();
   });
@@ -314,11 +331,18 @@ describe('EndfieldResources preference recovery integration', () => {
     const displayRaw = '{ "showNames": true, "hideDuplicateIcons": 4 }';
     const legacyRaw = '{"theme":"black","states":{"aef":{"safe":"v=11"}}}';
     localStorage.setItem(currentKey, displayRaw);
+    localStorage.setItem(displayBackup, displayRaw);
     localStorage.setItem(legacyBackup, legacyRaw);
+    set.calls.reset();
     const fixture = await createFixture();
     const html: HTMLElement = fixture.nativeElement;
     expect(localStorage.getItem(displayBackup)).toBe(displayRaw);
-    expect(html.textContent).toContain('endfield.recovery.displayDamaged');
+    expect(localStorage.getItem(currentKey)).toBe(displayRaw);
+    expect(
+      set.calls
+        .allArgs()
+        .some(([key]) => key === currentKey || key === displayBackup),
+    ).toBeFalse();
     expect(html.textContent).toContain(displayBackup);
     expect(html.textContent).toContain(legacyBackup);
     const spans = [...html.querySelectorAll('section[role="status"] span')];
@@ -376,24 +400,20 @@ describe('EndfieldResources preference recovery integration', () => {
       ...html.querySelectorAll('section[role="status"] > span'),
     ].map((span) => span.textContent?.trim());
     expect(backupKeys).toEqual([
+      currentKey,
       legacyBackup,
       displayBackup,
       `${displayBackup}.3`,
     ]);
   });
 
-  it('keeps an unbacked original readable and exportable when backup storage fails', async () => {
+  it('keeps an unbacked original readable and exportable without writing it', async () => {
     const raw = '{"showNames":true,"hideDuplicateIcons":"bad"}';
     localStorage.setItem(currentKey, raw);
     set.calls.reset();
-    set.and.callFake((key: string, value: string): void => {
-      if (key.startsWith(displayBackup)) throw new Error('quota');
-      realSet.call(localStorage, key, value);
-    });
-    spyOn(console, 'warn');
     const fixture = await createFixture();
     const html: HTMLElement = fixture.nativeElement;
-    expect(html.textContent).toContain('endfield.recovery.displayBackupFailed');
+    expect(html.textContent).toContain('endfield.recovery.availableBackups');
     const span = [...html.querySelectorAll('section[role="status"] span')].find(
       (element) => element.textContent?.trim() === currentKey,
     );
@@ -412,9 +432,12 @@ describe('EndfieldResources preference recovery integration', () => {
       jasmine.clock().uninstall();
     }
     expect(await (create.calls.mostRecent().args[0] as Blob).text()).toBe(raw);
-    TestBed.inject(EndfieldDisplayPreferences).toggleNames();
     TestBed.tick();
     expect(localStorage.getItem(currentKey)).toBe(raw);
-    expect(set.calls.allArgs().some(([key]) => key === currentKey)).toBeFalse();
+    expect(
+      set.calls
+        .allArgs()
+        .some(([key]) => key === currentKey || key.startsWith(displayBackup)),
+    ).toBeFalse();
   });
 });

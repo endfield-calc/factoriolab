@@ -40,12 +40,10 @@ import {
 } from '~/d3/sankey/sankey-link-horizontal';
 import { IconData } from '~/data/schema/icon-data';
 import { Exporter } from '~/exporter/exporter';
-import type {
-  PresentationFlowData,
-  PresentationNode,
-} from '~/extensions/presentation-extension';
 import { FlowBuilder } from '~/flow/flow-builder';
+import { FlowData } from '~/flow/flow-data';
 import { Link } from '~/flow/link';
+import { Node } from '~/flow/node';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
 import { FlowSettings } from '~/state/preferences/flow-settings';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
@@ -56,10 +54,8 @@ import { spread } from '~/utils/object';
 export const SVG_ID = 'lab-flow-svg';
 const NODE_WIDTH = 36;
 
-type PresentationBoxNode = BoxNode & PresentationNode;
-
 interface ElkGraph extends ElkNode {
-  children: PresentationBoxNode[];
+  children: BoxNode[];
   edges: (Link & ElkExtendedEdge)[];
 }
 
@@ -112,7 +108,7 @@ export class Flow {
   }
 
   async rebuildChart(
-    flowData: PresentationFlowData | null,
+    flowData: FlowData | null,
     flowSettings: FlowSettings,
   ): Promise<void> {
     this.renderGeneration++;
@@ -126,10 +122,7 @@ export class Flow {
     else await this.rebuildBoxLine(flowData, flowSettings);
   }
 
-  rebuildSankey(
-    flowData: PresentationFlowData,
-    flowSettings: FlowSettings,
-  ): void {
+  rebuildSankey(flowData: FlowData, flowSettings: FlowSettings): void {
     this.renderGeneration++;
     if (this.destroyRef.destroyed) return;
     let layout = this.getLayout(flowSettings.sankeyAlign, 1, 1);
@@ -167,8 +160,8 @@ export class Flow {
           : sankeyLinkLoop(
               coalesce(l.width, 0),
               NODE_WIDTH,
-              (l.source as SankeyNode<PresentationNode, Link>).y1,
-              (l.target as SankeyNode<PresentationNode, Link>).y1,
+              (l.source as SankeyNode<Node, Link>).y1,
+              (l.target as SankeyNode<Node, Link>).y1,
             )(l),
       )
       .attr('stroke', (l) => l.color)
@@ -192,7 +185,7 @@ export class Flow {
     // Main node svg
     const node = svg
       .append('g')
-      .selectAll<SVGSVGElement, SankeyNode<PresentationNode, Link>>('svg')
+      .selectAll<SVGSVGElement, SankeyNode<Node, Link>>('svg')
       .data(skGraph.nodes)
       .join('svg')
       .attr('class', 'overflow-visible')
@@ -200,8 +193,8 @@ export class Flow {
       .attr('y', (d) => coalesce(d.y0, 0))
       .on('click', this.clickHandler())
       .call(
-        drag<SVGSVGElement, SankeyNode<PresentationNode, Link>>()
-          .subject((d) => d as SankeyNode<PresentationNode, Link>)
+        drag<SVGSVGElement, SankeyNode<Node, Link>>()
+          .subject((d) => d as SankeyNode<Node, Link>)
           .on('drag', function (this, event: { dy: number; dx: number }, d) {
             const rectY = parseFloat(select(this).attr('y'));
             const rectX = parseFloat(select(this).attr('x'));
@@ -221,8 +214,8 @@ export class Flow {
               if ((l as SankeyLinkExtraProperties).direction === 'forward')
                 return sankeyLinkHorizontal()(l);
 
-              const source = l.source as SankeyNode<PresentationNode, Link>;
-              const target = l.target as SankeyNode<PresentationNode, Link>;
+              const source = l.source as SankeyNode<Node, Link>;
+              const target = l.target as SankeyNode<Node, Link>;
 
               return sankeyLinkLoop(
                 coalesce(l.width, 0),
@@ -275,7 +268,7 @@ export class Flow {
       (d) => d.recipeIcon != null,
     ) as Selection<
       SVGSVGElement,
-      SankeyNode<PresentationNode, Link> & { recipeIcon: IconData },
+      SankeyNode<Node, Link> & { recipeIcon: IconData },
       SVGGElement,
       unknown
     >;
@@ -344,7 +337,7 @@ export class Flow {
   }
 
   async rebuildBoxLine(
-    flow: PresentationFlowData,
+    flow: FlowData,
     flowSettings: FlowSettings,
   ): Promise<void> {
     const generation = ++this.renderGeneration;
@@ -468,8 +461,8 @@ export class Flow {
       .attr('y', (d) => coalesce(d.y, 0))
       .on('click', this.clickHandler())
       .call(
-        drag<SVGSVGElement, PresentationBoxNode>()
-          .subject((d) => d as PresentationBoxNode)
+        drag<SVGSVGElement, BoxNode>()
+          .subject((d) => d as BoxNode)
           .on('drag', function (this, event: { dy: number; dx: number }, d) {
             d.y = coalesce(d.y, 0) + event.dy;
             d.x = coalesce(d.x, 0) + event.dx;
@@ -521,7 +514,7 @@ export class Flow {
     // Filter nodes with recipeIcon
     const recipeIcon = node.filter((d) => d.recipeIcon != null) as Selection<
       SVGSVGElement,
-      PresentationBoxNode & { recipeIcon: IconData },
+      BoxNode & { recipeIcon: IconData },
       SVGGElement,
       unknown
     >;
@@ -593,12 +586,8 @@ export class Flow {
     align: SankeyAlign,
     width: number,
     height: number,
-  ): SankeyLayout<
-    SankeyGraphMinimal<PresentationNode, Link>,
-    PresentationNode,
-    Link
-  > {
-    return sankey<PresentationNode, Link>()
+  ): SankeyLayout<SankeyGraphMinimal<Node, Link>, Node, Link> {
+    return sankey<Node, Link>()
       .nodeId((d) => d.id)
       .nodeWidth(NODE_WIDTH)
       .nodeAlign(this._alignMap[align])
@@ -609,13 +598,9 @@ export class Flow {
   }
 
   private getGraph(
-    layout: SankeyLayout<
-      SankeyGraphMinimal<PresentationNode, Link>,
-      PresentationNode,
-      Link
-    >,
-    data: PresentationFlowData,
-  ): SankeyGraph<PresentationNode, Link> {
+    layout: SankeyLayout<SankeyGraphMinimal<Node, Link>, Node, Link>,
+    data: FlowData,
+  ): SankeyGraph<Node, Link> {
     return layout({
       nodes: data.nodes
         .filter((n) =>
@@ -628,7 +613,7 @@ export class Flow {
 
   private readonly _alignMap: Record<
     SankeyAlign,
-    (node: SankeyNode<PresentationNode, Link>, n: number) => number
+    (node: SankeyNode<Node, Link>, n: number) => number
   > = {
     [SankeyAlign.Left]: sankeyLeft,
     [SankeyAlign.Right]: sankeyRight,
@@ -636,11 +621,11 @@ export class Flow {
     [SankeyAlign.Justify]: sankeyJustify,
   };
 
-  private nodeHeight(d: SankeyNode<PresentationNode, Link>): number {
+  private nodeHeight(d: SankeyNode<Node, Link>): number {
     return coalesce(d.y1, 0) - coalesce(d.y0, 0);
   }
 
-  private imageOffset(d: SankeyNode<PresentationNode, Link>): number {
+  private imageOffset(d: SankeyNode<Node, Link>): number {
     return (num(d.y1) - num(d.y0)) / 2 - 32 / 2;
   }
 

@@ -59,8 +59,7 @@
 @if (presentation.showNameToggle) {
   <lab-checkbox
     [label]="presentation.nameToggleLabel"
-    [ngModel]="presentation.showNames()"
-    (ngModelChange)="presentation.toggleNames()"
+    [(ngModel)]="showNames"
   ></lab-checkbox>
 }
 
@@ -84,8 +83,9 @@
           [iconType]="dialogData.type"
           [icon]="id"
           [text]="
-            presentation.showNames() ||
-            (dialogData.type === 'recipe' && presentation.forceLabel(id))
+            showNames() ||
+            (dialogData.type === 'recipe' &&
+              data().recipeRecord[id]?.flags.has('forceShowLabel'))
               ? data()[recordKey][id].name
               : ''
           "

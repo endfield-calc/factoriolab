@@ -6442,15 +6442,15 @@
       "out": {
         "tundra_coupon": 1
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 150,
       "id": "tundra_coupon-crystal_shell",
       "name": "谷地调度券(晶体外壳)",
       "category": "settlement",
       "row": 0,
-      "icon": "FRZxbTuQP"
+      "icon": "FRZxbTuQP",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 2,
@@ -6460,15 +6460,15 @@
       "out": {
         "tundra_coupon": 2
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 150,
       "id": "tundra_coupon-glass_bottle",
       "name": "谷地调度券(紫晶质瓶)",
       "category": "settlement",
       "row": 0,
-      "icon": "fpxipfxQ_"
+      "icon": "fpxipfxQ_",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 2,
@@ -6478,15 +6478,15 @@
       "out": {
         "tundra_coupon": 1
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 150,
       "id": "tundra_coupon-glass_cmpt",
       "name": "谷地调度券(紫晶零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "WqhucJQl5"
+      "icon": "WqhucJQl5",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 2,
@@ -6496,15 +6496,15 @@
       "out": {
         "tundra_coupon": 1
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 150,
       "id": "tundra_coupon-iron_cmpt",
       "name": "谷地调度券(铁制零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "0pLWUXtXS"
+      "icon": "0pLWUXtXS",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 2,
@@ -6514,15 +6514,15 @@
       "out": {
         "tundra_coupon": 3
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 150,
       "id": "tundra_coupon-iron_enr_cmpt",
       "name": "谷地调度券(钢制零件)",
       "category": "settlement",
       "row": 0,
-      "icon": "PaI2yXcVi"
+      "icon": "PaI2yXcVi",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6532,15 +6532,15 @@
       "out": {
         "tundra_coupon": 10
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_food_1",
       "name": "谷地调度券(柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "D87_y4QHp"
+      "icon": "D87_y4QHp",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6550,15 +6550,15 @@
       "out": {
         "tundra_coupon": 27
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_food_2",
       "name": "谷地调度券(优质柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "LChCprdXR"
+      "icon": "LChCprdXR",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6568,15 +6568,15 @@
       "out": {
         "tundra_coupon": 70
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_food_3",
       "name": "谷地调度券(精选柑实罐头)",
       "category": "settlement",
       "row": 0,
-      "icon": "lG5pYr6_F"
+      "icon": "lG5pYr6_F",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6586,15 +6586,15 @@
       "out": {
         "tundra_coupon": 10
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_1",
       "name": "谷地调度券(荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "NXpQnBpZJ"
+      "icon": "NXpQnBpZJ",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6604,15 +6604,15 @@
       "out": {
         "tundra_coupon": 27
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_2",
       "name": "谷地调度券(优质荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "B33Y1xtAN"
+      "icon": "B33Y1xtAN",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6622,15 +6622,15 @@
       "out": {
         "tundra_coupon": 70
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_3",
       "name": "谷地调度券(精选荞愈胶囊)",
       "category": "settlement",
       "row": 0,
-      "icon": "Wy_OqDd79"
+      "icon": "Wy_OqDd79",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6640,15 +6640,15 @@
       "out": {
         "tundra_coupon": 16
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-proc_battery_1",
       "name": "谷地调度券(低容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "be5cdHAfy"
+      "icon": "be5cdHAfy",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6658,15 +6658,15 @@
       "out": {
         "tundra_coupon": 30
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-proc_battery_2",
       "name": "谷地调度券(中容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "HsYpeEhwA"
+      "icon": "HsYpeEhwA",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 10,
@@ -6676,15 +6676,15 @@
       "out": {
         "tundra_coupon": 70
       },
-      "producers": [
-        "settlement-tundra_coupon"
-      ],
       "cost": 30,
       "id": "tundra_coupon-proc_battery_3",
       "name": "谷地调度券(高容谷地电池)",
       "category": "settlement",
       "row": 0,
-      "icon": "tcIJgshsc"
+      "icon": "tcIJgshsc",
+      "locations": [
+        "tundra"
+      ]
     },
     {
       "time": 2,
@@ -6694,15 +6694,15 @@
       "out": {
         "jinlong_coupon": 1
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 150,
       "id": "jinlong_coupon-copper_cmpt",
       "name": "武陵调度券(赤铜零件)",
       "category": "settlement",
       "row": 1,
-      "icon": "fftXa_L3O"
+      "icon": "fftXa_L3O",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6712,15 +6712,15 @@
       "out": {
         "jinlong_coupon": 48
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-copper_enr_cmpt",
       "name": "武陵调度券(赫铜零件)",
       "category": "settlement",
       "row": 1,
-      "icon": "nL57eW-eu"
+      "icon": "nL57eW-eu",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6730,15 +6730,15 @@
       "out": {
         "jinlong_coupon": 70
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-copper_enr2_cmpt",
       "name": "武陵调度券(灼铜零件)",
       "category": "settlement",
       "row": 1,
-      "icon": "lpxYv1B-a"
+      "icon": "lpxYv1B-a",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 2,
@@ -6748,15 +6748,15 @@
       "out": {
         "jinlong_coupon": 1
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 150,
       "id": "jinlong_coupon-filter_core",
       "name": "武陵调度券(分离芯)",
       "category": "settlement",
       "row": 1,
-      "icon": "zbLLpntwq"
+      "icon": "zbLLpntwq",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 2,
@@ -6766,15 +6766,15 @@
       "out": {
         "jinlong_coupon": 1
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 150,
       "id": "jinlong_coupon-xiranite_powder",
       "name": "武陵调度券(息壤)",
       "category": "settlement",
       "row": 1,
-      "icon": "MN3RgE0QK"
+      "icon": "MN3RgE0QK",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6784,15 +6784,15 @@
       "out": {
         "jinlong_coupon": 27
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-xiranite_enr_powder",
       "name": "武陵调度券(重息壤)",
       "category": "settlement",
       "row": 1,
-      "icon": "TQnSxeYps"
+      "icon": "TQnSxeYps",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6802,15 +6802,15 @@
       "out": {
         "jinlong_coupon": 16
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-bottled_food_4",
       "name": "武陵调度券(锦草软饮)",
       "category": "settlement",
       "row": 2,
-      "icon": "TqWZWVpY3"
+      "icon": "TqWZWVpY3",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6820,15 +6820,15 @@
       "out": {
         "jinlong_coupon": 22
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-bottled_food_5",
       "name": "武陵调度券(优质锦草软饮)",
       "category": "settlement",
       "row": 2,
-      "icon": "qA-EMB1fs"
+      "icon": "qA-EMB1fs",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6838,15 +6838,15 @@
       "out": {
         "jinlong_coupon": 16
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-bottled_rec_hp_4",
       "name": "武陵调度券(芽针针剂)",
       "category": "settlement",
       "row": 2,
-      "icon": "Sjdqh9m2X"
+      "icon": "Sjdqh9m2X",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6856,15 +6856,15 @@
       "out": {
         "jinlong_coupon": 22
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-bottled_rec_hp_5",
       "name": "武陵调度券(优质芽针针剂)",
       "category": "settlement",
       "row": 2,
-      "icon": "VqJ8q3DQp"
+      "icon": "VqJ8q3DQp",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6874,15 +6874,15 @@
       "out": {
         "jinlong_coupon": 25
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-proc_battery_4",
       "name": "武陵调度券(低容武陵电池)",
       "category": "settlement",
       "row": 3,
-      "icon": "vI10u14eE"
+      "icon": "vI10u14eE",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6892,15 +6892,15 @@
       "out": {
         "jinlong_coupon": 54
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-proc_battery_5",
       "name": "武陵调度券(中容武陵电池)",
       "category": "settlement",
       "row": 3,
-      "icon": "e13iR_HPS"
+      "icon": "e13iR_HPS",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6910,15 +6910,15 @@
       "out": {
         "jinlong_coupon": 100
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-activity_xiranite_lung",
       "name": "武陵调度券(息壤龙泡泡)",
       "category": "settlement",
       "row": 4,
-      "icon": "DxQbkoaDm"
+      "icon": "DxQbkoaDm",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,
@@ -6928,15 +6928,15 @@
       "out": {
         "jinlong_coupon": 200
       },
-      "producers": [
-        "settlement-jinlong_coupon"
-      ],
       "cost": 30,
       "id": "jinlong_coupon-activity_xiranite_enr_lung",
       "name": "武陵调度券(重息壤龙泡泡)",
       "category": "settlement",
       "row": 4,
-      "icon": "nvQgypPJO"
+      "icon": "nvQgypPJO",
+      "locations": [
+        "jinlong"
+      ]
     },
     {
       "time": 10,

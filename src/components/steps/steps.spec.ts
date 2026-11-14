@@ -6,7 +6,6 @@ import {
   createEndfieldState,
   resourceObjectiveId,
 } from '~/endfield/domain/model';
-import { EndfieldDisplayPreferences } from '~/endfield/state/display-preferences';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
   PRESENTATION_EXTENSION,
@@ -16,6 +15,7 @@ import {
   EFFECTIVE_DEFAULTS,
   upstreamProduct,
 } from '~/extensions/product-profile';
+import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { initialColumnsState } from '~/state/preferences/columns-state';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
@@ -277,20 +277,6 @@ describe('Steps', () => {
     expect(component['settingsStore'].apply).not.toHaveBeenCalled();
   });
 
-  it('hides only identical item and recipe sprites when requested', () => {
-    const step = mocks.step1();
-    const data = mocks.getDataset();
-    const original = data.iconRecord.item[step.itemId!];
-    data.iconRecord.recipe[step.recipeId!] = { ...original };
-    spyOn<any>(component, 'data').and.returnValue(data);
-    spyOn(component['presentation'], 'hideDuplicateIcons').and.returnValue(
-      true,
-    );
-    expect(component.duplicateRecipeIcon(step)).toBeTrue();
-    data.iconRecord.recipe[step.recipeId!] = { ...original, id: 'different' };
-    expect(component.duplicateRecipeIcon(step)).toBeFalse();
-  });
-
   describe('changeStepChecked', () => {
     it('should set checked state based on the step item', () => {
       const step = mocks.step1();
@@ -378,6 +364,52 @@ describe('Steps', () => {
 });
 
 describe('Steps derived resource settings', () => {
+  it('shows the upstream tree, item and recipe icons for the Endfield view', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModule, Steps],
+      providers: [
+        {
+          provide: EFFECTIVE_DEFAULTS,
+          useValue: {
+            ...upstreamProduct.defaults(),
+            extension: createEndfieldState(),
+          },
+        },
+        {
+          provide: PRESENTATION_EXTENSION,
+          useFactory: (): PresentationExtension =>
+            createEndfieldPresentation(inject(EndfieldStore)),
+        },
+      ],
+    }).compileComponents();
+    const step = TestBed.inject(Mocks).step1();
+    const objectives = TestBed.inject(ObjectivesStore);
+    spyOn(objectives, 'steps').and.returnValue([step]);
+    spyOn(objectives, 'stepTree').and.returnValue({ [step.id]: [] });
+    spyOn(objectives, 'stepRecipes').and.returnValue({
+      [step.id]: {
+        ids: [step.recipeId!],
+        enabledIds: [step.recipeId!],
+        options: [],
+      },
+    });
+    const fixture = TestBed.createComponent(Steps);
+    fixture.componentInstance['preferencesStore'].apply({
+      columns: {
+        ...initialColumnsState,
+        tree: { ...initialColumnsState.tree, show: true },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const row = (fixture.nativeElement as HTMLElement).querySelector(
+      'tbody tr',
+    );
+    expect(row?.querySelectorAll('lab-exclude-button').length).toBe(2);
+    expect(row?.querySelector('lab-recipes-select lab-icon')).not.toBeNull();
+  });
+
   it('clears defaulted module and beacon overrides without creating an ordinary objective', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, Steps],
@@ -392,10 +424,7 @@ describe('Steps derived resource settings', () => {
         {
           provide: PRESENTATION_EXTENSION,
           useFactory: (): PresentationExtension =>
-            createEndfieldPresentation(
-              inject(EndfieldStore),
-              inject(EndfieldDisplayPreferences),
-            ),
+            createEndfieldPresentation(inject(EndfieldStore)),
         },
       ],
     }).compileComponents();

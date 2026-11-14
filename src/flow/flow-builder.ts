@@ -1,9 +1,6 @@
 import { computed, inject, Service } from '@angular/core';
 
-import {
-  PRESENTATION_EXTENSION,
-  type PresentationFlowData,
-} from '~/extensions/presentation-extension';
+import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -59,10 +56,10 @@ export class FlowBuilder {
     settings: Settings,
     preferences: PreferencesState,
     data: AdjustedDataset,
-  ): PresentationFlowData {
+  ): FlowData {
     const itemPrec = preferences.columns.items.precision;
     const machinePrec = preferences.columns.machines.precision;
-    const flow: PresentationFlowData = {
+    const flow: FlowData = {
       nodes: [],
       links: [],
     };

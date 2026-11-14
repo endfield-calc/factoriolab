@@ -32,12 +32,10 @@ describe('CostSettingsDialog', () => {
   });
 
   describe('reset', () => {
-    it('should reset the edit value to its intial state', () => {
-      spyOn(component['editValue'], 'set');
+    it('should reset the edit value to its initial state', () => {
+      component.apply('excluded', rational(10));
       component.reset();
-      expect(component['editValue'].set).toHaveBeenCalledWith(
-        initialSettingsState.costs,
-      );
+      expect(component['editValue']()).toEqual(initialSettingsState.costs);
     });
   });
 

@@ -6,6 +6,7 @@ import {
   initialPreferencesState,
   PreferencesState,
 } from '~/state/preferences/preferences-state';
+import { CostSettings } from '~/state/settings/cost-settings';
 import {
   initialSettingsState,
   SettingsState,
@@ -14,7 +15,7 @@ import { Language, languageOptions } from '~/translate/language';
 
 import { immutableValue, mutableValue, ReadonlyValue } from './immutable';
 
-/** One protocol-specific default snapshot, shared by stores, codecs and resets. */
+/** Defaults for a newly created or reset workspace. */
 export interface EffectiveDefaults {
   readonly settings: ReadonlyValue<SettingsState>;
   readonly preferences: ReadonlyValue<PreferencesState>;
@@ -29,21 +30,14 @@ export interface PreferenceRestore {
 export interface ProductProfile {
   readonly name: string;
   readonly exportPrefix: string;
-  readonly csv?: {
-    readonly entityNames: boolean;
-    readonly bom: boolean;
-    columnLabel(field: string, language: Language): string;
-  };
   readonly sourceUrl: string;
-  readonly issuesUrl: string;
-  readonly logo: string;
   readonly loadingLogo: string;
   readonly systemIcons?: readonly (IconJson & { readonly file: string })[];
   readonly defaultModId?: string;
   readonly allowedModIds?: readonly string[];
   readonly allowEditor: boolean;
-  readonly analytics: boolean;
   readonly languages: typeof languageOptions;
+  readonly serializedCostDefaults?: Readonly<Partial<CostSettings>>;
   defaults(): EffectiveDefaults;
   loadGameI18n(modId: string, language: Language): boolean;
   gameMetadata(
@@ -70,11 +64,8 @@ export const upstreamProduct: ProductProfile = {
   name: 'FactorioLab',
   exportPrefix: 'factoriolab',
   sourceUrl: 'https://github.com/factoriolab/factoriolab',
-  issuesUrl: 'https://github.com/factoriolab/factoriolab/issues',
-  logo: 'factoriolab.webp',
   loadingLogo: 'factoriolab-animate.webp',
   allowEditor: true,
-  analytics: true,
   languages: languageOptions,
   defaults: () =>
     immutableValue({

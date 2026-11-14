@@ -1,6 +1,11 @@
 import { rational } from '~/rational/rational';
 
-import { createEndfieldState, ovenId, resourceOwner } from './model';
+import {
+  copyResourceRecipeSettings,
+  createEndfieldState,
+  ovenId,
+  resourceOwner,
+} from './model';
 import { applyEndfieldAction, EndfieldSettingsSnapshot } from './presets';
 
 describe('Endfield resource actions', () => {
@@ -100,33 +105,29 @@ describe('Endfield resource actions', () => {
   });
 
   it('copies nested settings, preserves them when the rate changes, and rejects invalid inputs', () => {
-    const initial = createEndfieldState();
     const input = {
       modules: [{ id: 'm' }],
       beacons: [{ modules: [{ id: 'b' }] }],
     };
-    const set = applyEndfieldAction(
-      initial,
-      { type: 'resourceRecipeSettings', id: 'iron_ore', value: input },
-      settings,
-    );
+    const initial = {
+      ...createEndfieldState(),
+      resourceRecipeSettings: { iron_ore: copyResourceRecipeSettings(input) },
+    };
     input.modules[0].id = 'mutated';
     input.beacons[0].modules[0].id = 'mutated';
-    expect(set.state.resourceRecipeSettings.iron_ore?.modules?.[0].id).toBe(
-      'm',
-    );
+    expect(initial.resourceRecipeSettings.iron_ore?.modules?.[0].id).toBe('m');
     expect(
-      set.state.resourceRecipeSettings.iron_ore?.beacons?.[0].modules?.[0].id,
+      initial.resourceRecipeSettings.iron_ore?.beacons?.[0].modules?.[0].id,
     ).toBe('b');
     const next = applyEndfieldAction(
-      set.state,
+      initial,
       { type: 'resourceRate', id: 'iron_ore', value: rational(5) },
       settings,
     );
     expect(next.state.resourceRecipeSettings).toEqual(
-      set.state.resourceRecipeSettings,
+      initial.resourceRecipeSettings,
     );
-    expect(set.state.resourceLimits.rates.iron_ore).toEqual(rational.zero);
+    expect(initial.resourceLimits.rates.iron_ore).toEqual(rational.zero);
     const rejected = applyEndfieldAction(
       next.state,
       { type: 'machineLimit', id: ovenId, value: rational(-1) },
@@ -189,53 +190,14 @@ describe('Endfield resource actions', () => {
       { type: 'transfer', enabled: true, source: 'tundra' },
       settings,
     ).state;
-    const powered = applyEndfieldAction(
-      transferred,
-      { type: 'electric', value: rational(3, 2) },
-      settings,
-    ).state;
-    const checked = applyEndfieldAction(
-      powered,
-      {
-        type: 'derivedChecked',
-        owner: resourceOwner('iron_ore'),
-        checked: true,
-      },
-      settings,
-    ).state;
-    const unchecked = applyEndfieldAction(
-      checked,
-      {
-        type: 'derivedChecked',
-        owner: resourceOwner('iron_ore'),
-        checked: false,
-      },
-      settings,
-    ).state;
-    const cleared = applyEndfieldAction(
-      checked,
-      { type: 'clearDerivedChecked' },
-      settings,
-    ).state;
     expect(start.resourceLimits.enabled).toBeFalse();
     expect(enabled.resourceLimits.enabled).toBeTrue();
     expect(machines.machineLimits.enabled).toBeTrue();
     expect(limited.machineLimits.limits[ovenId]).toEqual(rational(8));
     expect(transferred.transfer.enabled).toBeTrue();
-    expect(powered.electric).toEqual(rational(3, 2));
-    expect(checked.checkedDerived.has(resourceOwner('iron_ore'))).toBeTrue();
-    expect(unchecked.checkedDerived.size).toBe(0);
-    expect(cleared.checkedDerived.size).toBe(0);
-    expect(checked.checkedDerived.size).toBe(1);
-    const removed = applyEndfieldAction(
-      { ...powered, resourceRecipeSettings: { iron_ore: { fuelId: 'fuel' } } },
-      { type: 'resourceRecipeSettings', id: 'iron_ore', value: undefined },
-      settings,
-    );
-    expect(removed.state.resourceRecipeSettings).toEqual({});
   });
 
-  it('rejects invalid presets, ids, rates, sources and weights without changing either snapshot', () => {
+  it('rejects invalid presets, ids, rates and sources without changing either snapshot', () => {
     const state = createEndfieldState();
     const cases = [
       [{ type: 'preset', preset: 'unknown' }, 'invalid-preset'],
@@ -259,13 +221,6 @@ describe('Endfield resource actions', () => {
       [
         { type: 'transfer', enabled: true, source: 'jinlong' },
         'invalid-source',
-      ],
-      [{ type: 'electric', value: rational(-1) }, 'invalid-value'],
-      [{ type: 'resourceRecipeSettings', id: 'unknown' }, 'invalid-id'],
-      [{ type: 'derivedChecked', owner: '  ', checked: true }, 'invalid-id'],
-      [
-        { type: 'derivedChecked', owner: 'ordinary:1', checked: true },
-        'invalid-id',
       ],
     ] as const;
     for (const [action, code] of cases) {

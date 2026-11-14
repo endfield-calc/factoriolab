@@ -18,7 +18,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { loadModule } from 'glpk-ts';
 
 import { Dialog } from '~/components/dialog/dialog';
-import { configureEndfieldRoutes, provideEndfield } from '~/endfield/providers';
+import { provideEndfield } from '~/endfield/providers';
 import { SIMPLEX_CONFIG } from '~/solver/simplex-config';
 import { Translate } from '~/translate/translate';
 
@@ -60,7 +60,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => initializeApp()),
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideRouter(configureEndfieldRoutes(routes), withComponentInputBinding()),
+    provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

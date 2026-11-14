@@ -2,14 +2,15 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 
 import { DEFAULT_MOD } from '~/data/datasets';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { Migration } from '~/state/router/migration';
 import { RouterSync } from '~/state/router/router-sync';
 import { coalesce } from '~/utils/nullish';
 
 export const idGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const migration = inject(Migration);
-  const routerSync = inject(RouterSync);
+  const product = inject(PRODUCT_PROFILE);
+  const defaultId = product.defaultModId ?? DEFAULT_MOD;
 
   const id = route.params['id'] as string | undefined;
 
@@ -19,6 +20,12 @@ export const idGuard: CanActivateFn = (route) => {
     case 'wizard':
     case 'flow':
     case 'data': {
+      if (product.allowedModIds != null)
+        return router.createUrlTree([defaultId, id], {
+          queryParams: route.queryParams,
+        });
+      const migration = inject(Migration);
+      const routerSync = inject(RouterSync);
       const result = async (): Promise<UrlTree> => {
         const unzipParams = await routerSync.unzipQueryParams(
           route.queryParams,
@@ -33,6 +40,14 @@ export const idGuard: CanActivateFn = (route) => {
       };
       return result();
     }
+  }
+
+  if (product.allowedModIds != null)
+    return id && product.allowedModIds.includes(id)
+      ? true
+      : router.createUrlTree([defaultId]);
+
+  switch (id) {
     case 'factorio':
       return router.createUrlTree([DEFAULT_MOD]);
     case 'final-factory':
@@ -48,4 +63,12 @@ export const idGuard: CanActivateFn = (route) => {
   }
 
   return true;
+};
+
+export const editorGuard: CanActivateFn = () => {
+  const product = inject(PRODUCT_PROFILE);
+  return (
+    product.allowEditor ||
+    inject(Router).createUrlTree([product.defaultModId ?? DEFAULT_MOD])
+  );
 };

@@ -19,8 +19,10 @@ import { CalculationVariable } from '~/extensions/calculation-extension';
 import { STATE_EXTENSION } from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
-import { GlpkResult } from '~/solver/glpk-result';
-import { SimplexState } from '~/solver/simplex-state';
+import type {
+  ModelGlpkResult as GlpkResult,
+  ModelSimplexState as SimplexState,
+} from '~/solver/model-extension';
 import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
 import { ItemsStore } from '~/state/items/items-store';

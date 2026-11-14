@@ -35,16 +35,16 @@
 
 独立目录是集中维护位置，不是再实现一个应用框架。接入契约只服务现有需求，不建设动态插件市场、任意脚本执行或完整多游戏扩展平台。
 
-CalculationExtension各阶段只接收不可变值，不注入Adjustment、Normalization或会间接依赖调用方的服务。Normalization本身依赖RecipesStore，因此成本出口不能通过扩展反向取得Normalization。ObjectivesStore使用自己已持有的Adjustment/Normalization准备扩展返回的声明。StateExtension只依赖独立额外状态，不注入RouterSync或计算Store，由RouterSync驱动恢复计划与提交。跨Store动作在UI适配/协调层提交，不能放进上述只读/编解码提供者形成依赖环。
+CalculationExtension的derive/rules阶段只接收不可变值，不注入Adjustment、Normalization或会间接依赖调用方的服务。成本策略由本地Adjustment适配器在上游公开adjustCosts/adjustObjective入口调用纯领域函数，不通过CalculationExtension反向取得Normalization。ObjectivesStore使用自己已持有的Adjustment/Normalization准备扩展返回的声明。StateExtension只依赖独立额外状态，不注入RouterSync或计算Store，由RouterSync驱动恢复计划与提交。跨Store动作在UI适配/协调层提交，不能放进上述只读/编解码提供者形成依赖环。
 
 ## 3. 四类接入契约
 
-| 契约                  | 输入与输出                                                                                      | 上游默认行为                       | 终末地实现                                                       |
-| --------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- |
-| ProductProfile        | 产品文本、资源引用、公开能力、有效默认快照与语言初始化策略                                      | 上游原品牌、目录和默认值           | aef单游戏、EndfieldLab品牌、现行语言规则、kW/BoxLine及成本默认值 |
-| CalculationExtension  | 不可变的原始/调整后数据、目标、配方设置、通用设置和额外状态；输出成本覆盖、派生目标与声明式约束 | 成本与目标原样，额外约束为空       | aef成本、固定采矿供给、机器额度、传输和净水规则                  |
-| StateExtension        | 命名空间、版本、快照读写、兼容解码与校验结果                                                    | 无扩展状态，使用原上游恢复与序列化 | 旧类型11–14/cet导入、ef扩展段、冻结hash与别名                    |
-| PresentationExtension | 实体、语言、已准备数据及owner；输出显示、动作能力、分派和链接计划                               | 上游原有展示                       | 名称开关、隐藏生产者、额外面板、步骤owner操作与指南              |
+| 契约                  | 输入与输出                                                                       | 上游默认行为                       | 终末地实现                                                       |
+| --------------------- | -------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| ProductProfile        | 产品文本、资源引用、公开能力、有效默认快照与语言初始化策略                       | 上游原品牌、目录和默认值           | aef单游戏、EndfieldLab品牌、现行语言规则、kW/BoxLine及成本默认值 |
+| CalculationExtension  | 不可变的调整后数据、目标、配方设置、通用设置和额外状态；输出派生目标与声明式约束 | 目标原样，额外约束为空             | 固定采矿供给、机器额度、传输和净水规则                           |
+| StateExtension        | 命名空间、版本、快照读写、兼容解码与校验结果                                     | 无扩展状态，使用原上游恢复与序列化 | 旧类型11–14/cet导入、ef扩展段、冻结hash与别名                    |
+| PresentationExtension | 实体、语言、已准备数据及owner；输出显示、动作能力、分派和链接计划                | 上游原有展示                       | 名称开关、隐藏生产者、额外面板、步骤owner操作与指南              |
 
 默认实现必须可独立启用，能运行上游通用夹具。终末地提供者在 `app.config` 等组合入口一次绑定；不是在每个调用位置传gameId后分支选择。
 
@@ -105,7 +105,7 @@ resourceRecipeSettings按稳定资源ID保存，支持当前机器实际适用�
 
 ### 5.1 复用原准备流程
 
-SettingsStore、MachinesStore、RecipesStore及Adjustment继续完成上游的数据、机器、速度、功耗和地点准备。RecipesStore的调整结果出口增加中立成本覆盖接点：领域成本策略读取原始声明成本、最终选用机器、配方设置和同一份额外状态，只覆盖成本字段，不重复调整速度、功耗或物料。
+SettingsStore、MachinesStore、RecipesStore及Adjustment继续完成上游的数据、机器、速度、功耗和地点准备。本地EndfieldAdjustment通过DI替换产品的Adjustment服务，仅覆写公开adjustCosts和adjustObjective：领域成本策略读取原始声明成本、最终选用机器、配方设置和电力快照，只覆盖成本字段，不重复调整速度、功耗或物料。普通配方沿adjustDataset的原生成本阶段处理；显式及派生目标在super.adjustObjective后使用同一成本函数。RecipesStore不再二次遍历覆盖成本。
 
 该出口仍是统一的调整数据来源。Solver、步骤、图、导出及数据详情的成本都消费同一准备结果；不能只改Solver输入而让RecipeDetail显示另一套成本。电力权重在本地面板编辑并进入扩展状态，通用CostKey和上游成本对话框无需增加aef专属字段。
 
@@ -113,7 +113,7 @@ SettingsStore、MachinesStore、RecipesStore及Adjustment继续完成上游的�
 
 ObjectivesStore通过中立接点建立一次计算上下文，包含可见普通目标、求解用归一化目标、步骤用完整目标设置记录、准备后的数据、额外约束和输入版本。无扩展时保持上游原路径。
 
-扩展纯阶段只返回派生ObjectiveState、owner、适用设置和规则声明；ObjectivesStore用自身已注入的Adjustment/Normalization执行准备及归一化，再把得到的值交给纯规则编译阶段。成本出口同样只拿raw/adjusted/settings值，不通过提供者注入Normalization。步骤归一化按派生recipeObjectiveId读取完整设置；展示和写操作再按owner分派。上游steps当前只取普通objectives()，必须与matrixResult、勾选读取及操作接点一起接入，不能只修改求解入口。
+扩展纯阶段只返回派生ObjectiveState、owner、适用设置和规则声明；ObjectivesStore用自身已注入的Adjustment/Normalization执行准备及归一化，再把得到的值交给纯规则编译阶段。成本适配器调用纯函数，不注入Normalization或计算Store。候选恢复准备独立使用原Adjustment，不读取实时Endfield电力。步骤归一化按派生recipeObjectiveId读取完整设置；展示和写操作再按owner分派。上游steps当前只取普通objectives()，必须与matrixResult、勾选读取及操作接点一起接入，不能只修改求解入口。
 
 ### 5.3 规则先编译，模型后构造
 
@@ -129,21 +129,21 @@ ObjectivesStore通过中立接点建立一次计算上下文，包含可见普�
 
 以下是有限接点的预期位置，不是要求整文件替换。每个实际改动都登记到[09](09-upstream-maintenance.md)。
 
-| 上游位置                                          | 通用接点                                                            | 本地实现归属                   |
-| ------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
-| `src/app/app.config.ts`                           | 提供默认/产品扩展实现                                               | product与adapters              |
-| `src/data/datasets.ts`、`game.ts`、`game-info.ts` | 注册身份，公开目录由ProductProfile筛选                              | product与aef数据包             |
-| `app.routes.ts`、`id-guard.ts`、landing/header    | 路由能力与产品导航策略，显式处理editor顶层路由                      | ProductProfile，不能只隐藏按钮 |
-| PreferencesStore/SettingsStore初始化              | 统一EffectiveDefaults用于初始、缺字段恢复、差分编码、modified及重置 | 现行语言选择及aef成本默认值    |
-| SettingsStore的数据/i18n资源出口                  | 数据格式和名称/版本翻译适配                                         | 数据适配器，不复制数据Store    |
-| RecipesStore调整结果出口                          | 成本覆盖并保留同一份可供详情读取的调整结果                          | 纯成本策略与适配器             |
-| ObjectivesStore计算入口及steps出口                | 完整上下文、两类目标的设置索引、owner和勾选读取                     | 资源编译与准备适配器           |
-| `src/solver/solver.ts`及模型类型                  | 声明式约束绑定、通用整数求解与结果读取                              | 领域只给规则，不直接依赖GLPK   |
-| RouterSync/Migration                              | 旧协议前置解码、扩展状态变更订阅、ef读写与原子恢复                  | compat与StateExtension         |
-| `display-rate.ts`                                 | 增加通用PerDay与86400因子                                           | 有边界测试的小型通用改动       |
-| main/picker/steps/数据详情                        | 有限页面插槽、展示及步骤动作/链接owner分派                          | 本地UI与PresentationExtension  |
-| Title/Release/Exporter/日志入口                   | 从统一产品配置取值，统计默认实现可替换                              | 品牌和禁用统计策略             |
-| 构建与工作流                                      | 调用本地资产/发布入口，保留上游质量检查                             | `scripts/endfield`与独立工作流 |
+| 上游位置                                          | 通用接点                                                                               | 本地实现归属                                  |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `src/app/app.config.ts`                           | 提供默认/产品扩展实现                                                                  | product与adapters                             |
+| `src/data/datasets.ts`、`game.ts`、`game-info.ts` | 注册身份，公开目录由ProductProfile筛选                                                 | product与aef数据包                            |
+| `app.config.ts`、landing/header                   | 在组合根装配原Routes的产品guard，显式处理editor顶层路由；共享路由表和guard保留上游字节 | ProductProfile及本地providers，不能只隐藏按钮 |
+| PreferencesStore/SettingsStore初始化              | 统一EffectiveDefaults用于初始、缺字段恢复、差分编码、modified及重置                    | 现行语言选择及aef成本默认值                   |
+| SettingsStore的数据/i18n资源出口                  | 数据格式和名称/版本翻译适配                                                            | 数据适配器，不复制数据Store                   |
+| Adjustment公开adjustCosts/adjustObjective         | 在原生调整流程内计算成本，保留同一份可供详情读取的调整结果                             | 本地Adjustment适配器及领域成本策略            |
+| ObjectivesStore计算入口及steps出口                | 完整上下文、两类目标的设置索引、owner和勾选读取                                        | 资源编译与准备适配器                          |
+| `src/solver/solver.ts`及模型类型                  | 声明式约束绑定、通用整数求解与结果读取                                                 | 领域只给规则，不直接依赖GLPK                  |
+| RouterSync/Migration                              | 旧协议前置解码、扩展状态变更订阅、ef读写与原子恢复                                     | compat与StateExtension                        |
+| `display-rate.ts`                                 | 增加通用PerDay与86400因子                                                              | 有边界测试的小型通用改动                      |
+| main/picker/steps/数据详情                        | 有限页面插槽、展示及步骤动作/链接owner分派                                             | 本地UI与PresentationExtension                 |
+| Title/Release/Exporter/日志入口                   | 从统一产品配置取值，统计默认实现可替换                                                 | 品牌和禁用统计策略                            |
+| 构建与工作流                                      | 调用本地资产/发布入口，保留上游质量检查                                                | `scripts/endfield`与独立工作流                |
 
 源码依据：[目标与步骤计算入口](https://github.com/factoriolab/factoriolab/blob/00bdb91c2442cd8d715501b9469cec115735645f/src/state/objectives/objectives-store.ts#L53-L107)、[配方准备](https://github.com/factoriolab/factoriolab/blob/00bdb91c2442cd8d715501b9469cec115735645f/src/state/recipes/recipes-store.ts)、[RouterSync](https://github.com/factoriolab/factoriolab/blob/00bdb91c2442cd8d715501b9469cec115735645f/src/state/router/router-sync.ts)、[Solver](https://github.com/factoriolab/factoriolab/blob/00bdb91c2442cd8d715501b9469cec115735645f/src/solver/solver.ts)。
 

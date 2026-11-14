@@ -2,7 +2,9 @@
   "app": {
     "name": "终末地量化计算器",
     "updateAvailableMessage": "<div>发现新版本，是否要刷新页面进行更新？</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">查看发行说明</a>",
-    "updateRequiredMessage": "<div>发现新版本，必须刷新页面才能继续使用。</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">查看发行说明</a>"
+    "updateRequiredMessage": "<div>发现新版本，必须刷新页面才能继续使用。</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">查看发行说明</a>",
+    "updateDetected": "检测到新版本",
+    "updateDetectedMessage": "正在下载新版本，请稍候..."
   },
   "landing": {
     "welcome": "欢迎来到 <b>终末地量化计算器</b>！让我们开始吧。"

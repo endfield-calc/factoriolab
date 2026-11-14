@@ -1,7 +1,14 @@
 import { InjectionToken, Type } from '@angular/core';
 
+import type { FlowData } from '~/flow/flow-data';
+import type { Node } from '~/flow/node';
 import { Step } from '~/solver/step';
 import { RecipeState } from '~/state/recipes/recipe-state';
+
+export type PresentationNode = Node & { objectiveLabel?: string };
+export type PresentationFlowData = Omit<FlowData, 'nodes'> & {
+  nodes: PresentationNode[];
+};
 
 export type StepOwner =
   | { readonly kind: 'objective'; readonly id: string }

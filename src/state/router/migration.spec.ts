@@ -1,7 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 
-import legacyDatasets from '~/endfield/compat/legacy-datasets.json';
-import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { ItemId } from '~/tests/item-id';
 import { mockModData } from '~/tests/mocks/data';
 import { RecipeId } from '~/tests/recipe-id';
@@ -29,48 +27,6 @@ describe('Migration', () => {
   });
 
   describe('migrate', () => {
-    it('reports an unrecognized V0 mod when frozen legacy tables are supplied', () => {
-      const hashes = { modHashV0: ['known'], modHash: ['current'] };
-      try {
-        service.migrate('current', { s: 'retired', v: '0' }, hashes);
-        fail('expected invalid legacy mod');
-      } catch (error) {
-        expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
-        expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
-          jasmine.objectContaining({
-            code: 'invalid-mod-index',
-            field: 's',
-            severity: 'error',
-          }),
-        );
-      }
-      expect(
-        service.migrate('current', { s: 'retired', v: '0' }).modId,
-      ).toEqual('current');
-    });
-    it('uses frozen mod tables for both V0 and V10 indices', () => {
-      const hashes = {
-        modHashV0: ['old-zero', 'old-one'],
-        modHash: ['frozen-zero', 'frozen-one'],
-      };
-      expect(
-        service.migrate(undefined, { s: 'old-one', v: '0' }, hashes).modId,
-      ).toEqual('frozen-one');
-      expect(
-        service.migrate(undefined, { b: 'B', z: 'z', v: '10' }, hashes).modId,
-      ).toEqual('frozen-one');
-    });
-
-    it('uses the actual legacy tables without replacing the original V0 path', () => {
-      expect(
-        service.migrate('aef', { s: 'aef', v: '0' }, legacyDatasets).modId,
-      ).toEqual('aef');
-      expect(
-        service.migrate(undefined, { b: 'Q', z: 'z', v: '10' }, legacyDatasets)
-          .modId,
-      ).toEqual('aef');
-    });
-
     it('should return empty params without alteration', () => {
       const originalParams = {};
       const { params } = service.migrate(undefined, originalParams);
@@ -250,24 +206,6 @@ describe('Migration', () => {
   });
 
   describe('restoreV10ResearchedTechnologies', () => {
-    it('reports an unknown technology rather than discarding it', () => {
-      try {
-        service.restoreV10ResearchedTechnologies(
-          new Set(['retired-tech']),
-          mockModData,
-        );
-        fail('expected unknown technology');
-      } catch (error) {
-        expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
-        expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
-          jasmine.objectContaining({
-            code: 'unknown-technology',
-            field: 'v10tre',
-            severity: 'error',
-          }),
-        );
-      }
-    });
     it('should return undefined if no technologies are found', () => {
       const result = service.restoreV10ResearchedTechnologies(
         new Set([RecipeId.ArtilleryShellRange]),

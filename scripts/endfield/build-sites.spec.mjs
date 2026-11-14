@@ -11,6 +11,8 @@ import {
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 
+import ts from 'typescript';
+
 import { buildSites } from './build-sites.mjs';
 import { packageSites } from './package-sites.mjs';
 import {
@@ -23,6 +25,133 @@ import {
 
 let fixture;
 let product;
+// Check bootstrap structure without loading the upstream-only editor modules.
+test('wires product guards into the real exported application routes', async () => {
+  const parse = async (file) =>
+    ts.createSourceFile(
+      file,
+      await readFile(path.join(workspace, file), 'utf8'),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+  const exported = (source, name) => {
+    const declaration = source.statements
+      .filter(
+        (statement) =>
+          ts.isVariableStatement(statement) &&
+          statement.modifiers?.some(
+            (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+          ),
+      )
+      .flatMap((statement) => statement.declarationList.declarations)
+      .find((declaration) => declaration.name.getText(source) === name);
+    assert.ok(declaration?.initializer, `Missing exported ${name}`);
+    return declaration.initializer;
+  };
+  const property = (object, name) => {
+    assert.ok(ts.isObjectLiteralExpression(object));
+    return object.properties.find(
+      (member) =>
+        ts.isPropertyAssignment(member) && member.name.getText() === name,
+    )?.initializer;
+  };
+  const imported = (source, name, module) => {
+    assert.ok(
+      source.statements.some(
+        (statement) =>
+          ts.isImportDeclaration(statement) &&
+          statement.moduleSpecifier.text === module &&
+          statement.importClause?.namedBindings &&
+          ts.isNamedImports(statement.importClause.namedBindings) &&
+          statement.importClause.namedBindings.elements.some(
+            (binding) =>
+              binding.name.text === name &&
+              (binding.propertyName?.text ?? binding.name.text) === name,
+          ),
+      ),
+      `${name} must be imported from ${module}`,
+    );
+  };
+  const flatten = (array) => {
+    assert.ok(ts.isArrayLiteralExpression(array));
+    return array.elements.flatMap((route) => {
+      const children = property(route, 'children');
+      return [route, ...(children == null ? [] : flatten(children))];
+    });
+  };
+  const guards = (route) => {
+    const value = property(route, 'canActivate');
+    if (value == null) return [];
+    assert.ok(ts.isArrayLiteralExpression(value));
+    return value.elements.map((guard) => guard.getText());
+  };
+  const routeSource = await parse('src/app/app.routes.ts');
+  imported(routeSource, 'idGuard', './id/id-guard');
+  imported(routeSource, 'landingGuard', './landing/landing-guard');
+  const routes = exported(routeSource, 'routes');
+  const all = flatten(routes);
+  assert.equal(
+    all.filter((route) => guards(route).includes('idGuard')).length,
+    1,
+  );
+  assert.equal(
+    all.filter((route) => guards(route).includes('landingGuard')).length,
+    2,
+  );
+  const idRoute = routes.elements.find(
+    (route) => property(route, 'path')?.text === ':id',
+  );
+  assert.deepEqual(guards(idRoute), ['idGuard']);
+  const landing = property(idRoute, 'children').elements.find(
+    (route) =>
+      property(route, 'path')?.text === '' &&
+      guards(route).includes('landingGuard'),
+  );
+  assert.deepEqual(guards(landing), ['landingGuard']);
+  const wildcard = routes.elements.find(
+    (route) => property(route, 'path')?.text === '**',
+  );
+  assert.deepEqual(guards(wildcard), ['landingGuard']);
+  const editors = all.filter(
+    (route) => property(route, 'path')?.text === 'editor',
+  );
+  assert.equal(editors.length, 1);
+  assert.ok(ts.isArrowFunction(property(editors[0], 'loadComponent')));
+  assert.ok(ts.isArrowFunction(property(editors[0], 'loadChildren')));
+  assert.equal(
+    all.flatMap((route) =>
+      ['loadComponent', 'loadChildren']
+        .map((key) => property(route, key))
+        .filter((value) => value != null),
+    ).length,
+    7,
+  );
+
+  const configSource = await parse('src/app/app.config.ts');
+  imported(configSource, 'routes', './app.routes');
+  imported(configSource, 'provideRouter', '@angular/router');
+  imported(configSource, 'configureEndfieldRoutes', '~/endfield/providers');
+  const providers = property(exported(configSource, 'appConfig'), 'providers');
+  assert.ok(ts.isArrayLiteralExpression(providers));
+  const routerProviders = providers.elements.filter(
+    (value) =>
+      ts.isCallExpression(value) &&
+      ts.isIdentifier(value.expression) &&
+      value.expression.text === 'provideRouter',
+  );
+  assert.equal(routerProviders.length, 1);
+  const input = routerProviders[0].arguments[0];
+  assert.ok(ts.isCallExpression(input));
+  assert.equal(input.expression.getText(), 'configureEndfieldRoutes');
+  assert.equal(input.arguments.length, 1);
+  assert.equal(input.arguments[0].getText(), 'routes');
+  assert.equal(
+    routerProviders[0].arguments[1].getText(),
+    'withComponentInputBinding()',
+  );
+});
+
 const base = '/nested%20path/deeper/';
 const release = {
   version: 'v20261114-0123456',

@@ -26,6 +26,31 @@ test('composes localized assets without changing upstream and supplies English f
   assert.equal(ja.endfield.resources.title, en.endfield.resources.title);
   assert.equal(ja.options.displayRate.perDaySuffix, '/d');
   assert.equal(zh.options.objectiveUnit.itemsPerDay, '物品/天');
+  const expectedUpdates = {
+    de: [
+      'Neue Version erkannt',
+      'Neue Version wird heruntergeladen, bitte warten...',
+    ],
+    en: ['New Version Detected', 'Downloading new version, please wait...'],
+    fr: [
+      'Nouvelle version détectée',
+      'Téléchargement de la nouvelle version en cours, veuillez patienter...',
+    ],
+    ja: [
+      '新しいバージョンを検出しました',
+      '新しいバージョンをダウンロード中です。しばらくお待ちください...',
+    ],
+    ru: [
+      'Обнаружена новая версия',
+      'Загружается новая версия, пожалуйста, подождите...',
+    ],
+    zh: ['检测到新版本', '正在下载新版本，请稍候...'],
+  };
+  for (const [language, [title, message]] of Object.entries(expectedUpdates)) {
+    const dictionary = await parse(path.join(out, `${language}.json`));
+    assert.equal(dictionary.app.updateDetected, title);
+    assert.equal(dictionary.app.updateDetectedMessage, message);
+  }
   assert.equal(await readFile('public/i18n/en.json', 'utf8'), original);
 });
 
@@ -36,6 +61,13 @@ test('local dictionaries only override declared upstream paths', async () => {
       (key) => !key.startsWith('endfield.') && !overridePaths.includes(key),
     );
     assert.deepEqual(invalid, []);
+  }
+  const product = await parse('public/endfield/product.json');
+  for (const local of Object.values(product.uiLocaleOverrides)) {
+    assert.deepEqual(
+      leaves(local).filter((key) => !overridePaths.includes(key)),
+      [],
+    );
   }
 });
 

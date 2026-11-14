@@ -42,7 +42,7 @@
 
 ## 实现复核与发现处理
 
-实际交付代码为 `400c9f75d287ccd3fce67ffeeb8e2a0c0babf181`。`evidence/source-mirror-match.txt` 记录浏览器镜像的774个源码、资产和配置输入与交付代码一致；镜像在签名前构建，其 release 字符串不能作为最终交付提交身份。`browser/working-archive.json` 验证脏状态重选同一存档及刷新；`working-fragment.json` 验证三条资源定位链接实际点击；`working-numeric-error.json` 验证非零下溢明确报错且不污染存储。`working-upgrade-{before,after,offline}.json` 验证旧 Angular 18 到新 Angular 22 的原生 SW 更新、存档与 black→dark 保留，以及 list/flow 离线刷新。
+首次迁移的受审代码为 `400c9f75d287ccd3fce67ffeeb8e2a0c0babf181`。`evidence/source-mirror-match.txt` 记录浏览器镜像的774个源码、资产和配置输入与该代码一致；镜像在签名前构建，其 release 字符串不能作为最终交付提交身份。`browser/working-archive.json` 验证脏状态重选同一存档及刷新；`working-fragment.json` 验证三条资源定位链接实际点击；`working-numeric-error.json` 验证非零下溢明确报错且不污染存储。`working-upgrade-{before,after,offline}.json` 验证旧 Angular 18 到新 Angular 22 的原生 SW 更新、存档与 black→dark 保留，以及 list/flow 离线刷新。后续改动面收敛的验证另见06第8节及09，不以这些历史日志代替新工作树验证。
 
 实际 S7 使用父节点为 `00bdb91c2442cd8d715501b9469cec115735645f` 的受控上游提交 `245a581fac12fe4c069319b2134b5359221cbf88`，合并提交 `e348d354306ab5b7c1922dbe0efa4f5565c38568` 的双父分别为交付代码和受控上游提交。`rehearsal/actual-merge-identity.log`、`actual-merged-checks.log`、`actual-merged-tests.log` 记录签名、身份、类型/lint 和1402/1402测试、四项覆盖率100%；独立 Astra 复核未发现 P0–P3。`actual-return-check.log` 确认交付分支已返回 `400c9f75`，不包含受控变化。这是一次受控合并演练，不表示已兼容所有未来上游版本。
 
@@ -55,3 +55,19 @@
 | 全量质量与产物 | `evidence/reviewed-final-tests.log` 使用默认 ChromeHeadless，1399/1399通过，语句9176/9176、分支3395/3395、函数1886/1886、行8213/8213均为100%；`evidence/final-node-tests.log` 16/16通过。`delivery/candidate-{root,subpath}[-verify]-400c9f75.log` 记录根及 `/delivery/check/` 双站各98项 SW 哈希；1.15 MB 初始包超预算为 warning。 |
 
 除单独标注外，证据路径均位于 `.tmp/upstream-migration/`。最终文档提交后重新构建根及子路径产物，交付步骤须生成 `evidence/final-delivery.json` 以绑定最终文档提交与产物身份；不将尚未生成的报告当作已有证据。本任务不执行远端部署。
+
+## 第一轮上游改动面收敛复核
+
+本轮受审对象为基于 `3da0e41b8c111c8ed1080e6190f3439b88a8f8f8` 的未提交工作树，相对官方 `00bdb91c2442cd8d715501b9469cec115735645f` 的差异由219降为185个文件，其中上游原文件修改114降为69、独立新增105增为116。独立Astra复核逐字节确认45个上游文件恢复，其中21个是spec；全部230路径的必要性清单无遗漏。原测试中的64个新增或修改用例已核对，未见断言丢失；求解测试改用公开接口，hash边界验证迁入Node，未降低覆盖门槛或放宽数值容差。
+
+独立复核确认全量1404/1404及四项覆盖率100%、Node20/20，类型/lint/格式检查与四站产物和浏览器证据符合 [06第8节](06-execution-and-acceptance.md#8-第一轮上游改动面收敛验收) 所述范围；求解器生成JavaScript未变，九语值及安装资源保持等值。最终835项输入哈希全部匹配，包含`package.json`及CI工作流。增量复核确认两条工作流均运行全部20项Node测试，固定旧源的浅获取及九个源blob验证已在空仓实测。完整审计位于 `.tmp/upstream-footprint-3da0e41b/REPORT.md` 和 `source-inputs.json`。
+
+本轮及CI增量复核未发现P0–P3问题。结论限于受审工作树：完整scripts项目仍有30项既存诊断（同环境基线31项，无新增），构建仍有既存体积警告；未实际执行GitHub托管runner，未重新执行S7合并演练，不证明185是全局最少文件数。本轮没有提交、推送或发布，构建release里的基准SHA不作为最终工作树身份。
+
+## 公开接口收敛复核
+
+后续收敛受审对象仍是基于 `3da0e41b` 的未提交工作树，实施范围和验收见 [06第9节](06-execution-and-acceptance.md#9-复用上游公开接口的收敛验收)。全新上下文Astra独立复核实际代码、测试、产物与浏览器证据，并重新计算836项源码/构建输入摘要，全部匹配。5个恢复文件均与官方 `00bdb91c` raw blob一致，差异为64个修改加116个新增，共180项；本轮24个实际变化路径均在授权范围，没有新建源码文件或扩大上游修改集合。累计恢复50个原文件，其中21个spec。
+
+独立确认路由的中立委托、产品shortcut/query转发与真实装配，普通/显式/派生成本及候选快照隔离；流程图相关文件规范化输出不变。本轮未修改原Adjustment、纯成本函数、求解器、冻结hash或覆盖率配置。Chrome1421/1421、四项覆盖率100%、Node21/21、app/spec类型、lint、格式及四站构建/98项SW哈希均通过。真实路由AST约束与Jasmine运行验证的分工未削弱原断言；浏览器记录和截图支持旧G01/G02、editor/foreign入口限制、显式root query优先、成本15→30→同名归档15、存档原文保留及缓存后离线流程图。
+
+复核发现的历史第8节锚点P3已修正并核实，没有遗留P0–P3问题。完整scripts项目仍有相同30项既存诊断，体积warning保留；未实际执行托管CI或新S7演练。证据与最终源码、10份迁移文档摘要位于 `.tmp/upstream-design-impl-3da0e41b/`。本轮没有提交、推送或发布。

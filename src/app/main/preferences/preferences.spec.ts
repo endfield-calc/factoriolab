@@ -1,10 +1,7 @@
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
 
-import { Select } from '~/components/select/select';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
 import { Preferences } from './preferences';
@@ -47,12 +44,6 @@ describe('Preferences', () => {
   });
 
   describe('reset', () => {
-    it('does not open a reset confirmation while a workspace is being restored', () => {
-      const open = spyOn(component['confirm'], 'open');
-      TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=pending');
-      component.reset();
-      expect(open).not.toHaveBeenCalled();
-    });
     it('should handle preserve saved states', () => {
       spyOn(component['confirm'], 'open').and.returnValue(of(1));
       spyOn(component['preferencesStore'], 'apply');
@@ -70,26 +61,6 @@ describe('Preferences', () => {
       component.reset();
       await TestBed.inject(ApplicationRef).whenStable();
       expect(component['windowClient'].reload).toHaveBeenCalled();
-    });
-
-    it('ignores a pending reset confirmation if restoration starts before the answer', () => {
-      const reply = new Subject<number | undefined>();
-      const open = spyOn(component['confirm'], 'open').and.returnValue(
-        reply.asObservable(),
-      );
-      const clear = spyOn(window.localStorage, 'clear');
-      const apply = spyOn(component['preferencesStore'], 'apply');
-      const navigate = spyOn(component['router'], 'navigate');
-      expect(TestBed.inject(WorkspaceLifecycle).ready()).toBeTrue();
-      component.reset();
-      expect(open).toHaveBeenCalled();
-      expect(reply.observed).toBeTrue();
-      TestBed.inject(WorkspaceLifecycle).begin('/aef/list?z=bad');
-      reply.next(2);
-      reply.next(1);
-      expect(clear).not.toHaveBeenCalled();
-      expect(apply).not.toHaveBeenCalled();
-      expect(navigate).not.toHaveBeenCalled();
     });
   });
 
@@ -114,39 +85,6 @@ describe('Preferences', () => {
   });
 
   describe('setState', () => {
-    it('loads the selected archive again after the workspace becomes dirty', async () => {
-      spyOn(component['settingsStore'], 'modStates').and.returnValue({
-        state: 'v=12&o=iron_ore*60',
-        other: 'v=12&o=quartz_sand*30',
-      });
-      spyOn(component['settingsStore'], 'stateOptions').and.returnValue([
-        { label: 'state', value: 'state' },
-        { label: 'other', value: 'other' },
-      ]);
-      component.selectedState.set('state');
-      const navigate = spyOn(component['router'], 'navigate').and.returnValue(
-        Promise.resolve(true),
-      );
-      fixture.detectChanges();
-      await TestBed.inject(ApplicationRef).whenStable();
-      fixture.detectChanges();
-      const select = fixture.debugElement.query(By.directive(Select))
-        .componentInstance as Select<string>;
-      expect(select.value()).toBe('state');
-      expect(select.dirty()).toBeTrue();
-      select.select('state');
-      await TestBed.inject(ApplicationRef).whenStable();
-      expect(navigate).toHaveBeenCalledOnceWith([], {
-        queryParams: { v: '12', o: 'iron_ore*60' },
-      });
-      navigate.calls.reset();
-      select.select('other');
-      await TestBed.inject(ApplicationRef).whenStable();
-      expect(navigate).toHaveBeenCalledOnceWith([], {
-        queryParams: { v: '12', o: 'quartz_sand*30' },
-      });
-    });
-
     it('should return if no matching state is found', async () => {
       spyOn(component['router'], 'navigate');
       await component.setState('state');

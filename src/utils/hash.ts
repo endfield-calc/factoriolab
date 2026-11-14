@@ -6,7 +6,7 @@ import { recipeHasQuality } from '~/data/schema/recipe';
 
 type ModHashSet = Record<keyof ModHash, Set<string>>;
 
-export function emptyModHash(): Required<ModHash> {
+export function emptyModHash(): ModHash {
   return {
     items: [],
     beacons: [],
@@ -76,24 +76,7 @@ export function updateHashSetItem(
   if (i.technology) hashSet.technologies.add(id);
 }
 
-export function updateHash(
-  data: ModData,
-  hash: ModHash,
-  policy?: 'append-only',
-): void {
-  if (policy === 'append-only') {
-    const current = emptyModHash();
-    updateHash(data, current);
-    for (const key of Object.keys(current) as (keyof ModHash)[]) {
-      const previous = hash[key] ?? [];
-      const known = new Set(previous);
-      hash[key] = [
-        ...previous,
-        ...current[key].filter((id) => id != null && !known.has(id)),
-      ];
-    }
-    return;
-  }
+export function updateHash(data: ModData, hash: ModHash): void {
   const hashSet = emptyModHashSet();
 
   const abnormalQualities = data.qualities?.filter((q) => q.level);

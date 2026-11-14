@@ -16,5 +16,4 @@ export interface Node extends BaseData {
   recipeIcon?: IconData;
   recipeQualityIcon?: IconData;
   recipeObjectiveId?: string;
-  objectiveLabel?: string;
 }

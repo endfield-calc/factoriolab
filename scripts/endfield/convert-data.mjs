@@ -126,6 +126,26 @@ export function legacyHash(oldHash) {
   );
 }
 
+export function isAppendOnlyDataset(id) {
+  return id === 'aef';
+}
+
+export function appendHashEntries(previous, candidates) {
+  const result = { ...previous };
+  for (const key of hashKeys) {
+    const entries = [...(previous[key] ?? [])];
+    const seen = new Set(entries);
+    for (const id of candidates[key] ?? []) {
+      if (id != null && !seen.has(id)) {
+        entries.push(id);
+        seen.add(id);
+      }
+    }
+    result[key] = entries;
+  }
+  return result;
+}
+
 export function appendOnlyHash(previous, data, frozen) {
   const current = legacyHash(previous);
   const baseline = legacyHash(frozen);
@@ -149,15 +169,8 @@ export function appendOnlyHash(previous, data, frozen) {
     const nonNull = current[key].filter((id) => id != null);
     if (nonNull.length !== new Set(nonNull).size)
       throw new Error(`Existing ${key} hash contains duplicate IDs`);
-    const seen = new Set(nonNull);
-    for (const id of ids[key]) {
-      if (!seen.has(id)) {
-        current[key].push(id);
-        seen.add(id);
-      }
-    }
   }
-  return current;
+  return appendHashEntries(current, ids);
 }
 
 export function convertData(old) {

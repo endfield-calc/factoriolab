@@ -1,5 +1,4 @@
 import { AdjustedRecipe } from '~/data/schema/recipe';
-import { CalculationModelContext } from '~/extensions/calculation-extension';
 import { Rational } from '~/rational/rational';
 import { ObjectiveState, RecipeObjective } from '~/state/objectives/objective';
 import { GlpkAlgorithm } from '~/state/preferences/glpk-algorithm';
@@ -37,5 +36,4 @@ export interface SimplexState {
   costs: CostSettings;
   hasSurplusCost: boolean;
   glpkAlgorithm: GlpkAlgorithm;
-  modelContext?: CalculationModelContext;
 }

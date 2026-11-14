@@ -28,8 +28,29 @@
                   "**/defaults.json",
                   "data/**",
                   "endfield/i18n/**",
-                  "i18n/**"
+                  "endfield/icons/**",
+                  "endfield/favicon.ico",
+                  "endfield/manifest.webmanifest",
+                  "i18n/**",
+                  "icons/*.png",
+                  "favicon.ico",
+                  "manifest.webmanifest"
                 ]
+              },
+              {
+                "glob": "*.png",
+                "input": "public/endfield/icons",
+                "output": "icons"
+              },
+              {
+                "glob": "favicon.ico",
+                "input": "public/endfield",
+                "output": "/"
+              },
+              {
+                "glob": "manifest.webmanifest",
+                "input": "public/endfield",
+                "output": "/"
               },
               {
                 "glob": "**/*",

@@ -10,6 +10,8 @@ const root = path.resolve(
 // local translation must live under the endfield namespace.
 export const overridePaths = [
   'app.name',
+  'app.updateDetected',
+  'app.updateDetectedMessage',
   'app.updateAvailableMessage',
   'app.updateRequiredMessage',
   'landing.welcome',
@@ -50,6 +52,7 @@ export async function prepareI18n(output) {
   }
   const english = await json(path.join(upstream, 'en.json'));
   const localEnglish = await json(path.join(local, 'en.json'));
+  const product = await json(path.join(root, 'public/endfield/product.json'));
   const localLanguages = new Set(await readdir(local));
   const files = (await readdir(upstream)).filter((file) =>
     file.endsWith('.json'),
@@ -61,8 +64,8 @@ export async function prepareI18n(output) {
       ? await json(path.join(local, file))
       : {};
     const result = merge(
-      merge(merge(english, source), localEnglish),
-      translation,
+      merge(merge(merge(english, source), localEnglish), translation),
+      product.uiLocaleOverrides?.[file.slice(0, -5)] ?? {},
     );
     await writeFile(
       path.join(output, file),

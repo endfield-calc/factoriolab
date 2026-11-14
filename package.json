@@ -1,5 +1,5 @@
 {
-  "name": "endfield-calc",
+  "name": "factoriolab",
   "description": "Factory production calculator for Arknights: Endfield",
   "version": "0.0.0",
   "type": "module",
@@ -24,7 +24,7 @@
     "build:sites": "node scripts/endfield/build-sites.mjs",
     "package:sites": "node scripts/endfield/package-sites.mjs",
     "verify:sites": "node scripts/endfield/verify-sites.mjs",
-    "test:delivery": "node --test scripts/endfield/build-sites.spec.mjs",
+    "test:delivery": "node --test scripts/endfield/convert-data.spec.mjs scripts/endfield/prepare-i18n.spec.mjs scripts/endfield/build-sites.spec.mjs",
     "test": "ng test",
     "test:ci": "ng test --no-watch --progress=false --browsers=ChromeHeadless",
     "lint": "ng lint",

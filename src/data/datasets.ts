@@ -17,7 +17,6 @@ export const datasets: Datasets = {
       id: 'aef',
       name: '明日方舟：终末地',
       game: 'endfield',
-      hashPolicy: 'append-only',
     },
     { id: '2x1', name: 'Space Age', game: 'factorio' },
     { id: '2q1', name: 'Quality', game: 'factorio' },

@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 
-import { AdjustedRecipe, Recipe } from '~/data/schema/recipe';
+import { AdjustedRecipe } from '~/data/schema/recipe';
 import { Rational } from '~/rational/rational';
 import {
   ObjectiveSettings,
@@ -67,19 +67,9 @@ export interface CalculationInput {
   readonly extension: unknown;
 }
 
-export interface RecipeCostInput {
-  readonly raw: ReadonlyValue<Recipe>;
-  readonly adjusted: ReadonlyValue<AdjustedRecipe>;
-  readonly recipeSettings: ReadonlyValue<RecipeSettings>;
-  readonly settings: ReadonlyValue<Settings>;
-  readonly data: ReadonlyValue<AdjustedDataset>;
-  readonly extension: unknown;
-}
-
 /** Implementations take values only: never inject Adjustment/Normalization/stores here. */
 export interface CalculationExtension {
   derive(input: CalculationInput): readonly DerivedObjective[];
-  cost(input: RecipeCostInput): Rational | undefined;
   rules(
     input: CalculationInput,
     variables: readonly CalculationVariable[],
@@ -89,7 +79,6 @@ export interface CalculationExtension {
 export const emptyModelRules: ModelRules = { constraints: [], integers: [] };
 export const upstreamCalculation: CalculationExtension = {
   derive: () => [],
-  cost: ({ adjusted }) => adjusted.cost,
   rules: () => emptyModelRules,
 };
 export const CALCULATION_EXTENSION = new InjectionToken<CalculationExtension>(

@@ -17,6 +17,7 @@ import { immutableValue, mutableValue } from '~/extensions/immutable';
 import {
   PRESENTATION_EXTENSION,
   StepOwner,
+  upstreamPresentation,
 } from '~/extensions/presentation-extension';
 import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import {
@@ -95,15 +96,13 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const data = this.recipesStore.adjustedDataset();
 
     return objectives.map((o) =>
-      this.recipesStore.applyObjectiveCost(
-        this.adjustment.adjustObjective(
-          o,
-          itemsState,
-          recipesState,
-          machinesState,
-          settings,
-          data,
-        ),
+      this.adjustment.adjustObjective(
+        o,
+        itemsState,
+        recipesState,
+        machinesState,
+        settings,
+        data,
       ),
     );
   });
@@ -147,15 +146,13 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         owners[base.id] != null
       )
         this.invalidDerived(base.id, 'Duplicate derived objective ID');
-      let prepared = this.recipesStore.applyObjectiveCost(
-        this.adjustment.adjustObjective(
-          base,
-          this.itemsStore.settings(),
-          recipeSettings,
-          this.machinesStore.settings(),
-          settings,
-          data,
-        ),
+      let prepared = this.adjustment.adjustObjective(
+        base,
+        this.itemsStore.settings(),
+        recipeSettings,
+        this.machinesStore.settings(),
+        settings,
+        data,
       );
       if (declaration.fixedOutput != null) {
         const output = prepared.recipe?.output[declaration.fixedOutput.itemId];
@@ -235,12 +232,15 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const result = this.matrixResult();
     const objectives = this.calculationContext().objectives;
 
-    return this.normalization
-      .normalizeSteps(result.steps, objectives)
-      .map((step) => ({
-        ...step,
-        checked: this.presentation.checked(step) ?? step.checked,
-      }));
+    const normalized = this.normalization.normalizeSteps(
+      result.steps,
+      objectives,
+    );
+    if (this.presentation === upstreamPresentation) return normalized;
+    return normalized.map((step) => ({
+      ...step,
+      checked: this.presentation.checked(step) ?? step.checked,
+    }));
   });
 
   readonly stepsModified = computed(() => {

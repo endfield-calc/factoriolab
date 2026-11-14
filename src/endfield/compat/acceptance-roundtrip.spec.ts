@@ -6,7 +6,10 @@ import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
 import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import { STATE_EXTENSION } from '~/extensions/state-extension';
+import {
+  STATE_EXTENSION,
+  WorkspaceRestoreError,
+} from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
@@ -22,6 +25,7 @@ import { Params } from '~/state/router/params';
 import { RouterSync, ZipState } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
+import { mockModData } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import {
@@ -32,6 +36,7 @@ import {
 import { provideEndfield } from '../providers';
 import { EndfieldStore } from '../state/endfield-store';
 import golden from './fixtures/legacy-golden.json';
+import legacyDatasets from './legacy-datasets.json';
 import legacyHash from './legacy-hash.json';
 
 const data = rawData as unknown as ModData;
@@ -469,6 +474,72 @@ describe('Remaining Endfield legacy and derived round trips', () => {
         '[remaining-roundtrip] A30',
         mode,
         JSON.stringify({ query, summary: stateSummary() }),
+      );
+    }
+  });
+});
+
+describe('Migration with frozen Endfield legacy tables', () => {
+  let service: Migration;
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [TestModule] });
+    service = TestBed.inject(Migration);
+  });
+  it('reports an unrecognized V0 mod when frozen legacy tables are supplied', () => {
+    const hashes = { modHashV0: ['known'], modHash: ['current'] };
+    try {
+      service.migrate('current', { s: 'retired', v: '0' }, hashes);
+      fail('expected invalid legacy mod');
+    } catch (error) {
+      expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
+      expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
+        jasmine.objectContaining({
+          code: 'invalid-mod-index',
+          field: 's',
+          severity: 'error',
+        }),
+      );
+    }
+    expect(service.migrate('current', { s: 'retired', v: '0' }).modId).toEqual(
+      'current',
+    );
+  });
+  it('uses frozen mod tables for both V0 and V10 indices', () => {
+    const hashes = {
+      modHashV0: ['old-zero', 'old-one'],
+      modHash: ['frozen-zero', 'frozen-one'],
+    };
+    expect(
+      service.migrate(undefined, { s: 'old-one', v: '0' }, hashes).modId,
+    ).toEqual('frozen-one');
+    expect(
+      service.migrate(undefined, { b: 'B', z: 'z', v: '10' }, hashes).modId,
+    ).toEqual('frozen-one');
+  });
+  it('uses the actual legacy tables without replacing the original V0 path', () => {
+    expect(
+      service.migrate('aef', { s: 'aef', v: '0' }, legacyDatasets).modId,
+    ).toEqual('aef');
+    expect(
+      service.migrate(undefined, { b: 'Q', z: 'z', v: '10' }, legacyDatasets)
+        .modId,
+    ).toEqual('aef');
+  });
+  it('reports an unknown technology rather than discarding it', () => {
+    try {
+      service.restoreV10ResearchedTechnologies(
+        new Set(['retired-tech']),
+        mockModData,
+      );
+      fail('expected unknown technology');
+    } catch (error) {
+      expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
+      expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
+        jasmine.objectContaining({
+          code: 'unknown-technology',
+          field: 'v10tre',
+          severity: 'error',
+        }),
       );
     }
   });

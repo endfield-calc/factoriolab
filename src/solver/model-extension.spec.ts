@@ -25,10 +25,10 @@ import {
   finiteNumber,
   ModelBinding,
   ModelRow,
+  ModelSimplexState as SimplexState,
   validateModelSolution,
 } from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
-import { SimplexState } from './simplex-state';
 import { Solver } from './solver';
 
 const recipeRef = (id: string): ModelVariableRef => ({ kind: 'recipe', id });

@@ -1,6 +1,9 @@
 import { computed, inject, Service } from '@angular/core';
 
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
+import {
+  PRESENTATION_EXTENSION,
+  type PresentationFlowData,
+} from '~/extensions/presentation-extension';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -42,8 +45,12 @@ export class FlowBuilder {
     return this.buildGraph(steps, suffix, settings, preferences, data);
   });
 
+  private recipeStepNodeType(step: Pick<Step, 'recipeObjectiveId'>): string {
+    return step.recipeObjectiveId ? 'm' : 'r';
+  }
+
   private recipeNodeId(recipeId: string, recipeObjectiveId?: string): string {
-    return recipeObjectiveId ? `m|${recipeObjectiveId}` : `r|${recipeId}`;
+    return `${this.recipeStepNodeType({ recipeObjectiveId })}|${recipeObjectiveId || recipeId}`;
   }
 
   private buildGraph(
@@ -52,10 +59,10 @@ export class FlowBuilder {
     settings: Settings,
     preferences: PreferencesState,
     data: AdjustedDataset,
-  ): FlowData {
+  ): PresentationFlowData {
     const itemPrec = preferences.columns.items.precision;
     const machinePrec = preferences.columns.machines.precision;
-    const flow: FlowData = {
+    const flow: PresentationFlowData = {
       nodes: [],
       links: [],
     };

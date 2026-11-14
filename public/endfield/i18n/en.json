@@ -2,7 +2,9 @@
   "app": {
     "name": "EndfieldLab",
     "updateAvailableMessage": "<div>An update is available. Would you like to reload the page to update?</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>",
-    "updateRequiredMessage": "<div>An update is available, and the page must be reloaded to proceed.</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>"
+    "updateRequiredMessage": "<div>An update is available, and the page must be reloaded to proceed.</div><a href=\"https://github.com/endfield-calc/factoriolab/releases\" target=\"_blank\" class=\"link\">View release notes</a>",
+    "updateDetected": "New Version Detected",
+    "updateDetectedMessage": "Downloading new version, please wait..."
   },
   "landing": {
     "welcome": "Welcome to <b>EndfieldLab</b>! Let's get to work."

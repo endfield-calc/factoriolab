@@ -14,10 +14,12 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 import {
+  appendHashEntries,
   appendOnlyHash,
   convertData,
   extractLegacyDatasets,
   hashKeys,
+  isAppendOnlyDataset,
   legacyHash,
   readSource,
   sourceRevision,
@@ -52,6 +54,231 @@ function loadClass(path, name, context = {}) {
   vm.runInNewContext(`${compiled}\nthis.loaded = ${name};`, context);
   return context.loaded;
 }
+
+// Exercise the production TypeScript hash functions without an Angular runtime.
+function loadFunctions(path, names, context = {}) {
+  const source = readFileSync(join(root, path), 'utf8')
+    .replace(/^import\s[\s\S]*?;\r?\n/gm, '')
+    .replace(/^export /gm, '');
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.None,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  vm.runInNewContext(
+    `${compiled}\nthis.loaded = { ${names.join(', ')} };`,
+    context,
+  );
+  return context.loaded;
+}
+
+const { itemHasQuality } = loadFunctions('src/data/schema/item.ts', [
+  'itemHasQuality',
+]);
+const { recipeHasQuality } = loadFunctions(
+  'src/data/schema/recipe.ts',
+  ['recipeHasQuality'],
+  { itemHasQuality },
+);
+const { qualityId } = loadFunctions('src/data/schema/quality.ts', [
+  'qualityId',
+]);
+const { emptyModHash, updateHash } = loadFunctions(
+  'src/utils/hash.ts',
+  ['emptyModHash', 'updateHash'],
+  { itemHasQuality, recipeHasQuality, qualityId },
+);
+const plain = (value) => JSON.parse(JSON.stringify(value));
+
+test('append-only merge fills missing sections and keeps retired and null slots', () => {
+  const candidates = emptyModHash();
+  updateHash(data, candidates);
+  const missing = { items: ['retired', null] };
+  const first = appendHashEntries(missing, candidates);
+  assert.deepEqual(first.items.slice(0, 2), ['retired', null]);
+  assert.ok(first.recipes.length > 0);
+  assert.ok(Array.isArray(first.locations));
+  assert.deepEqual(appendHashEntries(first, candidates), first);
+
+  const existingId = data.items[0].id;
+  const previous = {
+    ...plain(emptyModHash()),
+    items: ['retired', null, existingId],
+    recipes: ['retired-recipe', null],
+  };
+  const merged = appendHashEntries(previous, candidates);
+  assert.deepEqual(merged.items.slice(0, 3), ['retired', null, existingId]);
+  assert.deepEqual(merged.recipes.slice(0, 2), ['retired-recipe', null]);
+  assert.equal(merged.items.filter((id) => id === existingId).length, 1);
+  assert.deepEqual(appendHashEntries(merged, candidates), merged);
+  assert.deepEqual(previous.items, ['retired', null, existingId]);
+  assert.deepEqual(
+    appendHashEntries(
+      { items: [null], extra: ['kept'] },
+      { items: [null, 'new', 'new'] },
+    ),
+    { ...plain(emptyModHash()), items: [null, 'new'], extra: ['kept'] },
+  );
+});
+
+test('append-only candidates retain every upstream quality expansion', () => {
+  const synthetic = {
+    version: {},
+    flags: [],
+    categories: [],
+    icons: [],
+    items: [{ id: 'plate', name: 'Plate', stack: 10, machine: {} }],
+    recipes: [
+      {
+        id: 'recipe',
+        name: 'Recipe',
+        time: 1,
+        in: { plate: 1 },
+        out: { plate: 1 },
+      },
+    ],
+    qualities: [
+      { id: 'normal', name: 'Normal', level: 0 },
+      { id: 'rare', name: 'Rare', level: 1 },
+      { id: 'epic', name: 'Epic', level: 3 },
+    ],
+  };
+  for (const candidateData of [data, synthetic]) {
+    const candidates = emptyModHash();
+    updateHash(candidateData, candidates);
+    const previous = {
+      items: ['retired', null],
+      recipes: [null, 'retired-recipe'],
+    };
+    const merged = appendHashEntries(previous, candidates);
+    for (const key of hashKeys) {
+      const prefix = previous[key] ?? [];
+      const expected = [
+        ...prefix,
+        ...candidates[key].filter((id) => id != null && !prefix.includes(id)),
+      ];
+      assert.deepEqual(merged[key], expected, key);
+    }
+    assert.deepEqual(appendHashEntries(merged, candidates), merged);
+    if (candidateData === synthetic) {
+      assert.deepEqual(merged.items, [
+        'retired',
+        null,
+        'plate',
+        'plate(1)',
+        'plate(3)',
+      ]);
+      assert.deepEqual(merged.machines, ['plate', 'plate(1)', 'plate(3)']);
+      assert.deepEqual(merged.recipes, [
+        null,
+        'retired-recipe',
+        'recipe',
+        'recipe(1)',
+        'recipe(3)',
+      ]);
+    }
+  }
+  const candidates = emptyModHash();
+  updateHash(data, candidates);
+  assert.deepEqual(
+    appendHashEntries(frozen, candidates),
+    appendOnlyHash(frozen, data, frozen),
+  );
+  assert.deepEqual(appendHashEntries(hash, candidates), hash);
+  assert.deepEqual(appendOnlyHash(hash, data, frozen), hash);
+});
+
+test('conversion preserves its frozen and duplicate validation before merging', () => {
+  const changed = structuredClone(frozen);
+  changed.items[0] = null;
+  assert.throws(() => appendOnlyHash(changed, data, frozen), /frozen slot/);
+  const duplicate = structuredClone(hash);
+  duplicate.items.push(duplicate.items[0]);
+  assert.throws(() => appendOnlyHash(duplicate, data, frozen), /duplicate IDs/);
+  assert.throws(
+    () => appendOnlyHash({ ...hash, extra: [] }, data, frozen),
+    /Unknown hash array/,
+  );
+});
+
+test('hash CLI validates every registered identity before any input or write', () => {
+  const registry = loadFunctions('src/data/datasets.ts', ['datasets'], {
+    toRecord: (entries) =>
+      Object.fromEntries(entries.map((entry) => [entry.id, entry])),
+  }).datasets;
+  const source = readFileSync(
+    join(root, 'scripts/update-hash.ts'),
+    'utf8',
+  ).replace(/^import\s[\s\S]*?;\r?\n/gm, '');
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.None,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  assert.equal(isAppendOnlyDataset('aef'), true);
+  for (const invalid of [
+    'missing',
+    'cst',
+    './aef',
+    '../aef',
+    '..\\aef',
+    '2x1/../aef',
+    '2x1\\..\\aef',
+    'aef/',
+    'AEF',
+    '',
+  ]) {
+    assert.equal(isAppendOnlyDataset(invalid), false);
+    const reads = [];
+    const writes = [];
+    const context = {
+      datasets: registry,
+      CUSTOM_MOD: 'cst',
+      process: { argv: ['bun', 'update-hash.ts', 'aef', invalid] },
+      fs: { existsSync: () => true },
+      getJsonData: (path) => reads.push(path),
+      writeJsonData: (...args) => writes.push(args),
+      logTime: () => {},
+      emptyModHash,
+      updateHash,
+      appendHashEntries,
+      isAppendOnlyDataset,
+    };
+    assert.throws(
+      () => vm.runInNewContext(compiled, context),
+      /Unknown data set ID/,
+    );
+    assert.deepEqual(reads, []);
+    assert.deepEqual(writes, []);
+  }
+
+  const saved = { ...plain(emptyModHash()), items: ['retired', null] };
+  const writes = [];
+  vm.runInNewContext(compiled, {
+    datasets: registry,
+    CUSTOM_MOD: 'cst',
+    process: { argv: ['bun', 'update-hash.ts', 'aef', '2x1'] },
+    fs: { existsSync: () => true },
+    getJsonData: (path) =>
+      path.endsWith('/data.json') ? plain(data) : structuredClone(saved),
+    writeJsonData: (path, value) => writes.push([path, plain(value)]),
+    logTime: () => {},
+    emptyModHash,
+    updateHash,
+    appendHashEntries,
+    isAppendOnlyDataset,
+  });
+  assert.deepEqual(
+    writes.map(([path]) => path),
+    ['./public/data/aef/hash.json', './public/data/2x1/hash.json'],
+  );
+  assert.deepEqual(writes[0][1].items.slice(0, 2), ['retired', null]);
+  const upstream = structuredClone(saved);
+  updateHash(data, upstream);
+  assert.deepEqual(writes[1][1], plain(upstream));
+});
 
 test('both input paths use the same pinned snapshot', () => {
   const tempRoot = join(root, '.tmp');

@@ -22,7 +22,8 @@ export class WorkspacePreparation {
   private readonly itemsStore = inject(ItemsStore);
   private readonly machinesStore = inject(MachinesStore);
   private readonly recipesStore = inject(RecipesStore);
-  private readonly adjustment = inject(Adjustment);
+  // Restoration is detached from live product state, including its electric cost.
+  private readonly adjustment = new Adjustment();
 
   prepareObjectives(
     workspace: WorkspaceState,

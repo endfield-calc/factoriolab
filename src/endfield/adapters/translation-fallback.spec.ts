@@ -3,12 +3,21 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import { modRecord } from '~/data/datasets';
+import { emptyModData } from '~/data/schema/mod-data';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { SettingsStore } from '~/state/settings/settings-store';
+import { mockModHash } from '~/tests/mocks/data';
 import { Translate, TRANSLATION_FALLBACK } from '~/translate/translate';
 
-import { provideEndfieldProduct } from '../product/product';
+import {
+  createEndfieldProduct,
+  provideEndfieldProduct,
+} from '../product/product';
 import {
   endfieldTranslationFallback,
   mergeTranslation,
@@ -93,5 +102,94 @@ describe('Endfield interface translation fallback', () => {
         { a: { one: 'new' }, b: { child: 'new' }, c: 'new' },
       ),
     ).toEqual({ a: { one: 'new', two: '2' }, b: { child: 'new' }, c: 'new' });
+  });
+});
+
+describe('SettingsStore Endfield game translations', () => {
+  let service: SettingsStore;
+  let preferences: PreferencesStore;
+  let http: HttpTestingController;
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+      ],
+    });
+    service = TestBed.inject(SettingsStore);
+    preferences = TestBed.inject(PreferencesStore);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => {
+    http.verify();
+    localStorage.clear();
+  });
+  it('requests English game translations and clears them when the language has no package', async () => {
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    const data = emptyModData();
+    data.categories = [{ id: 'category', name: '中文' }];
+    data.icons = [{ id: 'category', x: 0, y: 0, color: '#fff' }];
+    data.version = { game: 'base' };
+    http.expectOne('data/aef/data.json').flush(data);
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    http.expectOne('data/aef/i18n/en.json').flush({
+      name: 'Endfield',
+      version: { game: 'translated' },
+      categories: { category: 'English' },
+      items: {},
+      recipes: {},
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.modInfo()?.name).toBe('Endfield');
+    expect(service.dataset().categoryRecord['category'].name).toBe('English');
+    expect(service.dataset().version).toEqual({ game: 'translated' });
+    preferences.apply({ language: 'ja' });
+    expect(service.modI18n()).toBeUndefined();
+    TestBed.tick();
+    http.expectOne('data/aef/i18n/ja.json').flush({
+      name: '日本語',
+      categories: { category: '日本語' },
+      items: {},
+      recipes: {},
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.modInfo()?.name).toBe('日本語');
+    preferences.apply({ language: 'de' });
+    expect(service.modI18n()).toBeUndefined();
+    TestBed.tick();
+    http.expectNone('data/aef/i18n/de.json');
+    expect(service.modI18n()).toBeUndefined();
+    expect(service.dataset().categoryRecord['category'].name).toBe('中文');
+    expect(service.dataset().version).toEqual({ game: 'base' });
+  });
+  it('uses the base dataset when a translation request fails', async () => {
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    const data = emptyModData();
+    data.categories = [{ id: 'category', name: '中文' }];
+    data.icons = [{ id: 'category', x: 0, y: 0, color: '#fff' }];
+    http.expectOne('data/aef/data.json').flush(data);
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    http.expectOne('data/aef/i18n/en.json').flush('missing', {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.modI18n()).toBeUndefined();
+    expect(service.modInfo()?.name).toBe(modRecord['aef'].name);
+    expect(service.dataset().categoryRecord['category'].name).toBe('中文');
+    expect(service.retryFailedResources()).toBeFalse();
   });
 });

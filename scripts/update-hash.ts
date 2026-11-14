@@ -6,6 +6,10 @@ import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
 import { emptyModHash, updateHash } from '~/utils/hash';
 
+import {
+  appendHashEntries,
+  isAppendOnlyDataset,
+} from './endfield/convert-data.mjs';
 import { getJsonData, writeJsonData } from './utils/file';
 import { logTime } from './utils/log';
 
@@ -39,8 +43,14 @@ for (let i = 0; i < mods.length; i++) {
     ? (getJsonData(modHashPath) as ModHash)
     : emptyModHash();
 
-  updateHash(modData, modHash, info.hashPolicy);
-  writeJsonData(modHashPath, modHash);
+  if (isAppendOnlyDataset(mod)) {
+    const candidates = emptyModHash();
+    updateHash(modData, candidates);
+    writeJsonData(modHashPath, appendHashEntries(modHash, candidates));
+  } else {
+    updateHash(modData, modHash);
+    writeJsonData(modHashPath, modHash);
+  }
 
   logTime(
     `Updated mod '${mod}' (${(i + 1).toString()} of ${mods.length.toString()})`,

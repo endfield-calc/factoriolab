@@ -54,7 +54,9 @@ jobs:
         run: npm run test:ci
 
       - name: Run delivery tests
-        run: npm run test:delivery
+        run: |
+          git fetch --no-tags --depth=1 https://github.com/endfield-calc/factoriolab.git 26a49e814f0570e050a19b726b3ba689d282aa3b
+          npm run test:delivery
 
       - name: Run build
         run: npm run build

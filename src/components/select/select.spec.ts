@@ -115,33 +115,12 @@ describe('Select', () => {
   });
 
   describe('select', () => {
-    it('reports a repeated explicit choice while keeping unchanged form values quiet', () => {
-      const choices: unknown[] = [];
-      const changed = jasmine.createSpy('changed');
-      component.optionSelected.subscribe((value) => choices.push(value));
-      component.registerOnChange(changed);
-      component.writeValue(2);
-      expect(choices).toEqual([]);
-      component.select(1);
-      component.select(1);
-      component.keydown(
-        { label: '1', value: 1 },
-        document.createElement('li'),
-        new KeyboardEvent('keydown', { key: 'Enter' }),
-      );
-      expect(choices).toEqual([1, 1, 1]);
-      expect(changed).toHaveBeenCalledOnceWith(1);
-    });
-
     it('should add to, and remove from, a selection set', () => {
-      const selected = jasmine.createSpy('selected');
-      component.optionSelected.subscribe(selected);
       setInputs(fixture, { value: [] });
       component.select(1);
       expect(component['selection']()).toContain(1);
       component.select(1);
       expect(component['selection']()).not.toContain(1);
-      expect(selected).not.toHaveBeenCalled();
     });
 
     it('should toggle the overlay and set the value in single selection mode', () => {

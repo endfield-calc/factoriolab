@@ -1,8 +1,21 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 
+import { DEFAULT_MOD } from '~/data/datasets';
+import { createEndfieldProduct } from '~/endfield/product/product';
+import {
+  editorGuard,
+  endfieldIdGuard as idGuard,
+  endfieldLandingGuard as landingGuard,
+} from '~/endfield/providers';
 import { rational } from '~/rational/rational';
 import { initialPreferencesState } from '~/state/preferences/preferences-state';
+import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { RouterSync } from '~/state/router/router-sync';
 import { initialSettingsState } from '~/state/settings/settings-state';
+import { MockComponent } from '~/tests/mocks/component';
+import { TestModule } from '~/tests/test-module';
 
 import {
   CALCULATION_EXTENSION,
@@ -66,9 +79,6 @@ describe('Neutral extension defaults', () => {
     const calculation = TestBed.inject(CALCULATION_EXTENSION);
     expect(calculation.rules({} as never, [])).toBe(emptyModelRules);
     expect(calculation.derive({} as never)).toEqual([]);
-    expect(
-      calculation.cost({ adjusted: { cost: rational(7) } } as never),
-    ).toEqual(rational(7));
     expect(extension.preflight({} as never)).toEqual([]);
     expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels).toEqual([]);
   });
@@ -201,5 +211,182 @@ describe('Workspace recovery lifecycle', () => {
       ]),
     ).toBeFalse();
     expect(lifecycle.ready()).toBeFalse();
+  });
+});
+
+describe('product route restrictions', () => {
+  let router: Router;
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+          {
+            path: ':id',
+            canActivate: [idGuard],
+            children: [
+              { path: '', pathMatch: 'full', component: MockComponent },
+              { path: 'list', component: MockComponent },
+              { path: 'flow', component: MockComponent },
+              { path: 'data', component: MockComponent },
+            ],
+          },
+        ]),
+      ],
+    });
+    router = TestBed.inject(Router);
+  });
+
+  it('keeps every query parameter for allowed and legacy shortcut routes', async () => {
+    const harness = await RouterTestingHarness.create(
+      '/aef/list?v=11&o=a&o=b&cet=x&z=abc',
+    );
+    expect(router.url).toBe('/aef/list?v=11&o=a&o=b&cet=x&z=abc');
+    await harness.navigateByUrl('/flow?v=11&o=a&o=b&cet=x&z=abc');
+    expect(router.url).toBe('/aef/flow?v=11&o=a&o=b&cet=x&z=abc');
+    await harness.navigateByUrl('/data?v=11&o=a&o=b');
+    expect(router.url).toBe('/aef/data?v=11&o=a&o=b');
+  });
+
+  it('redirects other games, custom data and editor without their queries', async () => {
+    const harness = await RouterTestingHarness.create(
+      '/2x1/list?v=11&o=foreign',
+    );
+    expect(router.url).toBe('/aef');
+    await harness.navigateByUrl('/cst/list?v=11&o=foreign');
+    expect(router.url).toBe('/aef');
+    await harness.navigateByUrl('/editor?v=11&o=foreign');
+    expect(router.url).toBe('/aef');
+  });
+});
+
+describe('upstream editor capability', () => {
+  it('allows the editor without a product provider', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await RouterTestingHarness.create('/editor?x=1');
+    expect(router.url).toBe('/editor?x=1');
+  });
+});
+
+describe('restricted product without a default mod', () => {
+  it('routes legacy shortcuts to the upstream default while retaining the query', async () => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: {
+            ...upstreamProduct,
+            allowEditor: false,
+            allowedModIds: [DEFAULT_MOD],
+          },
+        },
+        provideRouter([
+          {
+            path: 'editor',
+            canActivate: [editorGuard],
+            component: MockComponent,
+          },
+          {
+            path: ':id',
+            canActivate: [idGuard],
+            children: [
+              { path: '', pathMatch: 'full', component: MockComponent },
+              { path: 'flow', component: MockComponent },
+            ],
+          },
+        ]),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    await RouterTestingHarness.create('/flow?v=11&o=coal');
+    expect(router.url).toEqual(`/${DEFAULT_MOD}/flow?v=11&o=coal`);
+    await router.navigateByUrl('/editor?untrusted=1');
+    expect(router.url).toEqual(`/${DEFAULT_MOD}`);
+  });
+});
+
+describe('landingGuard with product restriction', () => {
+  let router: Router;
+  let preferences: PreferencesStore;
+  let routerSync: RouterSync;
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+        provideRouter([
+          {
+            path: ':id',
+            children: [
+              { path: 'list', component: MockComponent },
+              {
+                path: '',
+                pathMatch: 'full',
+                canActivate: [landingGuard],
+                component: MockComponent,
+              },
+            ],
+          },
+          {
+            path: '',
+            pathMatch: 'full',
+            canActivate: [landingGuard],
+            component: MockComponent,
+          },
+        ]),
+      ],
+    });
+    router = TestBed.inject(Router);
+    preferences = TestBed.inject(PreferencesStore);
+    routerSync = TestBed.inject(RouterSync);
+  });
+
+  it('preserves explicit root queries and ignores cached workspaces', async () => {
+    spyOn(preferences, 'bypassLanding').and.returnValue(true);
+    spyOn(routerSync, 'stored').and.returnValue('/aef/list?old=1');
+    await RouterTestingHarness.create('/?v=11&o=a&o=b&z=abc');
+    expect(router.url).toBe('/aef/list?v=11&o=a&o=b&z=abc');
+  });
+
+  it('rejects a foreign cached workspace and can resume the allowed one', async () => {
+    spyOn(preferences, 'bypassLanding').and.returnValue(true);
+    const stored = spyOn(routerSync, 'stored').and.returnValue(
+      '/2x1/list?o=foreign',
+    );
+    const harness = await RouterTestingHarness.create('/');
+    expect(router.url).toBe('/aef/list');
+    stored.and.returnValue('/aef/list?v=11&o=a');
+    await harness.navigateByUrl('/');
+    expect(router.url).toBe('/aef/list?v=11&o=a');
+  });
+
+  it('retains an explicit root query even when landing is enabled', async () => {
+    spyOn(preferences, 'bypassLanding').and.returnValue(false);
+    await RouterTestingHarness.create('/?v=11&o=a&o=b');
+    expect(router.url).toBe('/aef?v=11&o=a&o=b');
   });
 });

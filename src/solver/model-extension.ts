@@ -14,6 +14,17 @@ import {
 import { immutableValue } from '~/extensions/immutable';
 import { gcd, Rational, rational } from '~/rational/rational';
 
+import type { GlpkResult, GlpkReturnCode } from './glpk-result';
+import type { SimplexState } from './simplex-state';
+
+export interface ModelSimplexState extends SimplexState {
+  modelContext?: CalculationModelContext;
+}
+
+export type ModelGlpkResult = Omit<GlpkResult, 'returnCode'> & {
+  returnCode?: GlpkReturnCode;
+};
+
 export interface ModelBinding {
   readonly description: CalculationVariable;
   readonly variable: Variable;

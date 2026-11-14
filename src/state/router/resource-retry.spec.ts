@@ -1,7 +1,10 @@
+import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
+  provideHttpClientTesting,
   TestRequest,
 } from '@angular/common/http/testing';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -9,10 +12,15 @@ import { Subject } from 'rxjs';
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import rawI18n from '/public/data/aef/i18n/en.json';
+import { emptyModData } from '~/data/schema/mod-data';
 import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
 import { resourceOwner } from '~/endfield/domain/model';
-import { provideEndfieldProduct } from '~/endfield/product/product';
+import {
+  createEndfieldProduct,
+  provideEndfieldProduct,
+} from '~/endfield/product/product';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
+import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
@@ -24,6 +32,7 @@ import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RecipesStore } from '~/state/recipes/recipes-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
+import { mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import { Params } from './params';
@@ -590,5 +599,87 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     );
     await settle();
     expectRecovered(7n);
+  });
+});
+
+describe('SettingsStore resource errors', () => {
+  let service: SettingsStore;
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [TestModule] });
+    service = TestBed.inject(SettingsStore);
+  });
+  it('reports data and hash failures while ignoring translation failures', () => {
+    const dataError = new Error('data');
+    const hashError = new Error('hash');
+    const data = signal<Error | undefined>(undefined);
+    const hash = signal<Error | undefined>(undefined);
+    spyOn(service['modDataResource'], 'error').and.callFake(data);
+    spyOn(service['modHashResource'], 'error').and.callFake(hash);
+    spyOn(service['modI18nResource'], 'error').and.returnValue(
+      new Error('translation'),
+    );
+    expect(service.loadError()).toBeUndefined();
+    data.set(dataError);
+    expect(service.loadError()).toBe(dataError);
+    data.set(undefined);
+    hash.set(hashError);
+    expect(service.loadError()).toBe(hashError);
+  });
+});
+describe('SettingsStore resource retries', () => {
+  let service: SettingsStore;
+  let http: HttpTestingController;
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: PRODUCT_PROFILE,
+          useValue: createEndfieldProduct(false, 'zh'),
+        },
+      ],
+    });
+    service = TestBed.inject(SettingsStore);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => {
+    http.verify();
+    localStorage.clear();
+  });
+  it('does not issue duplicate retries while failed data and hash requests reload', async () => {
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    for (const path of ['data', 'hash']) {
+      http.expectOne(`data/aef/${path}.json`).flush('unavailable', {
+        status: 503,
+        statusText: 'Service Unavailable',
+      });
+    }
+    http.expectOne('data/aef/i18n/en.json').flush({});
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeDefined();
+
+    expect(service.retryFailedResources()).toBeTrue();
+    expect(service.loading()).toBeTrue();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.retryFailedResources()).toBeFalse();
+    TestBed.tick();
+    const dataRetry = http.expectOne('data/aef/data.json');
+    const hashRetry = http.expectOne('data/aef/hash.json');
+    http.expectNone('data/aef/data.json');
+    http.expectNone('data/aef/hash.json');
+    dataRetry.flush(emptyModData());
+    hashRetry.flush(mockModHash);
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+    expect(service.loading()).toBeFalse();
+    expect(service.loadError()).toBeUndefined();
+    expect(service.modData()).toEqual(emptyModData());
+    expect(service.modHash()).toEqual(mockModHash);
+    expect(service.retryFailedResources()).toBeFalse();
   });
 });

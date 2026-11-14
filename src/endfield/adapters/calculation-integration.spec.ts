@@ -13,7 +13,13 @@ import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { WorkspacePreparation } from '~/extensions/workspace-preparation';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
-import { ObjectiveState } from '~/state/objectives/objective';
+import { Adjustment } from '~/state/adjustment';
+import { ItemsStore } from '~/state/items/items-store';
+import { MachinesStore } from '~/state/machines/machines-store';
+import {
+  ObjectiveSettings,
+  ObjectiveState,
+} from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -152,20 +158,16 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(atob(params.ef.replace(/-/g, '+').replace(/_/g, '/'))).toBe(json);
   });
 
-  it('supports a declared-cost recipe without a selected producer at the pure cost boundary', () => {
+  it('supports a declared-cost recipe without a selected producer through the adjustment boundary', () => {
     const data = recipes.adjustedDataset();
-    expect(
-      TestBed.inject(CALCULATION_EXTENSION)
-        .cost({
-          raw: data.recipeRecord['sewage-treat'],
-          adjusted: data.adjustedRecipe['sewage-treat'],
-          recipeSettings: {},
-          settings: settings.settings(),
-          data,
-          extension: store.snapshot(),
-        })
-        ?.eq(rational(-30)),
-    ).toBeTrue();
+    const recipe = { ...data.adjustedRecipe['sewage-treat'] };
+    TestBed.inject(Adjustment).adjustCosts(
+      { 'sewage-treat': recipe },
+      { 'sewage-treat': {} },
+      settings.settings().costs,
+      data,
+    );
+    expect(recipe.cost?.eq(rational(-30))).toBeTrue();
   });
 
   it('rejects malformed extension declarations without changing visible objectives', () => {
@@ -298,6 +300,51 @@ describe('Endfield calculation composition with the published aef data', () => {
     }
     expect(objectives.state()).toEqual({});
     expect(store.snapshot()).toBe(initial);
+  });
+
+  it('prepares candidate physical output without reading live electric or recipe settings', () => {
+    recipes.set({ originium_ore: { machineId: 'miner_2' } });
+    settings.apply({ miningBonus: rational.zero });
+    const initial = store.snapshot();
+    const candidate: WorkspaceState = {
+      settingsState: {
+        modId: 'aef',
+        miningBonus: rational(50),
+        locationIds: new Set(['tundra', 'jinlong']),
+      },
+      objectivesState: {
+        1: {
+          ...machineObjective('1', 'originium_ore'),
+          machineId: 'miner_3',
+          overclock: rational(150),
+        },
+      },
+    };
+    const preparation = TestBed.inject(WorkspacePreparation);
+    const snapshot = spyOn(store, 'snapshot').and.callThrough();
+    store.set({ ...initial, electric: rational(2) });
+    const first = preparation.prepareObjectives(
+      candidate,
+      rawData as unknown as ModData,
+      rawHash,
+      ['1'],
+    );
+    store.set({ ...initial, electric: rational(17) });
+    const second = preparation.prepareObjectives(
+      candidate,
+      rawData as unknown as ModData,
+      rawHash,
+      ['1'],
+    );
+    expect(snapshot).not.toHaveBeenCalled();
+    expect(first['1'].machineId).toBe('miner_3');
+    expect(
+      first['1'].recipe!.output['originium_ore'].eq(rational(3, 4)),
+    ).toBeTrue();
+    expect(second).toEqual(first);
+    expect(recipes.state()['originium_ore'].machineId).toBe('miner_2');
+    expect(settings.state().miningBonus?.isZero()).toBeTrue();
+    expect(store.state().electric.eq(rational(17))).toBeTrue();
   });
 
   it('keeps a fixed physical supply after machine speed changes and leaves visible objectives unchanged', () => {
@@ -527,6 +574,244 @@ describe('Endfield calculation composition with the published aef data', () => {
       recipes.adjustedDataset().adjustedRecipe['originium_ore'].cost!;
     expect(changed.gt(ordinary)).toBeTrue();
     expect(settings.settings().costs.factor.eq(rational.one)).toBeTrue();
+  });
+
+  it('updates ordinary, explicit and derived machine costs from the chosen base machine', () => {
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, originium_ore: rational.one },
+      },
+      resourceRecipeSettings: {
+        originium_ore: { machineId: 'miner_3', overclock: rational(150) },
+      },
+    });
+    objectives.set({
+      1: {
+        ...machineObjective('1', 'originium_ore'),
+        machineId: 'miner_3',
+        overclock: rational(150),
+      },
+    });
+    for (const electric of [rational.one, rational(2)]) {
+      store.set({ ...store.snapshot(), electric });
+      const ordinary =
+        recipes.adjustedDataset().adjustedRecipe['originium_ore'];
+      const explicit = objectives.objectives()[0];
+      const derived = objectives
+        .calculationContext()
+        .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))!;
+      expect(ordinary.cost).toEqual(rational(5).mul(electric));
+      expect(explicit.recipe!.cost).toEqual(rational(10).mul(electric));
+      expect(derived.recipe!.cost).toEqual(rational(10).mul(electric));
+      expect(explicit.machineId).toBe('miner_3');
+      expect(derived.machineId).toBe('miner_3');
+    }
+    objectives.set({
+      1: { ...machineObjective('1', 'originium_ore'), cost: rational(-3) },
+    });
+    store.updateRecipeField('originium_ore', 'cost', rational.zero);
+    expect(objectives.objectives()[0].recipe!.cost).toEqual(rational(-3));
+    expect(
+      objectives
+        .calculationContext()
+        .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))!
+        .recipe!.cost,
+    ).toEqual(rational.zero);
+  });
+
+  it('preserves raw, override and recycling costs in both public adjustment paths', () => {
+    const adjustment = TestBed.inject(Adjustment);
+    const data = recipes.adjustedDataset();
+    const recipeSettings = recipes.settings();
+    const items = TestBed.inject(ItemsStore).settings();
+    const machines = TestBed.inject(MachinesStore).settings();
+    const costSettings = {
+      ...settings.settings().costs,
+      factor: rational(2),
+      recycling: rational(1000),
+    };
+    const cases = [
+      {
+        raw: undefined,
+        override: undefined,
+        recycling: false,
+        expected: costSettings.machine,
+      },
+      {
+        raw: rational(-30),
+        override: undefined,
+        recycling: false,
+        expected: rational(-60),
+      },
+      {
+        raw: rational.zero,
+        override: undefined,
+        recycling: false,
+        expected: rational.zero,
+      },
+      {
+        raw: rational(2),
+        override: undefined,
+        recycling: true,
+        expected: rational(4000),
+      },
+      {
+        raw: rational(-30),
+        override: rational.zero,
+        recycling: false,
+        expected: rational.zero,
+      },
+      {
+        raw: rational(-30),
+        override: rational(-3),
+        recycling: true,
+        expected: rational(-3000),
+      },
+    ];
+    for (const [index, example] of cases.entries()) {
+      const id = 'sewage-treat';
+      const candidate = {
+        ...data,
+        recipeRecord: {
+          ...data.recipeRecord,
+          [id]: {
+            ...data.recipeRecord[id],
+            cost: example.raw,
+            flags: new Set(example.recycling ? ['recycling' as const] : []),
+          },
+        },
+      };
+      const ordinary = { ...data.adjustedRecipe[id] };
+      adjustment.adjustCosts(
+        { [id]: ordinary },
+        { [id]: { ...recipeSettings[id], cost: example.override } },
+        costSettings,
+        candidate,
+      );
+      const objective = adjustment.adjustObjective(
+        { ...machineObjective('1', id), cost: example.override },
+        items,
+        recipeSettings,
+        machines,
+        { ...settings.settings(), costs: costSettings },
+        candidate,
+      );
+      expect(ordinary.cost)
+        .withContext(`case ${index}`)
+        .toEqual(example.expected);
+      expect(objective.recipe!.cost)
+        .withContext(`case ${index}`)
+        .toEqual(example.expected);
+    }
+  });
+
+  it('uses selected base machine usage and footprint in both adjustment paths', () => {
+    const adjustment = TestBed.inject(Adjustment);
+    const data = recipes.adjustedDataset();
+    const recipeSettings = recipes.settings();
+    const id = 'originium_ore';
+    const candidate = {
+      ...data,
+      machineRecord: {
+        ...data.machineRecord,
+        miner_2: {
+          ...data.machineRecord['miner_2'],
+          usage: rational(50),
+          size: [5, 5] as [number, number],
+        },
+      },
+    };
+    const chosenSettings = {
+      ...recipeSettings[id],
+      machineId: 'miner_2',
+      overclock: rational(150),
+    };
+    const costs = {
+      ...settings.settings().costs,
+      machine: rational(2),
+      footprint: rational(5),
+    };
+    store.set({ ...store.snapshot(), electric: rational(2) });
+    const ordinary = { ...data.adjustedRecipe[id] };
+    adjustment.adjustCosts(
+      { [id]: ordinary },
+      { [id]: chosenSettings },
+      costs,
+      candidate,
+    );
+    const objective = adjustment.adjustObjective(
+      {
+        ...machineObjective('1', id),
+        machineId: 'miner_2',
+        overclock: rational(150),
+      },
+      TestBed.inject(ItemsStore).settings(),
+      recipeSettings,
+      TestBed.inject(MachinesStore).settings(),
+      { ...settings.settings(), costs },
+      candidate,
+    );
+    // 2 * electric(2) * base usage(50) + 2 * footprint area(25).
+    expect(ordinary.cost).toEqual(rational(250));
+    expect(objective.recipe!.cost).toEqual(rational(250));
+    const adjustedPower =
+      objective.recipe!.drain ?? objective.recipe!.consumption;
+    expect(adjustedPower).toBeDefined();
+    expect(adjustedPower).not.toEqual(rational(50));
+    costs.footprint = rational.zero;
+    adjustment.adjustCosts(
+      { [id]: ordinary },
+      { [id]: chosenSettings },
+      costs,
+      candidate,
+    );
+    const withoutFootprint = adjustment.adjustObjective(
+      {
+        ...machineObjective('1', id),
+        machineId: 'miner_2',
+        overclock: rational(150),
+      },
+      TestBed.inject(ItemsStore).settings(),
+      recipeSettings,
+      TestBed.inject(MachinesStore).settings(),
+      { ...settings.settings(), costs },
+      candidate,
+    );
+    expect(ordinary.cost).toEqual(rational(200));
+    expect(withoutFootprint.recipe!.cost).toEqual(rational(200));
+  });
+
+  it('keeps machine-less objective costs on the public adjustment path', () => {
+    const id = 'originium_ore';
+    const data = recipes.adjustedDataset();
+    const candidate = {
+      ...data,
+      recipeRecord: {
+        ...data.recipeRecord,
+        [id]: {
+          ...data.recipeRecord[id],
+          producers: undefined,
+          cost: undefined,
+        },
+      },
+    };
+    const adjust = (cost?: ReturnType<typeof rational>): ObjectiveSettings =>
+      TestBed.inject(Adjustment).adjustObjective(
+        { ...machineObjective('1', id), cost },
+        TestBed.inject(ItemsStore).settings(),
+        recipes.settings(),
+        TestBed.inject(MachinesStore).settings(),
+        settings.settings(),
+        candidate,
+      );
+    const result = adjust();
+    expect(result.machineId).toBeUndefined();
+    expect(result.recipe!.cost).toEqual(settings.settings().costs.machine);
+    expect(adjust(rational.zero).recipe!.cost).toEqual(rational.zero);
+    expect(data.recipeRecord[id].producers).toBeDefined();
   });
 
   it('matches the visible integer objective to an independent dot product of every solved model variable', () => {

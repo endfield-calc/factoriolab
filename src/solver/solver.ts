@@ -31,7 +31,7 @@ import { fnPropsNotNullish } from '~/utils/nullish';
 import { spread } from '~/utils/object';
 import { contains } from '~/utils/record';
 
-import { GlpkResult, GlpkReturnCode } from './glpk-result';
+import { GlpkReturnCode } from './glpk-result';
 import { ItemValues } from './item-values';
 import {
   addModelRow,
@@ -40,7 +40,9 @@ import {
   finiteNumber,
   INTEGER_TOLERANCE,
   ModelBinding,
+  ModelGlpkResult,
   ModelRow,
+  ModelSimplexState,
   validateModelSolution,
 } from './model-extension';
 import { SIMPLEX_CONFIG } from './simplex-config';
@@ -113,9 +115,9 @@ export class Solver {
     data: AdjustedDataset,
     glpkAlgorithm: GlpkAlgorithm,
     modelContext?: CalculationModelContext,
-  ): SimplexState {
+  ): ModelSimplexState {
     // Set up state object
-    const state: SimplexState = {
+    const state: ModelSimplexState = {
       objectives,
       recipeObjectives: objectives.filter(
         (o): o is RecipeObjective =>
@@ -374,7 +376,7 @@ export class Solver {
     return finiteNumber(base.mul(cost), `${costKey} cost of ${itemId}`);
   }
 
-  private glpk(state: SimplexState): GlpkResult {
+  private glpk(state: ModelSimplexState): ModelGlpkResult {
     const itemIds = Object.keys(state.itemValues);
     const recipeIds = Object.keys(state.recipes);
 

@@ -4,16 +4,23 @@ import { loadModule } from 'glpk-ts';
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
+import { AdjustedRecipe } from '~/data/schema/recipe';
 import { CALCULATION_EXTENSION } from '~/extensions/calculation-extension';
-import { rational } from '~/rational/rational';
+import { Rational, rational } from '~/rational/rational';
+import { SIMPLEX_CONFIG } from '~/solver/simplex-config';
 import { SimplexResult } from '~/solver/simplex-result';
+import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
 import { ItemsStore } from '~/state/items/items-store';
-import { ObjectiveState } from '~/state/objectives/objective';
+import { ObjectiveState, RecipeObjective } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { AdjustedDataset } from '~/state/settings/dataset';
+import { MaximizeType } from '~/state/settings/maximize-type';
+import { Settings } from '~/state/settings/settings';
+import { initialSettingsState } from '~/state/settings/settings-state';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 
@@ -520,5 +527,199 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     close(count(restored.steps, 'sewage-treat-export'), 1);
     expect(settings.settings().excludedRecipeIds.has('carbon_enr')).toBeTrue();
     expect(extension.snapshot().machineLimits.enabled).toBeFalse();
+  });
+});
+
+describe('Endfield solver numerical boundaries', () => {
+  interface BoundaryFixture {
+    recipe: AdjustedRecipe;
+    data: AdjustedDataset;
+    settings: Settings;
+    objectives: ObjectiveState[];
+  }
+
+  let solver: Solver;
+  const tiny = rational(1n, 10n ** 400n);
+
+  beforeAll(async () => {
+    await loadModule('glpk.all.wasm');
+  });
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        Solver,
+        { provide: SIMPLEX_CONFIG, useValue: { msgLevel: 'off' } },
+      ],
+    });
+    solver = TestBed.inject(Solver);
+  });
+
+  function itemObjective(type: ObjectiveType, value: Rational): ObjectiveState {
+    return {
+      id: `item-${type}`,
+      targetId: 'product',
+      value,
+      type,
+      unit: ObjectiveUnit.Items,
+    };
+  }
+
+  function recipeObjective(
+    recipe: AdjustedRecipe,
+    type: ObjectiveType,
+    value: Rational,
+  ): RecipeObjective {
+    return {
+      id: `recipe-${type}`,
+      targetId: recipe.id,
+      value,
+      type,
+      unit: ObjectiveUnit.Machines,
+      recipe,
+    };
+  }
+
+  function fixture(): BoundaryFixture {
+    const recipe: AdjustedRecipe = {
+      id: 'boundary',
+      name: 'boundary',
+      row: 0,
+      time: rational.one,
+      in: {},
+      out: { product: rational.one },
+      output: { product: rational.one },
+      produces: new Set(['product']),
+      cost: rational.one,
+      flags: new Set(),
+      effects: {} as AdjustedRecipe['effects'],
+      producers: ['machine'],
+    };
+    const data = {
+      itemIds: ['product'],
+      itemRecord: { product: { stack: rational.one } },
+      adjustedRecipe: { boundary: recipe },
+      itemAvailableRecipeIds: { product: ['boundary'] },
+      itemAvailableIoRecipeIds: { product: ['boundary'] },
+      flags: new Set(),
+    } as unknown as AdjustedDataset;
+    const settings = {
+      ...initialSettingsState,
+      excludedItemIds: new Set(initialSettingsState.excludedItemIds),
+      costs: {
+        ...initialSettingsState.costs,
+        surplus: rational.zero,
+        maximize: rational(-2),
+      },
+      maximizeType: MaximizeType.Weight,
+      requireMachinesOutput: false,
+    } as Settings;
+    return {
+      recipe,
+      data,
+      settings,
+      objectives: [itemObjective(ObjectiveType.Output, rational.one)],
+    };
+  }
+
+  function solve(f: BoundaryFixture): SimplexResult {
+    return solver.solve(f.objectives, f.settings, f.data, false, 'simplex');
+  }
+
+  it('rejects unrepresentable bounds, costs, and coefficients before solving', () => {
+    const cases: {
+      name: string;
+      arrange: (f: BoundaryFixture) => void;
+      error: RegExp;
+    }[] = [
+      {
+        name: 'recipe limit',
+        arrange: (f): void => {
+          f.objectives.push(
+            recipeObjective(f.recipe, ObjectiveType.Limit, tiny),
+          );
+        },
+        error: /Unrepresentable upper bound.*numeric underflow/,
+      },
+      {
+        name: 'item output',
+        arrange: (f): void => {
+          f.objectives[0].value = tiny;
+        },
+        error: /Unrepresentable output bound.*numeric underflow/,
+      },
+      {
+        name: 'item input',
+        arrange: (f): void => {
+          f.objectives.push(itemObjective(ObjectiveType.Input, tiny));
+        },
+        error: /Unrepresentable input upper bound.*numeric underflow/,
+      },
+      {
+        name: 'item limit',
+        arrange: (f): void => {
+          f.objectives.push(itemObjective(ObjectiveType.Limit, tiny));
+        },
+        error: /Unrepresentable input limit.*numeric underflow/,
+      },
+      {
+        name: 'recipe cost',
+        arrange: (f): void => {
+          f.recipe.cost = tiny.inverse();
+        },
+        error: /Unrepresentable objective coefficient.*numeric underflow/,
+      },
+      {
+        name: 'surplus cost',
+        arrange: (f): void => {
+          f.settings.costs.surplus = tiny;
+        },
+        error: /Unrepresentable surplus cost.*numeric underflow/,
+      },
+      {
+        name: 'recipe output coefficient',
+        arrange: (f): void => {
+          f.recipe.output['product'] = tiny;
+        },
+        error: /Unrepresentable output coefficient.*numeric underflow/,
+      },
+      {
+        name: 'recipe input coefficient',
+        arrange: (f): void => {
+          f.recipe.in['product'] = tiny;
+          f.objectives.push(itemObjective(ObjectiveType.Limit, rational.one));
+        },
+        error: /Unrepresentable input coefficient.*numeric underflow/,
+      },
+    ];
+    for (const { name, arrange, error } of cases) {
+      const f = fixture();
+      arrange(f);
+      expect(() => solve(f))
+        .withContext(name)
+        .toThrowError(error);
+    }
+  });
+
+  it('rejects unrepresentable fixed and weighted recipe objectives', () => {
+    for (const [type, error] of [
+      [
+        ObjectiveType.Output,
+        /Unrepresentable bound of objective.*numeric underflow/,
+      ],
+      [
+        ObjectiveType.Maximize,
+        /Unrepresentable maximize objective coefficient.*numeric underflow/,
+      ],
+    ] as const) {
+      const f = fixture();
+      f.objectives = [recipeObjective(f.recipe, type, tiny)];
+      expect(() => solve(f)).toThrowError(error);
+    }
+  });
+
+  it('does not check an input coefficient when no input limit row uses it', () => {
+    const f = fixture();
+    f.recipe.in['product'] = tiny;
+    expect(solve(f).resultType).toBe('solved');
   });
 });

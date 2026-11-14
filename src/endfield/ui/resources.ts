@@ -29,11 +29,6 @@ export function perSecond(value: Rational): Rational {
   return value.div(rational(60));
 }
 
-interface RecoveryBackup {
-  key: string;
-  value: string;
-}
-
 @Component({
   selector: 'lab-endfield-resources',
   imports: [
@@ -53,9 +48,6 @@ export class EndfieldResources {
   protected readonly coordinator = inject(EndfieldCoordinator);
   protected readonly lifecycle = inject(WorkspaceLifecycle);
   protected readonly preferences = inject(PreferencesStore);
-  protected readonly warnings = computed(
-    () => this.preferences.migrationWarnings,
-  );
   protected readonly resources = resourceIds;
   protected readonly ovenId = ovenId;
   protected readonly perMinute = perMinute;
@@ -68,7 +60,6 @@ export class EndfieldResources {
     const locations = this.coordinator.settings().locationIds;
     return locations.size === 1 && locations.has('tundra');
   });
-  protected readonly backups = this.readBackups();
 
   protected resourceName(id: string): string {
     return this.coordinator.data().itemRecord[id]?.name ?? id;
@@ -90,40 +81,5 @@ export class EndfieldResources {
 
   protected download(name: string, value: string): void {
     saveAs(new Blob([value], { type: 'text/plain;charset=utf-8' }), name);
-  }
-
-  private readBackups(): RecoveryBackup[] {
-    const result: RecoveryBackup[] = [];
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (
-          key == null ||
-          !/^preferences\.recovery(?:\.endfield\.presentation)?(?:\.\d+)?$/.test(
-            key,
-          )
-        )
-          continue;
-        const value = localStorage.getItem(key);
-        if (value != null) result.push({ key, value });
-      }
-    } catch {
-      // A readable original can still be exported if enumerating backups fails.
-    }
-    const stored = this.preferences.stored();
-    if (
-      this.preferences.migrationWarnings.length &&
-      stored &&
-      !result.some((backup) => backup.value === stored)
-    )
-      result.push({ key: 'preferences', value: stored });
-    try {
-      const value = localStorage.getItem('endfield.presentation');
-      if (value != null && !result.some((backup) => backup.value === value))
-        result.push({ key: 'endfield.presentation', value });
-    } catch {
-      // The stored value is untouched but cannot be read for export.
-    }
-    return result.sort((a, b) => a.key.localeCompare(b.key));
   }
 }

@@ -1,13 +1,23 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import rawData from '/public/data/aef/data.json';
+import rawHash from '/public/data/aef/hash.json';
+import { ModData } from '~/data/schema/mod-data';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
+import { rational } from '~/rational/rational';
+import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
+import { Migration } from '~/state/router/migration';
+import { Params } from '~/state/router/params';
+import { RouterSync } from '~/state/router/router-sync';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 
 import { EndfieldGuide } from './guide';
 
 describe('EndfieldGuide', () => {
-  it('keeps legacy example parameters and only shows QQ in Chinese', async () => {
+  it('uses current example links and only shows QQ in Chinese', async () => {
     const language = signal('en');
     await TestBed.configureTestingModule({
       imports: [TestModule, EndfieldGuide],
@@ -29,23 +39,10 @@ describe('EndfieldGuide', () => {
       .filter((link) => link.getAttribute('href')?.includes('/aef/flow'))
       .map((link) => new URL(link.href));
     expect(urls.length).toBe(3);
-    expect(urls[0].searchParams.get('v')).toBe('11');
-    expect(urls[0].searchParams.get('z')).toBe(
-      'eJw1yDEKgDAQBMDfXLEg5C5GbLYJCBaWVunEVrlGRHy9iLEbxpkLTDWJc0HqAhDFWWA9IjCIM8Da2gfU.p6hoa.fIL09ivNGfJnFmT5O4rxgdfeDQTZfmeWk6gNmmh4R',
-    );
-    expect(urls[1].searchParams.getAll('o')).toEqual([
-      'tundra_coupon***2',
-      'originium_ore*560**3',
-      'quartz_sand*240**3',
-      'iron_ore*1080**3',
-      'power_proc_battery_3*4*3**power_sta_1',
-      'power_proc_battery_2**3',
-    ]);
-    expect(urls[1].searchParams.get('loc')).toBe('B');
-    expect(urls[2].searchParams.get('v')).toBe('11');
-    expect(urls[2].searchParams.get('z')).toBe(
-      'eJxFzLEKAjEQhOG3SfGDupvLHVpsYQ5EC6sTBLvDxkJJoz6.ZI1YzccwTLE8M6iEYjNpLdCFYhdicgitObFpOpOWvSvf0Nja8cjg0NYx1cVE-h32oHW4R4WOWL37O7-IK3.NqGM8fK8XHo-nSbiXq23D21Q.U1UrIA__',
-    );
+    for (const url of urls) {
+      expect(url.searchParams.get('v')).toBe('12');
+      expect(url.searchParams.get('z')).toBeTruthy();
+    }
     expect(
       fixture.nativeElement.querySelector('a[href*="qm.qq.com"]'),
     ).toBeNull();
@@ -58,5 +55,47 @@ describe('EndfieldGuide', () => {
     host.style.width = '382px';
     fixture.detectChanges();
     expect(host.scrollWidth).toBeLessThanOrEqual(host.clientWidth + 1);
+  });
+
+  it('loads all current example links through native migration, router and ef codec', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModule, EndfieldGuide],
+    }).compileComponents();
+    const settings = TestBed.inject(SettingsStore);
+    settings.apply({ modId: 'aef' });
+    settings['modDataResource'].set(rawData as unknown as ModData);
+    settings['modHashResource'].set(rawHash);
+    const router = TestBed.inject(RouterSync);
+    const migration = TestBed.inject(Migration);
+    const objectives = TestBed.inject(ObjectivesStore);
+    const endfield = TestBed.inject(EndfieldStore);
+    const guide = TestBed.createComponent(EndfieldGuide)
+      .componentInstance as unknown as { examples: { params: Params }[] };
+    for (const [index, example] of guide.examples.entries()) {
+      const unpacked = await router.unzipQueryParams({ ...example.params });
+      expect(unpacked['ef'])
+        .withContext(`example ${index + 1}`)
+        .toBeTruthy();
+      const migrated = migration.migrate('aef', unpacked);
+      router.updateState(
+        migrated.modId,
+        migrated.params,
+        migrated.isBare,
+        rawData as unknown as ModData,
+        rawHash,
+      );
+      const restored = Object.values(objectives.state());
+      expect(restored.length)
+        .withContext(`example ${index + 1}`)
+        .toBe([10, 6, 17][index]);
+      expect(
+        restored.every(
+          (objective) => objective.type >= 0 && objective.type <= 3,
+        ),
+      ).toBeTrue();
+      expect(endfield.state().electric).toEqual(rational.one);
+      expect(settings.state().costs.unproduceable).toEqual(rational(100000000));
+      expect(settings.state().costs.recycling).toEqual(rational.one);
+    }
   });
 });

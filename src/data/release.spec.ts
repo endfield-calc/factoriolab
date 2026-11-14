@@ -33,14 +33,14 @@ describe('Release', () => {
       TestBed.tick();
       http.expectOne('release.json').flush({ version: '0.0.0' });
       await TestBed.inject(ApplicationRef).whenStable();
-      expect(service.version()).toEqual('FactorioLab 0.0.0');
+      expect(service.version()).toEqual('EndfieldLab 0.0.0');
     });
 
     it('should handle no version specified', async () => {
       TestBed.tick();
       http.expectOne('release.json').flush({ version: '' });
       await TestBed.inject(ApplicationRef).whenStable();
-      expect(service.version()).toEqual('FactorioLab (dev)');
+      expect(service.version()).toEqual('EndfieldLab (dev)');
     });
   });
 });

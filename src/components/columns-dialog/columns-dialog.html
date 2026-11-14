@@ -58,15 +58,6 @@
   </table>
 </div>
 
-@if (presentation.showPowerUnit) {
-  <lab-form-field label="columns.powerUnit">
-    <lab-select
-      [options]="powerUnitOptions"
-      [(ngModel)]="powerUnit"
-    ></lab-select>
-  </lab-form-field>
-}
-
 <div class="gap-1 sm:gap-2 flex justify-end">
   @if (modified) {
     <button

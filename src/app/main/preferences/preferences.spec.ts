@@ -44,11 +44,20 @@ describe('Preferences', () => {
   });
 
   describe('reset', () => {
-    it('should handle preserve saved states', () => {
+    it('resets preferences while preserving saved states', () => {
+      const store = component['preferencesStore'];
+      store.saveState('2.0', 'saved', '/2.0/list?v=12');
+      store.apply({ language: 'ja' });
       spyOn(component['confirm'], 'open').and.returnValue(of(1));
-      spyOn(component['preferencesStore'], 'apply');
+      const reset = spyOn(store, 'resetPreferences').and.callThrough();
       component.reset();
-      expect(component['preferencesStore'].apply).toHaveBeenCalled();
+      expect(reset).toHaveBeenCalledOnceWith();
+      expect(store.language()).toBe('en');
+      expect(store.states()['2.0']['saved']).toBe('/2.0/list?v=12');
+      TestBed.tick();
+      expect(
+        JSON.parse(localStorage.getItem('preferences')!).states['2.0'].saved,
+      ).toBe('/2.0/list?v=12');
     });
 
     it('should handle full reset', async () => {

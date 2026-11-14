@@ -31,8 +31,8 @@ import { Wagon } from '~/data/schema/wagon';
 import {
   cloneDefaults,
   EFFECTIVE_DEFAULTS,
-  PRODUCT_PROFILE,
-} from '~/extensions/product-profile';
+  PINNED_MOD_ID,
+} from '~/extensions/defaults';
 import { LinkOption } from '~/option/link-option';
 import { getIdOptions, Option, OptionParams } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
@@ -61,14 +61,14 @@ import { displayRateInfo } from './display-rate';
 import { Options } from './options';
 import { Preset, presetOptions } from './preset';
 import { Settings } from './settings';
-import { PartialSettingsState, SettingsState } from './settings-state';
+import { SettingsState } from './settings-state';
 import { systemIconsRecord } from './system-icons';
 
 @Service()
 export class SettingsStore extends Store<SettingsState> {
   private readonly hydration = inject(Hydration);
   private readonly preferencesStore = inject(PreferencesStore);
-  private readonly product = inject(PRODUCT_PROFILE);
+  private readonly pinnedModId = inject(PINNED_MOD_ID);
   private readonly effectiveDefaults = inject(EFFECTIVE_DEFAULTS);
 
   readonly gameOptions = gameOptions.filter((option) =>
@@ -116,11 +116,7 @@ export class SettingsStore extends Store<SettingsState> {
   private readonly modI18nResource = httpResource<ModI18n>(() => {
     const modId = this.modId();
     const lang = this.preferencesStore.language();
-    if (
-      modId == null ||
-      !this.isAllowed(modId) ||
-      !this.product.loadGameI18n(modId, lang)
-    )
+    if (modId == null || !this.isAllowed(modId) || lang === 'en')
       return undefined;
     return `data/${modId}/i18n/${lang}.json`;
   });
@@ -179,7 +175,7 @@ export class SettingsStore extends Store<SettingsState> {
     if (
       modId == null ||
       !this.isAllowed(modId) ||
-      !this.product.loadGameI18n(modId, language) ||
+      language === 'en' ||
       this.modI18nResource.isLoading()
     )
       return undefined;
@@ -192,12 +188,7 @@ export class SettingsStore extends Store<SettingsState> {
     if (modId == null || !this.isAllowed(modId)) return undefined;
     const info = modRecord[modId];
     if (!info) return undefined;
-    const metadata = this.product.gameMetadata(
-      modId,
-      this.preferencesStore.language(),
-      this.modI18n(),
-    );
-    return metadata.name == null ? info : { ...info, name: metadata.name };
+    return info;
   });
 
   readonly game = computed(() => {
@@ -245,28 +236,17 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly iconPath = computed(() => {
     const info = this.modInfo();
-    const modId = coalesce(info?.id, this.product.defaultModId ?? DEFAULT_MOD);
+    const modId = coalesce(info?.id, this.pinnedModId ?? DEFAULT_MOD);
     if (modId === CUSTOM_MOD) return this.customIconsUrl();
     return `data/${modId}/icons.webp`;
   });
 
   readonly dataset = computed(() => {
-    const modId = this.modId();
-    const i18n = this.modI18n();
-    const metadata =
-      modId && this.isAllowed(modId)
-        ? this.product.gameMetadata(
-            modId,
-            this.preferencesStore.language(),
-            i18n,
-          )
-        : {};
-    const data = this.modData();
     return this.computeDataset(
       this.modInfo(),
-      data && metadata.version ? { ...data, version: metadata.version } : data,
+      this.modData(),
       this.modHash(),
-      i18n,
+      this.modI18n(),
       this.game(),
     );
   });
@@ -396,7 +376,7 @@ export class SettingsStore extends Store<SettingsState> {
 
     return {
       faIcon: faDatabase,
-      routerLink: `/${coalesce(mod?.id, this.product.defaultModId ?? DEFAULT_MOD)}/data`,
+      routerLink: `/${coalesce(mod?.id, this.pinnedModId ?? DEFAULT_MOD)}/data`,
       label: coalesce(mod?.name, ''),
     };
   });
@@ -416,33 +396,7 @@ export class SettingsStore extends Store<SettingsState> {
   }
 
   private isAllowed(modId: string): boolean {
-    return this.product.allowedModIds?.includes(modId) ?? true;
-  }
-
-  /** Prepare a candidate workspace without changing any live store state. */
-  prepareState(
-    partial: PartialSettingsState,
-    modData: ModData,
-    modHash: ModHash,
-  ): { settings: Settings; data: Dataset } {
-    const initial = cloneDefaults(this.effectiveDefaults).settings;
-    const state: SettingsState = {
-      ...initial,
-      ...partial,
-      costs: { ...initial.costs, ...partial.costs },
-    };
-    const info = state.modId == null ? undefined : modRecord[state.modId];
-    if (info == null || !this.isAllowed(info.id))
-      throw new Error('Cannot prepare an unknown or unavailable mod');
-    const defaults = this.computeDefaults(info, modData, state.preset);
-    const data = this.computeDataset(
-      info,
-      modData,
-      modHash,
-      undefined,
-      info.game,
-    );
-    return { settings: this.computeSettings(state, defaults, data), data };
+    return this.pinnedModId == null || modId === this.pinnedModId;
   }
 
   private computeDefaults(
@@ -895,7 +849,7 @@ export class SettingsStore extends Store<SettingsState> {
       (id) => technologyRecord[id].recipeProductivity,
     );
 
-    const modId = coalesce(info?.id, this.product.defaultModId ?? DEFAULT_MOD);
+    const modId = coalesce(info?.id, this.pinnedModId ?? DEFAULT_MOD);
     let file = `data/${modId}/icons.webp`;
     if (modId === CUSTOM_MOD) file = this.customIconsUrl();
 
@@ -916,14 +870,7 @@ export class SettingsStore extends Store<SettingsState> {
       Exclude<IconType, 'img'>,
       Record<string, IconData>
     > = {
-      system: {
-        ...systemIconsRecord,
-        ...toRecord(
-          (this.product.systemIcons ?? []).map((icon) =>
-            parseIconData(parseIcon(icon), icon.file),
-          ),
-        ),
-      },
+      system: systemIconsRecord,
       game: toIconRecord(iconIds, iconData),
       category: toIconRecord(categoryIds, categoryRecord),
       item: toIconRecord(itemIds, itemRecord),

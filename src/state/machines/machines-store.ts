@@ -26,15 +26,6 @@ export class MachinesStore extends RecordStore<MachineState> {
     ),
   );
 
-  /** Prepare a restoration snapshot without changing live store state. */
-  prepareSettings(
-    state: Record<string, MachineState>,
-    settings: Settings,
-    data: Dataset,
-  ): Record<string, MachineSettings> {
-    return this.computeMachinesSettings(state, settings, data);
-  }
-
   private computeMachinesSettings(
     state: Record<string, MachineState>,
     settings: Settings,

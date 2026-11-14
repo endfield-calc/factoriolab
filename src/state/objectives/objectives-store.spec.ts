@@ -653,12 +653,12 @@ describe('ObjectivesStore', () => {
       service.add(mockObjectiveBase);
       TestBed.tick();
       expect(service['title'].setTitle).toHaveBeenCalledWith(
-        'Coal | FactorioLab',
+        'Coal | EndfieldLab',
       );
       spy.calls.reset();
       service.remove('1');
       TestBed.tick();
-      expect(service['title'].setTitle).toHaveBeenCalledWith('FactorioLab');
+      expect(service['title'].setTitle).toHaveBeenCalledWith('EndfieldLab');
       spy.calls.reset();
       service.add({
         targetId: RecipeId.ElectronicCircuit,
@@ -668,7 +668,7 @@ describe('ObjectivesStore', () => {
       });
       TestBed.tick();
       expect(service['title'].setTitle).toHaveBeenCalledWith(
-        'Electronic circuit | FactorioLab',
+        'Electronic circuit | EndfieldLab',
       );
     });
   });

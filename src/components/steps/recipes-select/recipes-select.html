@@ -20,7 +20,7 @@
           type="recipe"
           [value]="recipeId"
           [text]="
-            presentation.sourceLabel(step()) ? '' : objId ? '#' + objId : ''
+            resourceFromObjectiveId(objId) ? '' : objId ? '#' + objId : ''
           "
         ></lab-icon>
       } @else {

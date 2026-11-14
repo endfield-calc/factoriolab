@@ -13,10 +13,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-} from '~/extensions/product-profile';
+import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { elkAlgorithmOptions } from '~/state/preferences/elk-algorithm';
 import {
   FlowDiagram,

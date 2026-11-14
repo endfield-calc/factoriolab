@@ -6,15 +6,16 @@ import { By } from '@angular/platform-browser';
 import { CostSettingsDialog } from '~/app/main/settings/cost-settings-dialog/cost-settings-dialog';
 import { Button } from '~/components/button/button';
 import { Modules } from '~/components/modules/modules';
-import { createEndfieldProduct } from '~/endfield/product/product';
+import { createEndfieldDefaults } from '~/endfield/product/product';
 import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { EFFECTIVE_DEFAULTS, PINNED_MOD_ID } from '~/extensions/defaults';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { ItemId } from '~/tests/item-id';
+import { mockModI18n } from '~/tests/mocks/data';
 import { mockModuleSettings } from '~/tests/mocks/settings';
 import { TestModule } from '~/tests/test-module';
 import { assert, setInputs } from '~/tests/utils';
@@ -39,7 +40,7 @@ function isolatePreferences(): void {
   });
 }
 
-describe('CostSettingsDialog with Endfield product', () => {
+describe('CostSettingsDialog with Endfield defaults', () => {
   isolatePreferences();
   let fixture: ComponentFixture<CostSettingsDialog>;
   let settings: SettingsStore;
@@ -69,7 +70,10 @@ describe('CostSettingsDialog with Endfield product', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: provideEndfield(),
+      providers: [
+        ...provideEndfield(),
+        { provide: PINNED_MOD_ID, useValue: undefined },
+      ],
     }).compileComponents();
     settings = TestBed.inject(SettingsStore);
     endfield = TestBed.inject(EndfieldStore);
@@ -87,7 +91,7 @@ describe('CostSettingsDialog with Endfield product', () => {
       fixture.componentInstance['editValue']().surplus.eq(rational.one),
     ).toBeTrue();
     expect(
-      fixture.componentInstance['editAdditionalCost']()?.eq(rational.one),
+      fixture.componentInstance['editElectric']()?.eq(rational.one),
     ).toBeTrue();
     expect(settings.settings().costs.surplus.eq(rational(4))).toBeTrue();
     expect(endfield.state().electric.eq(rational(2))).toBeTrue();
@@ -100,7 +104,7 @@ describe('CostSettingsDialog with Endfield product', () => {
       fixture.componentInstance['editValue']().surplus.eq(rational(4)),
     ).toBeTrue();
     expect(
-      fixture.componentInstance['editAdditionalCost']()?.eq(rational(2)),
+      fixture.componentInstance['editElectric']()?.eq(rational(2)),
     ).toBeTrue();
     click('reset');
     click('ok');
@@ -122,24 +126,74 @@ describe('CostSettingsDialog with Endfield product', () => {
     expect(endfield.state().electric.eq(rational(2))).toBeTrue();
     edit(electric, '-1');
     expect(
-      fixture.componentInstance['editAdditionalCost']()?.eq(rational(3, 2)),
+      fixture.componentInstance['editElectric']()?.eq(rational(3, 2)),
     ).toBeTrue();
     click('ok');
     expect(settings.settings().costs.surplus.eq(rational(5))).toBeTrue();
     expect(endfield.state().electric.eq(rational(3, 2))).toBeTrue();
   });
 
+  it('accepts negative and zero ordinary costs and a zero electric weight', () => {
+    const html = fixture.nativeElement as HTMLElement;
+    const input = (key: string): HTMLInputElement => {
+      const value = html
+        .querySelector(`#cost-${key}`)
+        ?.parentElement?.querySelector<HTMLInputElement>('td input');
+      assert(value != null);
+      return value;
+    };
+    const electric = html.querySelector<HTMLInputElement>(
+      'lab-form-field lab-input-number input',
+    );
+    assert(electric != null);
+    edit(input('surplus'), '-2');
+    edit(input('machine'), '0');
+    edit(electric, '0');
+    click('ok');
+    expect(settings.state().costs.surplus.eq(rational(-2))).toBeTrue();
+    expect(settings.state().costs.machine.eq(rational.zero)).toBeTrue();
+    expect(endfield.state().electric.eq(rational.zero)).toBeTrue();
+  });
+
+  it('rejects an invalid draft before writing either store', () => {
+    const component = fixture.componentInstance;
+    const close = spyOn(component['dialogRef'], 'close');
+    component['draft'].set({
+      costs: { ...settings.state().costs, surplus: rational(9) },
+      electric: rational(-1),
+    });
+    component.save();
+    expect(settings.state().costs.surplus.eq(rational(4))).toBeTrue();
+    expect(endfield.state().electric.eq(rational(2))).toBeTrue();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('ignores an invalid cost edit and rejects an invalid cost draft before writing', () => {
+    const component = fixture.componentInstance;
+    const close = spyOn(component['dialogRef'], 'close');
+    component.apply('surplus', undefined);
+    expect(component['editValue']().surplus.eq(rational(4))).toBeTrue();
+    component['draft'].set({
+      costs: { ...settings.state().costs, surplus: undefined as never },
+      electric: rational(3),
+    });
+    component.save();
+    expect(settings.state().costs.surplus.eq(rational(4))).toBeTrue();
+    expect(endfield.state().electric.eq(rational(2))).toBeTrue();
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('keeps a power draft when another extension field changes', () => {
     const component = fixture.componentInstance;
     component.apply('surplus', rational(5));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     endfield.set({
       ...endfield.state(),
       resourceLimits: { ...endfield.state().resourceLimits, enabled: true },
     });
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(3))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
     component.save();
     expect(settings.settings().costs.surplus.eq(rational(5))).toBeTrue();
     expect(endfield.state().electric.eq(rational(3))).toBeTrue();
@@ -161,20 +215,21 @@ describe('CostSettingsDialog with Endfield product', () => {
     const beforeRegion = settings.settings();
     settings.apply({ locationIds: new Set(['tundra']) });
     expect(settings.settings()).not.toBe(beforeRegion);
+    expect(settings.state().locationIds).toEqual(new Set(['tundra']));
     const component = fixture.componentInstance;
     expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(3))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
 
-    settings.apply({ modId: 'aef' });
-    const beforeLanguage = settings.dataset();
     const preferences = TestBed.inject(PreferencesStore);
-    preferences.apply({
-      language: preferences.language() === 'en' ? 'zh' : 'en',
-    });
-    expect(settings.dataset()).not.toBe(beforeLanguage);
+    preferences.apply({ language: 'zh' });
+    expect(preferences.language()).toBe('zh');
+    settings['modI18nResource'].set(mockModI18n);
+    expect(settings.dataset().itemRecord[ItemId.IronOre].name).toBe(
+      mockModI18n.items[ItemId.IronOre],
+    );
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(3))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
     click('ok');
     expect(settings.state().costs.surplus.eq(rational(5))).toBeTrue();
     expect(endfield.state().electric.eq(rational(3))).toBeTrue();
@@ -187,7 +242,10 @@ describe('CostSettingsDialog with Endfield product', () => {
     const restore = preservePreferences();
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: provideEndfield(),
+      providers: [
+        ...provideEndfield(),
+        { provide: PINNED_MOD_ID, useValue: undefined },
+      ],
     }).compileComponents();
     const cost = TestBed.createComponent(CostSettingsDialog);
     cost.detectChanges();
@@ -235,30 +293,30 @@ describe('CostSettingsDialog with Endfield product', () => {
   it('refreshes both drafts when a committed ordinary cost changes', () => {
     const component = fixture.componentInstance;
     component.apply('surplus', rational(5));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     settings.apply({
       costs: { ...settings.state().costs, surplus: rational(7) },
     });
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(7))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(2))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(2))).toBeTrue();
   });
 
   it('refreshes both drafts when the committed electric cost changes', () => {
     const component = fixture.componentInstance;
     component.apply('surplus', rational(5));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     endfield.set({ ...endfield.state(), electric: rational(6) });
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(4))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(6))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(6))).toBeTrue();
   });
 
   it('preserves both drafts during recovery and refreshes both when it completes', () => {
     const component = fixture.componentInstance;
     const lifecycle = TestBed.inject(WorkspaceLifecycle);
     component.apply('surplus', rational(5));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     const ticket = lifecycle.begin('?restoring');
     fixture.detectChanges();
     settings.apply({
@@ -267,12 +325,12 @@ describe('CostSettingsDialog with Endfield product', () => {
     endfield.set({ ...endfield.state(), electric: rational(2) });
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(3))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
 
     lifecycle.complete(ticket);
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(8))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(2))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(2))).toBeTrue();
     click('cancel');
     expect(settings.state().costs.surplus.eq(rational(8))).toBeTrue();
     expect(endfield.state().electric.eq(rational(2))).toBeTrue();
@@ -281,11 +339,11 @@ describe('CostSettingsDialog with Endfield product', () => {
   it('refreshes both drafts when a recovery completes without changing either committed cost', () => {
     const component = fixture.componentInstance;
     component.apply('surplus', rational(5));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     const lifecycle = TestBed.inject(WorkspaceLifecycle);
     lifecycle.complete(lifecycle.begin('?restoring'));
     expect(component['editValue']().surplus.eq(rational(4))).toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(2))).toBeTrue();
+    expect(component['editElectric']()?.eq(rational(2))).toBeTrue();
   });
 
   it('initializes from committed costs if opened while recovery is active', () => {
@@ -296,7 +354,7 @@ describe('CostSettingsDialog with Endfield product', () => {
       duringRecovery.componentInstance['editValue']().surplus.eq(rational(4)),
     ).toBeTrue();
     expect(
-      duringRecovery.componentInstance['editAdditionalCost']()?.eq(rational(2)),
+      duringRecovery.componentInstance['editElectric']()?.eq(rational(2)),
     ).toBeTrue();
   });
 
@@ -304,7 +362,7 @@ describe('CostSettingsDialog with Endfield product', () => {
     const component = fixture.componentInstance;
     const close = spyOn(component['dialogRef'], 'close');
     component.apply('surplus', rational(6));
-    component.applyAdditionalCost(rational(3));
+    component.applyElectric(rational(3));
     TestBed.inject(WorkspaceLifecycle).begin('?recovering');
     fixture.detectChanges();
     await fixture.whenStable();
@@ -314,7 +372,7 @@ describe('CostSettingsDialog with Endfield product', () => {
     expect(component['editValue']().surplus.eq(rational(6)))
       .withContext('ordinary cost draft remains unchanged')
       .toBeTrue();
-    expect(component['editAdditionalCost']()?.eq(rational(3)))
+    expect(component['editElectric']()?.eq(rational(3)))
       .withContext('power cost draft remains unchanged')
       .toBeTrue();
     expect(settings.settings().costs.surplus.eq(rational(4)))
@@ -341,8 +399,8 @@ describe('CostSettingsDialog effective defaults', () => {
       imports: [TestModule, CostSettingsDialog],
       providers: [
         {
-          provide: PRODUCT_PROFILE,
-          useValue: createEndfieldProduct(false, 'zh'),
+          provide: EFFECTIVE_DEFAULTS,
+          useValue: createEndfieldDefaults(false, 'zh'),
         },
       ],
     }).compileComponents();

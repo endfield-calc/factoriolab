@@ -25,8 +25,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { RatePipe } from '~/components/steps/pipes/rate-pipe';
+import {
+  resourceFromObjectiveId,
+  resourceOwner,
+} from '~/endfield/domain/model';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { Exporter } from '~/exporter/exporter';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { BeaconSettings } from '~/state/beacon-settings';
@@ -99,7 +103,7 @@ export class Steps {
   protected readonly route = inject(ActivatedRoute);
   protected readonly dialog = inject(Dialog);
   protected readonly exporter = inject(Exporter);
-  protected readonly presentation = inject(PRESENTATION_EXTENSION);
+  protected readonly endfieldStore = inject(EndfieldStore);
   private readonly hydration = inject(Hydration);
   protected readonly itemsStore = inject(ItemsStore);
   private readonly machinesStore = inject(MachinesStore);
@@ -134,6 +138,26 @@ export class Steps {
   protected readonly totals = this.objectivesStore.totals;
 
   protected readonly expandedSteps = signal<Set<string>>(new Set());
+  protected sourceLabel(step: Step): string | undefined {
+    return resourceFromObjectiveId(step.recipeObjectiveId) == null
+      ? undefined
+      : 'endfield.resources.source';
+  }
+
+  protected sourceModified(step: Step): boolean {
+    const id = resourceFromObjectiveId(step.recipeObjectiveId);
+    return (
+      id != null &&
+      this.endfieldStore.state().resourceRecipeSettings[id] != null
+    );
+  }
+
+  protected stepChecked(step: Step): boolean | undefined {
+    const id = resourceFromObjectiveId(step.recipeObjectiveId);
+    return step.itemId == null && id != null
+      ? this.endfieldStore.state().checkedDerived.has(resourceOwner(id))
+      : step.checked;
+  }
 
   protected readonly steps = computed(() => {
     const steps = this.objectivesStore.steps();
@@ -192,10 +216,10 @@ export class Steps {
   resetStep(step: Step): void {
     if (step.itemId) this.itemsStore.resetId(step.itemId);
 
-    const owner = this.presentation.owner(step);
-    if (owner) {
-      const handled = this.presentation.resetRecipe(owner);
-      if (handled || owner.kind === 'extension') return;
+    const resource = resourceFromObjectiveId(step.recipeObjectiveId);
+    if (resource != null) {
+      this.endfieldStore.resetResourceRecipe(resource);
+      return;
     }
     if (step.recipeObjectiveId) {
       this.objectivesStore.updateRecord(step.recipeObjectiveId, {
@@ -246,6 +270,7 @@ export class Steps {
 
   changeStepChecked(step: Step, value: boolean): void {
     const settings = this.settingsStore.settings();
+    const resource = resourceFromObjectiveId(step.recipeObjectiveId);
     // Priority: 1) Item state, 2) Recipe objective state, 3) Recipe state
     if (step.itemId != null) {
       const checkedItemIds = updateSetIds(
@@ -254,8 +279,8 @@ export class Steps {
         settings.checkedItemIds,
       );
       this.settingsStore.apply({ checkedItemIds });
-    } else if (this.presentation.toggleChecked(step, value)) {
-      return;
+    } else if (resource != null) {
+      this.endfieldStore.setResourceChecked(resource, value);
     } else if (step.recipeObjectiveId != null) {
       const checkedObjectiveIds = updateSetIds(
         step.recipeObjectiveId,
@@ -274,7 +299,7 @@ export class Steps {
   }
 
   resetChecked(): void {
-    this.presentation.clearChecked();
+    this.endfieldStore.clearResourceChecked();
     this.settingsStore.apply({
       checkedItemIds: new Set(),
       checkedObjectiveIds: new Set(),
@@ -313,12 +338,11 @@ export class Steps {
     ];
     this.objectivesStore.resetFields(...fields);
     this.recipesStore.resetFields(...fields);
-    this.presentation.resetRecipes(fields);
+    this.endfieldStore.resetResourceRecipes();
   }
 
   resetBeacons(): void {
     this.objectivesStore.resetFields('beacons');
     this.recipesStore.resetFields('beacons');
-    this.presentation.resetRecipes(['beacons']);
   }
 }

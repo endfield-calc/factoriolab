@@ -3,17 +3,14 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { ApplicationRef, FactoryProvider } from '@angular/core';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-  ActivatedRouteSnapshot,
   CanActivateFn,
   Params,
   provideRouter,
   Router,
-  RouterStateSnapshot,
   Routes,
-  UrlTree,
 } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
@@ -22,26 +19,26 @@ import { editorGuard, idGuard } from '~/app/id/id-guard';
 import { landingGuard } from '~/app/landing/landing-guard';
 import { DEFAULT_MOD } from '~/data/datasets';
 import { Release } from '~/data/release';
-import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
-import { environment } from '~/environments/environment';
+import { emptyModData } from '~/data/schema/mod-data';
 import {
   cloneDefaults,
-  PRODUCT_PROFILE,
-  ProductProfile,
-  upstreamProduct,
-} from '~/extensions/product-profile';
-import { STATE_EXTENSION } from '~/extensions/state-extension';
+  EFFECTIVE_DEFAULTS,
+  initialDefaults,
+  PINNED_MOD_ID,
+} from '~/extensions/defaults';
 import { rational } from '~/rational/rational';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
 import { PowerUnit } from '~/state/preferences/power-unit';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { Migration } from '~/state/router/migration';
 import { RouterSync } from '~/state/router/router-sync';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { MockComponent } from '~/tests/mocks/component';
+import { mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import { provideEndfield } from '../providers';
-import { createEndfieldProduct, provideEndfieldProduct } from './product';
+import { createEndfieldDefaults, provideEndfieldDefaults } from './product';
 
 describe('Endfield release presentation', () => {
   let release: Release;
@@ -100,204 +97,43 @@ describe('Endfield product', () => {
       [true, '', 'en'],
     ];
     for (const [production, browser, expected] of cases)
-      expect(
-        createEndfieldProduct(production, browser).defaults().preferences
-          .language,
-      )
+      expect(createEndfieldDefaults(production, browser).preferences.language)
         .withContext(`${String(production)}: ${browser}`)
         .toBe(expected);
   });
 
   it('provides independent immutable defaults without changing upstream values', () => {
-    const profile = createEndfieldProduct(true, 'zh-CN');
-    const snapshot = profile.defaults();
+    const snapshot = createEndfieldDefaults(true, 'zh-CN');
     const defaults = cloneDefaults(snapshot);
     expect(
       snapshot.settings.costs.unproduceable.eq(rational(100000000)),
     ).toBeTrue();
     expect(snapshot.settings.costs.surplus.eq(rational.one)).toBeTrue();
     expect(snapshot.settings.costs.recycling.eq(rational.one)).toBeTrue();
-    expect(
-      profile.serializedCostDefaults?.unproduceable?.eq(rational(1000000)),
-    ).toBeTrue();
-    expect(
-      profile.serializedCostDefaults?.recycling?.eq(rational(1000)),
-    ).toBeTrue();
     expect(snapshot.preferences.powerUnit).toBe(PowerUnit.kW);
     expect(snapshot.preferences.theme).toBe('light');
     expect(snapshot.preferences.flowSettings.diagram).toBe(FlowDiagram.BoxLine);
     expect(Object.isFrozen(snapshot.preferences.flowSettings)).toBeTrue();
     defaults.preferences.flowSettings.diagram = FlowDiagram.Sankey;
     expect(snapshot.preferences.flowSettings.diagram).toBe(FlowDiagram.BoxLine);
+    expect(initialDefaults.settings.costs.surplus.eq(rational.zero)).toBeTrue();
+  });
+
+  it('provides pinned Endfield defaults while keeping the native factory reusable', () => {
+    TestBed.configureTestingModule({ providers: provideEndfieldDefaults() });
+    expect(TestBed.inject(PINNED_MOD_ID)).toBe('aef');
+    expect(TestBed.inject(EFFECTIVE_DEFAULTS)).toEqual(
+      createEndfieldDefaults(false, navigator.language),
+    );
     expect(
-      upstreamProduct.defaults().settings.costs.surplus.eq(rational.zero),
+      cloneDefaults(initialDefaults).settings.costs.surplus.eq(rational.zero),
     ).toBeTrue();
-  });
-
-  it('salvages valid archives, columns and flow fields and reports invalid fields', () => {
-    const profile = createEndfieldProduct(true, 'zh-CN');
-    const restore = profile.migratePreferences({
-      states: {
-        aef: { first: 'v=11&o=a&o=b', second: 'z=abc', broken: 123 },
-        other: { old: '?x=1' },
-      },
-      language: 'ja',
-      theme: 'black',
-      powerUnit: 2,
-      hideDuplicateIcons: true,
-      columns: {
-        items: { show: false, precision: 3 },
-        belts: { show: 'bad', precision: null },
-      },
-      flowSettings: {
-        diagram: 0,
-        linkSize: 2,
-        hideExcluded: true,
-        linkText: 99,
-      },
-    });
-    expect(restore.state.states).toEqual({
-      aef: { first: 'v=11&o=a&o=b', second: 'z=abc' },
-      other: { old: '?x=1' },
-    });
-    expect(restore.state.language).toBe('ja');
-    expect(restore.state.theme).toBe('dark');
-    expect(restore.state.powerUnit).toBe(PowerUnit.MW);
-    expect(restore.state.columns?.items).toEqual({ show: false, precision: 3 });
-    expect(restore.state.columns?.belts.precision).toBeNull();
-    expect(restore.state.flowSettings?.diagram).toBe(FlowDiagram.Sankey);
-    expect(restore.state.flowSettings?.linkText).toBe(2);
-    expect(restore.state.flowSettings?.elkAlgorithm).toBe('layered');
-    expect(
-      (restore.state as Record<string, unknown>)['hideDuplicateIcons'],
-    ).toBeTrue();
-    expect(restore.warnings.length).toBeGreaterThan(0);
-  });
-
-  it('loads only the four available game translation packages', () => {
-    const profile = createEndfieldProduct(false, 'zh');
-    for (const lang of ['en', 'zh', 'ja', 'ru'] as const)
-      expect(profile.loadGameI18n('aef', lang)).toBeTrue();
-    for (const lang of ['de', 'fr', 'ko', 'pt-BR', 'es'] as const)
-      expect(profile.loadGameI18n('aef', lang)).toBeFalse();
-    expect(profile.loadGameI18n('2x1', 'en')).toBeFalse();
-    expect(profile.languages.map((x): string => x.value).sort()).toEqual(
-      ['de', 'en', 'fr', 'ja', 'ko', 'pt-BR', 'ru', 'es', 'zh'].sort(),
-    );
-    for (const { value } of profile.languages) {
-      const restored = profile.migratePreferences({ language: value });
-      expect(restored.state.language).withContext(value).toBe(value);
-      expect(restored.warnings).withContext(value).toEqual([]);
-    }
-  });
-
-  it('salvages independent fields while rejecting damaged archives and preferences', () => {
-    const profile = createEndfieldProduct(true, 'zh');
-    const input = {
-      language: 'unknown',
-      powerUnit: 99,
-      bypassLanding: 'bad',
-      showTechLabels: true,
-      hue: Number.NaN,
-      chroma: 42,
-      glpkAlgorithm: 'bad',
-      theme: 'bad',
-      states: { aef: { safe: 'v=11&o=iron', broken: 3 }, invalid: [] },
-      columns: {
-        items: { show: true, precision: 101 },
-        broken: {},
-        belts: 'bad',
-      },
-      flowSettings: {
-        diagram: 1,
-        hideExcluded: false,
-        elkAlgorithm: 'force',
-        sankeyAlign: 99,
-        unknown: 2,
-      },
-      sections: { sources: false, inputs: 'bad', unknown: true },
-    };
-    const result = profile.migratePreferences(input);
-    expect(result.state.states).toEqual({ aef: { safe: 'v=11&o=iron' } });
-    expect(result.state.language).toBeUndefined();
-    expect(result.state.powerUnit).toBeUndefined();
-    expect(result.state.showTechLabels).toBeTrue();
-    expect(result.state.chroma).toBe(42);
-    expect(result.state.theme).toBeUndefined();
-    expect(result.state.columns?.items.show).toBeTrue();
-    expect(result.state.flowSettings?.elkAlgorithm).toBe('force');
-    expect(result.state.sections?.sources).toBeFalse();
-    expect(result.warnings).toContain('Invalid preferences.states.aef.broken');
-    expect(result.warnings).toContain('Invalid preferences.states.invalid');
-    expect(result.warnings).toContain(
-      'Invalid preferences.columns.items.precision',
-    );
-    expect(result.warnings).toContain(
-      'Invalid preferences.flowSettings.sankeyAlign',
-    );
-    expect(result.warnings).toContain('Invalid preferences.sections.inputs');
-    expect(input.states.aef.broken).toBe(3);
-    expect(input.columns.items.precision).toBe(101);
-  });
-
-  it('handles invalid preference containers and validates localized game metadata', () => {
-    const profile = createEndfieldProduct(false, 'en');
-    expect(profile.migratePreferences(null).warnings).toEqual([
-      'Invalid preferences',
-    ]);
-    const result = profile.migratePreferences({
-      states: [],
-      columns: [],
-      flowSettings: null,
-      sections: 'bad',
-    });
-    expect(result.warnings).toEqual([
-      'Invalid preferences.states',
-      'Invalid preferences.columns',
-      'Invalid preferences.flowSettings',
-      'Invalid preferences.sections',
-    ]);
-    expect(result.state.states).toEqual({});
-    expect(profile.gameMetadata('other', 'en', {} as never)).toEqual({});
-    expect(profile.gameMetadata('aef', 'en')).toEqual({});
-    expect(
-      profile.gameMetadata('aef', 'en', {
-        name: 'Game',
-        version: { current: '1.5' },
-      } as never),
-    ).toEqual({ name: 'Game', version: { current: '1.5' } });
-    expect(
-      profile.gameMetadata('aef', 'en', {
-        name: 3,
-        version: { current: 2 },
-      } as never),
-    ).toEqual({});
-  });
-
-  it('reads browser language only for a production provider', () => {
-    const original = environment.production;
-    spyOnProperty(navigator, 'language', 'get').and.returnValue('zh-CN');
-    const factory = (provideEndfieldProduct() as FactoryProvider).useFactory;
-    try {
-      environment.production = false;
-      expect(factory().defaults().preferences.language).toBe('en');
-      environment.production = true;
-      expect(factory().defaults().preferences.language).toBe('zh');
-    } finally {
-      environment.production = original;
-    }
-  });
-
-  it('retains the supported stress layout algorithm during preference recovery', () => {
-    const result = createEndfieldProduct(false, 'en').migratePreferences({
-      flowSettings: { elkAlgorithm: 'stress' },
-    });
-    expect(result.state.flowSettings?.elkAlgorithm).toBe('stress');
-    expect(result.warnings).toEqual([]);
   });
 });
 
-describe('PreferencesStore with Endfield product', () => {
+describe('PreferencesStore with Endfield defaults', () => {
+  const defaults = createEndfieldDefaults(true, 'zh-CN');
+
   afterEach(() => {
     localStorage.clear();
   });
@@ -306,137 +142,361 @@ describe('PreferencesStore with Endfield product', () => {
     localStorage.clear();
     if (raw != null) localStorage.setItem('preferences', raw);
     TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: PRODUCT_PROFILE,
-          useValue: createEndfieldProduct(true, 'zh-CN'),
-        },
-      ],
+      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     return TestBed.inject(PreferencesStore);
   }
 
-  it('uses the production browser language until a valid saved preference overrides it', () => {
+  it('restores a valid current preferences object and preserves archives on reset', () => {
+    const saved = cloneDefaults(defaults).preferences;
+    saved.language = 'ja';
+    saved.theme = 'dark';
+    saved.states = { aef: { saved: '/aef/list?v=12&o=iron_ore*1' } };
+    const service = create(JSON.stringify(saved));
+    expect(service.restoreError()).toBeUndefined();
+    expect(service.language()).toBe('ja');
+    expect(service.states()).toEqual(saved.states);
+    service.resetPreferences(true);
+    TestBed.tick();
+    expect(service.theme()).toBe('light');
+    expect(service.states()).toEqual(saved.states);
+    const persisted = JSON.parse(localStorage.getItem('preferences')!);
+    expect(persisted.theme).toBe('light');
+    expect(persisted.states).toEqual(saved.states);
+  });
+
+  it('merges a valid current partial object with defaults', () => {
     const service = create(
       JSON.stringify({
-        language: 'ja',
-        states: { aef: { saved: 'v=11&o=a' } },
+        language: 'pt-BR',
+        states: { aef: { safe: '/aef/list?v=12' } },
+        columns: { items: { show: false, precision: 3 } },
+        flowSettings: { elkAlgorithm: 'stress' },
+        sections: { sources: false },
       }),
     );
-    expect(service.language()).toBe('ja');
-    expect(service.states()['aef']['saved']).toBe('v=11&o=a');
-    expect(service.flowSettings().elkAlgorithm).toBe('layered');
-  });
-
-  it('keeps a saved Portuguese preference over the browser default', () => {
-    const service = create(JSON.stringify({ language: 'pt-BR' }));
+    expect(service.restoreError()).toBeUndefined();
     expect(service.language()).toBe('pt-BR');
-    expect(service.migrationWarnings).toEqual([]);
+    expect(service.states()['aef']['safe']).toBe('/aef/list?v=12');
+    expect(service.columns().items).toEqual({ show: false, precision: 3 });
+    expect(service.columns().belts).toEqual(defaults.preferences.columns.belts);
+    expect(service.flowSettings().elkAlgorithm).toBe('stress');
+    expect(service.flowSettings().diagram).toBe(
+      defaults.preferences.flowSettings.diagram,
+    );
+    expect(service.state().sections.sources).toBeFalse();
+    expect(service.state().sections.outputs).toBeTrue();
   });
 
-  it('backs up a partly damaged original before saving independently valid fields', () => {
+  it('clears archives when explicitly resetting without preservation', () => {
     const raw = JSON.stringify({
-      language: 'ru',
-      theme: 'black',
-      hideDuplicateIcons: true,
-      states: { aef: { kept: 'z=abc&v=11', bad: 42, another: 'o=x&o=y' } },
-      columns: {
-        items: { show: false, precision: 2 },
-        belts: { show: 'invalid', precision: 4 },
-      },
+      language: 'ja',
+      states: { aef: { first: '/aef/list?v=12' }, other: { saved: '?v=12' } },
     });
     const service = create(raw);
-    expect(localStorage.getItem('preferences.recovery')).toBe(raw);
-    expect(service.language()).toBe('ru');
-    expect(service.theme()).toBe('dark');
-    expect(service.states()['aef']).toEqual({
-      kept: 'z=abc&v=11',
-      another: 'o=x&o=y',
-    });
-    expect(service.columns().items).toEqual({ show: false, precision: 2 });
-    expect(service.columns().belts.precision).toBe(4);
+    expect(service.restoreError()).toBeUndefined();
+    expect(service.states()['aef']['first']).toBe('/aef/list?v=12');
+    service.resetPreferences(false);
     TestBed.tick();
-    const saved = JSON.parse(localStorage.getItem('preferences') ?? '{}');
-    expect(saved.states.aef.kept).toBe('z=abc&v=11');
-    expect(saved.hideDuplicateIcons).toBeTrue();
-    expect(service.migrationWarnings.length).toBeGreaterThan(0);
-  });
-
-  it('preserves malformed JSON as a recovery copy before saving defaults', () => {
-    const raw = '{"states":';
-    const service = create(raw);
-    expect(localStorage.getItem('preferences.recovery')).toBe(raw);
     expect(service.language()).toBe('zh');
-    TestBed.tick();
-    expect(localStorage.getItem('preferences')).not.toBeNull();
-    expect(
-      JSON.parse(localStorage.getItem('preferences') ?? '{}').language,
-    ).toBe('zh');
+    expect(service.states()).toEqual({});
+    expect(JSON.parse(localStorage.getItem('preferences')!).states).toEqual({});
   });
 
-  it('keeps distinct recovery copies and reuses an existing copy of the same original', () => {
-    const raw = '{"states":';
+  const validScalars: [string, unknown][] = [
+    ...['de', 'en', 'es', 'fr', 'ja', 'ko', 'pt-BR', 'ru', 'zh'].map(
+      (value): [string, unknown] => ['language', value],
+    ),
+    ...[0, 1, 2, 3].map((value): [string, unknown] => ['powerUnit', value]),
+    ...['system', 'light', 'dark'].map((value): [string, unknown] => [
+      'theme',
+      value,
+    ]),
+    ...['simplex', 'exact'].map((value): [string, unknown] => [
+      'glpkAlgorithm',
+      value,
+    ]),
+    ['hue', -1],
+    ['chroma', 0],
+    ['backgroundLightness', 100],
+    ['bypassLanding', true],
+    ['paused', false],
+  ];
+  for (const [field, value] of validScalars) {
+    it(`restores and saves current ${field} = ${String(value)}`, () => {
+      const service = create(JSON.stringify({ [field]: value }));
+      expect(service.restoreError()).toBeUndefined();
+      const state = service.state() as unknown as Record<string, unknown>;
+      expect(state[field]).toEqual(value);
+      TestBed.tick();
+      const saved = JSON.parse(localStorage.getItem('preferences')!) as Record<
+        string,
+        unknown
+      >;
+      expect(saved[field]).toEqual(value);
+    });
+  }
+
+  const validFlows: [string, unknown][] = [
+    ...[0, 1].map((value): [string, unknown] => ['diagram', value]),
+    ...[0, 1, 2, 3, 4, 5].flatMap((value): [string, unknown][] => [
+      ['linkSize', value],
+      ['linkText', value],
+    ]),
+    ...[0, 1, 2, 3].map((value): [string, unknown] => ['sankeyAlign', value]),
+    ...[false, true].map((value): [string, unknown] => ['hideExcluded', value]),
+    ...['layered', 'force', 'stress'].map((value): [string, unknown] => [
+      'elkAlgorithm',
+      value,
+    ]),
+  ];
+  for (const [field, value] of validFlows) {
+    it(`restores current flow ${field} = ${String(value)} without losing other defaults`, () => {
+      const service = create(
+        JSON.stringify({ flowSettings: { [field]: value } }),
+      );
+      expect(service.restoreError()).toBeUndefined();
+      const flow = service.flowSettings() as unknown as Record<string, unknown>;
+      expect(flow[field]).toEqual(value);
+      expect(Object.keys(flow).sort()).toEqual(
+        Object.keys(defaults.preferences.flowSettings).sort(),
+      );
+      TestBed.tick();
+      const saved = JSON.parse(localStorage.getItem('preferences')!);
+      expect(saved.flowSettings[field]).toEqual(value);
+    });
+  }
+
+  for (const precision of [null, 0, 100]) {
+    it(`restores and saves a column precision of ${String(precision)}`, () => {
+      const service = create(
+        JSON.stringify({ columns: { items: { show: false, precision } } }),
+      );
+      expect(service.restoreError()).toBeUndefined();
+      expect(service.columns().items).toEqual({ show: false, precision });
+      expect(service.columns().belts).toEqual(
+        defaults.preferences.columns.belts,
+      );
+      TestBed.tick();
+      expect(
+        JSON.parse(localStorage.getItem('preferences')!).columns.items,
+      ).toEqual({ show: false, precision });
+    });
+  }
+
+  it('restores all current section booleans and valid empty archives', () => {
+    const sections = {
+      sources: false,
+      destinations: true,
+      depletion: false,
+      inputs: true,
+      outputs: false,
+    };
+    const service = create(
+      JSON.stringify({ sections, states: { aef: {}, other: { empty: '' } } }),
+    );
+    expect(service.restoreError()).toBeUndefined();
+    expect(service.state().sections).toEqual(sections);
+    expect(service.states()).toEqual({ aef: {}, other: { empty: '' } });
+    TestBed.tick();
+    const saved = JSON.parse(localStorage.getItem('preferences')!);
+    expect(saved.sections).toEqual(sections);
+    expect(saved.states).toEqual({ aef: {}, other: { empty: '' } });
+  });
+
+  const invalidFields: [string, unknown][] = [
+    ['unknown', true],
+    ['language', 'not-a-language'],
+    ['powerUnit', -1],
+    ['powerUnit', 4],
+    ['powerUnit', 1.5],
+    ['powerUnit', '1'],
+    ['theme', 'black'],
+    ['glpkAlgorithm', 'not-a-solver'],
+    ['hue', '10'],
+    ['chroma', {}],
+    ['backgroundLightness', null],
+    ['states', []],
+    ['states', { aef: [] }],
+    ['states', { aef: { safe: 'v=12', invalid: 1 } }],
+    ['columns', null],
+    ['columns', []],
+    ['columns', { unknown: { show: true, precision: 0 } }],
+    ['columns', { items: [] }],
+    ['columns', { items: { show: true } }],
+    ['columns', { items: { show: 'true', precision: 0 } }],
+    ...[-1, 101, 1.5, '1'].map((precision): [string, unknown] => [
+      'columns',
+      { items: { show: true, precision } },
+    ]),
+    ['columns', { items: { show: true, precision: 0, extra: false } }],
+    ['flowSettings', null],
+    ['flowSettings', []],
+    ['flowSettings', { diagram: 2 }],
+    ['flowSettings', { linkSize: 6 }],
+    ['flowSettings', { linkText: -1 }],
+    ['flowSettings', { sankeyAlign: 4 }],
+    ['flowSettings', { hideExcluded: 'false' }],
+    ['flowSettings', { elkAlgorithm: 'random' }],
+    ['flowSettings', { extra: true }],
+    ['sections', null],
+    ['sections', []],
+    ['sections', { unknown: true }],
+    ['sections', { sources: 'false' }],
+    ['bypassLanding', 1],
+  ];
+  const invalidDocuments: [string, string][] = [
+    ...[null, [], 42, 'bad'].map((value): [string, string] => [
+      `root ${JSON.stringify(value)}`,
+      JSON.stringify(value),
+    ]),
+    ['non-finite scalar', '{"language":"ru","hue":1e1000}'],
+    ...invalidFields.map(([field, value], i): [string, string] => [
+      `${field} case ${i}: ${JSON.stringify(value)}`,
+      JSON.stringify({
+        language: 'ru',
+        states: { aef: { safe: 'v=12' } },
+        [field]: value,
+      }),
+    ]),
+  ];
+  for (const [label, raw] of invalidDocuments) {
+    it(`rejects invalid ${label} as one document and protects its original`, () => {
+      spyOn(console, 'warn');
+      const service = create(raw);
+      expect(service.restoreError()).toBeDefined();
+      expect(service.stored()).toBe(raw);
+      expect(service.language()).toBe('zh');
+      expect(service.states()).toEqual({});
+      TestBed.tick();
+      service.apply({ language: 'ja' });
+      service.saveState('aef', 'later', '/aef/list?v=12');
+      TestBed.tick();
+      expect(service.restoreError()).toBeDefined();
+      expect(localStorage.getItem('preferences')).toBe(raw);
+      expect(localStorage.getItem('preferences.recovery')).toBeNull();
+    });
+  }
+
+  for (const [label, raw] of [
+    ['malformed JSON', '{"states":'],
+    ['empty JSON', ''],
+    ['retired black theme', JSON.stringify({ theme: 'black', language: 'ru' })],
+    [
+      'invalid nested schema',
+      JSON.stringify({
+        ...cloneDefaults(defaults).preferences,
+        theme: 'black',
+        language: 'ru',
+        states: { aef: { safe: '/aef/list?v=12', broken: 42 } },
+      }),
+    ],
+  ]) {
+    it(`preserves ${label} without salvaging fields until explicit reset`, () => {
+      const service = create(raw);
+      expect(service.restoreError()).toBeDefined();
+      expect(service.language()).toBe('zh');
+      expect(service.theme()).toBe('light');
+      expect(service.states()).toEqual({});
+      TestBed.tick();
+      service.apply({ theme: 'dark', language: 'ja' });
+      service.saveState('aef', 'new', '/aef/list?v=12');
+      TestBed.tick();
+      expect(service.restoreError()).toBeDefined();
+      expect(localStorage.getItem('preferences')).toBe(raw);
+      expect(localStorage.getItem('preferences.recovery')).toBeNull();
+      expect(localStorage.getItem('preferences.recovery.1')).toBeNull();
+      service.resetPreferences(true);
+      TestBed.tick();
+      expect(service.restoreError()).toBeUndefined();
+      const persisted = JSON.parse(localStorage.getItem('preferences')!);
+      expect(persisted.theme).toBe('light');
+      expect(persisted.states.aef.new).toBe('/aef/list?v=12');
+    });
+  }
+
+  it('does not consult or change the retired display preference', () => {
     localStorage.clear();
-    localStorage.setItem('preferences', raw);
-    localStorage.setItem('preferences.recovery', 'older original');
-    localStorage.setItem('preferences.recovery.1', 'another original');
-    spyOn(console, 'warn');
+    localStorage.setItem('endfield.presentation', '{broken');
+    const get = spyOn(Storage.prototype, 'getItem').and.callThrough();
     TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: PRODUCT_PROFILE,
-          useValue: createEndfieldProduct(false, 'zh'),
-        },
-      ],
+      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     const service = TestBed.inject(PreferencesStore);
-    expect(service.migrationWarnings).toContain(
-      'Failed to parse stored preferences',
-    );
-    expect(localStorage.getItem('preferences.recovery')).toBe('older original');
-    expect(localStorage.getItem('preferences.recovery.1')).toBe(
-      'another original',
-    );
-    expect(localStorage.getItem('preferences.recovery.2')).toBe(raw);
     TestBed.tick();
+    expect(service.restoreError()).toBeUndefined();
+    expect(get).not.toHaveBeenCalledWith('endfield.presentation');
+    expect(localStorage.getItem('endfield.presentation')).toBe('{broken');
+  });
+});
 
-    localStorage.setItem('preferences', raw);
-    TestBed.runInInjectionContext(() => new PreferencesStore());
-    expect(localStorage.getItem('preferences.recovery.2')).toBe(raw);
-    expect(localStorage.getItem('preferences.recovery.3')).toBeNull();
+describe('dataset HTTP boundary', () => {
+  afterEach(() => {
+    localStorage.clear();
   });
 
-  it('leaves the original intact when the recovery backup cannot be written', () => {
-    const raw = '{bad';
+  it('loads aef but does not request or expose a foreign dataset when pinned', async () => {
     localStorage.clear();
-    localStorage.setItem('preferences', raw);
-    const realSet = localStorage.setItem.bind(localStorage);
-    spyOn(Storage.prototype, 'setItem').and.callFake((key, value) => {
-      if (key.startsWith('preferences.recovery')) throw new Error('quota');
-      realSet(key, value);
-    });
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: PRODUCT_PROFILE,
-          useValue: createEndfieldProduct(false, 'zh'),
-        },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ...provideEndfieldDefaults(),
       ],
     });
-    TestBed.inject(PreferencesStore);
+    const settings = TestBed.inject(SettingsStore);
+    const http = TestBed.inject(HttpTestingController);
+    expect(settings.gameOptions.map((option) => option.value)).toEqual([
+      'endfield',
+    ]);
+    settings.apply({ modId: 'aef' });
     TestBed.tick();
-    expect(localStorage.getItem('preferences')).toBe(raw);
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      'preferences.recovery',
-      raw,
-    );
+    const data = emptyModData();
+    data.version = { game: 'aef' };
+    http.expectOne('data/aef/data.json').flush(data);
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.modData()?.version).toEqual({ game: 'aef' });
+    settings.apply({ modId: '2x1' });
+    TestBed.tick();
+    http.expectNone((request) => request.url.startsWith('data/2x1/'));
+    expect(settings.modData()).toBeUndefined();
+    expect(settings.modHash()).toBeUndefined();
+    expect(settings.modInfo()).toBeUndefined();
+    settings.apply({ modId: 'cst' });
+    TestBed.tick();
+    expect(settings.modData()).toBeUndefined();
+    expect(settings.modHash()).toBeUndefined();
+    expect(settings.modOptions()).toEqual([]);
+    http.expectNone((request) => request.url.startsWith('data/cst/'));
+    http.verify({ ignoreCancelled: true });
+  });
+
+  it('allows the native dataset resources when no mod is pinned', async () => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    expect(TestBed.inject(PINNED_MOD_ID)).toBeUndefined();
+    const settings = TestBed.inject(SettingsStore);
+    const http = TestBed.inject(HttpTestingController);
+    settings.apply({ modId: '2x1' });
+    TestBed.tick();
+    http.expectOne('data/2x1/data.json').flush(emptyModData());
+    http.expectOne('data/2x1/hash.json').flush(mockModHash);
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.modData()).toEqual(emptyModData());
+    expect(settings.modInfo()?.id).toBe('2x1');
+    settings.apply({ modId: 'missing-dataset' });
+    expect(settings.modInfo()).toBeUndefined();
+    expect(settings.game()).toBe('factorio');
+    http.verify({ ignoreCancelled: true });
   });
 });
 
 describe('Endfield route navigation', () => {
   function setup(
-    profile: ProductProfile,
-    options: { bypass?: boolean; stored?: string } = {},
+    options: { bypass?: boolean; stored?: string; pinned?: boolean } = {},
   ): {
     router: Router;
     source: Routes;
@@ -500,7 +560,10 @@ describe('Endfield route navigation', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter(source),
-        { provide: PRODUCT_PROFILE, useValue: profile },
+        {
+          provide: PINNED_MOD_ID,
+          useValue: options.pinned === false ? undefined : 'aef',
+        },
         { provide: PreferencesStore, useValue: { bypassLanding: bypass } },
         {
           provide: RouterSync,
@@ -522,7 +585,7 @@ describe('Endfield route navigation', () => {
   }
 
   it('passes every shortcut query to the destination unchanged before any old migration', async () => {
-    const fixture = setup(createEndfieldProduct(false, 'en'));
+    const fixture = setup();
     const harness = await RouterTestingHarness.create('/aef/list?v=11&o=a&o=b');
     expect(fixture.router.url).toBe('/aef/list?v=11&o=a&o=b');
     for (const shortcut of ['list', 'wizard', 'flow', 'data']) {
@@ -540,7 +603,7 @@ describe('Endfield route navigation', () => {
   });
 
   it('drops foreign queries and blocks editor and editor deep links', async () => {
-    const fixture = setup(createEndfieldProduct(false, 'en'));
+    const fixture = setup();
     const harness = await RouterTestingHarness.create('/2x1/list?o=foreign');
     expect(fixture.router.url).toBe('/aef');
     for (const url of [
@@ -558,7 +621,7 @@ describe('Endfield route navigation', () => {
   });
 
   it('preserves a root query with landing enabled without consulting the cache', async () => {
-    const fixture = setup(createEndfieldProduct(false, 'en'), {
+    const fixture = setup({
       stored: '/aef/list?old=1',
     });
     await RouterTestingHarness.create('/?v=11&o=a&o=b');
@@ -566,22 +629,8 @@ describe('Endfield route navigation', () => {
     expect(fixture.stored).not.toHaveBeenCalled();
   });
 
-  it('uses the upstream default for a restricted product without a default mod', async () => {
-    const fixture = setup({
-      ...upstreamProduct,
-      allowedModIds: [DEFAULT_MOD],
-    });
-    const harness = await RouterTestingHarness.create('/?v=11&o=a&o=b');
-    expect(fixture.router.url).toBe(`/${DEFAULT_MOD}?v=11&o=a&o=b`);
-    fixture.bypass.and.returnValue(true);
-    await harness.navigateByUrl('/?v=11&o=a&o=b');
-    expect(fixture.router.url).toBe(`/${DEFAULT_MOD}/list?v=11&o=a&o=b`);
-    expect(fixture.unzip).not.toHaveBeenCalled();
-    expect(fixture.migrate).not.toHaveBeenCalled();
-  });
-
   it('resumes only an allowed cache and gives an explicit root query priority', async () => {
-    const fixture = setup(createEndfieldProduct(false, 'en'), {
+    const fixture = setup({
       bypass: true,
       stored: '/aef/list?v=11&o=old',
     });
@@ -599,41 +648,8 @@ describe('Endfield route navigation', () => {
     expect(fixture.migrate).not.toHaveBeenCalled();
   });
 
-  it('treats an empty allowlist as an active restriction', () => {
-    const fixture = setup(
-      {
-        ...upstreamProduct,
-        defaultModId: 'aef',
-        allowedModIds: [],
-      },
-      { bypass: true, stored: '/aef/list?old=1' },
-    );
-    const state = {} as RouterStateSnapshot;
-    const idRoute = {
-      params: { id: 'aef' },
-      queryParams: {},
-    } as unknown as ActivatedRouteSnapshot;
-    const idResult = TestBed.runInInjectionContext(() =>
-      idGuard(idRoute, state),
-    );
-    expect(idResult instanceof UrlTree).toBeTrue();
-    expect(fixture.router.serializeUrl(idResult as UrlTree)).toBe('/aef');
-    const rootRoute = {
-      params: {},
-      queryParams: {},
-      paramMap: { get: () => null },
-    } as unknown as ActivatedRouteSnapshot;
-    const landingResult = TestBed.runInInjectionContext(() =>
-      landingGuard(rootRoute, state),
-    );
-    expect(fixture.router.serializeUrl(landingResult as UrlTree)).toBe(
-      '/aef/list',
-    );
-    expect(fixture.migrate).not.toHaveBeenCalled();
-  });
-
   it('preserves upstream shortcut, alias and ordinary-id behavior in neutral mode', async () => {
-    const fixture = setup(upstreamProduct);
+    const fixture = setup({ pinned: false });
     const harness = await RouterTestingHarness.create('/ffy');
     for (const [url, expected] of [
       ['/list?v=10&o=a&o=b', '/sfy/list?v=12&o=migrated&o=again'],
@@ -653,7 +669,8 @@ describe('Endfield route navigation', () => {
   });
 
   it('preserves neutral landing and editor behavior', async () => {
-    const fixture = setup(upstreamProduct, {
+    const fixture = setup({
+      pinned: false,
       stored: '/2x1/list?o=old',
     });
     const harness = await RouterTestingHarness.create('/?v=11&o=a&o=b');
@@ -674,18 +691,15 @@ describe('Shortcut forwarding to the Endfield codec', () => {
     localStorage.clear();
   });
 
-  it('passes the activated Id query to the codec before migration', async () => {
+  it('passes the activated Id query to native migration', async () => {
     localStorage.clear();
-    const sequence: string[] = [];
     const migrate = jasmine.createSpy('migrate').and.callFake(() => {
-      sequence.push('migrate');
-      throw new Error('Stop after observing codec preparation');
+      throw new Error('Stop after observing migration');
     });
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        provideEndfieldProduct(),
-        ...provideEndfieldStateExtension(),
+        ...provideEndfieldDefaults(),
         { provide: Migration, useValue: { migrate } },
         provideRouter([
           {
@@ -699,12 +713,6 @@ describe('Shortcut forwarding to the Endfield codec', () => {
     });
     const router = TestBed.inject(Router);
     const http = TestBed.inject(HttpTestingController);
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const originalPrepare = extension.prepare.bind(extension);
-    const prepare = spyOn(extension, 'prepare').and.callFake((input) => {
-      sequence.push('prepare');
-      return originalPrepare(input);
-    });
     await RouterTestingHarness.create('/list?v=11&o=a&o=b&cet=x');
     for (let i = 0; i < 6; i++) {
       await Promise.resolve();
@@ -712,12 +720,11 @@ describe('Shortcut forwarding to the Endfield codec', () => {
     }
 
     expect(router.url).toBe('/aef/list?v=11&o=a&o=b&cet=x');
-    expect(prepare).toHaveBeenCalledOnceWith({
-      modId: 'aef',
-      params: { v: '11', o: ['a', 'b'], cet: 'x' },
+    expect(migrate).toHaveBeenCalledOnceWith('aef', {
+      v: '11',
+      o: ['a', 'b'],
+      cet: 'x',
     });
-    expect(migrate).toHaveBeenCalledTimes(1);
-    expect(sequence).toEqual(['prepare', 'migrate']);
     http.expectNone((request) => /^data\/(?!aef\/)/.test(request.url));
   });
 });

@@ -1,4 +1,3 @@
-import type { ReadonlyValue } from '~/extensions/immutable';
 import { Rational, rational } from '~/rational/rational';
 import { RecipeState } from '~/state/recipes/recipe-state';
 
@@ -17,6 +16,9 @@ export const resourceIds: readonly ResourceId[] = Object.keys(
   resourceRecipes,
 ) as ResourceId[];
 export const ovenId = 'xiranite_oven_1';
+export type SourceRecipeSettings = Readonly<
+  Pick<RecipeState, 'machineId' | 'overclock'>
+>;
 
 export interface EndfieldState {
   readonly version: 1;
@@ -36,7 +38,7 @@ export interface EndfieldState {
   };
   readonly electric: Rational;
   readonly resourceRecipeSettings: Readonly<
-    Partial<Record<ResourceId, ReadonlyValue<RecipeState>>>
+    Partial<Record<ResourceId, SourceRecipeSettings>>
   >;
   readonly checkedDerived: ReadonlySet<string>;
 }
@@ -47,6 +49,11 @@ export function resourceOwner(id: ResourceId): string {
 
 export function resourceObjectiveId(id: ResourceId): string {
   return `ef:resource:${id}`;
+}
+
+/** Only the six resource supply objectives own source settings. */
+export function resourceFromObjectiveId(id?: string): ResourceId | undefined {
+  return resourceIds.find((resource) => resourceObjectiveId(resource) === id);
 }
 
 export function resourceLimitId(id: ResourceId): string {
@@ -72,28 +79,5 @@ export function createEndfieldState(): EndfieldState {
     electric: rational.one,
     resourceRecipeSettings: {},
     checkedDerived: new Set(),
-  };
-}
-
-/** Copy mutable nested fields before accepting or returning recipe settings. */
-export function copyResourceRecipeSettings(
-  settings: ReadonlyValue<RecipeState>,
-): RecipeState {
-  const { modules, beacons, ...rest } = settings;
-  return {
-    ...rest,
-    ...(modules == null
-      ? {}
-      : { modules: modules.map((module) => ({ ...module })) }),
-    ...(beacons == null
-      ? {}
-      : {
-          beacons: beacons.map(({ modules: beaconModules, ...beacon }) => ({
-            ...beacon,
-            ...(beaconModules == null
-              ? {}
-              : { modules: beaconModules.map((module) => ({ ...module })) }),
-          })),
-        }),
   };
 }

@@ -61,7 +61,12 @@
                 "glob": "**/*",
                 "input": "public/data/aef",
                 "output": "data/aef",
-                "ignore": ["defaults.json"]
+                "ignore": ["defaults.json", "i18n/**"]
+              },
+              {
+                "glob": "*.json",
+                "input": ".tmp/endfield-assets/data/aef/i18n",
+                "output": "data/aef/i18n"
               },
               {
                 "glob": "glpk.all.wasm",
@@ -79,12 +84,6 @@
           },
           "configurations": {
             "production": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.production.ts"
-                }
-              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -106,21 +105,9 @@
               "sourceMap": true
             },
             "staging": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.production.ts"
-                }
-              ],
               "baseHref": "/staging/"
             },
             "next": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.production.ts"
-                }
-              ],
               "baseHref": "/next/"
             }
           },
@@ -152,7 +139,22 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": ["**/defaults.json"]
+                "ignore": [
+                  "**/defaults.json",
+                  "data/aef/i18n/**",
+                  "endfield/i18n/**",
+                  "i18n/**"
+                ]
+              },
+              {
+                "glob": "*.json",
+                "input": ".tmp/endfield-assets/i18n",
+                "output": "i18n"
+              },
+              {
+                "glob": "*.json",
+                "input": ".tmp/endfield-assets/data/aef/i18n",
+                "output": "data/aef/i18n"
               },
               {
                 "glob": "glpk.all.wasm",

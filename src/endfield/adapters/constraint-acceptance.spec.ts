@@ -5,20 +5,17 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
 import { AdjustedRecipe } from '~/data/schema/recipe';
-import { CALCULATION_EXTENSION } from '~/extensions/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
 import { SIMPLEX_CONFIG } from '~/solver/simplex-config';
 import { SimplexResult } from '~/solver/simplex-result';
 import { Solver } from '~/solver/solver';
 import { Step } from '~/solver/step';
 import { ItemsStore } from '~/state/items/items-store';
-import { MachinesStore } from '~/state/machines/machines-store';
 import { ObjectiveState, RecipeObjective } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
-import { RecipesStore } from '~/state/recipes/recipes-store';
 import { AdjustedDataset } from '~/state/settings/dataset';
 import { MaximizeType } from '~/state/settings/maximize-type';
 import { Settings } from '~/state/settings/settings';
@@ -26,7 +23,6 @@ import { initialSettingsState } from '~/state/settings/settings-state';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 
-import { settlementRecipeAlias } from '../compat/codec';
 import {
   createEndfieldState,
   ovenId,
@@ -121,138 +117,6 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     return value;
   }
 
-  it('solves matching old and native settlement models, including explicit objectives and integer constraints', () => {
-    const previous: ModData = {
-      ...data,
-      recipes: data.recipes.map((recipe) => {
-        const alias = settlementRecipeAlias(recipe);
-        return alias == null
-          ? recipe
-          : { ...recipe, locations: undefined, producers: [alias] };
-      }),
-    };
-    const recipes = TestBed.inject(RecipesStore);
-    const machines = TestBed.inject(MachinesStore);
-    const snapshot = (
-      result: SimplexResult,
-    ): {
-      key: string;
-      count: number;
-      items: number;
-      output: number;
-      surplus: number;
-    }[] =>
-      result.steps
-        .map((step) => ({
-          key: `${step.itemId ?? ''}|${step.recipeId ?? ''}|${step.recipeObjectiveId ?? ''}`,
-          count: step.machines?.toNumber() ?? 0,
-          items: step.items?.toNumber() ?? 0,
-          output: step.output?.toNumber() ?? 0,
-          surplus: step.surplus?.toNumber() ?? 0,
-        }))
-        .sort((a, b) => a.key.localeCompare(b.key));
-
-    for (const [id, alias, itemId] of [
-      [
-        'tundra_coupon-glass_bottle',
-        'settlement-tundra_coupon',
-        'tundra_coupon',
-      ],
-      [
-        'jinlong_coupon-copper_cmpt',
-        'settlement-jinlong_coupon',
-        'jinlong_coupon',
-      ],
-    ] as const) {
-      const chosen = data.recipes.find((recipe) => recipe.id === id)!;
-      const input = Object.keys(chosen.in)[0];
-      settings.apply({
-        locationIds: new Set(['tundra', 'jinlong']),
-        overclock: rational(150),
-        excludedRecipeIds: new Set(
-          data.recipes
-            .filter((recipe) => recipe.out[itemId] != null && recipe.id !== id)
-            .map((recipe) => recipe.id),
-        ),
-      });
-      machines.set({ [alias]: { overclock: rational(125) } });
-      recipes.set({
-        [id]: {
-          machineId: alias,
-          overclock: rational(200),
-          productivity: rational(25),
-        },
-      });
-      for (const type of [
-        undefined,
-        ObjectiveType.Output,
-        ObjectiveType.Input,
-        ObjectiveType.Maximize,
-        ObjectiveType.Limit,
-      ]) {
-        const typeLabel = type == null ? 'ordinary' : String(type);
-        const selected: Record<string, ObjectiveState> = {
-          '1': objective('1', itemId, 60, ObjectiveUnit.Items),
-          // Keep maximization bounded by a real ingredient limit.
-          '3': {
-            ...objective('3', input, 120, ObjectiveUnit.Items),
-            type: ObjectiveType.Limit,
-          },
-          // Force an independent integer-constrained oven variable into the model.
-          '4': objective('4', 'xiranite_powder-carbon_enr', 1),
-        };
-        if (type != null)
-          selected['2'] = {
-            ...objective('2', id, 1),
-            type,
-            machineId: alias,
-            overclock: rational(175),
-          };
-        objectives.set(selected);
-        const base = createEndfieldState();
-        extension.set({
-          ...base,
-          machineLimits: { enabled: true, limits: { [ovenId]: rational(2) } },
-        });
-        settings['modDataResource'].set(previous);
-        const oldResult = objectives.matrixResult();
-        settings['modDataResource'].set(data);
-        const newResult = objectives.matrixResult();
-        expect(newResult.resultType)
-          .withContext(`${id} type ${typeLabel}`)
-          .toBe(oldResult.resultType);
-        expect(newResult.simplexStatus)
-          .withContext(`${id} type ${typeLabel}`)
-          .toBe(oldResult.simplexStatus);
-        expect(newResult.resultType)
-          .withContext(`${id} type ${typeLabel}`)
-          .toBe('solved');
-        expect(count(newResult.steps, 'xiranite_powder-carbon_enr', '4'))
-          .withContext(`${id} integer-constrained objective`)
-          .toBeCloseTo(1, 6);
-        if (type == null)
-          expect(count(newResult.steps, id)).withContext(id).toBeGreaterThan(0);
-        if (type === ObjectiveType.Output)
-          expect(count(newResult.steps, id, '2'))
-            .withContext(id)
-            .toBeCloseTo(1, 6);
-        expect(newResult.cost!.toNumber())
-          .withContext(`${id} cost type ${typeLabel}`)
-          .toBeCloseTo(oldResult.cost!.toNumber(), 5);
-        const before = snapshot(oldResult);
-        const after = snapshot(newResult);
-        expect(after.map((step) => step.key)).toEqual(
-          before.map((step) => step.key),
-        );
-        for (let i = 0; i < before.length; i++)
-          for (const field of ['count', 'items', 'output', 'surplus'] as const)
-            expect(after[i][field])
-              .withContext(`${id} ${typeLabel} ${before[i].key} ${field}`)
-              .toBeCloseTo(before[i][field], 5);
-      }
-    }
-  });
-
   it('A08 solves originium alone, preserving 560/min, 28 miners and surplus', () => {
     const state = createEndfieldState();
     extension.set({
@@ -266,7 +130,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       },
     });
     objectives.set({
-      1: objective('1', 'originium_ore', 60, ObjectiveUnit.Items),
+      1: objective('1', 'originium_ore', 540, ObjectiveUnit.Items),
     });
     const context = objectives.calculationContext();
     expect(
@@ -291,7 +155,7 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     close(count(solved.steps, 'originium_ore'), 28);
     const ore = objectives.steps().find((s) => s.itemId === 'originium_ore')!;
     close(ore.items!.toNumber(), 560);
-    close(ore.surplus!.toNumber(), 500);
+    close(ore.surplus!.toNumber(), 20);
   });
 
   it('A08 solves copper and gases only, with physical water and fluid transport', () => {
@@ -538,10 +402,6 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       2: objective('2', 'sewage-treat-export', 0.1),
     });
     expect(result('A12-overlap').resultType).toBe('failed');
-    const compile = spyOn(
-      TestBed.inject(CALCULATION_EXTENSION),
-      'rules',
-    ).and.callThrough();
     settings.apply({
       excludedRecipeIds: new Set(['carbon_enr', 'sewage-treat-export']),
     });
@@ -550,16 +410,6 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     expect(sparseX.resultType).toBe('solved');
     close(count(sparseX.steps, 'sewage-treat'), 3);
     close(count(sparseX.steps, 'sewage-treat-export'), 0);
-    expect(
-      compile.calls
-        .mostRecent()
-        .args[1].some((v) => v.recipeId === 'sewage-treat-export'),
-    ).toBeFalse();
-    expect(
-      compile.calls
-        .mostRecent()
-        .args[1].some((v) => v.recipeId === 'sewage-treat'),
-    ).toBeTrue();
     objectives.set({ 1: objective('1', 'sewage-treat', 3.1) });
     expect(result('A12-x-sparse-over').resultType).toBe('failed');
     settings.apply({
@@ -570,16 +420,6 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     expect(sparseY.resultType).toBe('solved');
     close(count(sparseY.steps, 'sewage-treat'), 0);
     close(count(sparseY.steps, 'sewage-treat-export'), 1);
-    expect(
-      compile.calls
-        .mostRecent()
-        .args[1].some((v) => v.recipeId === 'sewage-treat'),
-    ).toBeFalse();
-    expect(
-      compile.calls
-        .mostRecent()
-        .args[1].some((v) => v.recipeId === 'sewage-treat-export'),
-    ).toBeTrue();
     objectives.set({ 1: objective('1', 'sewage-treat-export', 1.1) });
     expect(result('A12-y-sparse-over').resultType).toBe('failed');
     settings.apply({ excludedRecipeIds: new Set(['carbon_enr']) });

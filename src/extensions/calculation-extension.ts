@@ -1,13 +1,6 @@
-import { InjectionToken } from '@angular/core';
-
 import { Rational } from '~/rational/rational';
-import {
-  ObjectiveSettings,
-  ObjectiveState,
-} from '~/state/objectives/objective';
+import { ObjectiveState } from '~/state/objectives/objective';
 import { RecipeSettings } from '~/state/recipes/recipe-settings';
-import { AdjustedDataset } from '~/state/settings/dataset';
-import { Settings } from '~/state/settings/settings';
 
 import { ReadonlyValue } from './immutable';
 
@@ -46,8 +39,7 @@ export interface CalculationModelContext {
 }
 
 export interface DerivedObjective {
-  readonly objective: ReadonlyValue<ObjectiveState>;
-  readonly owner: string;
+  readonly objective: Readonly<ObjectiveState>;
   /** A physical rate; caller converts using the fully adjusted objective recipe. */
   readonly fixedOutput?: {
     readonly itemId: string;
@@ -56,30 +48,3 @@ export interface DerivedObjective {
   /** An item input/limit already expressed per second, independent of display rate. */
   readonly fixedRate?: Rational;
 }
-
-export interface CalculationInput {
-  readonly data: ReadonlyValue<AdjustedDataset>;
-  readonly settings: ReadonlyValue<Settings>;
-  readonly recipeSettings: ReadonlyValue<Record<string, RecipeSettings>>;
-  readonly objectives: ReadonlyValue<ObjectiveSettings[]>;
-  readonly extension: unknown;
-}
-
-/** Implementations take values only: never inject Adjustment/Normalization/stores here. */
-export interface CalculationExtension {
-  derive(input: CalculationInput): readonly DerivedObjective[];
-  rules(
-    input: CalculationInput,
-    variables: readonly CalculationVariable[],
-  ): ModelRules;
-}
-
-export const emptyModelRules: ModelRules = { constraints: [], integers: [] };
-export const upstreamCalculation: CalculationExtension = {
-  derive: () => [],
-  rules: () => emptyModelRules,
-};
-export const CALCULATION_EXTENSION = new InjectionToken<CalculationExtension>(
-  'CALCULATION_EXTENSION',
-  { factory: (): CalculationExtension => upstreamCalculation },
-);

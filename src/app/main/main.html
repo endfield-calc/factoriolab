@@ -29,9 +29,8 @@
   ></header>
   <main class="flex grow flex-col">
     <div class="px-1 sm:px-3 lg:px-6">
-      @for (panel of presentation.mainPanels; track panel) {
-        <ng-container *ngComponentOutlet="panel"></ng-container>
-      }
+      <lab-endfield-resources></lab-endfield-resources>
+      <lab-endfield-guide></lab-endfield-guide>
     </div>
     <lab-objectives
       [attr.inert]="lifecycle.ready() ? null : ''"

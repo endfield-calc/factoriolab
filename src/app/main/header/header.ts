@@ -13,12 +13,12 @@ import {
   faUserGear,
 } from '@fortawesome/free-solid-svg-icons';
 
+import product from '/public/endfield/product.json';
 import { Button } from '~/components/button/button';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
 import { Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
@@ -45,7 +45,6 @@ import { headerLinks } from './links';
 export class Header {
   private readonly router = inject(Router);
   protected readonly settingsStore = inject(SettingsStore);
-  protected readonly product = inject(PRODUCT_PROFILE);
 
   readonly preferencesOpen = model.required<boolean>();
   readonly settingsOpen = model.required<boolean>();
@@ -59,12 +58,11 @@ export class Header {
   protected readonly headerLinks = headerLinks
     .map((link) =>
       link.text === 'header.source'
-        ? { ...link, href: this.product.sourceUrl }
+        ? { ...link, href: product.sourceUrl }
         : link,
     )
     .filter(
       (link) =>
-        this.product.allowEditor ||
         !['header.editor', 'header.discord', 'header.sponsor'].includes(
           link.text,
         ),

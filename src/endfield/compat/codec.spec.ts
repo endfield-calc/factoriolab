@@ -1,71 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 
 import rawData from '/public/data/aef/data.json';
-import rawHash from '/public/data/aef/hash.json';
-import { EnergyType } from '~/data/schema/energy-type';
 import { ModData } from '~/data/schema/mod-data';
 import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
-import { provideEndfield } from '~/endfield/providers';
-import { EndfieldStore } from '~/endfield/state/endfield-store';
-import {
-  STATE_EXTENSION,
-  upstreamState,
-  WorkspaceRestoreError,
-} from '~/extensions/state-extension';
-import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
+import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
-import { ItemsStore } from '~/state/items/items-store';
-import { MachinesStore } from '~/state/machines/machines-store';
-import { ObjectivesStore } from '~/state/objectives/objectives-store';
-import { RecipesStore } from '~/state/recipes/recipes-store';
-import { Migration } from '~/state/router/migration';
-import { Params } from '~/state/router/params';
-import { RouterSync } from '~/state/router/router-sync';
 import { Zip } from '~/state/router/zip';
-import { SettingsStore } from '~/state/settings/settings-store';
-import { TableStore } from '~/state/table/table-store';
-import { TestModule } from '~/tests/test-module';
 
 import {
   decodeEndfield,
   encodeEndfield,
-  settlementRecipeAlias,
   validateRecipeReferences,
 } from './codec';
-import { preflightWorkspace, prepareEndfield } from './restore';
 
 const data = rawData as unknown as ModData;
-// This synthetic extension gives the real copper mining recipe a machine that
-// supports fuel, modules and beacons; fixed aef has no such entities.
-const supportedData: ModData = {
-  ...data,
-  items: [
-    ...data.items.map((item) =>
-      item.id === 'miner_4'
-        ? {
-            ...item,
-            machine: {
-              ...item.machine,
-              type: EnergyType.Burner,
-              fuelTypes: ['test-fuel-type'],
-              modules: 2,
-            },
-          }
-        : item,
-    ),
-    {
-      id: 'test-fuel',
-      name: 'Fuel',
-      fuel: { types: ['test-fuel-type'], value: 1 },
-    },
-    { id: 'test-module', name: 'Module', module: { speed: 1 } },
-    {
-      id: 'test-beacon',
-      name: 'Beacon',
-      beacon: { effectivity: 1, modules: 2 },
-    },
-  ],
-};
 function payload(value: unknown): string {
   const bytes = new TextEncoder().encode(JSON.stringify(value));
   return btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''))
@@ -93,75 +41,46 @@ function expectDiagnostic(
 }
 
 describe('Endfield ef codec', () => {
-  it('rejects a historical coupon machine for another producerless settlement output during preflight', () => {
-    const id = 'jinlong_coupon-copper_cmpt';
-    const unrelated: ModData = {
-      ...data,
-      recipes: data.recipes.map((recipe) =>
-        recipe.id === id ? { ...recipe, out: { iron_ore: 1 } } : recipe,
-      ),
-    };
-    const state = {
-      recipesState: { [id]: { machineId: 'settlement-jinlong_coupon' } },
-      settingsState: { modId: 'aef' },
-    };
-    const plan = prepareEndfield({ modId: 'aef', params: { v: '11' } });
-    expectDiagnostic(
-      () => preflightWorkspace({ state, plan, data: unrelated }),
-      `recipes.${id}.machineId`,
-    );
-    expect(state.recipesState[id].machineId).toBe('settlement-jinlong_coupon');
-  });
-  it('recognizes only native settlement recipes and permits only their matching historical aliases', () => {
-    for (const [id, alias] of [
-      ['tundra_coupon-glass_bottle', 'settlement-tundra_coupon'],
-      ['jinlong_coupon-copper_cmpt', 'settlement-jinlong_coupon'],
-    ] as const) {
+  it('rejects machine overrides for producerless settlement recipes', () => {
+    for (const id of [
+      'tundra_coupon-glass_bottle',
+      'jinlong_coupon-copper_cmpt',
+    ]) {
       const recipe = data.recipes.find((entry) => entry.id === id)!;
-      expect(settlementRecipeAlias(recipe)).toBe(alias);
-      expect(() => {
-        validateRecipeReferences({ machineId: alias }, data, 'recipe', id);
-      }).not.toThrow();
-      const other = alias.includes('tundra')
-        ? 'settlement-jinlong_coupon'
-        : 'settlement-tundra_coupon';
-      for (const machineId of [other, 'miner_2', 'unknown'])
+      expect(recipe.producers).toBeUndefined();
+      for (const machineId of [
+        'settlement-tundra_coupon',
+        'settlement-jinlong_coupon',
+        'miner_2',
+      ])
         expectDiagnostic(() => {
           validateRecipeReferences({ machineId }, data, 'recipe', id);
         }, 'recipe.machineId');
-      expect(
-        settlementRecipeAlias({ ...recipe, producers: [] }),
-      ).toBeUndefined();
-      expect(
-        settlementRecipeAlias({ ...recipe, locations: [] }),
-      ).toBeUndefined();
-      expect(
-        settlementRecipeAlias({ ...recipe, out: { ...recipe.out, extra: 1 } }),
-      ).toBeUndefined();
-      expect(
-        settlementRecipeAlias({ ...recipe, category: 'other' }),
-      ).toBeUndefined();
     }
-    const ordinary = data.recipes.find(
-      (entry) => entry.id === 'originium_ore',
-    )!;
-    expect(
-      settlementRecipeAlias({ ...ordinary, producers: undefined }),
-    ).toBeUndefined();
+  });
+  it('allows the native empty module slot and rejects an unknown module on ordinary recipes', () => {
+    expect(() => {
+      validateRecipeReferences(
+        { modules: [{ id: '' }] },
+        data,
+        'ordinary',
+        'copper_ore',
+      );
+    }).not.toThrow();
     expectDiagnostic(() => {
       validateRecipeReferences(
-        { machineId: 'settlement-tundra_coupon' },
+        { modules: [{ id: 'missing-module' }] },
         data,
-        'recipe',
-        ordinary.id,
+        'ordinary',
+        'copper_ore',
       );
-    }, 'recipe.machineId');
+    }, 'ordinary.modules.0.id');
   });
   it('reads each whitelisted resource setting once and retains its captured value', () => {
     let reads = 0;
     const settings = Object.defineProperty({}, 'originium_ore', {
       enumerable: true,
-      get: () => (++reads === 1 ? { cost: rational(-3) } : undefined),
+      get: () => (++reads === 1 ? { overclock: rational(125) } : undefined),
     });
     const restored = decodeEndfield(
       encodeEndfield({
@@ -172,7 +91,9 @@ describe('Endfield ef codec', () => {
     );
     expect(reads).toBe(1);
     expect(
-      restored.resourceRecipeSettings.originium_ore?.cost?.eq(rational(-3)),
+      restored.resourceRecipeSettings.originium_ore?.overclock?.eq(
+        rational(125),
+      ),
     ).toBeTrue();
   });
   it('rejects zero recipe speed before a resource workspace can be committed', () => {
@@ -189,6 +110,8 @@ describe('Endfield ef codec', () => {
   });
   it('distinguishes disabled from enabled zero, fills only omitted defaults', () => {
     const defaults = createEndfieldState();
+    expect(decodeEndfield(undefined, data)).toEqual(defaults);
+    expect(decodeEndfield(null, data)).toEqual(defaults);
     const disabled = decodeEndfield(encodeEndfield(defaults), data);
     const enabled = decodeEndfield(
       payload({ version: 1, resourceLimits: { enabled: true } }),
@@ -202,14 +125,14 @@ describe('Endfield ef codec', () => {
     expect(encodeEndfield(enabled)).not.toBe(encodeEndfield(disabled));
   });
 
-  it('fills omitted enabled flags while retaining an explicit recipe cost without a machine', () => {
+  it('fills omitted enabled flags while retaining a source overclock without a machine', () => {
     const state = decodeEndfield(
       payload({
         version: 1,
         resourceLimits: { rates: { iron_ore: '3' } },
         machineLimits: { limits: { xiranite_oven_1: '2' } },
         transfer: { source: 'tundra' },
-        resourceRecipeSettings: { iron_ore: { cost: '-2' } },
+        resourceRecipeSettings: { iron_ore: { overclock: '125' } },
       }),
       data,
     );
@@ -219,7 +142,7 @@ describe('Endfield ef codec', () => {
     expect(state.resourceLimits.rates.iron_ore).toEqual(rational(3));
     expect(state.machineLimits.limits['xiranite_oven_1']).toEqual(rational(2));
     expect(state.resourceRecipeSettings.iron_ore).toEqual({
-      cost: rational(-2),
+      overclock: rational(125),
     });
     expect(decodeEndfield(encodeEndfield(state), data)).toEqual(state);
   });
@@ -239,7 +162,6 @@ describe('Endfield ef codec', () => {
         copper_ore: {
           machineId: 'miner_4',
           overclock: rational(125),
-          modules: [{ id: '', count: rational.one }],
         },
       },
       checkedDerived: new Set([resourceOwner('copper_ore')]),
@@ -249,33 +171,6 @@ describe('Endfield ef codec', () => {
     expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeEndfield(encoded, data)).toEqual(state);
     expect(encodeEndfield(decodeEndfield(encoded, data))).toBe(encoded);
-  });
-
-  it('round trips negative, zero and exact fractional recipe costs', () => {
-    for (const cost of [
-      rational(-30),
-      rational.zero,
-      new Rational(-9007199254740993n, 7n),
-    ]) {
-      const state = {
-        ...createEndfieldState(),
-        resourceRecipeSettings: { copper_ore: { machineId: 'miner_4', cost } },
-      };
-      const encoded = encodeEndfield(state);
-      const restored = decodeEndfield(encoded, data);
-      expect(restored.resourceRecipeSettings.copper_ore?.cost).toEqual(cost);
-      expect(encodeEndfield(restored)).toBe(encoded);
-    }
-    const decimal = decodeEndfield(
-      payload({
-        version: 1,
-        resourceRecipeSettings: { copper_ore: { cost: '-1.25e-2' } },
-      }),
-      data,
-    );
-    expect(decimal.resourceRecipeSettings.copper_ore?.cost).toEqual(
-      rational(-1, 80),
-    );
   });
 
   it('handles UTF-8 entity IDs in a valid dataset', () => {
@@ -303,8 +198,6 @@ describe('Endfield ef codec', () => {
     );
     const invalidJson = btoa('{').replace(/=+$/, '');
     for (const input of [
-      undefined,
-      null,
       3,
       '',
       'a',
@@ -405,7 +298,12 @@ describe('Endfield ef codec', () => {
         () => decodeEndfield(payload({ version: 1, electric: value }), data),
         'ef.electric',
       );
-    for (const value of ['1e10001', '1e-10001'])
+    for (const value of [
+      '1e10001',
+      '1e-10001',
+      '1e9007199254740992',
+      '1.0e-10000',
+    ])
       expectDiagnostic(
         () => decodeEndfield(payload({ version: 1, electric: value }), data),
         'ef.electric',
@@ -425,72 +323,18 @@ describe('Endfield ef codec', () => {
       );
   });
 
-  it('round trips supported machine, fuel, module and beacon settings without sharing their arrays', () => {
-    const settings = {
-      machineId: 'miner_4',
-      fuelId: 'test-fuel',
-      modules: [
-        { id: 'test-module', count: rational(2) },
-        { count: rational.one },
-      ],
-      beacons: [
-        {
-          id: 'test-beacon',
-          count: rational(3),
-          total: rational(7, 2),
-          modules: [{ id: 'test-module', count: rational.one }, {}],
-        },
-        {},
-      ],
-      overclock: rational(125),
-      productivity: rational(2),
-      cost: rational(-30),
-    };
-    const encoded = encodeEndfield({
-      ...createEndfieldState(),
-      resourceRecipeSettings: { copper_ore: settings },
-    });
-    const decoded = decodeEndfield(encoded, supportedData);
-    expect(decoded.resourceRecipeSettings.copper_ore).toEqual(settings);
-    expect(decoded.resourceRecipeSettings.copper_ore?.modules).not.toBe(
-      settings.modules,
-    );
-    expect(
-      decoded.resourceRecipeSettings.copper_ore?.beacons?.[0].modules,
-    ).not.toBe(settings.beacons[0].modules);
-    settings.modules[0].id = 'changed';
-    expect(decoded.resourceRecipeSettings.copper_ore?.modules?.[0].id).toBe(
-      'test-module',
-    );
-    expect(encodeEndfield(decoded)).toBe(encoded);
-  });
-
-  it('diagnoses invalid producer, nested entity and count references', () => {
-    for (const [settings, field] of [
-      [{ machineId: 'miner_2' }, 'machineId'],
-      [{ machineId: 'unknown' }, 'machineId'],
-      [{ fuelId: 'unknown' }, 'fuelId'],
-      [{ modules: 'invalid' }, 'modules'],
-      [{ modules: [{ id: 'unknown' }] }, 'modules.0.id'],
-      [{ modules: [{ id: 'test-module', count: '-1' }] }, 'modules.0.count'],
-      [{ beacons: 'invalid' }, 'beacons'],
-      [{ beacons: [{ id: 'unknown' }] }, 'beacons.0.id'],
-      [{ beacons: [{ id: 'test-beacon', total: '-1' }] }, 'beacons.0.total'],
-      [
-        { beacons: [{ id: 'test-beacon', modules: [{ id: 'unknown' }] }] },
-        'beacons.0.modules.0.id',
-      ],
-    ] as const)
+  it('diagnoses a non-producer or unknown machine reference', () => {
+    for (const machineId of ['miner_2', 'unknown'])
       expectDiagnostic(
         () =>
           decodeEndfield(
             payload({
               version: 1,
-              resourceRecipeSettings: { copper_ore: settings },
+              resourceRecipeSettings: { copper_ore: { machineId } },
             }),
-            supportedData,
+            data,
           ),
-        `ef.resourceRecipeSettings.copper_ore.${field}`,
+        'ef.resourceRecipeSettings.copper_ore.machineId',
       );
   });
 
@@ -504,20 +348,12 @@ describe('Endfield ef codec', () => {
       payload({ version: 1, resourceLimits: { rates: { copper_ore: '1/0' } } }),
       payload({ version: 1, electric: '-1' }),
       payload({ version: 1, resourceLimits: { rates: { copper_ore: '-1' } } }),
-      payload({
-        version: 1,
-        resourceRecipeSettings: { copper_ore: { cost: '-1/0' } },
-      }),
       payload({ version: 1, machineLimits: { limits: { miner_4: '1' } } }),
       payload({ version: 1, transfer: { source: 'jinlong' } }),
       payload({ version: 1, checkedDerived: ['resource:unknown'] }),
       payload({
         version: 1,
         resourceRecipeSettings: { copper_ore: { machineId: 'miner_2' } },
-      }),
-      payload({
-        version: 1,
-        resourceRecipeSettings: { copper_ore: { fuelId: 'missing' } },
       }),
     ];
     for (const input of inputs)
@@ -541,126 +377,13 @@ describe('Endfield ef codec', () => {
   });
 });
 
-describe('Endfield historical Jinlong coupon links', () => {
-  it('restores both versions and re-encodes matching recipe and objective aliases while rejecting mismatches', async () => {
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        ...provideEndfield(),
-        { provide: SettingsStore, useClass: SettingsStore },
-      ],
-    });
-    const settings = TestBed.inject(SettingsStore);
-    settings.apply({
-      modId: 'aef',
-      locationIds: new Set(['tundra', 'jinlong']),
-    });
-    settings['modDataResource'].set(data);
-    settings['modHashResource'].set(rawHash);
-    const router = TestBed.inject(RouterSync);
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const migration = TestBed.inject(Migration);
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const recipes = TestBed.inject(RecipesStore);
-    const machines = TestBed.inject(MachinesStore);
-    const objectives = TestBed.inject(ObjectivesStore);
-    const id = 'jinlong_coupon-copper_cmpt';
-    const alias = 'settlement-jinlong_coupon';
-    const restore = async (query: string): Promise<void> => {
-      const ticket = lifecycle.begin(query);
-      const params = await router.unzipQueryParams(router.toParams(query));
-      const plan = extension.prepare({ modId: 'aef', params });
-      const migrated = migration.migrate(
-        plan.modId,
-        plan.params,
-        plan.legacyModHashes,
-      );
-      router.updateState(
-        migrated.modId,
-        migrated.params,
-        migrated.isBare,
-        data,
-        rawHash,
-        plan,
-        ticket,
-      );
-      expect(lifecycle.ready())
-        .withContext(JSON.stringify(lifecycle.diagnostics()))
-        .toBeTrue();
-    };
-    const zip = async (): Promise<string> =>
-      router.toString(
-        (await router.getHash(
-          router.zipState({
-            objectives: objectives.state(),
-            items: TestBed.inject(ItemsStore).state(),
-            recipes: recipes.state(),
-            machines: machines.state(),
-            settings: settings.state(),
-            table: TestBed.inject(TableStore).state(),
-            data: settings.dataset(),
-            hash: rawHash,
-            extension: TestBed.inject(EndfieldStore).snapshot(),
-          }),
-        )) as Params,
-      );
-    for (const version of ['11', '12']) {
-      const query = `v=${version}&o=${id}**3**${alias}***175&r=${id}*${alias}***200***25&m=${alias}****125&moc=150`;
-      await restore(query);
-      expect(recipes.state()[id].machineId).toBe(alias);
-      expect(recipes.state()[id].overclock).toEqual(rational(200));
-      expect(recipes.state()[id].productivity).toEqual(rational(25));
-      expect(machines.state()[alias].overclock).toEqual(rational(125));
-      expect(settings.state().overclock).toEqual(rational(150));
-      expect(recipes.settings()[id].machineId).toBeUndefined();
-      expect(objectives.state()['1'].machineId).toBe(alias);
-      expect(objectives.objectives()[0].machineId).toBeUndefined();
-      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
-      expect(
-        objectives.objectives()[0].recipe!.output['jinlong_coupon'],
-      ).toEqual(rational(35, 32));
-      expect(
-        recipes.adjustedDataset().adjustedRecipe[id].output['jinlong_coupon'],
-      ).toEqual(rational(5, 4));
-      const encoded = await zip();
-      recipes.set({});
-      machines.set({});
-      objectives.set({});
-      await restore(encoded);
-      expect(recipes.state()[id].machineId).toBe(alias);
-      expect(machines.state()[alias].overclock).toEqual(rational(125));
-      expect(objectives.state()['1'].machineId).toBe(alias);
-      expect(
-        objectives.objectives()[0].recipe!.output['jinlong_coupon'],
-      ).toEqual(rational(35, 32));
-      const saved = {
-        recipes: recipes.state(),
-        machines: machines.state(),
-        objectives: objectives.state(),
-      };
-      for (const bad of [
-        `v=${version}&o=${id}**3**settlement-tundra_coupon`,
-        `v=${version}&r=${id}*settlement-tundra_coupon`,
-        `v=${version}&o=${id}**3**miner_2`,
-      ]) {
-        await expectAsync(restore(bad)).toBeRejectedWithError(
-          WorkspaceRestoreError,
-        );
-        expect(recipes.state()).toBe(saved.recipes);
-        expect(machines.state()).toBe(saved.machines);
-        expect(objectives.state()).toBe(saved.objectives);
-      }
-    }
-  });
-});
-
 describe('Zip sparse hash ranges', () => {
   let service: Zip;
   beforeEach(() => {
     TestBed.configureTestingModule({});
     service = TestBed.inject(Zip);
   });
-  it('breaks ranges at null and non-current hash slots', () => {
+  it('compresses across null slots and breaks at unselected current IDs', () => {
     expect(
       service.zipDiffSubset(
         new Set(['a', 'c']),
@@ -668,13 +391,13 @@ describe('Zip sparse hash ranges', () => {
         ['a', 'c'],
         ['a', null, 'c'],
       ),
-    ).toEqual('A*C');
+    ).toEqual('A~C');
     expect(
       service.zipDiffSubset(
         new Set(['a', 'c']),
         undefined,
-        ['a', 'c'],
-        ['a', 'retired', 'c'],
+        ['a', 'b', 'c'],
+        ['a', 'b', 'c'],
       ),
     ).toEqual('A*C');
   });
@@ -684,14 +407,7 @@ describe('Zip strict imports', () => {
   let service: Zip;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: STATE_EXTENSION,
-          useValue: { ...upstreamState, strictImports: true },
-        },
-      ],
-    });
+    TestBed.configureTestingModule({});
     service = TestBed.inject(Zip);
   });
 

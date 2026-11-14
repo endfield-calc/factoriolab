@@ -47,25 +47,22 @@
       "showNames": "Show names"
     },
     "recovery": {
-      "preferences": "Some preferences were repaired. Original data was preserved where possible.",
+      "preferences": "Preferences could not be restored; defaults are in use. The original data is kept and automatic saving is paused. Export it before resetting preferences.",
+      "resetPreferences": "The original preferences could not be loaded. Export them before continuing. Yes replaces the original with reset preferences and keeps only plans currently available in memory; unloaded archives cannot be kept. No removes all saved data in this browser and reloads the page.",
       "downloadPreferences": "Export original preferences",
       "loading": "Restoring the workspace. Editing is unavailable until restoration finishes.",
       "failed": "The workspace could not be fully restored. The original URL was kept; reset it or open a new plan.",
       "original": "Original URL (select and copy)",
       "downloadUrl": "Export original URL",
       "newPlan": "Open a new plan",
-      "warnings": "The workspace was restored with warnings.",
-      "displayDamaged": "Display preferences were damaged; any valid fields were recovered.",
-      "displayBackupFailed": "The original display preferences could not be backed up. Automatic saving is disabled.",
-      "displayStorageUnavailable": "Display preference storage is unavailable. Changes will remain in memory only.",
-      "availableBackups": "Saved recovery copies are available to export."
+      "warnings": "The workspace was restored with warnings."
     },
     "guide": {
       "title": "Tips and guide",
       "examples": "Examples",
       "exampleTundra": "Valley endgame example",
       "exampleCoupons": "Valley theoretical maximum coupons (exceeds demand)",
-      "exampleJinlongLegacy": "Wuling endgame example (legacy; requires dense originium powder transfer from Valley)",
+      "exampleJinlong": "Wuling endgame example",
       "tips": "Tips",
       "locations": "All regions are enabled by default. Select specific regions under Factory settings → Locations.",
       "views": "Use List for statistics and Flow for the production process. Display rates can be set per minute, hour or day.",

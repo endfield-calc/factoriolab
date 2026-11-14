@@ -5,7 +5,6 @@ import {
   computed,
   inject,
   linkedSignal,
-  Signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -19,11 +18,8 @@ import { DialogData } from '~/components/dialog/dialog';
 import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-} from '~/extensions/product-profile';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
+import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Rational, rational } from '~/rational/rational';
 import {
@@ -36,7 +32,7 @@ import { TranslatePipe } from '~/translate/translate-pipe';
 
 interface CostDraft {
   costs: CostSettings;
-  additional: Rational | undefined;
+  electric: Rational;
 }
 
 @Component({
@@ -58,47 +54,39 @@ interface CostDraft {
 })
 export class CostSettingsDialog implements DialogData {
   protected readonly dialogRef = inject(DialogRef);
-  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly ready = inject(WorkspaceLifecycle).ready;
+  private readonly endfieldStore = inject(EndfieldStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly defaults = inject(EFFECTIVE_DEFAULTS);
 
   private readonly committedCosts = computed(
     () => this.settingsStore.state().costs,
   );
-  private readonly additionalCost = ((): Signal<Rational> | undefined => {
-    const cost = this.presentation.additionalCost;
-    return cost == null
-      ? undefined
-      : computed(() => cost.value(), { equal: (a, b) => a.eq(b) });
-  })();
+  private readonly committedElectric = computed(
+    () => this.endfieldStore.state().electric,
+    { equal: (a, b) => a.eq(b) },
+  );
   private readonly draft = linkedSignal<
     CostDraft & { ready: boolean },
     CostDraft
   >({
     source: () => ({
       costs: this.committedCosts(),
-      additional: this.additionalCost?.(),
+      electric: this.committedElectric(),
       ready: this.ready(),
     }),
-    computation: ({ costs, additional, ready }, previous) =>
-      !ready && previous ? previous.value : { costs, additional },
+    computation: ({ costs, electric, ready }, previous) =>
+      !ready && previous ? previous.value : { costs, electric },
   });
   protected readonly editValue = computed(() => this.draft().costs);
-  protected readonly editAdditionalCost = computed(
-    () => this.draft().additional,
-  );
+  protected readonly editElectric = computed(() => this.draft().electric);
   protected readonly modified = computed(() => {
     const edit = this.editValue();
     const init = this.defaults.settings.costs;
     const keys = Object.keys(init) as CostKey[];
-    const additional = this.presentation.additionalCost;
-    const additionalValue = this.editAdditionalCost();
     return (
       keys.some((k) => !init[k].eq(edit[k])) ||
-      (additional != null &&
-        additionalValue != null &&
-        !additional.defaultValue.eq(additionalValue))
+      !rational.one.eq(this.editElectric())
     );
   });
 
@@ -109,31 +97,38 @@ export class CostSettingsDialog implements DialogData {
   readonly header = 'costs.header';
   protected readonly rational = rational;
 
-  apply(key: CostKey, value: Rational): void {
+  apply(key: CostKey, value: Rational | undefined): void {
+    if (!(value instanceof Rational)) return;
     this.draft.update((draft) => ({
       ...draft,
       costs: { ...draft.costs, [key]: value },
     }));
   }
 
-  applyAdditionalCost(value: Rational | undefined): void {
+  applyElectric(value: Rational | undefined): void {
     if (value?.gte(rational.zero))
-      this.draft.update((draft) => ({ ...draft, additional: value }));
+      this.draft.update((draft) => ({ ...draft, electric: value }));
   }
 
   reset(): void {
     if (!this.ready()) return;
     this.draft.set({
       costs: cloneDefaults(this.defaults).settings.costs,
-      additional: this.presentation.additionalCost?.defaultValue,
+      electric: rational.one,
     });
   }
 
   save(): void {
     if (!this.ready()) return;
-    const { costs, additional } = this.draft();
+    const { costs, electric } = this.draft();
+    if (
+      !(electric instanceof Rational) ||
+      electric.lt(rational.zero) ||
+      costKeys.some((key) => !(costs[key] instanceof Rational))
+    )
+      return;
     this.settingsStore.apply({ costs });
-    if (additional != null) this.presentation.additionalCost?.save(additional);
+    this.endfieldStore.set({ ...this.endfieldStore.state(), electric });
     this.dialogRef.close();
   }
 }

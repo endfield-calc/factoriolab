@@ -1,26 +1,23 @@
-import { rational } from '~/rational/rational';
+import {
+  resourceFromObjectiveId,
+  resourceIds,
+  resourceObjectiveId,
+} from './model';
 
-import { copyResourceRecipeSettings } from './model';
-
-describe('copyResourceRecipeSettings', () => {
-  it('copies beacons with and without nested modules when machine modules are absent', () => {
-    const source = {
-      machineId: 'machine',
-      beacons: [
-        { id: 'plain-beacon' },
-        { id: 'module-beacon', modules: [{ id: 'speed', count: rational(2) }] },
-      ],
-    };
-    const copy = copyResourceRecipeSettings(source);
-    expect(copy.modules).toBeUndefined();
-    expect(copy.beacons).toEqual(source.beacons);
-    expect(copy.beacons).not.toBe(source.beacons);
-    expect(copy.beacons?.[0]).not.toBe(source.beacons[0]);
-    expect(copy.beacons?.[1].modules).not.toBe(source.beacons[1].modules);
-    source.beacons[0].id = 'changed';
-    const nested = source.beacons[1].modules;
-    if (nested) nested[0].id = 'changed-module';
-    expect(copy.beacons?.[0].id).toBe('plain-beacon');
-    expect(copy.beacons?.[1].modules?.[0].id).toBe('speed');
+describe('resourceFromObjectiveId', () => {
+  it('accepts exactly the six source objective IDs', () => {
+    for (const id of resourceIds)
+      expect(resourceFromObjectiveId(resourceObjectiveId(id))).toBe(id);
+    for (const id of [
+      undefined,
+      '',
+      'iron_ore',
+      'resource:iron_ore',
+      'ef:limit:iron_ore',
+      'ef:resource:unknown',
+      'ef:resource:iron_ore:extra',
+      'prefix:ef:resource:iron_ore',
+    ])
+      expect(resourceFromObjectiveId(id)).toBeUndefined();
   });
 });

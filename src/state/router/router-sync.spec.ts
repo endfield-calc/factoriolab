@@ -4,6 +4,7 @@ import { defer, of, Subject } from 'rxjs';
 
 import { Confirm } from '~/components/confirm/confirm';
 import { DEFAULT_MOD } from '~/data/datasets';
+import { WorkspaceState } from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
 import { ItemId } from '~/tests/item-id';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
@@ -28,7 +29,6 @@ import { ZTRUE } from './constants';
 import { LabParams } from './lab-params';
 import {
   MIN_ZIP,
-  PartialState,
   RouterSync,
   ZipMachineSettings,
   ZipState,
@@ -188,7 +188,7 @@ const mockZipPartial: ZipData<LabParams> = {
   },
 };
 
-const mockEmpty: PartialState = {
+const mockEmpty: WorkspaceState = {
   objectivesState: undefined,
   itemsState: undefined,
   recipesState: undefined,
@@ -197,7 +197,7 @@ const mockEmpty: PartialState = {
   tableState: undefined,
 };
 
-const mockState: PartialState = {
+const mockState: WorkspaceState = {
   objectivesState: mockObjectivesState,
   itemsState: mockItemsState,
   recipesState: mockRecipesState,
@@ -498,7 +498,7 @@ describe('RouterSync', () => {
     delete mockStateV10.settingsState?.costs?.recycling;
     delete mockStateV10.settingsState?.recipeCostMultiplier;
 
-    const mockStateV8: PartialState = spread(mockStateV10, {
+    const mockStateV8: WorkspaceState = spread(mockStateV10, {
       settingsState: spread(mockStateV10.settingsState),
     });
     delete mockStateV8.settingsState?.checkedObjectiveIds;
@@ -507,7 +507,7 @@ describe('RouterSync', () => {
     delete mockStateV8.settingsState?.checkedRecipeIds;
     delete mockStateV8.settingsState?.researchedTechnologyIds;
 
-    const mockStateV6: PartialState = spread(mockStateV8, {
+    const mockStateV6: WorkspaceState = spread(mockStateV8, {
       objectivesState: mockMigratedObjectivesState,
       settingsState: spread(mockStateV8.settingsState, {
         costs: spread(mockStateV8.settingsState?.costs),
@@ -518,17 +518,17 @@ describe('RouterSync', () => {
     delete mockStateV6.settingsState?.costs?.surplus;
     delete mockStateV6.settingsState?.costs?.maximize;
 
-    const mockStateV3: PartialState = spread(mockStateV6, {
+    const mockStateV3: WorkspaceState = spread(mockStateV6, {
       settingsState: spread(mockStateV6.settingsState),
     });
     delete mockStateV3.settingsState?.netProductionOnly;
 
-    const mockStateV1: PartialState = spread(mockStateV3, {
+    const mockStateV1: WorkspaceState = spread(mockStateV3, {
       objectivesState: mockState.objectivesState,
       settingsState: spread(mockStateV3.settingsState),
     });
 
-    const mockStateV0: PartialState = spread(mockStateV3, {
+    const mockStateV0: WorkspaceState = spread(mockStateV3, {
       objectivesState: mockMigratedObjectivesState,
       settingsState: spread(mockStateV1.settingsState),
     });
@@ -1024,7 +1024,7 @@ describe('RouterSync', () => {
     });
 
     it('should map modules and beacons', () => {
-      const result = service.unzipObjectives({ o: ['*1*3***0*0'] }, [], []);
+      const result = service.unzipObjectives({ o: ['*1*3***0*0'] }, [{}], [{}]);
       expect(result).toEqual({
         ['1']: {
           id: '1',
@@ -1077,7 +1077,11 @@ describe('RouterSync', () => {
     });
 
     it('should map modules and beacons', () => {
-      const result = service.unzipRecipes({ r: ['iron-plate**0*0'] }, [], []);
+      const result = service.unzipRecipes(
+        { r: ['iron-plate**0*0'] },
+        [{}],
+        [{}],
+      );
       expect(result).toEqual({
         [ItemId.IronPlate]: {
           modules: [{}],
@@ -1109,8 +1113,8 @@ describe('RouterSync', () => {
     it('should unzip', () => {
       const result = service.unzipMachines(
         { m: ['assembling-machine-2*0*0'] },
-        [],
-        [],
+        [{}],
+        [{}],
       );
       expect(result).toEqual({
         ['assembling-machine-2']: {

@@ -1,11 +1,8 @@
-import { HttpTestingController } from '@angular/common/http/testing';
-import { ApplicationRef, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
   ActivatedRouteSnapshot,
-  NavigationSkipped,
-  NavigationStart,
   provideRouter,
   Router,
   UrlTree,
@@ -17,135 +14,79 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { Id } from '~/app/id/id';
 import { ModData } from '~/data/schema/mod-data';
-import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
 import { encodeEndfield } from '~/endfield/compat/codec';
-import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
-import { provideEndfieldProduct } from '~/endfield/product/product';
-import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
-  PRESENTATION_EXTENSION,
-  upstreamPresentation,
-} from '~/extensions/presentation-extension';
+  createEndfieldState,
+  resourceObjectiveId,
+} from '~/endfield/domain/model';
+import { provideEndfieldDefaults } from '~/endfield/product/product';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
   cloneDefaults,
   EFFECTIVE_DEFAULTS,
-  PRODUCT_PROFILE,
-  upstreamProduct,
-} from '~/extensions/product-profile';
-import {
-  STATE_EXTENSION,
-  StateExtension,
-  upstreamState,
-  WorkspaceRestoreError,
-} from '~/extensions/state-extension';
+  initialDefaults,
+  PINNED_MOD_ID,
+} from '~/extensions/defaults';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
-import { WorkspacePreparation } from '~/extensions/workspace-preparation';
 import { rational } from '~/rational/rational';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { ItemId } from '~/tests/item-id';
 import { mockModData, mockModHash } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import { ObjectiveType } from '../objectives/objective-type';
 import { ObjectiveUnit } from '../objectives/objective-unit';
-import { initialSettingsState } from '../settings/settings-state';
 import { initialTableState } from '../table/table-state';
 import { Compression } from './compression';
 import { LabParams } from './lab-params';
 import { Params } from './params';
 import { RouterSync, ZipState } from './router-sync';
 
-describe('RouterSync extension and restoration boundary', () => {
+describe('RouterSync current Endfield restoration and writes', () => {
   let service: RouterSync;
   let lifecycle: WorkspaceLifecycle;
-  let extensionValue: ReturnType<typeof signal<string>>;
+  let endfield: EndfieldStore;
+  let route: { params: Subject<Params>; queryParams: Subject<Params> };
+  let navigate: jasmine.Spy;
   let resources: BehaviorSubject<{
     modId: string | undefined;
-    data: typeof mockModData | undefined;
-    hash: typeof mockModHash | undefined;
+    data: ModData | undefined;
+    hash: typeof rawHash | undefined;
     loading: boolean;
     error: unknown;
   }>;
-  let route: { params: Subject<Params>; queryParams: Subject<Params> };
-  let navigate: jasmine.Spy;
+  const data = rawData as unknown as ModData;
+  const encoded = (electric: number): string =>
+    encodeEndfield({ ...createEndfieldState(), electric: rational(electric) });
 
   beforeEach(() => {
-    extensionValue = signal('initial');
-    const extension: StateExtension = {
-      ...upstreamState,
-      strictImports: true,
-      snapshot: () => extensionValue(),
-      encode: (value) => ({ ef: value as string }),
-      prepare: (input) => {
-        if (input.params['ef'] === 'bad')
-          throw new WorkspaceRestoreError([
-            {
-              code: 'ef',
-              message: 'Invalid ef',
-              field: 'ef',
-              severity: 'error',
-            },
-          ]);
-        return input;
-      },
-      decode: ({ state, plan }) => ({
-        state,
-        extension: plan.params['ef'] ?? 'initial',
-        diagnostics: [],
-      }),
-      commit: (value) => {
-        extensionValue.set(value as string);
-      },
-    };
-    const defaults = cloneDefaults(upstreamProduct.defaults());
-    defaults.settings.costs.surplus = rational.one;
-    defaults.settings.costs.unproduceable = rational(1000000n);
-    defaults.settings.costs.recycling = rational(1000n);
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        { provide: STATE_EXTENSION, useValue: extension },
-        { provide: EFFECTIVE_DEFAULTS, useValue: defaults },
-        {
-          provide: PRESENTATION_EXTENSION,
-          useValue: {
-            ...upstreamPresentation,
-            workspaceLink: (step: { id: string }): boolean =>
-              step.id === 'derived',
-          },
-        },
-      ],
-    });
+    TestBed.configureTestingModule({ imports: [TestModule] });
+    const settings = TestBed.inject(SettingsStore);
+    settings.apply({ modId: 'aef' });
+    settings['modDataResource'].set(data);
+    settings['modHashResource'].set(rawHash);
+    endfield = TestBed.inject(EndfieldStore);
     service = TestBed.inject(RouterSync);
     lifecycle = TestBed.inject(WorkspaceLifecycle);
-    resources = new BehaviorSubject<{
-      modId: string | undefined;
-      data: typeof mockModData | undefined;
-      hash: typeof mockModHash | undefined;
-      loading: boolean;
-      error: unknown;
-    }>({
-      modId: '2.0',
-      data: mockModData,
-      hash: mockModHash,
+    resources = new BehaviorSubject<(typeof resources)['value']>({
+      modId: 'aef',
+      data,
+      hash: rawHash,
       loading: false,
       error: undefined,
     });
     (service as any).resources = resources;
-    spyOn(TestBed.inject(ApplicationRef), 'tick');
     const router = TestBed.inject(Router);
     navigate = spyOn(router, 'navigate').and.resolveTo(true);
-    spyOnProperty(router, 'url').and.returnValue('/2.0/list');
+    spyOnProperty(router, 'url').and.returnValue('/aef/list');
     route = { params: new Subject(), queryParams: new Subject() };
     service.route$.next(route as unknown as ActivatedRoute);
   });
 
-  function open(params: Params, modId = '2.0'): void {
-    route.params.next({ id: modId });
-    route.queryParams.next(params);
+  function open(query: Params): void {
+    route.params.next({ id: 'aef' });
+    route.queryParams.next(query);
   }
-
   function emptyZip(): ZipState {
     return {
       objectives: service.empty,
@@ -155,92 +96,191 @@ describe('RouterSync extension and restoration boundary', () => {
       machineSettings: service.emptyMachineSettings,
     };
   }
-
   async function flush(): Promise<void> {
-    for (let i = 0; i < 8; i++) await Promise.resolve();
+    for (let i = 0; i < 15; i++) await Promise.resolve();
   }
 
-  it('encodes independent extension changes and caches the resulting URL', async () => {
-    (TestBed.inject(ApplicationRef).tick as jasmine.Spy).and.callThrough();
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
+  it('encodes changes from the real EndfieldStore and caches the resulting URL', async () => {
     spyOn(service, 'getHash').and.callFake((value) =>
       Promise.resolve(value.config.bare),
     );
-    open({ v: '12', ef: 'one' });
+    open({ v: '12', ef: encoded(2) });
     await flush();
     TestBed.tick();
     await flush();
     navigate.calls.reset();
-    extensionValue.set('two');
+    endfield.set({ ...endfield.snapshot(), electric: rational(3) });
     TestBed.tick();
     await flush();
     expect(navigate).toHaveBeenCalledWith(
       [],
       jasmine.objectContaining({
-        queryParams: jasmine.objectContaining({ ef: 'two' }),
+        queryParams: jasmine.objectContaining({ ef: encoded(3) }),
       }),
     );
-    expect(service.stored()).toEqual('/2.0/list');
+    expect(service.stored()).toEqual('/aef/list');
   });
 
-  it('reports a synchronous encoding failure and accepts a later valid route', async () => {
-    (TestBed.inject(ApplicationRef).tick as jasmine.Spy).and.callThrough();
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    service.stored.set('/2.0/list?preserved=1');
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
+  it('blocks URL writeback if a live objective is absent from the current hash', async () => {
+    spyOn(service, 'getHash').and.resolveTo({ v: '12' });
+    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
     await flush();
-    const previous = service['objectivesStore'].state();
-    const encode = spyOn(
-      TestBed.inject(STATE_EXTENSION),
-      'encode',
-    ).and.throwError('encode failed');
+    TestBed.tick();
+    await flush();
+    service.stored.set('/aef/list?preserved=1');
+    navigate.calls.reset();
+    const objective = service['objectivesStore'].state()['1'];
+    service['objectivesStore'].set({
+      1: { ...objective, targetId: 'retired-item' },
+    });
     TestBed.tick();
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('encode failed');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(service.stored()).toEqual('/2.0/list?preserved=1');
+    expect(lifecycle.diagnostics()[0].field).toEqual('retired-item');
+    expect(endfield.state().electric).toEqual(rational(2));
+    expect(service.stored()).toEqual('/aef/list?preserved=1');
     expect(navigate).not.toHaveBeenCalled();
-    encode.and.callThrough();
-    route.queryParams.next({ v: '12', ef: 'after', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-      ItemId.Coal,
-    );
   });
 
-  it('reports asynchronous compression failure without overwriting the cached URL', async () => {
-    (TestBed.inject(ApplicationRef).tick as jasmine.Spy).and.callThrough();
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    service.stored.set('/2.0/list?preserved=1');
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
+  for (const [failure, message] of [
+    ['compression unavailable', 'compression unavailable'],
+    [{}, 'Workspace restoration failed'],
+  ] as const) {
+    it(`preserves the URL when a resource stream fails: ${message}`, async () => {
+      open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
+      await flush();
+      TestBed.tick();
+      await flush();
+      service.stored.set('/aef/list?preserved=1');
+      navigate.calls.reset();
+      resources.next({
+        modId: 'aef',
+        data: undefined,
+        hash: undefined,
+        loading: true,
+        error: undefined,
+      });
+      route.queryParams.next({ v: '12', ef: encoded(3) });
+      await flush();
+      resources.error(failure);
+      await flush();
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.diagnostics()[0].message).toEqual(message);
+      expect(service.stored()).toEqual('/aef/list?preserved=1');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+  }
+
+  it('discards a candidate carrying an obsolete generation', () => {
+    const previous = service['objectivesStore'].state();
+    const stale = lifecycle.begin('/aef/list?old');
+    lifecycle.begin('/aef/list?new');
+    service.updateState(
+      'aef',
+      { v: '12', o: ['xiranite_powder*5'], ef: encoded(2) } as LabParams,
+      true,
+      data,
+      rawHash,
+      stale,
+    );
+    expect(service['objectivesStore'].state()).toBe(previous);
+    expect(endfield.state().electric).toEqual(rational.one);
+  });
+
+  for (const [failure, message] of [
+    [new Error('rollback failed'), 'rollback failed'],
+    [{}, 'Failed to restore the previous workspace'],
+  ] as const) {
+    it(`reports a rollback failure: ${message}`, async () => {
+      open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
+      await flush();
+      const previous = service['objectivesStore'].state();
+      const set = spyOn(endfield, 'set').and.throwError(failure as Error);
+      route.queryParams.next({ v: '12', ef: 'bad' });
+      await flush();
+      expect(lifecycle.ready()).toBeFalse();
+      expect(lifecycle.diagnostics()[1].code).toBe('workspace-rollback');
+      expect(lifecycle.diagnostics()[1].message).toBe(message);
+      expect(service['objectivesStore'].state()).toBe(previous);
+      set.and.callThrough();
+      route.queryParams.next({ v: '12', ef: encoded(3) });
+      await flush();
+      expect(lifecycle.ready()).toBeTrue();
+      expect(endfield.state().electric).toEqual(rational(3));
+    });
+  }
+
+  it('preserves the workspace on invalid ef, compression and indices, then recovers', async () => {
+    spyOn(service, 'getHash').and.resolveTo({ v: '12' });
+    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
     await flush();
     const previous = service['objectivesStore'].state();
-    const compress = spyOn(service, 'getHash').and.rejectWith(
-      new Error('compression failed'),
-    );
-    TestBed.tick();
+    const stored = service.stored();
+    navigate.calls.reset();
+    route.queryParams.next({ v: '12', ef: 'bad' });
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('compression failed');
+    expect(lifecycle.diagnostics()[0].field).toEqual('ef');
+    expect(endfield.state().electric).toEqual(rational(2));
     expect(service['objectivesStore'].state()).toBe(previous);
-    expect(service.stored()).toEqual('/2.0/list?preserved=1');
+    expect(service.stored()).toEqual(stored);
     expect(navigate).not.toHaveBeenCalled();
-    compress.and.resolveTo({ v: '12' });
-    route.queryParams.next({ v: '12', ef: 'after', o: [ItemId.Coal] });
+    spyOn(service['compression'], 'inflate').and.rejectWith(new Error('bad z'));
+    spyOn(console, 'error');
+    route.queryParams.next({ v: '12', z: 'bad' });
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(lifecycle.diagnostics()[0].field).toEqual('z');
+    expect(service['objectivesStore'].state()).toBe(previous);
+    route.queryParams.next({ v: '12', r: ['originium_ore**4'] });
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    expect(service['objectivesStore'].state()).toBe(previous);
+    expect(endfield.state().electric).toEqual(rational(2));
+    route.queryParams.next({ v: '12', ef: encoded(3) });
     await flush();
     expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-      ItemId.Coal,
-    );
+    expect(endfield.state().electric).toEqual(rational(3));
   });
 
-  it('ignores a stale compression rejection while a newer route is restoring', async () => {
-    (TestBed.inject(ApplicationRef).tick as jasmine.Spy).and.callThrough();
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    service.stored.set('/2.0/list?preserved=1');
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
+  it('ignores a late inflate after a newer route restores real ef', async () => {
+    let finish!: (value: string) => void;
+    spyOn(service['compression'], 'inflate').and.returnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    open({ z: 'slow', v: '12' });
+    route.queryParams.next({ ef: encoded(3), v: '12' });
+    await flush();
+    expect(endfield.state().electric).toEqual(rational(3));
+    finish(`ef=${encoded(2)}&v=12`);
+    await flush();
+    expect(endfield.state().electric).toEqual(rational(3));
+    expect(lifecycle.ready()).toBeTrue();
+  });
+
+  it('preserves the outer version while restoring from the current hash', async () => {
+    spyOn(service['compression'], 'inflate').and.resolveTo(
+      `v=11&o=A&ef=${encoded(2)}`,
+    );
+    const migrate = spyOn(service['migration'], 'migrate').and.callThrough();
+    open({ z: 'compressed', v: '12' });
+    await flush();
+    expect(migrate).toHaveBeenCalledWith(
+      'aef',
+      jasmine.objectContaining({ v: '12', z: 'compressed' }),
+    );
+    expect(lifecycle.ready()).toBeTrue();
+    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
+      rawHash.items[0]!,
+    );
+    expect(endfield.state().electric).toEqual(rational(2));
+  });
+
+  it('ignores stale compression rejection while a later route is inflating', async () => {
+    service.stored.set('/aef/list?preserved=1');
+    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
     await flush();
     let rejectWrite!: (error: Error) => void;
     spyOn(service, 'getHash').and.returnValue(
@@ -262,422 +302,20 @@ describe('RouterSync extension and restoration boundary', () => {
     rejectWrite(new Error('obsolete write'));
     await flush();
     expect(lifecycle.diagnostics()).toEqual([]);
-    expect(service.stored()).toEqual('/2.0/list?preserved=1');
+    expect(service.stored()).toEqual('/aef/list?preserved=1');
     expect(navigate).not.toHaveBeenCalled();
-    finishInflate('v=12&ef=after');
+    finishInflate(`v=12&ef=${encoded(3)}`);
     await flush();
     expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('after');
+    expect(endfield.state().electric).toEqual(rational(3));
   });
 
-  it('prepares and commits direct public restore inputs when no plan was supplied', () => {
-    const prepare = spyOn(
-      TestBed.inject(STATE_EXTENSION),
-      'prepare',
-    ).and.callThrough();
-    service.updateState(
-      '2.0',
-      { v: '12', o: [ItemId.Wood] },
-      true,
-      mockModData,
-      mockModHash,
-    );
-    expect(prepare).toHaveBeenCalledWith({
-      modId: '2.0',
-      params: { v: '12', o: [ItemId.Wood] },
-    });
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-      ItemId.Wood,
-    );
-    expect(service['ready']()).toBeTrue();
-  });
-
-  it('restores omitted cost settings from the effective product defaults', async () => {
-    open({ v: '12', o: [ItemId.Wood] });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    const costs = service['settingsStore'].state().costs;
-    expect(costs.surplus).toEqual(rational.one);
-    expect(costs.unproduceable).toEqual(rational(1000000n));
-    expect(costs.recycling).toEqual(rational(1000n));
-  });
-
-  for (const [field, value] of [
-    ['orm', 'yes'],
-    ['omt', 'NaN'],
-  ] as const) {
-    it(`keeps the valid workspace when ${field} is malformed`, async () => {
-      open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-      await flush();
-      const previous = service['objectivesStore'].state();
-      const previousSettings = service['settingsStore'].state();
-      const stored = service.stored();
-      route.queryParams.next({ v: '12', [field]: value });
-      await flush();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()[0].field).toEqual(field);
-      expect(service['objectivesStore'].state()).toBe(previous);
-      expect(service['settingsStore'].state()).toBe(previousSettings);
-      expect(service.stored()).toEqual(stored);
-      expect(navigate).not.toHaveBeenCalled();
-      route.queryParams.next({ v: '12', ef: 'after', o: [ItemId.Coal] });
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-        ItemId.Coal,
-      );
-    });
-  }
-
-  it('does not commit a decode result carrying an error diagnostic', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    const stored = service.stored();
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const originalDecode = extension.decode.bind(extension);
-    spyOn(extension, 'decode').and.callFake((input) =>
-      input.plan.params['ef'] === 'invalid'
-        ? {
-            state: input.state,
-            extension: 'invalid',
-            diagnostics: [
-              {
-                code: 'bad-decode',
-                message: 'invalid state',
-                field: 'ef',
-                severity: 'error',
-              },
-            ],
-          }
-        : originalDecode(input),
-    );
-    route.queryParams.next({ v: '12', ef: 'invalid', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].code).toEqual('bad-decode');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(extensionValue()).toEqual('good');
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
-    route.queryParams.next({ v: '12', ef: 'after', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('after');
-  });
-
-  it('preserves the old workspace and can recover after invalid ef, z, or indices', async () => {
-    spyOn(service, 'getHash').and.resolveTo({ v: '12' });
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    const stored = service.stored();
-    navigate.calls.reset();
-
-    route.queryParams.next({ v: '12', ef: 'bad' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('ef');
-    expect(extensionValue()).toEqual('good');
-    expect(service['objectivesStore'].state()).toEqual(previous);
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
-
-    spyOn(service['compression'], 'inflate').and.rejectWith(new Error('bad z'));
-    spyOn(console, 'error');
-    route.queryParams.next({ v: '12', z: 'bad' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('z');
-    expect(service['objectivesStore'].state()).toEqual(previous);
-    expect(service.stored()).toEqual(stored);
-
-    route.queryParams.next({ v: '12', r: ['wood**4'] });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('4');
-    expect(service['objectivesStore'].state()).toEqual(previous);
-    expect(service.stored()).toEqual(stored);
-
-    route.queryParams.next({ v: '12', ef: 'after' });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('after');
-  });
-
-  it('ignores slow decompression after a newer navigation', async () => {
-    let finish!: (value: string) => void;
-    spyOn(service['compression'], 'inflate').and.returnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    open({ z: 'slow', v: '12' });
-    route.queryParams.next({ ef: 'new', v: '12' });
-    await flush();
-    expect(extensionValue()).toEqual('new');
-    finish('ef=old&v=12');
-    await flush();
-    expect(extensionValue()).toEqual('new');
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('preserves the outer version and uses the frozen hash from prepare', async () => {
-    spyOn(service['compression'], 'inflate').and.resolveTo('v=11&o=A&ef=old');
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const frozen = { ...mockModHash, items: ['frozen-item'] };
-    const prepare = spyOn(extension, 'prepare').and.callFake((input) => ({
-      ...input,
-      hash: frozen,
-    }));
-    const decode = spyOn(extension, 'decode').and.callThrough();
-    open({ z: 'compressed', v: '12' });
-    await flush();
-    expect(prepare).toHaveBeenCalledWith(
-      jasmine.objectContaining({
-        params: jasmine.objectContaining({ v: '12', z: 'compressed' }),
-      }),
-    );
-    expect(decode.calls.mostRecent().args[0].hash).toBe(frozen);
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-      'frozen-item',
-    );
-  });
-
-  it('preflights before preparing only requested objectives and committing', async () => {
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const oldState = service['objectivesStore'].state();
-    const order: string[] = [];
-    spyOn(extension, 'preflight').and.callFake(() => {
-      order.push('preflight');
-      return ['1'];
-    });
-    spyOn(
-      TestBed.inject(WorkspacePreparation),
-      'prepareObjectives',
-    ).and.callFake((_state, _data, _hash, ids) => {
-      order.push('prepare');
-      expect(ids).toEqual(['1']);
-      expect(service['objectivesStore'].state()).toBe(oldState);
-      return {};
-    });
-    const originalDecode = extension.decode.bind(extension);
-    spyOn(extension, 'decode').and.callFake((input) => {
-      order.push('decode');
-      return originalDecode(input);
-    });
-    open({ v: '12', o: [ItemId.Wood, ItemId.Coal] });
-    await flush();
-    expect(order).toEqual(['preflight', 'prepare', 'decode']);
-    expect(Object.keys(service['objectivesStore'].state())).toEqual(['1', '2']);
-  });
-
-  it('rolls back every committed store if extension commit throws', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previousObjectives = service['objectivesStore'].state();
-    const previousSettings = service['settingsStore'].state();
-    const stored = service.stored();
-    const extension = TestBed.inject(STATE_EXTENSION);
-    spyOn(extension, 'commit').and.callFake((value) => {
-      extensionValue.set(value as string);
-      if (value === 'throw') throw new Error('commit failed');
-    });
-    route.queryParams.next({ v: '12', ef: 'throw', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('commit failed');
-    expect(service['objectivesStore'].state()).toBe(previousObjectives);
-    expect(service['settingsStore'].state()).toBe(previousSettings);
-    expect(extensionValue()).toEqual('good');
-    expect(service.stored()).toEqual(stored);
-  });
-
-  it('reports both a failed commit and a failed extension rollback', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previousObjectives = service['objectivesStore'].state();
-    const previousSettings = service['settingsStore'].state();
-    const stored = service.stored();
-    let faulty = true;
-    spyOn(TestBed.inject(STATE_EXTENSION), 'commit').and.callFake((value) => {
-      if (faulty && value === 'throw') {
-        extensionValue.set('partially committed');
-        throw new Error('commit failed');
-      }
-      if (faulty) throw new Error('rollback failed');
-      extensionValue.set(value as string);
-    });
-    route.queryParams.next({ v: '12', ef: 'throw', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(
-      lifecycle.diagnostics().map((diagnostic) => diagnostic.code),
-    ).toEqual(['workspace-restore', 'workspace-rollback']);
-    expect(lifecycle.diagnostics()[1].message).toContain('rollback failed');
-    expect(service['objectivesStore'].state()).toBe(previousObjectives);
-    expect(service['settingsStore'].state()).toBe(previousSettings);
-    expect(extensionValue()).toEqual('partially committed');
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
-    faulty = false;
-    route.queryParams.next({ v: '12', ef: 'after', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('after');
-  });
-
-  it('rejects an unknown legacy technology without dropping it and accepts an explicit empty set', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    route.queryParams.next({ v: '12', v10tre: 'retired-tech' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0]).toEqual(
-      jasmine.objectContaining({
-        code: 'unknown-technology',
-        field: 'v10tre',
-        severity: 'error',
-      }),
-    );
-    expect(service['objectivesStore'].state()).toBe(previous);
-    route.queryParams.next({ v: '12', v10tre: ItemId.Wood });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].field).toEqual('v10tre');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    route.queryParams.next({ v: '12', v10tre: ItemId.Electronics });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(
-      service['settingsStore']
-        .state()
-        .researchedTechnologyIds?.has(ItemId.Electronics),
-    ).toBeTrue();
-    route.queryParams.next({ v: '12', v10tre: '_' });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['settingsStore'].state().researchedTechnologyIds).toEqual(
-      new Set(),
-    );
-  });
-
-  it('recovers from an interrupted resource stream on a new navigation', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    const previousSettings = service['settingsStore'].state();
-    const stored = service.stored();
-    open({ v: '12', ef: 'pending' }, '1.0');
-    await flush();
-    resources.error('resource stream disconnected');
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toEqual(
-      'resource stream disconnected',
-    );
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(service['settingsStore'].state()).toBe(previousSettings);
-    expect(service.stored()).toEqual(stored);
-    resources = new BehaviorSubject<{
-      modId: string | undefined;
-      data: typeof mockModData | undefined;
-      hash: typeof mockModHash | undefined;
-      loading: boolean;
-      error: unknown;
-    }>({
-      modId: '2.0',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    (service as any).resources = resources;
-    open({ v: '12', ef: 'after', o: [ItemId.Coal] });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('after');
-  });
-
-  it('reports a resource failure lacking an error message and preserves the workspace', async () => {
-    open({ v: '12', ef: 'good', o: [ItemId.Wood] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    open({ v: '12', ef: 'pending' }, '1.0');
-    await flush();
-    resources.error({ status: 503 });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toEqual(
-      'Workspace restoration failed',
-    );
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  it('waits for matching resources and cancels the older resource wait', async () => {
-    open({ ef: 'old', v: '12' }, '1.0');
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    open({ ef: 'new', v: '12' }, '1.1');
-    await flush();
-    resources.next({
-      modId: '1.0',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    expect(lifecycle.ready()).toBeFalse();
-    expect(extensionValue()).toEqual('initial');
-    resources.next({
-      modId: '1.1',
-      data: mockModData,
-      hash: mockModHash,
-      loading: true,
-      error: undefined,
-    });
-    expect(lifecycle.ready()).toBeFalse();
-    resources.next({
-      modId: '1.1',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    expect(lifecycle.ready()).toBeTrue();
-    expect(extensionValue()).toEqual('new');
-  });
-
-  it('restores the previous settings after a fatal resource failure', async () => {
-    open({ ef: 'good', v: '12', o: [ItemId.Wood] });
-    await flush();
-    const previousSettings = service['settingsStore'].state();
-    const previousObjectives = service['objectivesStore'].state();
-    open({ ef: 'new', v: '12' }, '1.0');
-    await flush();
-    resources.next({
-      modId: '1.0',
-      data: undefined,
-      hash: undefined,
-      loading: false,
-      error: new Error('data failed'),
-    });
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('data failed');
-    expect(service['settingsStore'].state()).toBe(previousSettings);
-    expect(service['objectivesStore'].state()).toBe(previousObjectives);
-    expect(extensionValue()).toEqual('good');
-  });
-
-  it('does not navigate or save when an older compression finishes last', async () => {
-    open({ ef: 'ready', v: '12' });
+  it('publishes only the latest compression result', async () => {
+    open({ ef: encoded(2), v: '12' });
     await flush();
     let finishOld!: (value: LabParams) => void;
     let finishNew!: (value: LabParams) => void;
-    const getHash = spyOn(service, 'getHash');
-    getHash.and.returnValues(
+    spyOn(service, 'getHash').and.returnValues(
       new Promise((resolve) => {
         finishOld = resolve;
       }),
@@ -687,19 +325,19 @@ describe('RouterSync extension and restoration boundary', () => {
     );
     void service.updateUrl(emptyZip(), service['activeTicket']);
     void service.updateUrl(emptyZip(), service['activeTicket']);
-    finishNew({ ef: 'new' } as LabParams);
+    finishNew({ ef: encoded(3) } as LabParams);
     await flush();
-    finishOld({ ef: 'old' } as LabParams);
+    finishOld({ ef: encoded(2) } as LabParams);
     await flush();
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate.calls.mostRecent().args[1].queryParams).toEqual({
-      ef: 'new',
+      ef: encoded(3),
     });
-    expect(service.stored()).toEqual('/2.0/list');
+    expect(service.stored()).toEqual('/aef/list');
   });
 
-  it('discards a pending write when a new external navigation begins', async () => {
-    open({ ef: 'ready', v: '12' });
+  it('discards a pending write when a new external route fails', async () => {
+    open({ ef: encoded(2), v: '12' });
     await flush();
     const stored = service.stored();
     let finish!: (value: LabParams) => void;
@@ -714,71 +352,45 @@ describe('RouterSync extension and restoration boundary', () => {
     finish({ v: '12' });
     await flush();
     expect(navigate).not.toHaveBeenCalled();
+    expect(endfield.state().electric).toEqual(rational(2));
     expect(service.stored()).toEqual(stored);
   });
 
-  it('uses effective defaults when writing values equal to upstream defaults', () => {
-    const zip = emptyZip();
-    service.zipSettings(
-      zip,
-      initialSettingsState,
-      [],
-      service['settingsStore'].dataset(),
-      mockModHash,
-    );
-    expect(zip.config.bare.csu).toEqual('0');
-    expect(zip.config.bare.cun).toEqual('100000000');
-    expect(zip.config.bare.cre).toEqual('1');
-  });
-
-  it('keeps ordinary objectives and extension config for derived links', async () => {
-    service['objectivesStore'].set({
-      1: {
-        id: '1',
-        targetId: ItemId.Wood,
-        value: rational.one,
-        unit: ObjectiveUnit.Items,
-        type: ObjectiveType.Output,
-      },
-      2: {
-        id: '2',
-        targetId: ItemId.Coal,
-        value: rational.one,
-        unit: ObjectiveUnit.Items,
-        type: ObjectiveType.Output,
-      },
+  it('does not commit until the matching resources finish loading', async () => {
+    resources.next({
+      modId: 'aef',
+      data: undefined,
+      hash: undefined,
+      loading: true,
+      error: undefined,
     });
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    spyOn(service, 'getHash').and.callFake((value) =>
-      Promise.resolve({
-        ...value.objectives.bare,
-        ...value.config.bare,
-      }),
-    );
-    const config = {
-      bare: { ef: 'settings', och: 'B' },
-      hash: { ef: 'settings', och: 'B' },
-    };
-    const derived = await service.stepHref(
-      { id: 'derived', itemId: ItemId.Coal, items: rational(5n) },
-      config,
-    );
-    expect(derived?.o).toEqual([ItemId.Wood, ItemId.Coal]);
-    expect((derived as Params)['ef']).toEqual('settings');
-    expect(derived?.och).toEqual('B');
-    const ordinary = await service.stepHref(
-      { id: 'ordinary', itemId: ItemId.Coal, items: rational(5n) },
-      config,
-    );
-    expect(ordinary?.o).toEqual([`${ItemId.Coal}*5`]);
-    expect((ordinary as Params)['ef']).toEqual('settings');
-    expect(ordinary?.och).toBeUndefined();
-    expect(config.bare.och).toEqual('B');
-    expect(config.hash.och).toEqual('B');
+    open({ ef: encoded(2), v: '12' });
+    await flush();
+    expect(lifecycle.ready()).toBeFalse();
+    route.queryParams.next({ ef: encoded(3), v: '12' });
+    await flush();
+    resources.next({
+      modId: '1.0',
+      data,
+      hash: rawHash,
+      loading: false,
+      error: undefined,
+    });
+    expect(lifecycle.ready()).toBeFalse();
+    expect(endfield.state().electric).toEqual(rational.one);
+    resources.next({
+      modId: 'aef',
+      data,
+      hash: rawHash,
+      loading: false,
+      error: undefined,
+    });
+    expect(lifecycle.ready()).toBeTrue();
+    expect(endfield.state().electric).toEqual(rational(3));
   });
 });
 
-describe('RouterSync real Endfield legacy restoration', () => {
+describe('RouterSync real Endfield restoration', () => {
   for (const [section, id, field] of [
     ['i', 'retired-item', 'items.retired-item'],
     ['r', 'retired-recipe', 'recipes.retired-recipe'],
@@ -787,10 +399,7 @@ describe('RouterSync real Endfield legacy restoration', () => {
     it(`reports an unknown ${section} record even when it has no settings`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [
-          provideEndfieldProduct(),
-          ...provideEndfieldStateExtension(),
-        ],
+        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -837,10 +446,7 @@ describe('RouterSync real Endfield legacy restoration', () => {
     it(`preserves the existing workspace for invalid ${target} overclock`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [
-          provideEndfieldProduct(),
-          ...provideEndfieldStateExtension(),
-        ],
+        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -859,7 +465,7 @@ describe('RouterSync real Endfield legacy restoration', () => {
       service['recipesStore'].set({ originium_ore: { cost: rational(2n) } });
       service['machinesStore'].set({ miner_4: { overclock: rational.one } });
       service['tableStore'].apply({ filter: 'original' });
-      endfield.toggleDerived(resourceOwner('copper_ore'), true);
+      endfield.setResourceChecked('copper_ore', true);
       const previous = {
         settings: service['settingsStore'].state(),
         objectives: service['objectivesStore'].state(),
@@ -926,10 +532,7 @@ describe('RouterSync real Endfield legacy restoration', () => {
     it(`rejects a migrated disallowed mod from a ${compressed ? 'compressed' : 'bare'} legacy link`, async () => {
       TestBed.configureTestingModule({
         imports: [TestModule],
-        providers: [
-          provideEndfieldProduct(),
-          ...provideEndfieldStateExtension(),
-        ],
+        providers: [...provideEndfieldDefaults()],
       });
       const service = TestBed.inject(RouterSync);
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
@@ -989,22 +592,10 @@ describe('RouterSync real Endfield legacy restoration', () => {
   });
 
   it('round trips ordinary and derived links with multiple checked objectives', async () => {
-    const defaults = cloneDefaults(upstreamProduct.defaults());
-    defaults.extension = createEndfieldState();
+    const defaults = cloneDefaults(initialDefaults);
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [
-        { provide: EFFECTIVE_DEFAULTS, useValue: defaults },
-        ...provideEndfieldStateExtension(),
-        {
-          provide: PRESENTATION_EXTENSION,
-          useValue: {
-            ...upstreamPresentation,
-            workspaceLink: (step: { id: string }): boolean =>
-              step.id === 'derived',
-          },
-        },
-      ],
+      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     const service = TestBed.inject(RouterSync);
     const data = rawData as unknown as ModData;
@@ -1032,11 +623,8 @@ describe('RouterSync real Endfield legacy restoration', () => {
     service['objectivesStore'].set(objectives);
     service['settingsStore'].set(settings);
     spyOn(service['settingsStore'], 'modHash').and.returnValue(rawHash);
-    const prepared = service['settingsStore'].prepareState(
-      settings,
-      data,
-      rawHash,
-    );
+    service['settingsStore']['modDataResource'].set(data);
+    service['settingsStore']['modHashResource'].set(rawHash);
     const zipped = service.zipState({
       objectives,
       items: {},
@@ -1044,9 +632,9 @@ describe('RouterSync real Endfield legacy restoration', () => {
       machines: {},
       settings,
       table: initialTableState,
-      data: prepared.data,
+      data: service['settingsStore'].dataset(),
       hash: rawHash,
-      extension: TestBed.inject(STATE_EXTENSION).snapshot(),
+      endfield: TestBed.inject(EndfieldStore).snapshot(),
     });
     expect(zipped.config.bare.och).toEqual('B');
     const ordinary = await service.stepHref(
@@ -1054,27 +642,25 @@ describe('RouterSync real Endfield legacy restoration', () => {
       zipped.config,
     );
     const derived = await service.stepHref(
-      { id: 'derived', itemId: 'carbon_enr', items: rational(5n) },
+      {
+        id: 'derived',
+        recipeObjectiveId: resourceObjectiveId('originium_ore'),
+        itemId: 'carbon_enr',
+        items: rational(5n),
+      },
       zipped.config,
     );
     expect(ordinary).not.toBeNull();
     expect(derived).not.toBeNull();
-    const extension = TestBed.inject(STATE_EXTENSION);
     async function restore(params: LabParams): Promise<void> {
       const input = await service.unzipQueryParams(params as Params);
-      const plan = extension.prepare({ modId: 'aef', params: input });
-      const migrated = service['migration'].migrate(
-        plan.modId,
-        plan.params,
-        plan.legacyModHashes,
-      );
+      const migrated = service['migration'].migrate('aef', input);
       service.updateState(
         migrated.modId,
         migrated.params,
         migrated.isBare,
         data,
         rawHash,
-        plan,
       );
     }
     await restore(ordinary!);
@@ -1093,22 +679,16 @@ describe('RouterSync real Endfield legacy restoration', () => {
   });
 
   it('round trips real multi-item and multi-recipe subsets around retired slots', () => {
-    const defaults = cloneDefaults(upstreamProduct.defaults());
-    defaults.extension = createEndfieldState();
+    const defaults = cloneDefaults(initialDefaults);
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [
-        { provide: EFFECTIVE_DEFAULTS, useValue: defaults },
-        ...provideEndfieldStateExtension(),
-      ],
+      providers: [{ provide: EFFECTIVE_DEFAULTS, useValue: defaults }],
     });
     const service = TestBed.inject(RouterSync);
     const data = rawData as unknown as ModData;
-    const prepared = service['settingsStore'].prepareState(
-      { modId: 'aef' },
-      data,
-      rawHash,
-    );
+    service['settingsStore'].apply({ modId: 'aef' });
+    service['settingsStore']['modDataResource'].set(data);
+    service['settingsStore']['modHashResource'].set(rawHash);
     const zip: ZipState = {
       objectives: service.empty,
       config: service.empty,
@@ -1128,10 +708,10 @@ describe('RouterSync real Endfield legacy restoration', () => {
       zip,
       { ...defaults.settings, excludedRecipeIds, checkedItemIds },
       [],
-      prepared.data,
+      service['settingsStore'].dataset(),
       rawHash,
     );
-    expect(zip.config.bare.rex).toEqual('A*C');
+    expect(zip.config.bare.rex).toEqual('A~C');
     const restored = service.unzipSettings(
       'aef',
       zip.config.bare,
@@ -1142,45 +722,17 @@ describe('RouterSync real Endfield legacy restoration', () => {
     );
     expect(restored?.excludedRecipeIds).toEqual(excludedRecipeIds);
     expect(restored?.checkedItemIds).toEqual(checkedItemIds);
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const oldState = service.unzipSettings(
-      'aef',
-      { rex: 'A~C' },
-      [],
-      [],
-      data,
-      rawHash,
-    );
-    expect(() =>
-      extension.preflight({
-        state: { settingsState: oldState },
-        plan: extension.prepare({
-          modId: 'aef',
-          params: { v: '12', rex: 'A~C' },
-        }),
-        data,
-      }),
-    ).toThrowError(WorkspaceRestoreError);
   });
 
-  it('prepares a legacy resource objective, then separates its checks from ordinary objectives', async () => {
-    const defaults = cloneDefaults(upstreamProduct.defaults());
-    defaults.extension = createEndfieldState();
+  it('keeps unsupported objective types and cet under native semantics', async () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
-      providers: [
-        { provide: EFFECTIVE_DEFAULTS, useValue: defaults },
-        ...provideEndfieldStateExtension(),
-      ],
+      providers: [...provideEndfieldDefaults()],
     });
     const service = TestBed.inject(RouterSync);
     const lifecycle = TestBed.inject(WorkspaceLifecycle);
     const endfield = TestBed.inject(EndfieldStore);
-    const prepare = spyOn(
-      TestBed.inject(WorkspacePreparation),
-      'prepareObjectives',
-    ).and.callThrough();
-    spyOn(TestBed.inject(ApplicationRef), 'tick');
+    service['settingsStore'].apply({ modId: 'aef' });
     (service as any).resources = new BehaviorSubject({
       modId: 'aef',
       data: rawData as unknown as ModData,
@@ -1193,35 +745,31 @@ describe('RouterSync real Endfield legacy restoration', () => {
     service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
     params.next({ id: 'aef' });
     queryParams.next({
-      v: '11',
-      o: ['xiranite_powder*2', 'copper_ore-liquid_water*28*3*12*miner_4'],
-      och: 'B',
-      cet: '3/2',
+      v: '12',
+      o: [
+        'xiranite_powder*2',
+        'originium_ore*2*3*11',
+        'originium_ore*3*3*12',
+        'xiranite_oven_1*4*0*13',
+        'xiranite_powder*1*0*14',
+      ],
+      och: 'B~D',
+      cet: 'invalid',
     });
-    for (let i = 0; i < 8; i++) await Promise.resolve();
-    expect(lifecycle.diagnostics())
-      .withContext(JSON.stringify(lifecycle.diagnostics()))
-      .toEqual([]);
+    for (let i = 0; i < 15; i++) await Promise.resolve();
     expect(lifecycle.ready()).toBeTrue();
-    expect(prepare.calls.mostRecent().args[3]).toEqual(['2']);
+    expect(lifecycle.diagnostics()).toEqual([]);
     expect(
       Object.values(service['objectivesStore'].state()).map(
-        (objective) => objective.targetId,
+        (objective): number => objective.type,
       ),
-    ).toEqual(['xiranite_powder']);
-    expect(service['settingsStore'].state().checkedObjectiveIds.size).toEqual(
-      0,
+    ).toEqual([0, 11, 12, 13, 14]);
+    expect(service['settingsStore'].state().checkedObjectiveIds).toEqual(
+      new Set(['2', '3', '4']),
     );
-    expect(
-      endfield.state().checkedDerived.has(resourceOwner('copper_ore')),
-    ).toBeTrue();
-    expect(
-      endfield.state().resourceLimits.rates.copper_ore.gt(rational.zero),
-    ).toBeTrue();
-    expect(
-      endfield.state().resourceRecipeSettings.copper_ore?.machineId,
-    ).toEqual('miner_4');
-    expect(endfield.state().electric).toEqual(rational(3n, 2n));
+    expect(encodeEndfield(endfield.snapshot())).toEqual(
+      encodeEndfield(createEndfieldState()),
+    );
   });
 });
 
@@ -1248,8 +796,7 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        provideEndfieldProduct(),
-        ...provideEndfieldStateExtension(),
+        ...provideEndfieldDefaults(),
         provideRouter([
           {
             path: ':id',
@@ -1297,7 +844,11 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
   }
 
   it('keeps the existing workspace ready through list, flow and data child routes', async () => {
-    await attach('v=12&o=xiranite_powder*5');
+    const ef = encodeEndfield({
+      ...createEndfieldState(),
+      electric: rational(2),
+    });
+    await attach(`v=12&o=xiranite_powder*5&ef=${ef}`);
     expect(lifecycle.ready()).toBeTrue();
     const previous = service['objectivesStore'].state();
     const previousSettings = service['settingsStore'].state();
@@ -1307,7 +858,9 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     next.calls.reset();
     for (const page of ['flow', 'data', 'list']) {
       expect(
-        await router.navigateByUrl(`/aef/${page}?v=12&o=xiranite_powder*5`),
+        await router.navigateByUrl(
+          `/aef/${page}?v=12&o=xiranite_powder*5&ef=${ef}`,
+        ),
       ).toBeTrue();
       await flush();
       expect(lifecycle.ready()).toBeTrue();
@@ -1316,7 +869,7 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
       expect(service['settingsStore'].state()).toBe(previousSettings);
       expect(TestBed.inject(EndfieldStore).state()).toEqual(previousExtension);
       expect(lifecycle.originalInput()).toEqual(
-        `/aef/${page}?v=12&o=xiranite_powder*5`,
+        `/aef/${page}?v=12&o=xiranite_powder*5&ef=${ef}`,
       );
       TestBed.tick();
       expect(next).toHaveBeenCalled();
@@ -1340,18 +893,29 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     expect(lifecycle.ready()).toBeFalse();
     expect(inflate.calls.count()).toBeGreaterThan(originalCalls);
     const token = service['zip'].zipNString('xiranite_powder', rawHash.items);
-    for (const resolve of pending.slice(0, -1)) resolve(`v=12&o=${token}*2`);
+    const encoded = (electric: number): string =>
+      encodeEndfield({
+        ...createEndfieldState(),
+        electric: rational(electric),
+      });
+    for (const resolve of pending.slice(0, -1))
+      resolve(`v=12&o=${token}*2&ef=${encoded(2)}`);
     await flush();
     expect(lifecycle.ready()).toBeFalse();
-    pending[pending.length - 1](`v=12&o=${token}*5`);
+    pending[pending.length - 1](`v=12&o=${token}*5&ef=${encoded(3)}`);
     await flush();
     expect(lifecycle.ready()).toBeTrue();
     expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5n));
+    expect(TestBed.inject(EndfieldStore).state().electric).toEqual(rational(3));
     expect(lifecycle.originalInput()).toEqual('/aef/flow?z=slow&v=12');
   });
 
   it('preserves a failed restore and its diagnostic on a child page navigation', async () => {
-    await attach('v=12&o=xiranite_powder*5');
+    const ef = encodeEndfield({
+      ...createEndfieldState(),
+      electric: rational(2),
+    });
+    await attach(`v=12&o=xiranite_powder*5&ef=${ef}`);
     const previous = service['objectivesStore'].state();
     expect(await router.navigateByUrl('/aef/list?v=12&ef=bad')).toBeTrue();
     await flush();
@@ -1365,6 +929,7 @@ describe('RouterSync parent ActivatedRoute with child pages', () => {
     expect(lifecycle.diagnostics()).toEqual(diagnostics);
     expect(lifecycle.originalInput()).toEqual('/aef/flow?v=12&ef=bad');
     expect(service['objectivesStore'].state()).toBe(previous);
+    expect(TestBed.inject(EndfieldStore).state().electric).toEqual(rational(2));
   });
 });
 
@@ -1492,43 +1057,21 @@ describe('RouterSync real Router navigation timing', () => {
     expect(service['ready']()).toBeTrue();
   });
 
-  it('reports a snapshot failure during navigation and recovers on a later route', async () => {
+  it('reports a failed store rollback when a real guard cancels', async () => {
     const previous = service['objectivesStore'].state();
-    const snapshot = spyOn(
-      TestBed.inject(STATE_EXTENSION),
-      'snapshot',
-    ).and.throwError('snapshot failed');
-    expect(await router.navigateByUrl('/2.0/next?v=12')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('snapshot failed');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    snapshot.and.callThrough();
-    expect(await router.navigateByUrl('/2.0/next?v=12&o=wood')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual('wood');
-  });
-
-  it('reports a failed rollback on guard cancellation and permits a later navigation', async () => {
-    const previous = service['objectivesStore'].state();
-    let failing = true;
-    spyOn(TestBed.inject(STATE_EXTENSION), 'commit').and.callFake(() => {
-      if (failing) {
-        failing = false;
-        throw new Error('rollback failed');
-      }
-    });
+    const set = spyOn(TestBed.inject(EndfieldStore), 'set').and.throwError(
+      'rollback failed',
+    );
     guard = (): boolean => false;
     expect(await router.navigateByUrl('/2.0/cancel?v=12')).toBeFalse();
     expect(lifecycle.ready()).toBeFalse();
     expect(lifecycle.diagnostics()[0].message).toContain('rollback failed');
     expect(service['objectivesStore'].state()).toBe(previous);
+    set.and.callThrough();
     guard = (): boolean => true;
     expect(await router.navigateByUrl('/2.0/next?v=12&o=wood')).toBeTrue();
     await flush();
     expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual('wood');
   });
 
   it('keeps the gate through a redirect and restores on guard error', async () => {
@@ -1780,16 +1323,11 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('reports a snapshot rollback error on exit without writing to the editor', async () => {
+  it('reports a failed store rollback when leaving the workspace', async () => {
     const saved = service.stored();
-    const previous = service['objectivesStore'].state();
-    let failing = true;
-    spyOn(TestBed.inject(STATE_EXTENSION), 'commit').and.callFake(() => {
-      if (failing) {
-        failing = false;
-        throw new Error('exit rollback failed');
-      }
-    });
+    const set = spyOn(TestBed.inject(EndfieldStore), 'set').and.throwError(
+      'exit rollback failed',
+    );
     expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
     TestBed.tick();
     await flush();
@@ -1798,13 +1336,12 @@ describe('RouterSync leaving the workspace route tree', () => {
     expect(lifecycle.diagnostics()[0].message).toContain(
       'exit rollback failed',
     );
-    expect(service['objectivesStore'].state()).toBe(previous);
     expect(service.stored()).toEqual(saved);
     expect(navigate).not.toHaveBeenCalled();
+    set.and.callThrough();
     expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
     await attachWorkspace();
     expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(3n));
   });
 
   it('discards an older inflate when leaving and restores a later workspace', async () => {
@@ -1839,531 +1376,6 @@ describe('RouterSync leaving the workspace route tree', () => {
 });
 
 /** Fault injection: these hooks deliberately violate the extension purity contract. */
-describe('RouterSync reentrant extension callbacks with a real Router', () => {
-  let router: Router;
-  let lifecycle: WorkspaceLifecycle;
-  let settings: SettingsStore;
-  let objectives: ObjectivesStore;
-  let http: HttpTestingController;
-  let phase: 'prepare' | 'preflight' | 'decode' | 'commit' | undefined;
-  let hook: (() => void) | undefined;
-  let blockedStarted: boolean;
-  let releaseBlocked: ((value: boolean) => void) | undefined;
-  let nested: Promise<boolean> | undefined;
-  let extensionValue: ReturnType<typeof signal<string>>;
-  let events: string[];
-
-  function fire(current: typeof phase): void {
-    if (phase !== current) return;
-    phase = undefined;
-    hook?.();
-  }
-
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 40; i++) await Promise.resolve();
-  }
-
-  beforeEach(async () => {
-    phase = undefined;
-    hook = undefined;
-    blockedStarted = false;
-    releaseBlocked = undefined;
-    nested = undefined;
-    events = [];
-    extensionValue = signal('initial');
-    const extension: StateExtension = {
-      ...upstreamState,
-      strictImports: true,
-      snapshot: () => extensionValue(),
-      prepare: (input) => {
-        fire('prepare');
-        return input;
-      },
-      preflight: () => {
-        fire('preflight');
-        return [];
-      },
-      decode: ({ state }) => {
-        fire('decode');
-        return {
-          state,
-          extension: `commit:${state.objectivesState?.['1']?.value.toString() ?? 'none'}`,
-          diagnostics: [],
-        };
-      },
-      commit: (value) => {
-        fire('commit');
-        extensionValue.set(value as string);
-      },
-    };
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        { provide: STATE_EXTENSION, useValue: extension },
-        provideRouter([
-          { path: 'editor', component: NavigationFixture },
-          {
-            path: ':id',
-            component: Id,
-            children: [
-              { path: 'list', component: NavigationFixture },
-              {
-                path: 'reject',
-                component: NavigationFixture,
-                canActivate: [(): boolean => false],
-              },
-              {
-                path: 'blocked',
-                component: NavigationFixture,
-                canActivate: [
-                  (): Promise<boolean> => {
-                    blockedStarted = true;
-                    return new Promise<boolean>((resolve) => {
-                      releaseBlocked = resolve;
-                    });
-                  },
-                ],
-              },
-            ],
-          },
-        ]),
-      ],
-    });
-    settings = TestBed.inject(SettingsStore);
-    spyOn(settings, 'modData').and.returnValue(mockModData);
-    spyOn(settings, 'modHash').and.returnValue(mockModHash);
-    spyOn(settings, 'loading').and.returnValue(false);
-    spyOn(settings, 'loadError').and.returnValue(undefined);
-    objectives = TestBed.inject(ObjectivesStore);
-    http = TestBed.inject(HttpTestingController);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
-    router = TestBed.inject(Router);
-    const service = TestBed.inject(RouterSync);
-    spyOn(service, 'getHash').and.callFake((value) =>
-      Promise.resolve({
-        ...value.objectives.bare,
-        ...value.config.bare,
-        v: '12',
-      }),
-    );
-    router.events.subscribe((event) => {
-      if (event instanceof NavigationStart) events.push(`start:${event.url}`);
-      if (event instanceof NavigationSkipped)
-        events.push(`skipped:${event.url}`);
-    });
-    await RouterTestingHarness.create('/2.0/list?v=12&o=wood*2');
-    for (let i = 0; i < 8; i++) {
-      TestBed.tick();
-      await Promise.resolve();
-    }
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(settings.modId()).toEqual('2.0');
-    expect(objectives.state()['1'].value).toEqual(rational(2n));
-  });
-
-  it('does not apply an obsolete mod when prepare starts a guarded navigation', async () => {
-    const apply = spyOn(settings, 'apply').and.callThrough();
-    phase = 'prepare';
-    hook = (): void => {
-      events.push('hook:prepare');
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-      events.push('hook:return');
-    };
-    await router.navigateByUrl('/1.0/list?v=12&o=wood*8');
-    await flush();
-    expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
-    expect(events.indexOf('start:/2.0/blocked?v=12'))
-      .withContext(events.join(' | '))
-      .toBeLessThan(events.indexOf('hook:return'));
-    expect(settings.modId()).withContext(events.join(' | ')).toEqual('2.0');
-    expect(apply).not.toHaveBeenCalledWith({ modId: '1.0' });
-    expect(
-      http.match((request) => request.url.startsWith('data/1.0/')),
-    ).toEqual([]);
-    expect(lifecycle.ready()).toBeFalse();
-    releaseBlocked?.(true);
-    await nested;
-    await flush();
-  });
-
-  for (const callback of ['preflight', 'decode'] as const) {
-    it(`does not commit an obsolete restore when ${callback} starts a guarded navigation`, async () => {
-      const previous = objectives.state();
-      const previousExtension = extensionValue();
-      phase = callback;
-      hook = (): void => {
-        events.push(`hook:${callback}`);
-        nested = router.navigateByUrl('/2.0/blocked?v=12');
-        events.push('hook:return');
-      };
-      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
-      await flush();
-      expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
-      expect(events.indexOf('start:/2.0/blocked?v=12'))
-        .withContext(events.join(' | '))
-        .toBeLessThan(events.indexOf('hook:return'));
-      expect(objectives.state()).withContext(events.join(' | ')).toBe(previous);
-      expect(extensionValue()).toEqual(previousExtension);
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(true);
-      await nested;
-      await flush();
-    });
-  }
-
-  it('keeps the previous workspace ready when rollback reenters with a skipped same-URL navigation', async () => {
-    const previous = objectives.state();
-    const previousUrl = router.url;
-    let inside = false;
-    let skippedInside = false;
-    router.events.subscribe((event) => {
-      if (inside && event instanceof NavigationSkipped) skippedInside = true;
-    });
-    phase = 'commit';
-    hook = (): void => {
-      inside = true;
-      events.push('hook:commit');
-      nested = router.navigateByUrl(router.url);
-      inside = false;
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await nested;
-    await flush();
-    expect(skippedInside).withContext(events.join(' | ')).toBeTrue();
-    expect(router.url).toEqual(previousUrl);
-    expect(lifecycle.ready()).toBeTrue();
-    expect(objectives.state()).toBe(previous);
-  });
-
-  it('restores readiness when rollback starts another guarded navigation that is cancelled', async () => {
-    const previous = objectives.state();
-    const previousUrl = router.url;
-    phase = 'commit';
-    hook = (): void => {
-      events.push('hook:commit');
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-      events.push('hook:return');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(blockedStarted).withContext(events.join(' | ')).toBeTrue();
-    expect(events.indexOf('start:/2.0/blocked?v=12'))
-      .withContext(events.join(' | '))
-      .toBeLessThan(events.indexOf('hook:return'));
-    expect(lifecycle.ready()).withContext(events.join(' | ')).toBeFalse();
-    releaseBlocked?.(false);
-    await nested;
-    await flush();
-    expect(router.url).toEqual(previousUrl);
-    expect(objectives.state()).toBe(previous);
-    expect(lifecycle.ready()).withContext(events.join(' | ')).toBeTrue();
-  });
-
-  it('lets a guarded navigation succeed when it starts during rollback', async () => {
-    phase = 'commit';
-    hook = (): void => {
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(blockedStarted).toBeTrue();
-    expect(lifecycle.ready()).toBeFalse();
-    releaseBlocked?.(true);
-    expect(await nested).toBeTrue();
-    await flush();
-    expect(router.url).toEqual('/2.0/blocked?v=12');
-    expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.diagnostics()).toEqual([]);
-  });
-
-  it('preserves an existing failed workspace when a rollback navigation is cancelled', async () => {
-    const failure = {
-      code: 'fault-input',
-      message: 'invalid input',
-      field: 'o',
-      severity: 'error' as const,
-    };
-    phase = 'preflight';
-    hook = (): void => {
-      throw new WorkspaceRestoreError([failure]);
-    };
-    await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()).toEqual([failure]);
-    const originalInput = lifecycle.originalInput();
-    const previous = objectives.state();
-    phase = 'commit';
-    hook = (): void => {
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(blockedStarted).toBeTrue();
-    releaseBlocked?.(false);
-    await nested;
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()).toEqual([failure]);
-    expect(lifecycle.originalInput()).toEqual(originalInput);
-    expect(objectives.state()).toBe(previous);
-  });
-
-  it('restarts an unfinished inflate after reentrant rollback cancellation', async () => {
-    const compression = TestBed.inject(Compression);
-    const pending: ((value: string) => void)[] = [];
-    spyOn(compression, 'inflate').and.callFake(
-      () => new Promise<string>((resolve) => pending.push(resolve)),
-    );
-    await router.navigateByUrl('/2.0/list?z=slow&v=12');
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    const previous = objectives.state();
-    const originalCount = pending.length;
-    expect(originalCount).toBeGreaterThan(0);
-    phase = 'commit';
-    hook = (): void => {
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(blockedStarted).toBeTrue();
-    const token = compression.nToId(mockModHash.items.indexOf('wood'));
-    for (const resolve of pending.slice(0, originalCount))
-      resolve(`v=12&o=${token}*9`);
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(objectives.state()).toBe(previous);
-    releaseBlocked?.(false);
-    await nested;
-    await flush();
-    expect(pending.length).toBeGreaterThan(originalCount);
-    pending[pending.length - 1](`v=12&o=${token}*6`);
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(objectives.state()['1'].targetId).toEqual('wood');
-    expect(objectives.state()['1'].value).toEqual(rational(6n));
-    expect(lifecycle.originalInput()).toEqual('/2.0/list?z=slow&v=12');
-  });
-
-  it('ignores an obsolete rollback error after the callback starts another navigation', async () => {
-    const previous = objectives.state();
-    phase = 'commit';
-    hook = (): void => {
-      nested = router.navigateByUrl('/2.0/blocked?v=12');
-      throw new Error('obsolete rollback failure');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(blockedStarted).toBeTrue();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()).toEqual([]);
-    releaseBlocked?.(false);
-    await nested;
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.diagnostics()).toEqual([]);
-    expect(objectives.state()).toBe(previous);
-  });
-
-  for (const throwAfterNavigation of [false, true]) {
-    it(`restarts the current restore when commit starts a cancelled navigation${throwAfterNavigation ? ' and throws' : ''}`, async () => {
-      phase = 'commit';
-      hook = (): void => {
-        nested = router.navigateByUrl('/2.0/blocked?v=12');
-        if (throwAfterNavigation) throw new Error('obsolete commit failure');
-      };
-      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
-      await flush();
-      expect(blockedStarted).toBeTrue();
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(false);
-      await nested;
-      await flush();
-      expect(router.url).toEqual('/2.0/list?v=12&o=wood*8');
-      expect(lifecycle.ready()).toBeTrue();
-      expect(lifecycle.diagnostics()).toEqual([]);
-      expect(objectives.state()['1'].value).toEqual(rational(8n));
-      expect(extensionValue()).toEqual('commit:8');
-    });
-
-    it(`keeps the new navigation in charge when a failed commit rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
-      phase = 'commit';
-      hook = (): void => {
-        phase = 'commit';
-        hook = (): void => {
-          nested = router.navigateByUrl('/2.0/blocked?v=12');
-          if (throwAfterNavigation)
-            throw new Error('obsolete rollback failure');
-        };
-        throw new Error('commit failure');
-      };
-      await router.navigateByUrl('/2.0/list?v=12&o=wood*8');
-      await flush();
-      expect(blockedStarted).toBeTrue();
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(false);
-      await nested;
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(lifecycle.diagnostics()).toEqual([]);
-      expect(objectives.state()['1'].value).toEqual(rational(8n));
-      expect(extensionValue()).toEqual('commit:8');
-    });
-  }
-
-  for (const throwAfterNavigation of [false, true]) {
-    it(`preserves the failed diagnostic when failure rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
-      const failure = {
-        code: 'fault-input',
-        message: 'invalid input',
-        field: 'o',
-        severity: 'error' as const,
-      };
-      const previous = objectives.state();
-      phase = 'preflight';
-      hook = (): void => {
-        phase = 'commit';
-        hook = (): void => {
-          nested = router.navigateByUrl('/2.0/blocked?v=12');
-          if (throwAfterNavigation)
-            throw new Error('obsolete rollback failure');
-        };
-        throw new WorkspaceRestoreError([failure]);
-      };
-      await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
-      await flush();
-      expect(blockedStarted).toBeTrue();
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(false);
-      await nested;
-      await flush();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()).toEqual([failure]);
-      expect(lifecycle.originalInput()).toEqual('/2.0/list?v=12&o=wood*9');
-      expect(objectives.state()).toBe(previous);
-    });
-
-    it(`keeps the editor paused when leave rollback reenters${throwAfterNavigation ? ' and throws' : ''}`, async () => {
-      const previous = objectives.state();
-      phase = 'commit';
-      hook = (): void => {
-        nested = router.navigateByUrl('/2.0/blocked?v=12');
-        if (throwAfterNavigation) throw new Error('obsolete rollback failure');
-      };
-      await router.navigateByUrl('/editor');
-      await flush();
-      expect(blockedStarted).toBeTrue();
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(false);
-      await nested;
-      await flush();
-      expect(router.url).toEqual('/editor');
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()).toEqual([]);
-      expect(lifecycle.originalInput()).toEqual('/editor');
-      expect(objectives.state()).toBe(previous);
-      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(objectives.state()['1'].value).toEqual(rational(3n));
-    });
-  }
-
-  for (const leaving of [false, true]) {
-    it(`keeps the failed baseline when ${leaving ? 'leaving' : 'cancelling'} fails and its failure rollback starts another navigation`, async () => {
-      const previous = objectives.state();
-      const previousUrl = router.url;
-      const previousInput = lifecycle.originalInput();
-      phase = 'commit';
-      hook = (): void => {
-        phase = 'commit';
-        hook = (): void => {
-          nested = router.navigateByUrl('/2.0/blocked?v=12');
-        };
-        throw new Error('first rollback failed');
-      };
-      await router.navigateByUrl(leaving ? '/editor' : '/2.0/reject?v=12');
-      await flush();
-      expect(blockedStarted).toBeTrue();
-      expect(lifecycle.ready()).toBeFalse();
-      releaseBlocked?.(false);
-      await nested;
-      await flush();
-      expect(router.url).toEqual(leaving ? '/editor' : previousUrl);
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.originalInput()).toEqual(
-        leaving ? '/editor' : previousInput,
-      );
-      expect(lifecycle.diagnostics()).toEqual([
-        {
-          code: 'workspace-restore',
-          message: 'first rollback failed',
-          severity: 'error',
-        },
-      ]);
-      expect(objectives.state()).toBe(previous);
-      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(objectives.state()['1'].value).toEqual(rational(3n));
-    });
-  }
-
-  for (const [rollbackError, message] of [
-    ['string rollback failure', 'string rollback failure'],
-    [{ detail: 'unknown failure' }, 'Failed to restore the previous workspace'],
-  ] as const) {
-    it(`reports a ${typeof rollbackError} thrown by the rollback callback`, async () => {
-      const previous = objectives.state();
-      phase = 'preflight';
-      hook = (): void => {
-        phase = 'commit';
-        hook = (): void => {
-          // Fault injection verifies diagnostic handling of non-Error throws.
-          // eslint-disable-next-line @typescript-eslint/only-throw-error
-          throw rollbackError;
-        };
-        throw new Error('preflight failed');
-      };
-      await router.navigateByUrl('/2.0/list?v=12&o=wood*9');
-      await flush();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.diagnostics()).toEqual([
-        {
-          code: 'workspace-restore',
-          message: 'preflight failed',
-          severity: 'error',
-        },
-        { code: 'workspace-rollback', message, severity: 'error' },
-      ]);
-      expect(objectives.state()).toBe(previous);
-      expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(objectives.state()['1'].value).toEqual(rational(3n));
-    });
-  }
-
-  it('reports a rollback error and accepts a later valid navigation', async () => {
-    const previous = objectives.state();
-    phase = 'commit';
-    hook = (): void => {
-      throw new Error('rollback failed');
-    };
-    expect(await router.navigateByUrl('/2.0/reject?v=12')).toBeFalse();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.diagnostics()[0].message).toContain('rollback failed');
-    expect(objectives.state()).toBe(previous);
-    expect(await router.navigateByUrl('/2.0/list?v=12&o=wood*3')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(objectives.state()['1'].value).toEqual(rational(3n));
-  });
-});
-
 describe('RouterSync public retry and product boundaries', () => {
   let router: Router;
   let service: RouterSync;
@@ -2380,20 +1392,12 @@ describe('RouterSync public retry and product boundaries', () => {
   beforeEach(async () => {
     loading.set(false);
     loadError.set(undefined);
-    const extension: StateExtension = {
-      ...upstreamState,
-      prepare: (input) =>
-        input.params['missingMod'] === '1'
-          ? { ...input, modId: undefined }
-          : input,
-    };
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        { provide: STATE_EXTENSION, useValue: extension },
         {
-          provide: PRODUCT_PROFILE,
-          useValue: { ...upstreamProduct, allowedModIds: ['2.0'] },
+          provide: PINNED_MOD_ID,
+          useValue: '2.0',
         },
         provideRouter([
           {
@@ -2428,33 +1432,6 @@ describe('RouterSync public retry and product boundaries', () => {
     await flush();
     expect(lifecycle.ready()).toBeTrue();
     expect(objectives.state()['1'].value).toEqual(rational(2n));
-  });
-
-  it('rejects an extension plan with no mod while preserving the active workspace', async () => {
-    const previousObjectives = objectives.state();
-    const previousSettings = settings.state();
-    const stored = service.stored();
-    const navigate = spyOn(router, 'navigate').and.callThrough();
-    const url = '/2.0/list?v=12&missingMod=1';
-    expect(await router.navigateByUrl(url)).toBeTrue();
-    await flush();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual(url);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.originalInput()).toEqual(url);
-    expect(lifecycle.diagnostics()).toEqual([
-      {
-        code: 'mod-not-allowed',
-        message: 'Workspace mod is not available: (missing)',
-        field: 'modId',
-        severity: 'error',
-      },
-    ]);
-    expect(objectives.state()).toBe(previousObjectives);
-    expect(settings.state()).toBe(previousSettings);
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('waits for current resources when retry is unavailable and a cached snapshot is stale', async () => {

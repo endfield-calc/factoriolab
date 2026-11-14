@@ -1,6 +1,7 @@
 import { httpResource } from '@angular/common/http';
 import { computed, Service } from '@angular/core';
 
+import product from '/public/endfield/product.json';
 import { ReleaseInfo } from '~/data/release-info';
 
 @Service()
@@ -9,6 +10,6 @@ export class Release {
   readonly version = computed(() => {
     const config = this.config.value();
     if (config == null) return '';
-    return `FactorioLab ${config.version || '(dev)'}`;
+    return `${product.name} ${config.version || '(dev)'}`;
   });
 }

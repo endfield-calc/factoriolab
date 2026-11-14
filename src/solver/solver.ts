@@ -67,6 +67,19 @@ export class Solver {
 
     if (objectives.length === 0) return { steps: [], resultType: 'skipped' };
 
+    for (const objective of objectives)
+      if (
+        isRecipeObjective(objective) &&
+        [
+          ObjectiveType.Output,
+          ObjectiveType.Input,
+          ObjectiveType.Maximize,
+          ObjectiveType.Limit,
+        ].includes(objective.type) &&
+        objective.value.lt(rational.zero)
+      )
+        throw new Error(`Negative machine count for objective ${objective.id}`);
+
     // Get matrix state
     const state = this.getState(
       objectives,

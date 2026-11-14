@@ -53,7 +53,7 @@ describe('EndfieldResources', () => {
         {
           provide: PreferencesStore,
           useValue: {
-            migrationWarnings: ['Theme black was renamed dark'],
+            restoreError: signal('Unable to restore preferences'),
             stored: (): string => '{"theme":"black"}',
           },
         },
@@ -90,7 +90,7 @@ describe('EndfieldResources', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const html: HTMLElement = fixture.nativeElement;
-    expect(html.textContent).toContain('Theme black was renamed dark');
+    expect(html.textContent).toContain('endfield.recovery.preferences');
     expect(html.textContent).toContain('Unable to restore');
     expect(html.querySelector('textarea')?.value).toBe('/aef/list?z=bad&v=11');
     const buttons = [...html.querySelectorAll('button')];
@@ -160,77 +160,26 @@ describe('EndfieldResources', () => {
     });
   });
 
-  it('recovers all backed-up preference versions and falls back when storage is unavailable', () => {
-    spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(4);
-    spyOn(Storage.prototype, 'key').and.callFake(
-      (index: number): string | null =>
-        [
-          'preferences.recovery.1',
-          'other',
-          'preferences.recovery',
-          'preferences.recovery.2',
-        ][index] ?? null,
-    );
-    const get = spyOn(Storage.prototype, 'getItem').and.callFake(
-      (key: string): string | null =>
-        (
-          ({
-            'preferences.recovery': 'first',
-            'preferences.recovery.1': 'second',
-          }) as Record<string, string>
-        )[key] ?? null,
-    );
-    expect(fixture.componentInstance['readBackups']()).toEqual([
-      { key: 'preferences', value: '{"theme":"black"}' },
-      { key: 'preferences.recovery', value: 'first' },
-      { key: 'preferences.recovery.1', value: 'second' },
-    ]);
-    get.and.throwError('storage unavailable');
-    expect(fixture.componentInstance['readBackups']()).toEqual([
-      { key: 'preferences', value: '{"theme":"black"}' },
-    ]);
-    spyOn(fixture.componentInstance['preferences'], 'stored').and.returnValue(
-      undefined,
-    );
-    expect(fixture.componentInstance['readBackups']()).toEqual([]);
-  });
-
-  it('discovers display backups even when there are no current warnings', () => {
-    fixture.componentInstance['preferences'].migrationWarnings.length = 0;
-    spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(1);
-    spyOn(Storage.prototype, 'key').and.returnValue(
-      'preferences.recovery.endfield.presentation.2',
-    );
-    spyOn(Storage.prototype, 'getItem').and.returnValue('damaged display');
-    expect(fixture.componentInstance['readBackups']()).toEqual([
-      {
-        key: 'preferences.recovery.endfield.presentation.2',
-        value: 'damaged display',
+  it('exports the current failed workspace URL unchanged', () => {
+    ready.set(false);
+    fixture.detectChanges();
+    const download = spyOn(
+      fixture.componentInstance as unknown as {
+        download: (name: string, value: string) => void;
       },
-    ]);
-  });
-
-  it('offers the still-readable legacy display original', () => {
-    fixture.componentInstance['preferences'].migrationWarnings.length = 0;
-    spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(0);
-    spyOn(Storage.prototype, 'getItem').and.callFake(
-      (key: string): string | null =>
-        key === 'endfield.presentation' ? '{broken' : null,
+      'download',
     );
-    expect(fixture.componentInstance['readBackups']()).toEqual([
-      { key: 'endfield.presentation', value: '{broken' },
-    ]);
-  });
-
-  it('does not offer a second copy of an original already present in a recovery backup', () => {
-    fixture.componentInstance['preferences'].migrationWarnings.length = 0;
-    spyOnProperty(Storage.prototype, 'length', 'get').and.returnValue(1);
-    const key = 'preferences.recovery.endfield.presentation';
-    spyOn(Storage.prototype, 'key').and.returnValue(key);
-    spyOn(Storage.prototype, 'getItem').and.returnValue('{broken');
-    expect(fixture.componentInstance['readBackups']()).toEqual([
-      { key, value: '{broken' },
-    ]);
+    const button = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ].find((element) =>
+      element.textContent?.includes('endfield.recovery.downloadUrl'),
+    );
+    expect(button).toBeDefined();
+    button!.click();
+    expect(download).toHaveBeenCalledOnceWith(
+      'endfield-original-url.txt',
+      '/aef/list?z=bad&v=11',
+    );
   });
 
   it('exports the unmodified original as a local text blob', async () => {
@@ -256,188 +205,67 @@ describe('EndfieldResources', () => {
 });
 
 describe('EndfieldResources preference recovery integration', () => {
-  const currentKey = 'endfield.presentation';
-  const displayBackup = 'preferences.recovery.endfield.presentation';
-  const legacyBackup = 'preferences.recovery.97';
-  let original: Map<string, string>;
-  let set: jasmine.Spy;
-
-  function relevantKeys(): string[] {
-    return Array.from({ length: localStorage.length }, (_, index) =>
-      localStorage.key(index),
-    ).filter(
-      (key): key is string =>
-        key != null &&
-        (key === currentKey ||
-          key === legacyBackup ||
-          key === displayBackup ||
-          key.startsWith(`${displayBackup}.`)),
-    );
-  }
-
   beforeEach(() => {
-    original = new Map(
-      relevantKeys().map((key) => [key, localStorage.getItem(key) ?? '']),
-    );
-    for (const key of relevantKeys()) localStorage.removeItem(key);
-    spyOn(Storage.prototype, 'getItem').and.callThrough();
-    set = spyOn(Storage.prototype, 'setItem').and.callThrough();
+    localStorage.clear();
   });
-
   afterEach(() => {
-    set.and.callThrough();
-    TestBed.tick();
-    for (const key of relevantKeys()) localStorage.removeItem(key);
-    for (const [key, value] of original) localStorage.setItem(key, value);
+    localStorage.clear();
   });
 
-  async function createFixture(): Promise<ComponentFixture<EndfieldResources>> {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, EndfieldResources],
-      providers: [
-        {
-          provide: PreferencesStore,
-          useValue: {
-            migrationWarnings: [],
-            stored: (): undefined => undefined,
+  for (const [label, raw] of [
+    ['malformed JSON', '{"states":'],
+    ['empty text', ''],
+  ]) {
+    it(`exports ${label} without writing or listing old backups`, async () => {
+      localStorage.setItem('preferences', raw);
+      localStorage.setItem('preferences.recovery.1', 'old backup');
+      localStorage.setItem('endfield.presentation', 'old display');
+      await TestBed.configureTestingModule({
+        imports: [TestModule, EndfieldResources],
+        providers: [
+          {
+            provide: EndfieldCoordinator,
+            useValue: {
+              ready: signal(true),
+              state: signal(createEndfieldState()),
+              settings: signal({
+                locationIds: new Set(['tundra']),
+                excludedRecipeIds: new Set(),
+              }),
+              data: signal({ itemRecord: {} }),
+              diagnostics: signal([]),
+              dispatch: (): boolean => true,
+            },
           },
-        },
-        {
-          provide: EndfieldCoordinator,
-          useValue: {
-            ready: signal(true),
-            state: signal(createEndfieldState()),
-            settings: signal({
-              locationIds: new Set(['tundra']),
-              excludedRecipeIds: new Set(),
-            }),
-            data: signal({ itemRecord: {} }),
-            diagnostics: signal([]),
-            dispatch: (): boolean => true,
+          {
+            provide: WorkspaceLifecycle,
+            useValue: { diagnostics: signal([]), originalInput: signal('') },
           },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(EndfieldResources);
+      fixture.detectChanges();
+      const html: HTMLElement = fixture.nativeElement;
+      expect(TestBed.inject(PreferencesStore).restoreError()).toBeDefined();
+      expect(html.textContent).toContain('endfield.recovery.preferences');
+      expect(html.textContent).not.toContain('preferences.recovery.1');
+      expect(html.textContent).not.toContain('endfield.presentation');
+      const download = spyOn(
+        fixture.componentInstance as unknown as {
+          download: (name: string, value: string) => void;
         },
-        {
-          provide: WorkspaceLifecycle,
-          useValue: { diagnostics: signal([]), originalInput: signal('') },
-        },
-      ],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(EndfieldResources);
-    fixture.detectChanges();
-    return fixture;
+        'download',
+      );
+      const button = [...html.querySelectorAll('button')].find((element) =>
+        element.textContent?.includes('endfield.recovery.downloadPreferences'),
+      );
+      expect(button).toBeDefined();
+      button!.click();
+      expect(download).toHaveBeenCalledOnceWith('preferences.json', raw);
+      TestBed.tick();
+      expect(localStorage.getItem('preferences')).toBe(raw);
+      expect(localStorage.getItem('preferences.recovery.1')).toBe('old backup');
+      expect(localStorage.getItem('endfield.presentation')).toBe('old display');
+    });
   }
-
-  it('discovers real display and legacy backups and exports their original text', async () => {
-    const displayRaw = '{ "showNames": true, "hideDuplicateIcons": 4 }';
-    const legacyRaw = '{"theme":"black","states":{"aef":{"safe":"v=11"}}}';
-    localStorage.setItem(currentKey, displayRaw);
-    localStorage.setItem(displayBackup, displayRaw);
-    localStorage.setItem(legacyBackup, legacyRaw);
-    set.calls.reset();
-    const fixture = await createFixture();
-    const html: HTMLElement = fixture.nativeElement;
-    expect(localStorage.getItem(displayBackup)).toBe(displayRaw);
-    expect(localStorage.getItem(currentKey)).toBe(displayRaw);
-    expect(
-      set.calls
-        .allArgs()
-        .some(([key]) => key === currentKey || key === displayBackup),
-    ).toBeFalse();
-    expect(html.textContent).toContain(displayBackup);
-    expect(html.textContent).toContain(legacyBackup);
-    const spans = [...html.querySelectorAll('section[role="status"] span')];
-    const displayButton = spans.find(
-      (span) => span.textContent?.trim() === displayBackup,
-    )?.previousElementSibling as HTMLButtonElement;
-    const legacyButton = spans.find(
-      (span) => span.textContent?.trim() === legacyBackup,
-    )?.previousElementSibling as HTMLButtonElement;
-    expect(displayButton).toBeTruthy();
-    expect(legacyButton).toBeTruthy();
-    const create = spyOn(URL, 'createObjectURL').and.returnValues(
-      'blob:display-test',
-      'blob:legacy-test',
-    );
-    spyOn(URL, 'revokeObjectURL');
-    spyOn(HTMLAnchorElement.prototype, 'dispatchEvent').and.returnValue(true);
-    jasmine.clock().install();
-    try {
-      displayButton.click();
-      legacyButton.click();
-      jasmine.clock().tick(40000);
-    } finally {
-      jasmine.clock().uninstall();
-    }
-    expect(create.calls.count()).toBe(2);
-    expect(await (create.calls.argsFor(0)[0] as Blob).text()).toBe(displayRaw);
-    expect(await (create.calls.argsFor(1)[0] as Blob).text()).toBe(legacyRaw);
-  });
-
-  it('shows previously saved recovery copies even without current warnings', async () => {
-    localStorage.setItem(
-      currentKey,
-      '{"showNames":true,"hideDuplicateIcons":false}',
-    );
-    localStorage.setItem(`${displayBackup}.3`, 'old display original');
-    const fixture = await createFixture();
-    const html: HTMLElement = fixture.nativeElement;
-    expect(html.textContent).toContain('endfield.recovery.availableBackups');
-    expect(html.textContent).toContain(`${displayBackup}.3`);
-    expect(html.textContent).not.toContain('endfield.recovery.displayDamaged');
-  });
-
-  it('lists multiple saved recovery copies in key order', async () => {
-    localStorage.setItem(
-      currentKey,
-      '{"showNames":true,"hideDuplicateIcons":false}',
-    );
-    localStorage.setItem(`${displayBackup}.3`, 'new display original');
-    localStorage.setItem(displayBackup, 'old display original');
-    localStorage.setItem(legacyBackup, 'legacy original');
-    const fixture = await createFixture();
-    const html: HTMLElement = fixture.nativeElement;
-    const backupKeys = [
-      ...html.querySelectorAll('section[role="status"] > span'),
-    ].map((span) => span.textContent?.trim());
-    expect(backupKeys).toEqual([
-      currentKey,
-      legacyBackup,
-      displayBackup,
-      `${displayBackup}.3`,
-    ]);
-  });
-
-  it('keeps an unbacked original readable and exportable without writing it', async () => {
-    const raw = '{"showNames":true,"hideDuplicateIcons":"bad"}';
-    localStorage.setItem(currentKey, raw);
-    set.calls.reset();
-    const fixture = await createFixture();
-    const html: HTMLElement = fixture.nativeElement;
-    expect(html.textContent).toContain('endfield.recovery.availableBackups');
-    const span = [...html.querySelectorAll('section[role="status"] span')].find(
-      (element) => element.textContent?.trim() === currentKey,
-    );
-    const button = span?.previousElementSibling as HTMLButtonElement;
-    expect(button).toBeTruthy();
-    const create = spyOn(URL, 'createObjectURL').and.returnValue(
-      'blob:original-test',
-    );
-    spyOn(URL, 'revokeObjectURL');
-    spyOn(HTMLAnchorElement.prototype, 'dispatchEvent').and.returnValue(true);
-    jasmine.clock().install();
-    try {
-      button.click();
-      jasmine.clock().tick(40000);
-    } finally {
-      jasmine.clock().uninstall();
-    }
-    expect(await (create.calls.mostRecent().args[0] as Blob).text()).toBe(raw);
-    TestBed.tick();
-    expect(localStorage.getItem(currentKey)).toBe(raw);
-    expect(
-      set.calls
-        .allArgs()
-        .some(([key]) => key === currentKey || key.startsWith(displayBackup)),
-    ).toBeFalse();
-  });
 });

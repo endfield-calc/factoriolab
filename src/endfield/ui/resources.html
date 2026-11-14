@@ -1,26 +1,15 @@
-@if (warnings().length || backups.length) {
+@if (preferences.restoreError()) {
   <section role="status" class="my-2 rounded p-3 border border-complement-400">
     <p>
-      {{
-        (warnings().length
-          ? 'endfield.recovery.preferences'
-          : 'endfield.recovery.availableBackups'
-        ) | translate
-      }}
+      {{ 'endfield.recovery.preferences' | translate }}
     </p>
-    <ul class="ms-4 list-disc">
-      @for (warning of warnings(); track $index) {
-        <li>{{ warning | translate }}</li>
-      }
-    </ul>
-    @for (backup of backups; track backup.key) {
+    @if (preferences.stored() !== undefined) {
       <button
         type="button"
         labButton
         [text]="'endfield.recovery.downloadPreferences'"
-        (click)="download(backup.key + '.json', backup.value)"
+        (click)="download('preferences.json', preferences.stored()!)"
       ></button>
-      <span class="ms-1">{{ backup.key }}</span>
     }
   </section>
 }

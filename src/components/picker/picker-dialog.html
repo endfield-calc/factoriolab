@@ -56,12 +56,10 @@
   }
 </div>
 
-@if (presentation.showNameToggle) {
-  <lab-checkbox
-    [label]="presentation.nameToggleLabel"
-    [(ngModel)]="showNames"
-  ></lab-checkbox>
-}
+<lab-checkbox
+  label="endfield.picker.showNames"
+  [(ngModel)]="showNames"
+></lab-checkbox>
 
 <lab-tabs
   type="category"
@@ -82,13 +80,7 @@
           labButton
           [iconType]="dialogData.type"
           [icon]="id"
-          [text]="
-            showNames() ||
-            (dialogData.type === 'recipe' &&
-              data().recipeRecord[id]?.flags.has('forceShowLabel'))
-              ? data()[recordKey][id].name
-              : ''
-          "
+          [text]="showNames() ? data()[recordKey][id].name : ''"
           [border]="id === selectedId"
           [color]="id === selectedId ? 'brand' : 'gray'"
           [toggleIcon]="multi ? faEyeSlash : undefined"

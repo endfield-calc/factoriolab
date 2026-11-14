@@ -6,11 +6,11 @@ import { SwUpdate } from '@angular/service-worker';
 import { faCheck, faRotate, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { filter, merge, switchMap } from 'rxjs';
 
+import product from '/public/endfield/product.json';
 import { Confirm } from '~/components/confirm/confirm';
 import { CustomDataDialog } from '~/components/custom-data-dialog/custom-data-dialog';
 import { CUSTOM_MOD } from '~/data/game';
 import { Release } from '~/data/release';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { log } from '~/utils/log';
 import { WindowClient } from '~/utils/window-client';
@@ -24,7 +24,7 @@ import { WindowClient } from '~/utils/window-client';
 export class App {
   private readonly swUpdate = inject(SwUpdate);
   protected readonly router = inject(Router);
-  protected readonly product = inject(PRODUCT_PROFILE);
+  protected readonly product = product;
   private readonly dialog = inject(Dialog);
   private readonly release = inject(Release);
   private readonly confirm = inject(Confirm);

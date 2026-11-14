@@ -1,3 +1,4 @@
+import type { Recipe } from '~/data/schema/recipe';
 import type {
   CalculationVariable,
   DerivedObjective,
@@ -10,82 +11,27 @@ import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 
 import {
-  copyResourceRecipeSettings,
   EndfieldState,
   ovenId,
   resourceIds,
   resourceLimitId,
   resourceObjectiveId,
-  resourceOwner,
   resourceRecipes,
 } from './model';
 
 const transferKey = 'domain_key_tundra';
 const hourlyTransfer = rational(1, 3600);
 
-/** The fixed aef data's complete set of tundra transfer recipes. */
-export const tundraTransferRecipeIds: readonly string[] = [
-  'transfer_tundra_bottled_food_1',
-  'transfer_tundra_bottled_food_2',
-  'transfer_tundra_bottled_food_3',
-  'transfer_tundra_bottled_rec_hp_1',
-  'transfer_tundra_bottled_rec_hp_2',
-  'transfer_tundra_bottled_rec_hp_3',
-  'transfer_tundra_carbon_enr',
-  'transfer_tundra_carbon_enr_powder',
-  'transfer_tundra_carbon_mtl',
-  'transfer_tundra_carbon_powder',
-  'transfer_tundra_crystal_enr',
-  'transfer_tundra_crystal_enr_powder',
-  'transfer_tundra_crystal_powder',
-  'transfer_tundra_crystal_shell',
-  'transfer_tundra_equip_script_1',
-  'transfer_tundra_equip_script_2',
-  'transfer_tundra_equip_script_3',
-  'transfer_tundra_glass_bottle',
-  'transfer_tundra_glass_cmpt',
-  'transfer_tundra_glass_enr_bottle',
-  'transfer_tundra_glass_enr_cmpt',
-  'transfer_tundra_iron_bottle',
-  'transfer_tundra_iron_cmpt',
-  'transfer_tundra_iron_enr',
-  'transfer_tundra_iron_enr_bottle',
-  'transfer_tundra_iron_enr_cmpt',
-  'transfer_tundra_iron_enr_powder',
-  'transfer_tundra_iron_nugget',
-  'transfer_tundra_iron_powder',
-  'transfer_tundra_originium_enr_powder',
-  'transfer_tundra_originium_powder',
-  'transfer_tundra_plant_bbflower_1',
-  'transfer_tundra_plant_bbflower_powder_1',
-  'transfer_tundra_plant_bbflower_seed_1',
-  'transfer_tundra_plant_grass_1',
-  'transfer_tundra_plant_grass_2',
-  'transfer_tundra_plant_grass_powder_1',
-  'transfer_tundra_plant_grass_powder_2',
-  'transfer_tundra_plant_grass_seed_1',
-  'transfer_tundra_plant_grass_seed_2',
-  'transfer_tundra_plant_moss_1',
-  'transfer_tundra_plant_moss_2',
-  'transfer_tundra_plant_moss_3',
-  'transfer_tundra_plant_moss_enr_powder_1',
-  'transfer_tundra_plant_moss_enr_powder_2',
-  'transfer_tundra_plant_moss_powder_1',
-  'transfer_tundra_plant_moss_powder_2',
-  'transfer_tundra_plant_moss_powder_3',
-  'transfer_tundra_plant_moss_seed_1',
-  'transfer_tundra_plant_moss_seed_2',
-  'transfer_tundra_plant_moss_seed_3',
-  'transfer_tundra_proc_battery_1',
-  'transfer_tundra_proc_battery_2',
-  'transfer_tundra_proc_battery_3',
-  'transfer_tundra_proc_bomb_1',
-  'transfer_tundra_quartz_enr',
-  'transfer_tundra_quartz_enr_powder',
-  'transfer_tundra_quartz_glass',
-  'transfer_tundra_quartz_powder',
-];
-const transferRecipes = new Set(tundraTransferRecipeIds);
+/** Identify transfers from their original input, before recipe adjustment. */
+export function tundraTransferRecipeIds(
+  recipes: Readonly<Record<string, Pick<Recipe, 'id' | 'in'>>>,
+): ReadonlySet<string> {
+  return new Set(
+    Object.values(recipes)
+      .filter((recipe) => recipe.in[transferKey]?.gt(rational.zero))
+      .map((recipe) => recipe.id),
+  );
+}
 
 /** Values with fixedOutput are physical rates until the caller prepares the recipe. */
 export function deriveEndfieldObjectives(
@@ -94,10 +40,8 @@ export function deriveEndfieldObjectives(
   const result: DerivedObjective[] = [];
   if (state.resourceLimits.enabled) {
     for (const id of resourceIds) {
-      const owner = resourceOwner(id);
       const targetId = resourceRecipes[id];
       result.push({
-        owner,
         objective: {
           id: resourceLimitId(id),
           targetId,
@@ -110,9 +54,8 @@ export function deriveEndfieldObjectives(
       if (rate.gt(rational.zero)) {
         const settings = state.resourceRecipeSettings[id];
         result.push({
-          owner,
           objective: {
-            ...(settings == null ? {} : copyResourceRecipeSettings(settings)),
+            ...settings,
             id: resourceObjectiveId(id),
             targetId,
             value: rational.zero,
@@ -127,7 +70,6 @@ export function deriveEndfieldObjectives(
 
   if (state.transfer.enabled) {
     result.push({
-      owner: 'transfer:tundra',
       objective: {
         id: 'ef:transfer:tundra:input',
         targetId: transferKey,
@@ -140,7 +82,6 @@ export function deriveEndfieldObjectives(
   }
   const transferLimit = state.transfer.enabled ? hourlyTransfer : rational.zero;
   result.push({
-    owner: 'transfer:tundra',
     objective: {
       id: 'ef:transfer:tundra:limit',
       targetId: transferKey,
@@ -157,11 +98,15 @@ export function deriveEndfieldObjectives(
 export function compileEndfieldRules(
   state: EndfieldState,
   variables: readonly CalculationVariable[],
-  availability?: {
-    readonly recipeIds: ReadonlySet<string>;
-    readonly machineIds: ReadonlySet<string>;
+  input: {
+    readonly transferRecipeIds: ReadonlySet<string>;
+    readonly availability?: {
+      readonly recipeIds: ReadonlySet<string>;
+      readonly machineIds: ReadonlySet<string>;
+    };
   },
 ): ModelRules {
+  const { availability, transferRecipeIds } = input;
   const constraints: LinearRule[] = [];
   const integers: ModelVariableRef[] = [];
   const integerKeys = new Set<string>();
@@ -217,7 +162,7 @@ export function compileEndfieldRules(
   }
 
   const transfer = variables.filter((variable) =>
-    transferRecipes.has(variable.recipeId),
+    transferRecipeIds.has(variable.recipeId),
   );
   for (const variable of transfer) addInteger(variable.ref);
   constraints.push({

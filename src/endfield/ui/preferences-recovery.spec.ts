@@ -3,30 +3,157 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 
+import english from '/public/endfield/i18n/en.json';
+import chinese from '/public/endfield/i18n/zh.json';
 import { Preferences } from '~/app/main/preferences/preferences';
 import { Select } from '~/components/select/select';
 import { provideEndfield } from '~/endfield/providers';
-import { EFFECTIVE_DEFAULTS } from '~/extensions/product-profile';
+import { EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
 
 describe('saved states during recovery', () => {
-  it('resets ordinary preferences while preserving saved archives', async () => {
+  beforeEach(() => {
+    localStorage.removeItem('preferences');
+  });
+  afterEach(() => {
+    localStorage.removeItem('preferences');
+  });
+
+  it('uses the normal reset confirmation for valid saved preferences and keeps their archives', async () => {
+    localStorage.setItem(
+      'preferences',
+      JSON.stringify({
+        language: 'ja',
+        states: { aef: { safe: '/aef/list?v=12&o=iron_ore' } },
+      }),
+    );
     await TestBed.configureTestingModule({
       imports: [TestModule, Preferences],
       providers: provideEndfield(),
     }).compileComponents();
-    const fixture = TestBed.createComponent(Preferences);
-    const component = fixture.componentInstance;
+    const component = TestBed.createComponent(Preferences).componentInstance;
     const store = component['preferencesStore'];
     const defaultTheme = TestBed.inject(EFFECTIVE_DEFAULTS).preferences.theme;
-    store.saveState('aef', 'safe', 'v=11&o=iron_ore');
+    expect(store.restoreError()).toBeUndefined();
     store.apply({ theme: defaultTheme === 'light' ? 'dark' : 'light' });
-    spyOn(component['confirm'], 'open').and.returnValue(of(1));
+    const open = spyOn(component['confirm'], 'open').and.returnValue(of(1));
     component.reset();
+    expect(open).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        header: 'preferences.resetHeader',
+        message: 'preferences.resetMessage',
+      }),
+    );
     expect(store.state().theme).toBe(defaultTheme);
-    expect(store.state().states['aef']['safe']).toBe('v=11&o=iron_ore');
+    expect(store.state().states['aef']['safe']).toBe(
+      '/aef/list?v=12&o=iron_ore',
+    );
+    TestBed.tick();
+    expect(
+      JSON.parse(localStorage.getItem('preferences')!).states.aef.safe,
+    ).toBe('/aef/list?v=12&o=iron_ore');
+  });
+
+  for (const [label, raw] of [
+    ['malformed JSON', '{bad-json'],
+    [
+      'invalid theme and unloaded archive',
+      JSON.stringify({
+        theme: 'black',
+        states: { aef: { unloaded: '/aef/list?v=12&o=quartz_sand' } },
+      }),
+    ],
+  ]) {
+    it(`protects ${label} on cancel and replaces it on explicit confirmation`, async () => {
+      localStorage.setItem('preferences', raw);
+      spyOn(console, 'warn');
+      await TestBed.configureTestingModule({
+        imports: [TestModule, Preferences],
+        providers: provideEndfield(),
+      }).compileComponents();
+      const component = TestBed.createComponent(Preferences).componentInstance;
+      const store = component['preferencesStore'];
+      expect(store.restoreError()).toBeDefined();
+      expect(store.states()).toEqual({});
+      store.apply({ language: 'ja' });
+      store.saveState('aef', 'in-memory', '/aef/list?v=12&o=iron_ore');
+      TestBed.tick();
+      expect(localStorage.getItem('preferences')).toBe(raw);
+      const open = spyOn(component['confirm'], 'open').and.returnValues(
+        of(0),
+        of(1),
+      );
+
+      component.reset();
+      expect(open).toHaveBeenCalledOnceWith(
+        jasmine.objectContaining({
+          header: 'preferences.resetHeader',
+          message: 'endfield.recovery.resetPreferences',
+          actions: jasmine.arrayContaining([
+            jasmine.objectContaining({ text: 'yes', value: 1 }),
+            jasmine.objectContaining({ text: 'no', value: 2 }),
+            jasmine.objectContaining({ text: 'cancel', value: 0 }),
+          ]),
+        }),
+      );
+      expect(store.restoreError()).toBeDefined();
+      store.apply({ language: 'ru' });
+      TestBed.tick();
+      expect(localStorage.getItem('preferences')).toBe(raw);
+      expect(store.states()).toEqual({
+        aef: { 'in-memory': '/aef/list?v=12&o=iron_ore' },
+      });
+
+      component.reset();
+      expect(open).toHaveBeenCalledTimes(2);
+      expect(open.calls.mostRecent().args[0].message).toBe(
+        'endfield.recovery.resetPreferences',
+      );
+      TestBed.tick();
+      expect(store.restoreError()).toBeUndefined();
+      expect(localStorage.getItem('preferences')).not.toBe(raw);
+      const saved = JSON.parse(localStorage.getItem('preferences')!);
+      expect(saved.language).toBe(
+        TestBed.inject(EFFECTIVE_DEFAULTS).preferences.language,
+      );
+      expect(saved.states).toEqual({
+        aef: { 'in-memory': '/aef/list?v=12&o=iron_ore' },
+      });
+      expect(localStorage.getItem('preferences.recovery')).toBeNull();
+    });
+  }
+
+  it('explains the protected original and reset consequences in English and Chinese', () => {
+    for (const text of [
+      'defaults are in use',
+      'original data is kept',
+      'automatic saving is paused',
+      'Export it',
+    ])
+      expect(english.endfield.recovery.preferences).toContain(text);
+    for (const text of [
+      'Export them',
+      'replaces the original',
+      'only plans currently available in memory',
+      'unloaded archives cannot be kept',
+    ])
+      expect(english.endfield.recovery.resetPreferences).toContain(text);
+    for (const text of [
+      '使用默认值',
+      '原始数据已保留',
+      '自动保存已暂停',
+      '先导出原文',
+    ])
+      expect(chinese.endfield.recovery.preferences).toContain(text);
+    for (const text of [
+      '先导出原文',
+      '替换原文',
+      '仅保留当前内存中可用的方案',
+      '无法保留未能加载的存档',
+    ])
+      expect(chinese.endfield.recovery.resetPreferences).toContain(text);
   });
 
   it('blocks archive writes while preserving loading and language selection', async () => {
@@ -121,7 +248,7 @@ describe('Preferences recovery and saved state selection', () => {
       reply.asObservable(),
     );
     const clear = spyOn(window.localStorage, 'clear');
-    const apply = spyOn(component['preferencesStore'], 'apply');
+    const reset = spyOn(component['preferencesStore'], 'resetPreferences');
     const navigate = spyOn(component['router'], 'navigate');
     expect(TestBed.inject(WorkspaceLifecycle).ready()).toBeTrue();
     component.reset();
@@ -131,7 +258,7 @@ describe('Preferences recovery and saved state selection', () => {
     reply.next(2);
     reply.next(1);
     expect(clear).not.toHaveBeenCalled();
-    expect(apply).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
   });
   it('loads the selected archive again after the workspace becomes dirty', async () => {

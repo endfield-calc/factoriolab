@@ -8,7 +8,6 @@ import {
 
 import { Icon } from '~/components/icon/icon';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
 import { TotalValue } from '~/state/objectives/total-value';
 import { SettingsStore } from '~/state/settings/settings-store';
 
@@ -21,7 +20,6 @@ import { SettingsStore } from '~/state/settings/settings-store';
 })
 export class TotalCell {
   readonly value = input.required<Record<string, TotalValue>>();
-  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly settingsStore = inject(SettingsStore);
 
   protected itemName(id: string): string {

@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,36 +40,83 @@ async function json(file) {
   return JSON.parse((await readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
 }
 
-/** Produce Angular's i18n assets in a separate directory without editing upstream. */
-export async function prepareI18n(output) {
+function contains(parent, child) {
+  const relative = path.relative(parent, child);
+  return (
+    relative === '' ||
+    (relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  );
+}
+
+async function removeStaleJson(directory, files) {
+  const expected = new Set(files);
+  for (const file of await readdir(directory)) {
+    if (file.endsWith('.json') && !expected.has(file))
+      await unlink(path.join(directory, file));
+  }
+}
+
+/** Prepare UI dictionaries and all non-English game overlays for Angular. */
+export async function prepareAssets(output) {
   const upstream = path.join(root, 'public/i18n');
   const local = path.join(root, 'public/endfield/i18n');
+  const game = path.join(root, 'public/data/aef/i18n');
   const destination = path.resolve(output);
-  if (destination === upstream || destination === local) {
+  if (
+    [upstream, local, game].some(
+      (source) =>
+        contains(source, destination) || contains(destination, source),
+    )
+  )
     throw new Error('Output must be separate from source dictionaries');
-  }
   const english = await json(path.join(upstream, 'en.json'));
   const localEnglish = await json(path.join(local, 'en.json'));
+  const localChinese = await json(path.join(local, 'zh.json'));
+  const gameChinese = await json(path.join(game, 'zh.json'));
   const localLanguages = new Set(await readdir(local));
-  const files = (await readdir(upstream)).filter((file) =>
-    file.endsWith('.json'),
-  );
-  await mkdir(output, { recursive: true });
+  const gameLanguages = new Set(await readdir(game));
+  const files = (await readdir(upstream))
+    .filter((file) => file.endsWith('.json'))
+    .sort();
+  const uiDestination = path.join(destination, 'i18n');
+  const gameDestination = path.join(destination, 'data/aef/i18n');
+  const gameFiles = files.filter((file) => file !== 'en.json');
+  await mkdir(uiDestination, { recursive: true });
+  await mkdir(gameDestination, { recursive: true });
+  await removeStaleJson(uiDestination, files);
+  await removeStaleJson(gameDestination, gameFiles);
   for (const file of files) {
     const source = await json(path.join(upstream, file));
     const translation = localLanguages.has(file)
       ? await json(path.join(local, file))
       : {};
+    const fallback =
+      file !== 'en.json' && !gameLanguages.has(file)
+        ? {
+            options: { game: { endfield: localChinese.options.game.endfield } },
+          }
+        : {};
     const result = merge(
-      merge(merge(english, source), localEnglish),
+      merge(merge(merge(english, source), localEnglish), fallback),
       translation,
     );
     await writeFile(
-      path.join(output, file),
+      path.join(uiDestination, file),
       `${JSON.stringify(result, null, 2)}\n`,
     );
+    if (file !== 'en.json') {
+      const overlay = gameLanguages.has(file)
+        ? await json(path.join(game, file))
+        : gameChinese;
+      await writeFile(
+        path.join(gameDestination, file),
+        `${JSON.stringify(overlay, null, 2)}\n`,
+      );
+    }
   }
-  return files;
+  return { ui: files, game: gameFiles };
 }
 
 if (
@@ -83,9 +130,9 @@ if (
     );
     process.exitCode = 1;
   } else {
-    const files = await prepareI18n(path.resolve(process.argv[index + 1]));
+    const files = await prepareAssets(path.resolve(process.argv[index + 1]));
     console.log(
-      `Prepared ${files.length} languages in ${path.resolve(process.argv[index + 1])}`,
+      `Prepared ${files.ui.length} UI dictionaries and ${files.game.length} game overlays in ${path.resolve(process.argv[index + 1])}`,
     );
   }
 }

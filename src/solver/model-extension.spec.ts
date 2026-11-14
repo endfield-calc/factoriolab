@@ -153,6 +153,97 @@ describe('Solver model extension', () => {
     solver = TestBed.inject(Solver);
   });
 
+  it('rejects negative ordinary machine quantities at the public solve boundary', () => {
+    const r = recipe('r');
+    const compile = jasmine.createSpy('compile').and.returnValue({
+      constraints: [],
+      integers: [],
+    });
+    for (const type of [
+      ObjectiveType.Output,
+      ObjectiveType.Input,
+      ObjectiveType.Maximize,
+      ObjectiveType.Limit,
+    ]) {
+      const fixed = objective('negative', r, rational(-1), type);
+      expect(() =>
+        solver.solve(
+          [fixed],
+          initialSettingsState as Settings,
+          {} as AdjustedDataset,
+          false,
+          'simplex',
+          context(compile),
+        ),
+      ).toThrowError('Negative machine count for objective negative');
+      expect(fixed.value).toEqual(rational(-1));
+    }
+    expect(compile).not.toHaveBeenCalled();
+  });
+
+  it('solves zero and positive fixed machine quantities and permits negative costs', () => {
+    const fixedRecipe = {
+      ...recipe('fixed'),
+      out: {},
+      output: {},
+      produces: new Set<string>(),
+    };
+    const emptyData = {
+      itemIds: [],
+      itemAvailableRecipeIds: {},
+      itemAvailableIoRecipeIds: {},
+      adjustedRecipe: {},
+      itemRecord: {},
+      flags: new Set(),
+    } as unknown as AdjustedDataset;
+    const settings = { ...initialSettingsState } as Settings;
+    for (const count of [0, 2]) {
+      const result = solver.solve(
+        [objective('fixed', fixedRecipe, rational(count))],
+        settings,
+        emptyData,
+        false,
+        'simplex',
+      );
+      expect(result.resultType).toBe('solved');
+      expect(
+        result.steps.find((step) => step.recipeObjectiveId === 'fixed')
+          ?.machines,
+      ).toEqual(rational(count));
+    }
+
+    const negativeCost = recipe('r', rational(-2));
+    const data = {
+      itemIds: ['product'],
+      itemAvailableRecipeIds: { product: ['r'] },
+      itemAvailableIoRecipeIds: { product: ['r'] },
+      adjustedRecipe: { r: negativeCost },
+      itemRecord: { product: { stack: rational.one } },
+      flags: new Set(),
+    } as unknown as AdjustedDataset;
+    const result = solver.solve(
+      [
+        {
+          id: 'demand',
+          targetId: 'product',
+          value: rational.one,
+          unit: ObjectiveUnit.Items,
+          type: ObjectiveType.Output,
+        },
+        objective('limit', negativeCost, rational.one, ObjectiveType.Limit),
+      ],
+      settings,
+      data,
+      false,
+      'simplex',
+    );
+    expect(result.resultType).toBe('solved');
+    expect(result.cost).toEqual(rational(-2));
+    expect(
+      result.steps.find((step) => step.recipeId === 'r')?.machines,
+    ).toEqual(rational.one);
+  });
+
   for (const algorithm of ['simplex', 'exact'] as const) {
     it(`uses the integer solution and objective after ${algorithm} LP preparation`, () => {
       const lp = state();

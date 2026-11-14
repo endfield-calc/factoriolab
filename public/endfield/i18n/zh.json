@@ -47,25 +47,22 @@
       "showNames": "显示名称"
     },
     "recovery": {
-      "preferences": "部分偏好已修复，原始数据已尽可能保留。",
+      "preferences": "无法恢复偏好，已使用默认值；原始数据已保留，自动保存已暂停。请先导出原文，再重置偏好。",
+      "resetPreferences": "无法加载原始偏好，请先导出原文。选择“是”将重置偏好并替换原文，仅保留当前内存中可用的方案，无法保留未能加载的存档。选择“否”将清除此浏览器的全部保存数据并重新加载。",
       "downloadPreferences": "导出原始偏好",
       "loading": "正在恢复方案，完成前无法编辑。",
       "failed": "方案未能完整恢复，原始网址已保留；可重置或打开新方案。",
       "original": "原始网址（可选中复制）",
       "downloadUrl": "导出原始网址",
       "newPlan": "打开新方案",
-      "warnings": "方案已恢复，但存在警告。",
-      "displayDamaged": "显示偏好数据已损坏，已尽可能恢复有效字段。",
-      "displayBackupFailed": "无法备份原始显示偏好，已停用自动保存。",
-      "displayStorageUnavailable": "无法读取显示偏好存储，本次更改仅保留在内存中。",
-      "availableBackups": "可导出已保存的恢复备份。"
+      "warnings": "方案已恢复，但存在警告。"
     },
     "guide": {
       "title": "温馨提示与操作指南",
       "examples": "示例模板",
       "exampleTundra": "四号谷地毕业示例",
       "exampleCoupons": "谷地理论最高调度券（超出需求）",
-      "exampleJinlongLegacy": "武陵毕业示例（旧版本，需谷地传输致密源石粉末）",
+      "exampleJinlong": "武陵毕业示例",
       "tips": "使用小技巧",
       "locations": "默认启用全区域；只计算特定区域时，在工厂设置 → 区域调整勾选。",
       "views": "列表展示统计数据，流程图展示工序。 显示单位可选择每分钟、每小时或每天。",

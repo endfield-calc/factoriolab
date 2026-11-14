@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { createEndfieldDefaults } from '~/endfield/product/product';
+import { EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { FlowDiagram } from '~/state/preferences/flow-diagram';
 import { initialPreferencesState } from '~/state/preferences/preferences-state';
 import { TestModule } from '~/tests/test-module';
@@ -49,5 +51,36 @@ describe('FlowSettingsDialog', () => {
       expect(component['preferencesStore'].apply).toHaveBeenCalled();
       expect(component['dialogRef'].close).toHaveBeenCalled();
     });
+  });
+});
+
+describe('FlowSettingsDialog with Endfield defaults', () => {
+  it('uses BoxLine for reset and modified', async () => {
+    const original = localStorage.getItem('preferences');
+    localStorage.removeItem('preferences');
+    try {
+      await TestBed.configureTestingModule({
+        imports: [TestModule, FlowSettingsDialog],
+        providers: [
+          {
+            provide: EFFECTIVE_DEFAULTS,
+            useValue: createEndfieldDefaults(false, 'zh'),
+          },
+        ],
+      }).compileComponents();
+      const fixture = TestBed.createComponent(FlowSettingsDialog);
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      expect(component['modified']()).toBeFalse();
+      component.apply({ diagram: FlowDiagram.Sankey });
+      expect(component['modified']()).toBeTrue();
+      component.reset();
+      expect(component['editValue']().diagram).toBe(FlowDiagram.BoxLine);
+      expect(component['modified']()).toBeFalse();
+    } finally {
+      TestBed.resetTestingModule();
+      if (original == null) localStorage.removeItem('preferences');
+      else localStorage.setItem('preferences', original);
+    }
   });
 });

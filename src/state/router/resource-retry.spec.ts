@@ -11,16 +11,14 @@ import { Subject } from 'rxjs';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
-import rawI18n from '/public/data/aef/i18n/en.json';
+import rawI18n from '/public/data/aef/i18n/zh.json';
 import { emptyModData } from '~/data/schema/mod-data';
-import { provideEndfieldStateExtension } from '~/endfield/adapters/state-extension';
-import { resourceOwner } from '~/endfield/domain/model';
 import {
-  createEndfieldProduct,
-  provideEndfieldProduct,
+  createEndfieldDefaults,
+  provideEndfieldDefaults,
 } from '~/endfield/product/product';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { EFFECTIVE_DEFAULTS, PINNED_MOD_ID } from '~/extensions/defaults';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
@@ -41,7 +39,7 @@ import { RouterSync } from './router-sync';
 describe('RouterSync resource retry with the real Endfield HTTP resources', () => {
   const dataUrl = 'data/aef/data.json';
   const hashUrl = 'data/aef/hash.json';
-  const i18nUrl = 'data/aef/i18n/en.json';
+  const i18nUrl = 'data/aef/i18n/zh.json';
   const savedUrl = '/aef/list?v=12&o=xiranite_powder*5';
   const badAttemptUrl = '/aef/list?v=12&o=xiranite_powder*3';
   const retryUrl = '/aef/list?v=12&o=xiranite_powder*2';
@@ -164,8 +162,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        provideEndfieldProduct(),
-        ...provideEndfieldStateExtension(),
+        ...provideEndfieldDefaults(),
         // TestModule otherwise supplies a mock resource-backed SettingsStore.
         { provide: SettingsStore, useClass: SettingsStore },
       ],
@@ -173,6 +170,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     http = TestBed.inject(HttpTestingController);
     settings = TestBed.inject(SettingsStore);
     preferences = TestBed.inject(PreferencesStore);
+    preferences.apply({ language: 'zh' });
     objectives = TestBed.inject(ObjectivesStore);
     endfield = TestBed.inject(EndfieldStore);
     items = TestBed.inject(ItemsStore);
@@ -193,7 +191,7 @@ describe('RouterSync resource retry with the real Endfield HTTP resources', () =
     machines.set({ miner_4: { overclock: rational.one } });
     recipes.set({ 'copper_ore-liquid_water': { cost: rational(2n) } });
     table.apply({ filter: 'xiranite' });
-    endfield.toggleDerived(resourceOwner('copper_ore'), true);
+    endfield.setResourceChecked('copper_ore', true);
     currentUrl = savedUrl;
     await settle();
   });
@@ -636,17 +634,27 @@ describe('SettingsStore resource retries', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         {
-          provide: PRODUCT_PROFILE,
-          useValue: createEndfieldProduct(false, 'zh'),
+          provide: EFFECTIVE_DEFAULTS,
+          useValue: createEndfieldDefaults(false, 'zh'),
         },
+        { provide: PINNED_MOD_ID, useValue: 'aef' },
       ],
     });
     service = TestBed.inject(SettingsStore);
+    TestBed.inject(PreferencesStore).apply({ language: 'zh' });
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => {
     http.verify();
     localStorage.clear();
+  });
+  it('uses the English base data without requesting an English entity package', () => {
+    TestBed.inject(PreferencesStore).apply({ language: 'en' });
+    service.apply({ modId: 'aef' });
+    TestBed.tick();
+    http.expectOne('data/aef/data.json').flush(rawData);
+    http.expectOne('data/aef/hash.json').flush(rawHash);
+    http.expectNone((request) => request.url.startsWith('data/aef/i18n/'));
   });
   it('does not issue duplicate retries while failed data and hash requests reload', async () => {
     service.apply({ modId: 'aef' });
@@ -657,7 +665,7 @@ describe('SettingsStore resource retries', () => {
         statusText: 'Service Unavailable',
       });
     }
-    http.expectOne('data/aef/i18n/en.json').flush({});
+    http.expectOne('data/aef/i18n/zh.json').flush({});
     await TestBed.inject(ApplicationRef).whenStable();
     TestBed.tick();
     expect(service.loading()).toBeFalse();

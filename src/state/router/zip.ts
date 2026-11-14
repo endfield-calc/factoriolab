@@ -1,11 +1,7 @@
 import { inject, Service } from '@angular/core';
 
-import {
-  STATE_EXTENSION,
-  WorkspaceRestoreError,
-} from '~/extensions/state-extension';
+import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
-import { notNullish } from '~/utils/nullish';
 
 import { Compression } from './compression';
 import { ZARRAYSEP, ZEMPTY, ZFALSE, ZFIELDSEP, ZTRUE } from './constants';
@@ -19,7 +15,6 @@ type KeysMatching<T, V> = {
 @Service()
 export class Zip {
   private readonly compression = inject(Compression);
-  private readonly extension = inject(STATE_EXTENSION);
 
   private invalid(token: string): never {
     throw new WorkspaceRestoreError([
@@ -38,18 +33,22 @@ export class Zip {
     return this.compression.nToId(index);
   }
 
-  private parseIndex(token: string, hash: (string | null)[]): number {
+  private parseIndex(
+    token: string,
+    hash: (string | null)[],
+  ): { index: number; value: string } {
     if (!/^[A-Za-z0-9.-]+$/.test(token) || token.length > 9)
       return this.invalid(token);
     const index = this.compression.idToN(token);
+    const value = hash[index];
     if (
       !Number.isSafeInteger(index) ||
       index < 0 ||
       index >= hash.length ||
-      hash[index] == null
+      value == null
     )
       return this.invalid(token);
-    return index;
+    return { index, value };
   }
 
   zipFields(fields: string[]): string {
@@ -104,21 +103,25 @@ export class Zip {
     const result: string[] = [];
     let start: string | undefined;
     let end: string | undefined;
-    const flush = (): void => {
-      if (start == null) return;
-      if (end == null) result.push(start);
-      else result.push(start + ZARRAYSEP + end);
-      start = undefined;
-      end = undefined;
-    };
     hash.forEach((h, i) => {
-      if (h != null && allSet.has(h) && value.has(h)) {
+      if (h == null || !allSet.has(h)) return;
+
+      if (value.has(h)) {
         const j = this.compression.nToId(i);
         if (start == null) start = j;
         else end = j;
-      } else flush();
+      } else if (start != null) {
+        if (end == null) result.push(start);
+        else result.push(start + ZARRAYSEP + end);
+        start = undefined;
+        end = undefined;
+      }
     });
-    flush();
+
+    if (start != null) {
+      if (end == null) result.push(start);
+      else result.push(start + ZARRAYSEP + end);
+    }
 
     return result.join(ZFIELDSEP);
   }
@@ -188,16 +191,14 @@ export class Zip {
 
   parseBool(value: string | undefined): boolean | undefined {
     if (!value?.length) return undefined;
-    if (this.extension.strictImports && value !== ZTRUE && value !== ZFALSE)
-      this.invalid(value);
+    if (value !== ZTRUE && value !== ZFALSE) this.invalid(value);
     return value === ZTRUE;
   }
 
   parseNumber(value: string | undefined): number | undefined {
     if (!value?.length) return undefined;
     const parsed = Number(value);
-    if (this.extension.strictImports && !Number.isFinite(parsed))
-      this.invalid(value);
+    if (!Number.isFinite(parsed)) this.invalid(value);
     return parsed;
   }
 
@@ -224,15 +225,14 @@ export class Zip {
     return value.split(ZARRAYSEP).map((s) => {
       const index = Number(s);
       if (
-        this.extension.strictImports &&
-        (!/^\d+$/.test(s) ||
-          !Number.isSafeInteger(index) ||
-          index < 0 ||
-          index >= arr.length ||
-          arr[index] == null)
+        !/^\d+$/.test(s) ||
+        !Number.isSafeInteger(index) ||
+        index < 0 ||
+        index >= arr.length ||
+        arr[index] == null
       )
         this.invalid(s);
-      return arr[index] ?? {};
+      return arr[index];
     });
   }
 
@@ -243,10 +243,7 @@ export class Zip {
     if (value === ZEMPTY) return '';
     const v = this.parseString(value);
     if (v == null) return v;
-    const index = this.extension.strictImports
-      ? this.parseIndex(v, hash)
-      : this.compression.idToN(v);
-    return hash[index] ?? undefined;
+    return this.parseIndex(v, hash).value;
   }
 
   parseNArray(
@@ -255,16 +252,7 @@ export class Zip {
   ): string[] | undefined {
     const v = this.parseArray(value);
     if (v == null) return v;
-    return v
-      .map(
-        (a) =>
-          hash[
-            this.extension.strictImports
-              ? this.parseIndex(a, hash)
-              : this.compression.idToN(a)
-          ],
-      )
-      .filter(notNullish);
+    return v.map((a) => this.parseIndex(a, hash).value);
   }
 
   parseSubset(
@@ -278,18 +266,9 @@ export class Zip {
     const result = new Set<string>();
     for (const range of ranges) {
       const tokens = range.split(ZARRAYSEP);
-      if (
-        this.extension.strictImports &&
-        (tokens.length > 2 || tokens.some((t) => !t))
-      )
-        this.invalid(range);
-      const [start, end] = tokens.map((i) =>
-        this.extension.strictImports
-          ? this.parseIndex(i, hash)
-          : this.compression.idToN(i),
-      );
-      if (this.extension.strictImports && end != null && end < start)
-        this.invalid(range);
+      if (tokens.length > 2 || tokens.some((t) => !t)) this.invalid(range);
+      const [start, end] = tokens.map((i) => this.parseIndex(i, hash).index);
+      if (end != null && end < start) this.invalid(range);
       const sliceEnd = end != null ? end + 1 : start + 1;
       const slice = hash.slice(start, sliceEnd).filter((v) => v != null);
       slice.forEach((i) => result.add(i));

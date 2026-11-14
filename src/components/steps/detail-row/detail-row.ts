@@ -16,7 +16,7 @@ import {
 import { Icon } from '~/components/icon/icon';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
+import { resourceFromObjectiveId } from '~/endfield/domain/model';
 import { Rational, rational } from '~/rational/rational';
 import { StepDetailRow } from '~/state/objectives/step-detail-row';
 import { RecipesStore } from '~/state/recipes/recipes-store';
@@ -45,23 +45,16 @@ import { PercentPadPipe } from './percent-pad-pipe';
 })
 export class DetailRow {
   private readonly recipesStore = inject(RecipesStore);
-  private readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly settingsStore = inject(SettingsStore);
 
   readonly value = input.required<StepDetailRow>();
   readonly leftSpan = input.required<number>();
   readonly factor = input<Rational>(rational.one);
 
-  protected sourceLabel(
-    recipeObjectiveId?: string,
-    recipeId?: string,
-  ): string | undefined {
-    if (recipeObjectiveId == null) return undefined;
-    return this.presentation.sourceLabel({
-      id: recipeObjectiveId,
-      recipeObjectiveId,
-      recipeId,
-    });
+  protected sourceLabel(recipeObjectiveId?: string): string | undefined {
+    return resourceFromObjectiveId(recipeObjectiveId) == null
+      ? undefined
+      : 'endfield.resources.source';
   }
 
   /**

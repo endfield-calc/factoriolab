@@ -146,7 +146,7 @@
       } @else {
         @if (value().recipeId; as recipeId) {
           @let objId = value().recipeObjectiveId;
-          @let source = sourceLabel(objId, recipeId);
+          @let source = sourceLabel(objId);
           <lab-icon
             class="mx-0.5"
             [value]="recipeId"
@@ -190,7 +190,7 @@
           percent.div(safeFactor()) | rate: -2 | percentPad
         }}</span>
         @if (value().destId; as destId) {
-          @let source = sourceLabel(value().destRecipeObjectiveId, destId);
+          @let source = sourceLabel(value().destRecipeObjectiveId);
           <lab-icon
             class="mx-0.5 order-2"
             [value]="destId"

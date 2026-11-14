@@ -5,11 +5,6 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import {
-  STATE_EXTENSION,
-  WorkspaceRestoreError,
-} from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
@@ -25,7 +20,6 @@ import { Params } from '~/state/router/params';
 import { RouterSync, ZipState } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
-import { mockModData } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 
 import {
@@ -35,9 +29,6 @@ import {
 } from '../domain/model';
 import { provideEndfield } from '../providers';
 import { EndfieldStore } from '../state/endfield-store';
-import golden from './fixtures/legacy-golden.json';
-import legacyDatasets from './legacy-datasets.json';
-import legacyHash from './legacy-hash.json';
 
 const data = rawData as unknown as ModData;
 const hash = rawHash as unknown as ModHash;
@@ -70,7 +61,7 @@ interface StateSummary {
   };
 }
 
-describe('Remaining Endfield legacy and derived round trips', () => {
+describe('Endfield derived round trips', () => {
   let router: RouterSync;
   let settings: SettingsStore;
   let objectives: ObjectivesStore;
@@ -115,22 +106,13 @@ describe('Remaining Endfield legacy and derived round trips', () => {
     const params = await router.unzipQueryParams(
       query ? router.toParams(query) : {},
     );
-    const plan = TestBed.inject(STATE_EXTENSION).prepare({
-      modId: 'aef',
-      params,
-    });
-    const migrated = TestBed.inject(Migration).migrate(
-      plan.modId,
-      plan.params,
-      plan.legacyModHashes,
-    );
+    const migrated = TestBed.inject(Migration).migrate('aef', params);
     router.updateState(
       migrated.modId,
       migrated.params,
       migrated.isBare,
       dataset,
       hash,
-      plan,
       ticket,
     );
     expect(lifecycle.ready())
@@ -148,7 +130,7 @@ describe('Remaining Endfield legacy and derived round trips', () => {
       table: TestBed.inject(TableStore).state(),
       data: settings.dataset(),
       hash,
-      extension: endfield.snapshot(),
+      endfield: endfield.snapshot(),
     });
   }
 
@@ -200,278 +182,6 @@ describe('Remaining Endfield legacy and derived round trips', () => {
     };
   }
 
-  it('keeps historical wire defaults while new empty workspaces round trip with current defaults', async () => {
-    const sparseEf = btoa(JSON.stringify({ version: 1 }))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    const fullEf = TestBed.inject(STATE_EXTENSION).encode(
-      createEndfieldState(),
-    )['ef'] as string;
-    const compressedEmpty = router.toString(
-      (await router.getHashParams({})) as Params,
-    );
-    const compressedV11 = router.toString({
-      ...(await router.getHashParams({ v: '11' })),
-      v: '11',
-    });
-    const cases: [string, string, string, string][] = [
-      ['empty', '', '100000000', '1'],
-      ['version only', 'v=12', '1000000', '1000'],
-      ['v11 bare', 'v=11', '1000000', '1000'],
-      ['v11 compressed', compressedV11, '1000000', '1000'],
-      ['compressed empty', compressedEmpty, '1000000', '1000'],
-      ['v12 without ef', 'v=12&o=iron_ore*2', '1000000', '1000'],
-      ['v12 full ef', `v=12&ef=${fullEf}`, '1000000', '1000'],
-      ['v12 sparse ef', `v=12&ef=${sparseEf}`, '1000000', '1000'],
-      ['ef only', `ef=${sparseEf}`, '1000000', '1000'],
-      ['explicit old', 'v=12&cun=1000000&cre=1000', '1000000', '1000'],
-      ['explicit new', 'v=12&cun=100000000&cre=1', '100000000', '1'],
-      ['explicit zero', 'v=12&cun=0&cre=0&csu=0', '0', '0'],
-      ['one explicit', 'v=12&cun=0', '0', '1000'],
-      ['other explicit', 'v=12&cre=0', '1000000', '0'],
-      ['unknown version', 'v=13', '100000000', '1'],
-      ['noncanonical version', 'v=012', '100000000', '1'],
-      ['exponent version', 'v=1e1', '100000000', '1'],
-    ];
-    for (const [label, query, unproduceable, recycling] of cases) {
-      await restore(query);
-      expect(settings.state().costs.unproduceable.toString())
-        .withContext(label)
-        .toBe(unproduceable);
-      expect(settings.state().costs.recycling.toString())
-        .withContext(label)
-        .toBe(recycling);
-      expect(settings.state().costs.surplus.toString())
-        .withContext(label)
-        .toBe(label === 'explicit zero' ? '0' : '1');
-      expect(endfield.state().electric.eq(rational.one))
-        .withContext(label)
-        .toBeTrue();
-      if (label === 'v12 sparse ef') {
-        const state = endfield.state();
-        expect({ ...state, checkedDerived: [...state.checkedDerived] }).toEqual(
-          {
-            ...createEndfieldState(),
-            checkedDerived: [],
-          },
-        );
-      }
-      const serialized = zip();
-      for (const format of ['bare', 'hash'] as const) {
-        expect(serialized.config[format].cun)
-          .withContext(`${label}: ${format} unproduceable`)
-          .toBe(unproduceable === '1000000' ? undefined : unproduceable);
-        expect(serialized.config[format].cre)
-          .withContext(`${label}: ${format} recycling`)
-          .toBe(recycling === '1000' ? undefined : recycling);
-      }
-      const encoded = await router.getHash(serialized);
-      await restore(router.toString(encoded as Params));
-      expect(settings.state().costs.unproduceable.toString())
-        .withContext(`${label}: restored`)
-        .toBe(unproduceable);
-      expect(settings.state().costs.recycling.toString())
-        .withContext(`${label}: restored`)
-        .toBe(recycling);
-    }
-  });
-
-  it('keeps omitted costs after checked-objective renumbering and retains sparse ef zeros', async () => {
-    const ef = btoa(
-      JSON.stringify({
-        version: 1,
-        electric: '0',
-        machineLimits: { enabled: false, limits: { xiranite_oven_1: '0' } },
-        resourceLimits: { enabled: false, rates: { iron_ore: '0' } },
-      }),
-    )
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    await restore(`v=11&o=iron_ore*0*3*11&o=copper_nugget*2&och=A~B&ef=${ef}`);
-    expect([...settings.state().checkedObjectiveIds]).toEqual(['1']);
-    expect(
-      settings.state().costs.unproduceable.eq(rational(1000000)),
-    ).toBeTrue();
-    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
-    expect(endfield.state().electric.eq(rational.zero)).toBeTrue();
-    expect(
-      endfield
-        .state()
-        .machineLimits.limits['xiranite_oven_1'].eq(rational.zero),
-    ).toBeTrue();
-    expect(
-      endfield.state().resourceLimits.rates.iron_ore.eq(rational.zero),
-    ).toBeTrue();
-    expect(endfield.state().resourceLimits.enabled).toBeFalse();
-    expect(endfield.state().transfer.source).toBe('tundra');
-  });
-
-  it('waits for legacy settings migration before filling omitted costs', async () => {
-    const parts = ['aef', ...Array<string>(24).fill('')];
-    parts[19] = '23'; // v10 settings unproduceable cost
-    await restore(`v=10&s=${parts.join('*')}`);
-    expect(settings.state().costs.unproduceable.eq(rational(23))).toBeTrue();
-    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
-    await restore('cet=0');
-    expect(
-      settings.state().costs.unproduceable.eq(rational(1000000)),
-    ).toBeTrue();
-    expect(settings.state().costs.recycling.eq(rational(1000))).toBeTrue();
-    expect(endfield.state().electric.eq(rational.zero)).toBeTrue();
-  });
-
-  it('restores the G01 compressed and G02 bare legacy links with their recorded costs', async () => {
-    for (const fixture of golden.cases.filter((entry) =>
-      ['G01', 'G02'].includes(entry.id),
-    )) {
-      await restore(fixture.url.slice(fixture.url.indexOf('?') + 1));
-      expect(stateSummary().costs['unproduceable'])
-        .withContext(fixture.id)
-        .toBe('1000000');
-      expect(stateSummary().costs['recycling'])
-        .withContext(fixture.id)
-        .toBe('1000');
-      const encoded = await router.getHash(zip());
-      await restore(router.toString(encoded as Params));
-      expect(stateSummary().costs['unproduceable'])
-        .withContext(fixture.id)
-        .toBe('1000000');
-      expect(stateSummary().costs['recycling'])
-        .withContext(fixture.id)
-        .toBe('1000');
-    }
-  });
-
-  it('A20 restores complete v11 types, edits ordinary goals, then restores the edited URL', async () => {
-    // G06 uses legacy serialized fields; add a second ordinary goal and checked indices.
-    const query =
-      'o=originium_powder*100&o=originium_ore*0*3*11&o=originium_ore*28*3*12&o=xiranite_oven_1*12**13&o=domain_key_tundra*1**14&o=copper_nugget*200&och=A*C*F&cet=2&odr=3&loc=A~B&rex=Cn~Co&v=11';
-    await restore(query);
-    const initial = stateSummary();
-    expect(initial.objectives.map((o) => o.targetId)).toEqual([
-      'originium_powder',
-      'copper_nugget',
-    ]);
-    expect(initial.checked).toEqual(['1', '2']);
-    expect(initial.locations).toEqual(['jinlong', 'tundra']);
-    expect(initial.excluded).toContain('sewage-treat');
-    expect(initial.excluded).toContain('sewage-treat-export');
-    expect(initial.rate).toBe(3);
-    expect(
-      endfield.state().resourceLimits.rates.originium_ore.eq(rational(560, 60)),
-    ).toBeTrue();
-    expect(initial.extension.machineEnabled).toBeTrue();
-    expect(initial.extension.machineLimit).toBe('12');
-    expect(initial.extension.transfer).toBeTrue();
-    expect(initial.extension.electric).toBe('2');
-    expect(initial.extension.checked).toEqual([resourceOwner('originium_ore')]);
-    objectives.add({
-      targetId: 'iron_ore',
-      value: rational(4),
-      type: ObjectiveType.Output,
-      unit: ObjectiveUnit.Items,
-    });
-    expect(Object.values(objectives.state()).map((o) => o.targetId)).toEqual([
-      'originium_powder',
-      'copper_nugget',
-      'iron_ore',
-    ]);
-    objectives.remove('3');
-    objectives.add({
-      targetId: 'quartz_sand',
-      value: rational(5),
-      type: ObjectiveType.Output,
-      unit: ObjectiveUnit.Items,
-    });
-    const ordered = Object.values(objectives.state());
-    objectives.setOrder([ordered[1], ordered[0], ordered[2]]);
-    const edited = stateSummary();
-    expect(edited.objectives.map((o) => o.targetId)).toEqual([
-      'copper_nugget',
-      'originium_powder',
-      'quartz_sand',
-    ]);
-    expect(edited.checked).toEqual(['1', '2']);
-    expect(edited.extension).toEqual(initial.extension);
-    expect(edited.locations).toEqual(initial.locations);
-    expect(edited.excluded).toEqual(initial.excluded);
-    const params = await router.getHash(zip());
-    const encoded = router.toString(params as Params);
-    objectives.set({});
-    endfield.reset();
-    await restore(encoded);
-    expect(stateSummary()).toEqual(edited);
-    console.info(
-      '[remaining-roundtrip] A20',
-      JSON.stringify({ query, encoded, summary: stateSummary() }),
-    );
-  });
-
-  it('A21 restores the same original compressed links with reordered copied data and the frozen hash', async () => {
-    const originalData = JSON.stringify(data);
-    const originalHash = JSON.stringify(hash);
-    const reordered: ModData = {
-      ...data,
-      categories: [...data.categories].reverse(),
-      icons: [...data.icons].reverse(),
-      items: [...data.items].reverse(),
-      recipes: [...data.recipes].reverse(),
-      locations: [...(data.locations ?? [])].reverse(),
-    };
-    expect(reordered.items[0].id).not.toBe(data.items[0].id);
-    expect(reordered.recipes[0].id).not.toBe(data.recipes[0].id);
-    for (const fixture of golden.cases.filter((entry) =>
-      entry.url.includes('?z='),
-    )) {
-      const query = fixture.url.slice(fixture.url.indexOf('?') + 1);
-      settings['modDataResource'].set(data);
-      await restore(query);
-      const normal = stateSummary();
-      const params = await router.unzipQueryParams(router.toParams(query));
-      const plan = TestBed.inject(STATE_EXTENSION).prepare({
-        modId: 'aef',
-        params,
-      });
-      expect(plan.hash).toEqual(legacyHash);
-      const prepared = settings.prepareState(
-        { modId: 'aef' },
-        reordered,
-        plan.hash!,
-      );
-      expect(prepared.data.itemRecord[reordered.items[0].id].id).toBe(
-        reordered.items[0].id,
-      );
-      expect(prepared.data.recipeRecord[reordered.recipes[0].id].id).toBe(
-        reordered.recipes[0].id,
-      );
-      settings['modDataResource'].set(reordered);
-      await restore(query, reordered);
-      const changed = stateSummary();
-      expect(changed).withContext(fixture.id).toEqual(normal);
-      if (fixture.id === 'G03') {
-        const alias = changed.objectives.find(
-          (o) => o.targetId === 'xiranite_powder-carbon_enr',
-        );
-        expect(alias?.value).toBe('4');
-        expect(alias?.unit).toBe(ObjectiveUnit.Machines);
-      }
-      console.info(
-        '[remaining-roundtrip] A21',
-        fixture.id,
-        JSON.stringify({
-          query,
-          objectives: changed.objectives,
-          locations: changed.locations,
-          excluded: changed.excluded,
-        }),
-      );
-    }
-    expect(JSON.stringify(data)).toBe(originalData);
-    expect(JSON.stringify(hash)).toBe(originalHash);
-  });
-
   it('A30 preserves one real derived supply and its independent settings/check through every link and save', async () => {
     settings.apply({
       locationIds: new Set(['tundra', 'jinlong']),
@@ -518,12 +228,7 @@ describe('Remaining Endfield legacy and derived round trips', () => {
     expect(initialDerived.itemId).toBeUndefined();
     objectives.updateRecipeField(initialDerived, 'machineId', 'miner_3');
     objectives.updateRecipeField(initialDerived, 'overclock', rational(125));
-    expect(
-      TestBed.inject(PRESENTATION_EXTENSION).toggleChecked(
-        initialDerived,
-        true,
-      ),
-    ).toBeTrue();
+    endfield.setResourceChecked('originium_ore', true);
     endfield.set({ ...endfield.snapshot(), electric: rational(2) });
     expect(Object.values(objectives.state())).toEqual(ordinaryBefore);
     expect(objectives.matrixResult().resultType).toBe('solved');
@@ -558,8 +263,8 @@ describe('Remaining Endfield legacy and derived round trips', () => {
     expect(zipped.config.bare.och).toBe('A');
     expect(zipped.config.bare.rex).toBeDefined();
     expect(zipped.config.bare.csu).toBe('0');
-    expect(zipped.config.bare.cun).toBe('100000000');
-    expect(zipped.config.bare.cre).toBe('1');
+    expect(zipped.config.bare.cun).toBeUndefined();
+    expect(zipped.config.bare.cre).toBeUndefined();
     const ef = (zipped.config.bare as Params)['ef'] as string;
     const payload = JSON.parse(atob(ef.replace(/-/g, '+').replace(/_/g, '/')));
     expect(JSON.stringify(payload)).not.toContain('sewage-treat');
@@ -620,72 +325,6 @@ describe('Remaining Endfield legacy and derived round trips', () => {
         '[remaining-roundtrip] A30',
         mode,
         JSON.stringify({ query, summary: stateSummary() }),
-      );
-    }
-  });
-});
-
-describe('Migration with frozen Endfield legacy tables', () => {
-  let service: Migration;
-  beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [TestModule] });
-    service = TestBed.inject(Migration);
-  });
-  it('reports an unrecognized V0 mod when frozen legacy tables are supplied', () => {
-    const hashes = { modHashV0: ['known'], modHash: ['current'] };
-    try {
-      service.migrate('current', { s: 'retired', v: '0' }, hashes);
-      fail('expected invalid legacy mod');
-    } catch (error) {
-      expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
-      expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
-        jasmine.objectContaining({
-          code: 'invalid-mod-index',
-          field: 's',
-          severity: 'error',
-        }),
-      );
-    }
-    expect(service.migrate('current', { s: 'retired', v: '0' }).modId).toEqual(
-      'current',
-    );
-  });
-  it('uses frozen mod tables for both V0 and V10 indices', () => {
-    const hashes = {
-      modHashV0: ['old-zero', 'old-one'],
-      modHash: ['frozen-zero', 'frozen-one'],
-    };
-    expect(
-      service.migrate(undefined, { s: 'old-one', v: '0' }, hashes).modId,
-    ).toEqual('frozen-one');
-    expect(
-      service.migrate(undefined, { b: 'B', z: 'z', v: '10' }, hashes).modId,
-    ).toEqual('frozen-one');
-  });
-  it('uses the actual legacy tables without replacing the original V0 path', () => {
-    expect(
-      service.migrate('aef', { s: 'aef', v: '0' }, legacyDatasets).modId,
-    ).toEqual('aef');
-    expect(
-      service.migrate(undefined, { b: 'Q', z: 'z', v: '10' }, legacyDatasets)
-        .modId,
-    ).toEqual('aef');
-  });
-  it('reports an unknown technology rather than discarding it', () => {
-    try {
-      service.restoreV10ResearchedTechnologies(
-        new Set(['retired-tech']),
-        mockModData,
-      );
-      fail('expected unknown technology');
-    } catch (error) {
-      expect(error).toEqual(jasmine.any(WorkspaceRestoreError));
-      expect((error as WorkspaceRestoreError).diagnostics[0]).toEqual(
-        jasmine.objectContaining({
-          code: 'unknown-technology',
-          field: 'v10tre',
-          severity: 'error',
-        }),
       );
     }
   });

@@ -37,20 +37,24 @@ import { Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
+import { decodeEndfield, encodeEndfield } from '~/endfield/compat/codec';
+import { validateCurrentWorkspace } from '~/endfield/compat/restore';
+import {
+  EndfieldState,
+  resourceFromObjectiveId,
+} from '~/endfield/domain/model';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
   cloneDefaults,
   EFFECTIVE_DEFAULTS,
-  PRODUCT_PROFILE,
-} from '~/extensions/product-profile';
+  PINNED_MOD_ID,
+} from '~/extensions/defaults';
 import {
   RestoreDiagnostic,
-  RestorePlan,
-  STATE_EXTENSION,
   WorkspaceRestoreError,
+  WorkspaceState,
 } from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
-import { WorkspacePreparation } from '~/extensions/workspace-preparation';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { asString } from '~/utils/coercion';
@@ -118,7 +122,7 @@ interface State {
   table: TableState;
   data: Dataset;
   hash: ModHash;
-  extension?: unknown;
+  endfield?: EndfieldState;
 }
 
 interface LiveSnapshot {
@@ -128,7 +132,7 @@ interface LiveSnapshot {
   machines: Record<string, MachineState>;
   settings: SettingsState;
   table: TableState;
-  extension: unknown;
+  endfield: EndfieldState;
 }
 
 interface NavigationStatus {
@@ -139,23 +143,9 @@ interface NavigationStatus {
   readonly retry?: RouteInput;
 }
 
-interface Settlement {
-  readonly ticket: number;
-  readonly status: NavigationStatus;
-}
-
 interface RouteInput {
   readonly params: Params;
   readonly queryParams: Params;
-}
-
-export interface PartialState {
-  objectivesState?: Record<string, ObjectiveState>;
-  itemsState?: Record<string, ItemState>;
-  recipesState?: Record<string, RecipeState>;
-  machinesState?: Record<string, MachineState>;
-  settingsState?: PartialSettingsState;
-  tableState?: Partial<TableState>;
 }
 
 @Service()
@@ -171,12 +161,10 @@ export class RouterSync {
   private readonly settingsStore = inject(SettingsStore);
   private readonly tableStore = inject(TableStore);
   private readonly zip = inject(Zip);
-  private readonly extension = inject(STATE_EXTENSION);
-  private readonly presentation = inject(PRESENTATION_EXTENSION);
+  private readonly endfieldStore = inject(EndfieldStore);
   private readonly lifecycle = inject(WorkspaceLifecycle);
-  private readonly preparation = inject(WorkspacePreparation);
   private readonly effectiveDefaults = inject(EFFECTIVE_DEFAULTS);
-  private readonly product = inject(PRODUCT_PROFILE);
+  private readonly pinnedModId = inject(PINNED_MOD_ID, { optional: true });
 
   private readonly state = new Subject<State>();
   readonly zipConfig = signal(this.empty);
@@ -201,8 +189,12 @@ export class RouterSync {
   private stable?: LiveSnapshot;
   private readonly navigationPending = signal(false);
   private navigationId?: number;
-  private navigationStatus?: NavigationStatus;
-  private settlement?: Settlement;
+  private navigationStatus: NavigationStatus = {
+    ready: false,
+    lifecycleReady: false,
+    diagnostics: [],
+    originalInput: '',
+  };
   private navigationHadRoute = false;
   private readonly retryRestore = new Subject<RouteInput>();
   private lastRouteInput?: RouteInput;
@@ -301,29 +293,21 @@ export class RouterSync {
             return from(this.unzipQueryParams(queryParams));
           }).pipe(
             filter(() => this.lifecycle.current(ticket)),
-            map((unpacked) => {
-              const plan = this.extension.prepare({
-                modId: params['id'] as string | undefined,
-                params: unpacked,
-              });
-              const migrated = this.migration.migrate(
-                plan.modId,
-                plan.params,
-                plan.legacyModHashes,
-              );
-              return { plan, migrated };
-            }),
-            switchMap(({ plan, migrated }) => {
-              if (!this.lifecycle.current(ticket)) return EMPTY;
+            map((unpacked) =>
+              this.migration.migrate(
+                params['id'] as string | undefined,
+                unpacked,
+              ),
+            ),
+            switchMap((migrated) => {
               if (
-                this.product.allowedModIds != null &&
-                (migrated.modId == null ||
-                  !this.product.allowedModIds.includes(migrated.modId))
+                this.pinnedModId != null &&
+                migrated.modId !== this.pinnedModId
               )
                 throw new WorkspaceRestoreError([
                   {
                     code: 'mod-not-allowed',
-                    message: `Workspace mod is not available: ${migrated.modId ?? '(missing)'}`,
+                    message: `Workspace mod is not available: ${String(migrated.modId)}`,
                     field: 'modId',
                     severity: 'error',
                   },
@@ -378,7 +362,6 @@ export class RouterSync {
                     migrated.isBare,
                     data,
                     hash,
-                    plan,
                     ticket,
                   );
                 }),
@@ -406,7 +389,8 @@ export class RouterSync {
       const settings = this.settingsStore.state();
       const table = this.tableStore.state();
       const data = this.settingsStore.dataset();
-      const extension = this.extension.snapshot();
+      const endfield =
+        settings.modId === 'aef' ? this.endfieldStore.snapshot() : undefined;
 
       this.state.next({
         objectives,
@@ -417,7 +401,7 @@ export class RouterSync {
         table,
         data,
         hash,
-        extension,
+        endfield,
       });
     });
 
@@ -454,18 +438,14 @@ export class RouterSync {
   private beginNavigation(event: NavigationStart): void {
     const alreadyPending = this.navigationPending();
     const wasReady = this.lifecycle.ready();
-    if (!alreadyPending || this.navigationStatus == null) {
-      const settlement = this.settlement;
-      this.navigationStatus =
-        settlement != null && this.lifecycle.current(settlement.ticket)
-          ? settlement.status
-          : {
-              ready: this.ready(),
-              lifecycleReady: wasReady,
-              diagnostics: this.lifecycle.diagnostics(),
-              originalInput: this.lifecycle.originalInput(),
-              retry: this.restoring ? this.lastRouteInput : undefined,
-            };
+    if (!alreadyPending) {
+      this.navigationStatus = {
+        ready: this.ready(),
+        lifecycleReady: wasReady,
+        diagnostics: this.lifecycle.diagnostics(),
+        originalInput: this.lifecycle.originalInput(),
+        retry: this.restoring ? this.lastRouteInput : undefined,
+      };
     }
     this.navigationId = event.id;
     this.navigationHadRoute = false;
@@ -475,13 +455,8 @@ export class RouterSync {
     this.writeSequence++;
     this.ready.set(false);
     this.restoring = false;
-    if (!alreadyPending && (wasReady || this.stable == null)) {
-      try {
-        this.stable = this.snapshot();
-      } catch (error) {
-        this.failRestore(ticket, error);
-      }
-    }
+    if (!alreadyPending && (wasReady || this.stable == null))
+      this.stable = this.snapshot();
   }
 
   private finishNavigation(event: NavigationEnd): void {
@@ -494,7 +469,6 @@ export class RouterSync {
       return;
     }
     this.navigationId = undefined;
-    this.navigationStatus = undefined;
     this.navigationPending.set(false);
   }
 
@@ -511,44 +485,23 @@ export class RouterSync {
   private leaveWorkspace(originalInput: string): void {
     this.workspaceScope = false;
     this.navigationId = undefined;
-    this.navigationStatus = undefined;
     const ticket = this.lifecycle.begin(originalInput);
     this.activeTicket = ticket;
     this.writeSequence++;
     this.ready.set(false);
     this.restoring = false;
-    const settlement: Settlement = {
-      ticket,
-      status: {
-        ready: false,
-        lifecycleReady: false,
-        diagnostics: [],
-        originalInput,
-      },
-    };
-    this.settlement = settlement;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
-      if (!this.lifecycle.current(ticket)) return;
       this.stable = undefined;
     } catch (error) {
-      if (!this.lifecycle.current(ticket)) return;
       this.failRestore(ticket, error);
-    } finally {
-      if (this.settlement === settlement) this.settlement = undefined;
     }
-    if (!this.lifecycle.current(ticket)) return;
     this.navigationPending.set(false);
   }
 
   private cancelNavigation(originalInput?: string): void {
     const status = this.navigationStatus;
     this.navigationId = undefined;
-    this.navigationStatus = undefined;
-    if (status == null) {
-      this.navigationPending.set(false);
-      return;
-    }
     const target = {
       ...status,
       originalInput: originalInput ?? status.originalInput,
@@ -556,12 +509,9 @@ export class RouterSync {
     const ticket = this.lifecycle.begin(target.originalInput);
     this.activeTicket = ticket;
     this.writeSequence++;
-    const settlement: Settlement = { ticket, status: target };
-    this.settlement = settlement;
     let restored = false;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
-      if (!this.lifecycle.current(ticket)) return;
       if (target.lifecycleReady)
         this.lifecycle.complete(ticket, target.diagnostics);
       else this.lifecycle.fail(ticket, target.diagnostics);
@@ -569,18 +519,16 @@ export class RouterSync {
       if (target.retry == null) this.stable = undefined;
       restored = true;
     } catch (error) {
-      if (!this.lifecycle.current(ticket)) return;
       this.failRestore(ticket, error);
-    } finally {
-      if (this.settlement === settlement) this.settlement = undefined;
     }
-    if (!this.lifecycle.current(ticket)) return;
     this.navigationPending.set(false);
-    if (restored && target.retry != null && this.lifecycle.current(ticket))
-      this.retryRestore.next(target.retry);
+    if (restored && target.retry != null) this.retryRestore.next(target.retry);
   }
 
-  private errorMessage(error: unknown): string {
+  private errorMessage(
+    error: unknown,
+    fallback = 'Workspace restoration failed',
+  ): string {
     if (
       typeof error === 'object' &&
       error != null &&
@@ -588,7 +536,7 @@ export class RouterSync {
       typeof error.message === 'string'
     )
       return error.message;
-    return typeof error === 'string' ? error : 'Workspace restoration failed';
+    return typeof error === 'string' ? error : fallback;
   }
 
   private snapshot(): LiveSnapshot {
@@ -599,7 +547,7 @@ export class RouterSync {
       machines: this.machinesStore.state(),
       settings: this.settingsStore.state(),
       table: this.tableStore.state(),
-      extension: this.extension.snapshot(),
+      endfield: this.endfieldStore.snapshot(),
     };
   }
 
@@ -610,7 +558,7 @@ export class RouterSync {
     this.machinesStore.set(snapshot.machines);
     this.settingsStore.set(snapshot.settings);
     this.tableStore.set(snapshot.table);
-    this.extension.commit(snapshot.extension);
+    this.endfieldStore.set(snapshot.endfield);
   }
 
   private failRestore(ticket: number, error: unknown): void {
@@ -626,35 +574,19 @@ export class RouterSync {
               severity: 'error',
             },
           ];
-    const settlement: Settlement = {
-      ticket,
-      status: {
-        ready: false,
-        lifecycleReady: false,
-        diagnostics,
-        originalInput: this.lifecycle.originalInput(),
-      },
-    };
-    this.settlement = settlement;
     let rollbackError: unknown;
     try {
       if (this.stable != null) this.restoreSnapshot(this.stable);
-      if (!this.lifecycle.current(ticket)) return;
     } catch (cause) {
-      if (!this.lifecycle.current(ticket)) return;
       rollbackError = cause;
-    } finally {
-      if (this.settlement === settlement) this.settlement = undefined;
     }
     if (rollbackError != null)
       diagnostics.push({
         code: 'workspace-rollback',
-        message:
-          rollbackError instanceof Error
-            ? rollbackError.message
-            : typeof rollbackError === 'string'
-              ? rollbackError
-              : 'Failed to restore the previous workspace',
+        message: this.errorMessage(
+          rollbackError,
+          'Failed to restore the previous workspace',
+        ),
         severity: 'error',
       });
     this.ready.set(false);
@@ -695,7 +627,7 @@ export class RouterSync {
       table,
       data,
       hash,
-      extension,
+      endfield,
     } = state;
     const zState = this.zipModulesBeacons(
       objectives,
@@ -711,9 +643,11 @@ export class RouterSync {
     this.zipMachines(zState, machines, hash);
     this.zipSettings(zState, settings, Object.keys(objectives), data, hash);
     this.zipTable(zState, table);
-    const extensionParams = this.extension.encode(extension);
-    Object.assign(zState.config.bare as Params, extensionParams);
-    Object.assign(zState.config.hash as Params, extensionParams);
+    if (settings.modId === 'aef' && endfield != null) {
+      const ef = encodeEndfield(endfield);
+      Object.assign(zState.config.bare as Params, { ef });
+      Object.assign(zState.config.hash as Params, { ef });
+    }
     return zState;
   }
 
@@ -725,7 +659,8 @@ export class RouterSync {
     if (hash == null) return null;
 
     let objectives: Record<string, ObjectiveState> | undefined;
-    const workspaceLink = this.presentation.workspaceLink(step);
+    const workspaceLink =
+      resourceFromObjectiveId(step.recipeObjectiveId) != null;
     if (workspaceLink) {
       objectives = this.objectivesStore.state();
     } else if (step.itemId != null && step.items != null) {
@@ -875,7 +810,6 @@ export class RouterSync {
     isBare: boolean,
     modData: ModData,
     modHash: ModHash,
-    plan?: RestorePlan,
     ticket?: number,
   ): void {
     if (modId == null && Object.keys(params).length === 0) {
@@ -884,11 +818,10 @@ export class RouterSync {
       return;
     }
 
-    const decodeHash = plan?.hash ?? modHash;
-    const hash = isBare ? undefined : decodeHash;
+    const hash = isBare ? undefined : modHash;
     const ms = this.unzipModules(params, hash);
     const bs = this.unzipBeacons(params, ms, hash);
-    const state: PartialState = {};
+    const state: WorkspaceState = {};
     state.objectivesState = this.unzipObjectives(params, ms, bs, hash);
     state.itemsState = this.unzipItems(params, hash);
     state.recipesState = this.unzipRecipes(params, ms, bs, hash);
@@ -902,68 +835,45 @@ export class RouterSync {
       bs,
       objectiveIds,
       modData,
-      decodeHash,
+      modHash,
       hash,
     );
     state.tableState = this.unzipTable(params);
 
-    const restorePlan =
-      plan ?? this.extension.prepare({ modId, params: params as Params });
-    const objectiveIdsToPrepare = this.extension.preflight({
-      state,
-      plan: restorePlan,
-      data: modData,
-    });
-    const preparedObjectives = objectiveIdsToPrepare.length
-      ? this.preparation.prepareObjectives(
-          state,
-          modData,
-          decodeHash,
-          objectiveIdsToPrepare,
-        )
-      : undefined;
-    const decoded = this.extension.decode({
-      state,
-      params,
-      plan: restorePlan,
-      data: modData,
-      hash: decodeHash,
-      preparedObjectives,
-    });
-    if (
-      decoded.diagnostics.some((diagnostic) => diagnostic.severity === 'error')
-    )
-      throw new WorkspaceRestoreError(decoded.diagnostics);
+    let endfield: EndfieldState | undefined;
+    if (modId === 'aef') {
+      validateCurrentWorkspace(state, modData);
+      endfield = decodeEndfield(
+        (params as Record<string, unknown>)['ef'],
+        modData,
+      );
+    }
     if (ticket != null && !this.lifecycle.current(ticket)) return;
     const previous = this.stable ?? this.snapshot();
     try {
-      this.dispatch(decoded.state, ticket == null);
-      this.extension.commit(decoded.extension);
-      if (ticket != null && !this.lifecycle.current(ticket)) return;
+      this.dispatch(state, ticket == null);
+      if (endfield != null) this.endfieldStore.set(endfield);
     } catch (error) {
-      if (ticket != null && !this.lifecycle.current(ticket)) return;
       try {
         this.restoreSnapshot(previous);
       } catch (rollbackError) {
-        if (ticket != null && !this.lifecycle.current(ticket)) return;
         throw new AggregateError(
           [error, rollbackError],
           'Workspace commit and rollback failed',
           { cause: rollbackError },
         );
       }
-      if (ticket != null && !this.lifecycle.current(ticket)) return;
       throw error;
     }
     if (ticket != null) {
-      this.lifecycle.complete(ticket, decoded.diagnostics);
+      this.lifecycle.complete(ticket);
       this.ready.set(true);
       this.restoring = false;
       if (!this.navigationPending()) this.stable = undefined;
     }
   }
 
-  dispatch(state: PartialState, markReady = true): void {
+  dispatch(state: WorkspaceState, markReady = true): void {
     this.objectivesStore.load(state.objectivesState);
     this.itemsStore.load(state.itemsState);
     this.recipesStore.load(state.recipesState);
@@ -1324,8 +1234,7 @@ export class RouterSync {
       };
 
       prune(obj);
-      if (Object.keys(obj).length || this.extension.strictImports)
-        state[id] = obj;
+      state[id] = obj;
     }
 
     return state;
@@ -1399,8 +1308,7 @@ export class RouterSync {
       };
 
       prune(obj);
-      if (Object.keys(obj).length || this.extension.strictImports)
-        state[id] = obj;
+      state[id] = obj;
     }
 
     return state;
@@ -1463,8 +1371,7 @@ export class RouterSync {
       };
 
       prune(obj);
-      if (Object.keys(obj).length || this.extension.strictImports)
-        state[id] = obj;
+      state[id] = obj;
     }
 
     return state;
@@ -1478,7 +1385,6 @@ export class RouterSync {
     hash: ModHash,
   ): void {
     const init = cloneDefaults(this.effectiveDefaults).settings;
-    init.costs = { ...init.costs, ...this.product.serializedCostDefaults };
 
     // Set up shorthand functions to zip state
     const set = this.zip.set(zState.config, state, init);
@@ -1608,21 +1514,6 @@ export class RouterSync {
     if (params.v10rch) obj.checkedRecipeIds = mps(params.v10rch, hash?.recipes);
     if (params.v10tre) {
       obj.researchedTechnologyIds = mps(params.v10tre, hash?.technologies);
-      if (this.extension.strictImports)
-        for (const id of obj.researchedTechnologyIds)
-          if (
-            !modData.items.some(
-              (item) => item.id === id && item.technology != null,
-            )
-          )
-            throw new WorkspaceRestoreError([
-              {
-                code: 'unknown-technology',
-                message: `Unknown technology ID: ${id}`,
-                field: 'v10tre',
-                severity: 'error',
-              },
-            ]);
       obj.researchedTechnologyIds =
         this.migration.restoreV10ResearchedTechnologies(
           obj.researchedTechnologyIds,

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { prepareI18n } from './prepare-i18n.mjs';
+import { prepareAssets } from './prepare-i18n.mjs';
 import { packageSites } from './package-sites.mjs';
 import { normalizeBase, readBaseArgument, workspace } from './verify-sites.mjs';
 
@@ -21,15 +21,15 @@ function angularBuild(base) {
   });
 }
 
-/** Prepare translations, build once, then finalize both independent sites. */
+/** Prepare assets, build once, then finalize both independent sites. */
 export async function buildSites({
   base = '/',
-  prepare = prepareI18n,
+  prepare = prepareAssets,
   build = angularBuild,
   pack = packageSites,
 } = {}) {
   const normalizedBase = normalizeBase(base);
-  await prepare(path.join(workspace, '.tmp/endfield-assets/i18n'));
+  await prepare(path.join(workspace, '.tmp/endfield-assets'));
   await build(normalizedBase);
   await pack({ base: normalizedBase });
 }

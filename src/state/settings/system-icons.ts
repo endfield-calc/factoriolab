@@ -29,8 +29,14 @@ export const systemIcons: IconJson[] = [
   { id: 'star-rupture', x: 264, y: 198, color: '#615f62' },
 ];
 
-export const systemIconsRecord = toRecord(
-  systemIcons.map(
-    (i): IconData => parseIconData(parseIcon(i), 'icons/icons.webp'),
+export const systemIconsRecord = {
+  ...toRecord(
+    systemIcons.map(
+      (i): IconData => parseIconData(parseIcon(i), 'icons/icons.webp'),
+    ),
   ),
-);
+  endfield: parseIconData(
+    parseIcon({ id: 'endfield', x: 0, y: 0, color: '#d9bd4c' }),
+    'endfield/game.webp',
+  ),
+};

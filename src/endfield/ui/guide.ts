@@ -21,31 +21,22 @@ export class EndfieldGuide {
     {
       name: 'endfield.guide.exampleTundra',
       params: {
-        z: 'eJw1yDEKgDAQBMDfXLEg5C5GbLYJCBaWVunEVrlGRHy9iLEbxpkLTDWJc0HqAhDFWWA9IjCIM8Da2gfU.p6hoa.fIL09ivNGfJnFmT5O4rxgdfeDQTZfmeWk6gNmmh4R',
-        v: '11',
+        z: 'eJx9kVGPojAUhf8ND002KWVw9KEPK1Fso5hRh5b7RkFimZaSRUfg129w3M1mH-bt5LsnN-ee6-gSEPH90HM0R-EMIxR4jgIicxQgtPIcxYi8PPEV-eQPPiEfz5.8BwonvPEcHVEwyaXnaPglt56jPSJPaq8Ue8YVdOmdK3oeOAHJx1wsbqx2.TbiA8jks5S8hve-VcLgYmCz88CNsmut4vSD1a3NRD.C8a4Lu8Ygd3rfdFoFvAVibrlMr5IsBjiyGat.6m3E-1Ksh3LTVgVZ3yD6y9vCLm7.eWsVLO8geaUCbljt9C5iHbPlpfAXL7nkF2UN.sffZDKpchGaonnTe83urPEX24hfM5G4iZ9ic83lYWR1-8psessE70C86b2Fi9okZhvxLhd-W26-7jjHZshE2JZxWqkAjDLz.pHjxHQlcceawzQfwabDNztHFaRDRt71XnNcivCjsCtdHe8aRG-y4DDkYjfl7Zmeekyf.vQIImmLOD2BPOBchM2j.wB3zCYORPILxGEFkrelffxCSYm9T-qT3wCBvkg_',
+        v: '12',
       },
     },
     {
       name: 'endfield.guide.exampleCoupons',
       params: {
-        o: [
-          'tundra_coupon***2',
-          'originium_ore*560**3',
-          'quartz_sand*240**3',
-          'iron_ore*1080**3',
-          'power_proc_battery_3*4*3**power_sta_1',
-          'power_proc_battery_2**3',
-        ],
-        omt: '0',
-        loc: 'B',
-        v: '11',
+        z: 'eJx9kUFvozAQhf8NB0uVDIS0HDg0qCG2EqKSFJu5YQiKqQ3WEhrMr18ljarVHnp7-uZp9OZNH60AIeQ5fVSiYIkR8p0-wshbPOQRufjloZ.QAvkIbZw-Cu9EXyLsqL6KVs6piU6WesDpXLJwJG0.bWNqgadfNactfExGMIUrS5YnS5XQaymS.JO0RhdsmuFwlZVeY-A7ue8GKXxqwFNjyfML90ILB7Ik7avcxnSq2drWG9NU3nqE-IebSofjf95W-KsrcNoInyrS9nIXk4Ho-ly54aLk9Cy0wv.4u4KnTckCVXXvci.JlXRuuI3ppWBpf-PHRF1Kns2kNc9E52PB6ADsXe41nMUmVduYDiVzTb35vuOUKFuwwNRJ3ggflFAv0z3HkciG44F02W0-g87tLztn4ee28D7kXlJcs-Cz0m-yOVwlsEkVfmZLtrvlnYi89Zg..PkBWGqqJD8Cz3DJgu7ev48HotMeWPoHWPYGnJpa338hOMfOV-R6fwEufLKB',
+        v: '12',
       },
     },
     {
-      name: 'endfield.guide.exampleJinlongLegacy',
+      name: 'endfield.guide.exampleJinlong',
       params: {
-        z: 'eJxFzLEKAjEQhOG3SfGDupvLHVpsYQ5EC6sTBLvDxkJJoz6.ZI1YzccwTLE8M6iEYjNpLdCFYhdicgitObFpOpOWvSvf0Nja8cjg0NYx1cVE-h32oHW4R4WOWL37O7-IK3.NqGM8fK8XHo-nSbiXq23D21Q.U1UrIA__',
-        v: '11',
+        z: 'eJx9kc2OmzAUhd-GhaW25rfDgsWABmIrIRrIYOMdhqCYsQGVMAGevoKhP-qiK3.6fHR0fd15fgEcHWqdVwDrCQJgap3HgGFtAMFuLsDdiQDrq72RfwO6sdvgBJwN9N2BdLUOsH4V2gDoqzoAHQITGCuHf9gfgfFta.WBvkGAPqu.bIe6e1CTXek9a9fau87YYBQvBXFH1HTTMcAzo.FHRXHD3qaeEwnLGTnXGUuuQsGj7B01vcrJtLD0IUoVQkZP4twOgpu4Z4YcC5rdqeHOLEUOap7FMcBTRcK5OvR1aYQjC377vlTu-E-24ab.YBTX3MQSNZ04BWhAqrqVumsVFN-4kvCvfJvTuC6ILcv2VZwFeqBWd48Bvuck7lZ.ieS9oMmCmv47UtmYEzww8irOit34IZbHAA8F0fvq8PmOayTnnNh9FWU1N5nk8mna5rggUVM4oDZZ7xemsvk.nQs3szk33sRZYFgR-71UL6JOH4KRSeZmMhfktM47IbHuMdvzWcpI3JdRdmE0gQWx223.JhyQijtG4h-MJC-M4r5S219wSqH24enGTxyLyzs_',
+        v: '12',
       },
     },
   ];

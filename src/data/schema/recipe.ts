@@ -20,9 +20,7 @@ export type RecipeFlag =
   /** Treats machines required as a percentage instead of a number */
   | 'infinite'
   /** Even if there are no producers, show the machine quantity */
-  | 'showCount'
-  /** Show the recipe name in a picker even when names are otherwise hidden */
-  | 'forceShowLabel';
+  | 'showCount';
 
 export interface RecipeJson {
   id: string;

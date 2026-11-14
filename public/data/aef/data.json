@@ -1531,34 +1531,34 @@
   "categories": [
     {
       "id": "material",
-      "name": "材料",
+      "name": "Material",
       "icon": "iron_enr"
     },
     {
       "id": "product",
-      "name": "工业产物",
+      "name": "AIC Products",
       "icon": "product"
     },
     {
       "id": "gen-power",
-      "name": "发电",
+      "name": "Power",
       "icon": "power_sta_1"
     },
     {
       "id": "settlement",
-      "name": "据点",
+      "name": "Outpost",
       "icon": "tundra_coupon"
     },
     {
       "id": "activity",
-      "name": "活动",
+      "name": "Event",
       "icon": "activity"
     }
   ],
   "items": [
     {
       "id": "plant_moss_seed_1",
-      "name": "荞花种子",
+      "name": "Buckflower Seed",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1569,7 +1569,7 @@
     },
     {
       "id": "plant_moss_1",
-      "name": "荞花",
+      "name": "Buckflower",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1580,7 +1580,7 @@
     },
     {
       "id": "plant_moss_powder_1",
-      "name": "荞花粉末",
+      "name": "Buckflower Powder",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1591,7 +1591,7 @@
     },
     {
       "id": "plant_moss_enr_powder_1",
-      "name": "细磨荞花粉末",
+      "name": "Ground Buckflower Powder",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1602,7 +1602,7 @@
     },
     {
       "id": "plant_moss_seed_3",
-      "name": "砂叶种子",
+      "name": "Sandleaf Seed",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1613,7 +1613,7 @@
     },
     {
       "id": "plant_moss_3",
-      "name": "砂叶",
+      "name": "Sandleaf",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1624,7 +1624,7 @@
     },
     {
       "id": "plant_moss_powder_3",
-      "name": "砂叶粉末",
+      "name": "Sandleaf Powder",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1635,7 +1635,7 @@
     },
     {
       "id": "plant_grass_seed_1",
-      "name": "锦草种子",
+      "name": "Jincao Seed",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1646,7 +1646,7 @@
     },
     {
       "id": "plant_grass_1",
-      "name": "锦草",
+      "name": "Jincao",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1657,7 +1657,7 @@
     },
     {
       "id": "plant_grass_powder_1",
-      "name": "锦草粉末",
+      "name": "Jincao Powder",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1668,7 +1668,7 @@
     },
     {
       "id": "liquid_plant_grass_1",
-      "name": "锦草溶液",
+      "name": "Jincao Solution",
       "category": "material",
       "row": 0,
       "icon": "liquid_plant_grass_1",
@@ -1678,7 +1678,7 @@
     },
     {
       "id": "carbon_mtl",
-      "name": "碳块",
+      "name": "Carbon",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1689,7 +1689,7 @@
     },
     {
       "id": "carbon_powder",
-      "name": "碳粉末",
+      "name": "Carbon Powder",
       "stack": 50,
       "category": "material",
       "row": 0,
@@ -1700,7 +1700,7 @@
     },
     {
       "id": "plant_moss_seed_2",
-      "name": "柑实种子",
+      "name": "Citrome Seed",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1711,7 +1711,7 @@
     },
     {
       "id": "plant_moss_2",
-      "name": "柑实",
+      "name": "Citrome",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1722,7 +1722,7 @@
     },
     {
       "id": "plant_moss_powder_2",
-      "name": "柑实粉末",
+      "name": "Citrome Powder",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1733,7 +1733,7 @@
     },
     {
       "id": "plant_moss_enr_powder_2",
-      "name": "细磨柑实粉末",
+      "name": "Ground Citrome Powder",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1744,7 +1744,7 @@
     },
     {
       "id": "plant_bbflower_seed_1",
-      "name": "酮化树种",
+      "name": "Aketine Seed",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1755,7 +1755,7 @@
     },
     {
       "id": "plant_bbflower_1",
-      "name": "酮化灌木",
+      "name": "Aketine",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1766,7 +1766,7 @@
     },
     {
       "id": "plant_bbflower_powder_1",
-      "name": "酮化灌木粉末",
+      "name": "Aketine Powder",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1777,7 +1777,7 @@
     },
     {
       "id": "plant_grass_seed_2",
-      "name": "芽针种子",
+      "name": "Yazhen Seeds",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1788,7 +1788,7 @@
     },
     {
       "id": "plant_grass_2",
-      "name": "芽针",
+      "name": "Yazhen",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1799,7 +1799,7 @@
     },
     {
       "id": "plant_grass_powder_2",
-      "name": "芽针粉末",
+      "name": "Yazhen Powder",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1810,7 +1810,7 @@
     },
     {
       "id": "liquid_plant_grass_2",
-      "name": "芽针溶液",
+      "name": "Yazhen Solution",
       "category": "material",
       "row": 1,
       "icon": "liquid_plant_grass_2",
@@ -1820,7 +1820,7 @@
     },
     {
       "id": "carbon_enr_powder",
-      "name": "致密碳粉末",
+      "name": "Dense Carbon Powder",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1831,7 +1831,7 @@
     },
     {
       "id": "carbon_enr",
-      "name": "稳定碳块",
+      "name": "Stabilized Carbon",
       "stack": 50,
       "category": "material",
       "row": 1,
@@ -1842,7 +1842,7 @@
     },
     {
       "id": "originium_ore",
-      "name": "源矿",
+      "name": "Originium Ore",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1853,7 +1853,7 @@
     },
     {
       "id": "crystal_shell",
-      "name": "晶体外壳",
+      "name": "Origocrust",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1864,7 +1864,7 @@
     },
     {
       "id": "crystal_powder",
-      "name": "晶体外壳粉末",
+      "name": "Origocrust Powder",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1875,7 +1875,7 @@
     },
     {
       "id": "crystal_enr_powder",
-      "name": "致密晶体粉末",
+      "name": "Dense Origocrust Powder",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1886,7 +1886,7 @@
     },
     {
       "id": "crystal_enr",
-      "name": "密制晶体",
+      "name": "Packed Origocrust",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1897,7 +1897,7 @@
     },
     {
       "id": "originium_powder",
-      "name": "源石粉末",
+      "name": "Originium Powder",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1908,7 +1908,7 @@
     },
     {
       "id": "originium_enr_powder",
-      "name": "致密源石粉末",
+      "name": "Dense Originium Powder",
       "stack": 50,
       "category": "material",
       "row": 2,
@@ -1919,7 +1919,7 @@
     },
     {
       "id": "quartz_sand",
-      "name": "紫晶矿",
+      "name": "Amethyst Ore",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1930,7 +1930,7 @@
     },
     {
       "id": "quartz_glass",
-      "name": "紫晶纤维",
+      "name": "Amethyst Fiber",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1941,7 +1941,7 @@
     },
     {
       "id": "quartz_powder",
-      "name": "紫晶粉末",
+      "name": "Amethyst Powder",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1952,7 +1952,7 @@
     },
     {
       "id": "quartz_enr_powder",
-      "name": "高晶粉末",
+      "name": "Cryston Powder",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1963,7 +1963,7 @@
     },
     {
       "id": "quartz_enr",
-      "name": "高晶纤维",
+      "name": "Cryston Fiber",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1974,7 +1974,7 @@
     },
     {
       "id": "glass_bottle",
-      "name": "紫晶质瓶",
+      "name": "Amethyst Bottle",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1985,7 +1985,7 @@
     },
     {
       "id": "glass_enr_bottle",
-      "name": "高晶质瓶",
+      "name": "Cryston Bottle",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -1996,7 +1996,7 @@
     },
     {
       "id": "glass_cmpt",
-      "name": "紫晶零件",
+      "name": "Amethyst Part",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -2007,7 +2007,7 @@
     },
     {
       "id": "glass_enr_cmpt",
-      "name": "高晶零件",
+      "name": "Cryston Part",
       "stack": 50,
       "category": "material",
       "row": 3,
@@ -2018,7 +2018,7 @@
     },
     {
       "id": "iron_ore",
-      "name": "蓝铁矿",
+      "name": "Ferrium Ore",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2029,7 +2029,7 @@
     },
     {
       "id": "iron_nugget",
-      "name": "蓝铁块",
+      "name": "Ferrium",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2040,7 +2040,7 @@
     },
     {
       "id": "iron_powder",
-      "name": "蓝铁粉末",
+      "name": "Ferrium Powder",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2051,7 +2051,7 @@
     },
     {
       "id": "iron_enr_powder",
-      "name": "致密蓝铁粉末",
+      "name": "Dense Ferrium Powder",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2062,7 +2062,7 @@
     },
     {
       "id": "iron_enr",
-      "name": "钢块",
+      "name": "Steel",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2073,7 +2073,7 @@
     },
     {
       "id": "iron_bottle",
-      "name": "蓝铁瓶",
+      "name": "Ferrium Bottle",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2084,7 +2084,7 @@
     },
     {
       "id": "iron_enr_bottle",
-      "name": "钢质瓶",
+      "name": "Steel Bottle",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2095,7 +2095,7 @@
     },
     {
       "id": "iron_cmpt",
-      "name": "铁制零件",
+      "name": "Ferrium Part",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2106,7 +2106,7 @@
     },
     {
       "id": "iron_enr_cmpt",
-      "name": "钢制零件",
+      "name": "Steel Part",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2117,7 +2117,7 @@
     },
     {
       "id": "iron_bottle-liquid_plant_grass_1",
-      "name": "蓝铁瓶(锦草溶液)",
+      "name": "Ferrium Bottle(Jincao Solution)",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2128,7 +2128,7 @@
     },
     {
       "id": "iron_bottle-liquid_plant_grass_2",
-      "name": "蓝铁瓶(芽针溶液)",
+      "name": "Ferrium Bottle(Yazhen Solution)",
       "stack": 50,
       "category": "material",
       "row": 4,
@@ -2139,7 +2139,7 @@
     },
     {
       "id": "copper_ore",
-      "name": "赤铜矿",
+      "name": "Cuprium Ore",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2150,7 +2150,7 @@
     },
     {
       "id": "copper_nugget",
-      "name": "赤铜块",
+      "name": "Cuprium",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2161,7 +2161,7 @@
     },
     {
       "id": "copper_powder",
-      "name": "赤铜粉末",
+      "name": "Cuprium Powder",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2172,7 +2172,7 @@
     },
     {
       "id": "copper_enr",
-      "name": "赫铜块",
+      "name": "Hetonite",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2183,7 +2183,7 @@
     },
     {
       "id": "copper_enr2",
-      "name": "灼铜块",
+      "name": "Pyrrolite",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2194,7 +2194,7 @@
     },
     {
       "id": "copper_jar",
-      "name": "赤铜耐压罐",
+      "name": "Cuprium Canister",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2205,7 +2205,7 @@
     },
     {
       "id": "filter_core",
-      "name": "分离芯",
+      "name": "Separator Core",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2216,7 +2216,7 @@
     },
     {
       "id": "copper_cmpt",
-      "name": "赤铜零件",
+      "name": "Cuprium Part",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2227,7 +2227,7 @@
     },
     {
       "id": "copper_enr_cmpt",
-      "name": "赫铜零件",
+      "name": "Hetonite Part",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2238,7 +2238,7 @@
     },
     {
       "id": "copper_enr2_cmpt",
-      "name": "灼铜零件",
+      "name": "Pyrrolite Part",
       "stack": 50,
       "category": "material",
       "row": 5,
@@ -2249,7 +2249,7 @@
     },
     {
       "id": "liquid_copper",
-      "name": "赤铜溶液",
+      "name": "Cuprium Solution",
       "category": "material",
       "row": 6,
       "icon": "liquid_copper",
@@ -2259,7 +2259,7 @@
     },
     {
       "id": "liquid_copper_enr",
-      "name": "赫铜溶液",
+      "name": "Hetonite Solution",
       "category": "material",
       "row": 6,
       "icon": "liquid_copper_enr",
@@ -2269,7 +2269,7 @@
     },
     {
       "id": "gas_copper",
-      "name": "气态赤铜",
+      "name": "Cuprium Gas",
       "category": "material",
       "row": 6,
       "icon": "gas_copper",
@@ -2279,7 +2279,7 @@
     },
     {
       "id": "gas_copper_enr",
-      "name": "气态赫铜",
+      "name": "Hetonite Gas",
       "category": "material",
       "row": 6,
       "icon": "gas_copper_enr",
@@ -2289,7 +2289,7 @@
     },
     {
       "id": "gas_copper_enr2",
-      "name": "气态灼铜",
+      "name": "Pyrrolite Gas",
       "category": "material",
       "row": 6,
       "icon": "gas_copper_enr2",
@@ -2299,7 +2299,7 @@
     },
     {
       "id": "copper_bottle",
-      "name": "赤铜瓶",
+      "name": "Cuprium Bottle",
       "stack": 50,
       "category": "material",
       "row": 6,
@@ -2310,7 +2310,7 @@
     },
     {
       "id": "copper_enr_bottle",
-      "name": "赫铜瓶",
+      "name": "Hetonite Bottle",
       "stack": 50,
       "category": "material",
       "row": 6,
@@ -2321,7 +2321,7 @@
     },
     {
       "id": "copper_bottle-liquid_plant_grass_1",
-      "name": "赤铜瓶(锦草溶液)",
+      "name": "Cuprium Bottle(Jincao Solution)",
       "stack": 50,
       "category": "material",
       "row": 6,
@@ -2332,7 +2332,7 @@
     },
     {
       "id": "copper_bottle-liquid_plant_grass_2",
-      "name": "赤铜瓶(芽针溶液)",
+      "name": "Cuprium Bottle(Yazhen Solution)",
       "stack": 50,
       "category": "material",
       "row": 6,
@@ -2343,7 +2343,7 @@
     },
     {
       "id": "xiranite_powder",
-      "name": "息壤",
+      "name": "Xiranite",
       "stack": 50,
       "category": "material",
       "row": 7,
@@ -2354,7 +2354,7 @@
     },
     {
       "id": "xiranite_poly",
-      "name": "壤晶",
+      "name": "Xircon",
       "stack": 50,
       "category": "material",
       "row": 7,
@@ -2365,7 +2365,7 @@
     },
     {
       "id": "xiranite_enr_powder",
-      "name": "重息壤",
+      "name": "Heavy Xiranite",
       "stack": 50,
       "category": "material",
       "row": 7,
@@ -2376,7 +2376,7 @@
     },
     {
       "id": "liquid_xiranite_poly",
-      "name": "壤晶废液",
+      "name": "Xircon Effluent",
       "category": "material",
       "row": 7,
       "icon": "liquid_xiranite_poly",
@@ -2386,7 +2386,7 @@
     },
     {
       "id": "liquid_xiranite_lowpoly",
-      "name": "惰性壤晶废液",
+      "name": "Inert Xircon Effluent",
       "category": "material",
       "row": 7,
       "icon": "liquid_xiranite_lowpoly",
@@ -2396,7 +2396,7 @@
     },
     {
       "id": "liquid_sewage",
-      "name": "污水",
+      "name": "Sewage",
       "category": "material",
       "row": 7,
       "icon": "liquid_sewage",
@@ -2406,7 +2406,7 @@
     },
     {
       "id": "liquid_xiranite",
-      "name": "液化息壤",
+      "name": "Liquid Xiranite",
       "category": "material",
       "row": 8,
       "icon": "liquid_xiranite",
@@ -2416,7 +2416,7 @@
     },
     {
       "id": "gas_xiranite",
-      "name": "息壤气",
+      "name": "Xiragen",
       "category": "material",
       "row": 8,
       "icon": "gas_xiranite",
@@ -2426,7 +2426,7 @@
     },
     {
       "id": "liquid_xiranite_enr",
-      "name": "液化重息壤",
+      "name": "Liquid Heavy Xiranite",
       "category": "material",
       "row": 8,
       "icon": "liquid_xiranite_enr",
@@ -2436,7 +2436,7 @@
     },
     {
       "id": "gas_xiranite_enr",
-      "name": "重息壤气",
+      "name": "Heavy Xiragen",
       "category": "material",
       "row": 8,
       "icon": "gas_xiranite_enr",
@@ -2446,7 +2446,7 @@
     },
     {
       "id": "liquid_water",
-      "name": "清水",
+      "name": "Clean Water",
       "category": "material",
       "row": 8,
       "icon": "liquid_water",
@@ -2456,7 +2456,7 @@
     },
     {
       "id": "gas_water",
-      "name": "水蒸气",
+      "name": "Aquagen",
       "category": "material",
       "row": 8,
       "icon": "gas_water",
@@ -2466,7 +2466,7 @@
     },
     {
       "id": "liquid_acid",
-      "name": "沉积酸",
+      "name": "Precipitation Acid",
       "category": "material",
       "row": 8,
       "icon": "liquid_acid",
@@ -2476,7 +2476,7 @@
     },
     {
       "id": "gas_acid",
-      "name": "酸气",
+      "name": "Acridgen",
       "category": "material",
       "row": 8,
       "icon": "gas_acid",
@@ -2486,7 +2486,7 @@
     },
     {
       "id": "gas_inert",
-      "name": "惰气",
+      "name": "Inergen",
       "category": "material",
       "row": 8,
       "icon": "gas_inert",
@@ -2496,7 +2496,7 @@
     },
     {
       "id": "bottled_food_1",
-      "name": "柑实罐头",
+      "name": "Canned Citrome [C]",
       "stack": 50,
       "category": "product",
       "row": 0,
@@ -2507,7 +2507,7 @@
     },
     {
       "id": "bottled_food_2",
-      "name": "优质柑实罐头",
+      "name": "Canned Citrome [B]",
       "stack": 50,
       "category": "product",
       "row": 0,
@@ -2518,7 +2518,7 @@
     },
     {
       "id": "bottled_food_3",
-      "name": "精选柑实罐头",
+      "name": "Canned Citrome [A]",
       "stack": 50,
       "category": "product",
       "row": 0,
@@ -2529,7 +2529,7 @@
     },
     {
       "id": "bottled_food_4",
-      "name": "锦草软饮",
+      "name": "Jincao Drink",
       "stack": 50,
       "category": "product",
       "row": 0,
@@ -2540,7 +2540,7 @@
     },
     {
       "id": "bottled_food_5",
-      "name": "优质锦草软饮",
+      "name": "Jincao Tea",
       "stack": 50,
       "category": "product",
       "row": 0,
@@ -2551,7 +2551,7 @@
     },
     {
       "id": "bottled_rec_hp_1",
-      "name": "荞愈胶囊",
+      "name": "Buck Capsule [C]",
       "stack": 50,
       "category": "product",
       "row": 1,
@@ -2562,7 +2562,7 @@
     },
     {
       "id": "bottled_rec_hp_2",
-      "name": "优质荞愈胶囊",
+      "name": "Buck Capsule [B]",
       "stack": 50,
       "category": "product",
       "row": 1,
@@ -2573,7 +2573,7 @@
     },
     {
       "id": "bottled_rec_hp_3",
-      "name": "精选荞愈胶囊",
+      "name": "Buck Capsule [A]",
       "stack": 50,
       "category": "product",
       "row": 1,
@@ -2584,7 +2584,7 @@
     },
     {
       "id": "bottled_rec_hp_4",
-      "name": "芽针针剂",
+      "name": "Yazhen Syringe [C]",
       "stack": 50,
       "category": "product",
       "row": 1,
@@ -2595,7 +2595,7 @@
     },
     {
       "id": "bottled_rec_hp_5",
-      "name": "优质芽针针剂",
+      "name": "Yazhen Syringe [A]",
       "stack": 50,
       "category": "product",
       "row": 1,
@@ -2606,7 +2606,7 @@
     },
     {
       "id": "equip_script_1",
-      "name": "紫晶装备原件",
+      "name": "Amethyst Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2617,7 +2617,7 @@
     },
     {
       "id": "equip_script_2",
-      "name": "蓝铁装备原件",
+      "name": "Ferrium Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2628,7 +2628,7 @@
     },
     {
       "id": "equip_script_3",
-      "name": "高晶装备原件",
+      "name": "Cryston Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2639,7 +2639,7 @@
     },
     {
       "id": "equip_script_4",
-      "name": "息壤装备原件",
+      "name": "Xiranite Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2650,7 +2650,7 @@
     },
     {
       "id": "equip_script_4_1",
-      "name": "赤铜装备原件",
+      "name": "Cuprium Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2661,7 +2661,7 @@
     },
     {
       "id": "equip_script_4_2",
-      "name": "赫铜装备原件",
+      "name": "Hetonite Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2672,7 +2672,7 @@
     },
     {
       "id": "equip_script_4_3",
-      "name": "灼铜装备原件",
+      "name": "Pyrrolite Component",
       "stack": 50,
       "category": "product",
       "row": 2,
@@ -2683,7 +2683,7 @@
     },
     {
       "id": "proc_battery_1",
-      "name": "低容谷地电池",
+      "name": "LC Valley Battery",
       "stack": 50,
       "category": "product",
       "row": 3,
@@ -2694,7 +2694,7 @@
     },
     {
       "id": "proc_battery_2",
-      "name": "中容谷地电池",
+      "name": "SC Valley Battery",
       "stack": 50,
       "category": "product",
       "row": 3,
@@ -2705,7 +2705,7 @@
     },
     {
       "id": "proc_battery_3",
-      "name": "高容谷地电池",
+      "name": "HC Valley Battery",
       "stack": 50,
       "category": "product",
       "row": 3,
@@ -2716,7 +2716,7 @@
     },
     {
       "id": "proc_battery_4",
-      "name": "低容武陵电池",
+      "name": "LC Wuling Battery",
       "stack": 50,
       "category": "product",
       "row": 3,
@@ -2727,7 +2727,7 @@
     },
     {
       "id": "proc_battery_5",
-      "name": "中容武陵电池",
+      "name": "SC Wuling Battery",
       "stack": 50,
       "category": "product",
       "row": 3,
@@ -2738,7 +2738,7 @@
     },
     {
       "id": "proc_bomb_1",
-      "name": "工业爆炸物",
+      "name": "Industrial Explosive",
       "stack": 50,
       "category": "product",
       "row": 4,
@@ -2749,7 +2749,7 @@
     },
     {
       "id": "tundra_coupon",
-      "name": "谷地调度券",
+      "name": "Valley Stock Bill",
       "stack": 50000000,
       "category": "settlement",
       "row": 0,
@@ -2760,7 +2760,7 @@
     },
     {
       "id": "jinlong_coupon",
-      "name": "武陵调度券",
+      "name": "Wuling Stock Bill",
       "stack": 50000000,
       "category": "settlement",
       "row": 0,
@@ -2771,7 +2771,7 @@
     },
     {
       "id": "activity_xiranite_lung",
-      "name": "息壤龙泡泡",
+      "name": "Xiranite Chubby Lung",
       "stack": 50,
       "category": "activity",
       "row": 0,
@@ -2782,7 +2782,7 @@
     },
     {
       "id": "activity_xiranite_enr_lung",
-      "name": "重息壤龙泡泡",
+      "name": "Heavy Xiranite Chubby Lung",
       "stack": 50,
       "category": "activity",
       "row": 0,
@@ -2793,7 +2793,7 @@
     },
     {
       "id": "activity_xiranite_nugget",
-      "name": "实验息壤块",
+      "name": "Proto Xiranite",
       "stack": 50,
       "category": "activity",
       "row": 1,
@@ -2804,7 +2804,7 @@
     },
     {
       "id": "activity_xiranite_box",
-      "name": "实验龙泡泡外壳",
+      "name": "Proto Chubby Lung Shell",
       "stack": 50,
       "category": "activity",
       "row": 1,
@@ -2815,7 +2815,7 @@
     },
     {
       "id": "activity_copper_xiranite_tool",
-      "name": "实验铜骨骼",
+      "name": "Proto Cuprium Frame",
       "stack": 50,
       "category": "activity",
       "row": 1,
@@ -2826,7 +2826,7 @@
     },
     {
       "id": "activity_copper_poly_gas",
-      "name": "实验息壤铜气",
+      "name": "Proto Xiran-Cuprium Gas",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2837,7 +2837,7 @@
     },
     {
       "id": "activity_copper_poly",
-      "name": "实验息壤铜锭",
+      "name": "Proto Xiran-Cuprium",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2848,7 +2848,7 @@
     },
     {
       "id": "activity_copper_poly_cmpt",
-      "name": "实验息壤铜零件",
+      "name": "Proto Xiran-Cuprium Part",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2859,7 +2859,7 @@
     },
     {
       "id": "activity_xiranite_enr_nugget",
-      "name": "实验重息壤块",
+      "name": "Proto Heavy Xiranite",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2870,7 +2870,7 @@
     },
     {
       "id": "activity_copper_poly_tool",
-      "name": "实验息壤铜骨骼",
+      "name": "Proto Xiran-Cuprium Frame",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2881,7 +2881,7 @@
     },
     {
       "id": "activity_xiranite_enr_box",
-      "name": "实验龙泡泡重壳",
+      "name": "Proto Chubby Lung Heavy Shell",
       "stack": 50,
       "category": "activity",
       "row": 2,
@@ -2892,7 +2892,7 @@
     },
     {
       "id": "domain_key_tundra",
-      "name": "超库存传输",
+      "name": "Metastorage Transfer",
       "stack": 1,
       "category": "__domain_transfer",
       "row": 999,
@@ -2903,7 +2903,7 @@
     },
     {
       "id": "__miner_water",
-      "name": "清水",
+      "name": "Clean Water",
       "icon": "liquid_water",
       "category": "__internal",
       "row": 999,
@@ -2913,7 +2913,7 @@
     },
     {
       "id": "__domain_transfer",
-      "name": "超库存传输",
+      "name": "Metastorage Transfer",
       "stack": 1,
       "machine": {
         "speed": 1,
@@ -2930,7 +2930,7 @@
     },
     {
       "id": "__miner_pump_1",
-      "name": "水泵(水驱矿机)",
+      "name": "Fluid Pump(Hydro Mining Rig)",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -2949,7 +2949,7 @@
     },
     {
       "id": "cmpt_mc_1",
-      "name": "配件机",
+      "name": "Fitting Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -2969,7 +2969,7 @@
     },
     {
       "id": "dismantler_1",
-      "name": "拆解机",
+      "name": "Separating Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -2992,7 +2992,7 @@
     },
     {
       "id": "filling_pd_mc_1",
-      "name": "灌装机",
+      "name": "Filling Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3012,7 +3012,7 @@
     },
     {
       "id": "furnance_1",
-      "name": "精炼炉",
+      "name": "Refining Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3032,7 +3032,7 @@
     },
     {
       "id": "gas_pump_1",
-      "name": "气体收集泵",
+      "name": "Gas Extractor",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3054,7 +3054,7 @@
     },
     {
       "id": "gas_reactor_1",
-      "name": "气体反应炉",
+      "name": "Gas Reactor Globe",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3077,7 +3077,7 @@
     },
     {
       "id": "grinder_1",
-      "name": "粉碎机",
+      "name": "Shredding Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3097,7 +3097,7 @@
     },
     {
       "id": "liquid_clean_gate",
-      "name": "净水节点(污水接入口)",
+      "name": "Purification Node(Sewage Inlet)",
       "stack": 1,
       "machine": {
         "speed": 1,
@@ -3116,7 +3116,7 @@
     },
     {
       "id": "liquid_cleaner_1",
-      "name": "废水处理机",
+      "name": "Water Treatment Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3139,7 +3139,7 @@
     },
     {
       "id": "liquid_purifier_1",
-      "name": "提纯机",
+      "name": "Purification Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3162,7 +3162,7 @@
     },
     {
       "id": "liquid_recycle_gate",
-      "name": "净水节点(产物排出口)",
+      "name": "Purification Node(Byproduct Outlet)",
       "stack": 1,
       "machine": {
         "speed": 1,
@@ -3181,7 +3181,7 @@
     },
     {
       "id": "miner_2",
-      "name": "电驱矿机",
+      "name": "Electric Mining Rig",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3198,7 +3198,7 @@
     },
     {
       "id": "miner_3",
-      "name": "二型电驱矿机",
+      "name": "Electric Mining Rig Mk II",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3215,7 +3215,7 @@
     },
     {
       "id": "miner_4",
-      "name": "水驱矿机",
+      "name": "Hydro Mining Rig",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3234,7 +3234,7 @@
     },
     {
       "id": "mix_pool_1",
-      "name": "反应池",
+      "name": "Reactor Crucible",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3257,7 +3257,7 @@
     },
     {
       "id": "mix_pool_2",
-      "name": "扩容反应池",
+      "name": "Expanded Crucible",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3280,7 +3280,7 @@
     },
     {
       "id": "phase_trans_1",
-      "name": "液气转化机",
+      "name": "Fluid-Gas Transmuting Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3303,7 +3303,7 @@
     },
     {
       "id": "phase_trans_2",
-      "name": "固气转化机",
+      "name": "Solid-Gas Transmuting Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3326,7 +3326,7 @@
     },
     {
       "id": "planter_1",
-      "name": "种植机",
+      "name": "Planting Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3346,7 +3346,7 @@
     },
     {
       "id": "power_sta_1",
-      "name": "热能池",
+      "name": "Thermal Bank",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3366,7 +3366,7 @@
     },
     {
       "id": "pump_1",
-      "name": "水泵",
+      "name": "Fluid Pump",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3385,7 +3385,7 @@
     },
     {
       "id": "pump_2",
-      "name": "二型耐酸水泵",
+      "name": "Acid Resistant Pump Mk II",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3404,7 +3404,7 @@
     },
     {
       "id": "seedcol_1",
-      "name": "采种机",
+      "name": "Seed-Picking Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3424,7 +3424,7 @@
     },
     {
       "id": "settlement-jinlong",
-      "name": "据点供货(武陵)",
+      "name": "Outpost Supplies(Wuling)",
       "icon": "jinlong",
       "stack": 1,
       "machine": {
@@ -3444,7 +3444,7 @@
     },
     {
       "id": "settlement-jinlong_coupon",
-      "name": "据点供货(武陵)",
+      "name": "Outpost Supplies(Wuling)",
       "icon": "jinlong_coupon",
       "stack": 1,
       "machine": {
@@ -3464,7 +3464,7 @@
     },
     {
       "id": "settlement-tundra",
-      "name": "据点供货(四号谷地)",
+      "name": "Outpost Supplies(Valley IV)",
       "icon": "tundra",
       "stack": 1,
       "machine": {
@@ -3484,7 +3484,7 @@
     },
     {
       "id": "settlement-tundra_coupon",
-      "name": "据点供货(四号谷地)",
+      "name": "Outpost Supplies(Valley IV)",
       "icon": "tundra_coupon",
       "stack": 1,
       "machine": {
@@ -3504,7 +3504,7 @@
     },
     {
       "id": "shaper_1",
-      "name": "塑形机",
+      "name": "Moulding Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3524,7 +3524,7 @@
     },
     {
       "id": "thickener_1",
-      "name": "研磨机",
+      "name": "Grinding Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3544,7 +3544,7 @@
     },
     {
       "id": "tools_asm_mc_1",
-      "name": "封装机",
+      "name": "Packaging Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3564,7 +3564,7 @@
     },
     {
       "id": "winder_1",
-      "name": "装备原件机",
+      "name": "Gearing Unit",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3584,7 +3584,7 @@
     },
     {
       "id": "xiranite_oven_1",
-      "name": "天有洪炉",
+      "name": "Forge of the Sky",
       "stack": 50,
       "machine": {
         "speed": 1,
@@ -3607,7 +3607,7 @@
     },
     {
       "id": "belt",
-      "name": "传送带",
+      "name": "Transport Belt",
       "stack": 1,
       "belt": {
         "speed": 0.5,
@@ -3624,7 +3624,7 @@
     },
     {
       "id": "pipe",
-      "name": "管道",
+      "name": "Pipe",
       "stack": 1,
       "category": "belt-and-pipe",
       "row": 999,
@@ -3653,7 +3653,7 @@
         "seedcol_1"
       ],
       "id": "plant_moss_seed_1",
-      "name": "荞花种子",
+      "name": "Buckflower Seed",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_seed_1"
@@ -3670,7 +3670,7 @@
         "planter_1"
       ],
       "id": "plant_moss_1",
-      "name": "荞花",
+      "name": "Buckflower",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_1"
@@ -3687,7 +3687,7 @@
         "grinder_1"
       ],
       "id": "plant_moss_powder_1",
-      "name": "荞花粉末",
+      "name": "Buckflower Powder",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_powder_1"
@@ -3705,7 +3705,7 @@
         "thickener_1"
       ],
       "id": "plant_moss_enr_powder_1",
-      "name": "细磨荞花粉末",
+      "name": "Ground Buckflower Powder",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_enr_powder_1"
@@ -3722,7 +3722,7 @@
         "seedcol_1"
       ],
       "id": "plant_moss_seed_3",
-      "name": "砂叶种子",
+      "name": "Sandleaf Seed",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_seed_3"
@@ -3739,7 +3739,7 @@
         "planter_1"
       ],
       "id": "plant_moss_3",
-      "name": "砂叶",
+      "name": "Sandleaf",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_3"
@@ -3756,7 +3756,7 @@
         "grinder_1"
       ],
       "id": "plant_moss_powder_3",
-      "name": "砂叶粉末",
+      "name": "Sandleaf Powder",
       "category": "material",
       "row": 0,
       "icon": "plant_moss_powder_3"
@@ -3773,7 +3773,7 @@
         "seedcol_1"
       ],
       "id": "plant_grass_seed_1",
-      "name": "锦草种子",
+      "name": "Jincao Seed",
       "category": "material",
       "row": 0,
       "icon": "plant_grass_seed_1"
@@ -3794,7 +3794,7 @@
         "jinlong"
       ],
       "id": "plant_grass_1",
-      "name": "锦草",
+      "name": "Jincao",
       "category": "material",
       "row": 0,
       "icon": "plant_grass_1"
@@ -3811,7 +3811,7 @@
         "grinder_1"
       ],
       "id": "plant_grass_powder_1",
-      "name": "锦草粉末",
+      "name": "Jincao Powder",
       "category": "material",
       "row": 0,
       "icon": "plant_grass_powder_1"
@@ -3830,7 +3830,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_plant_grass_1",
-      "name": "锦草溶液",
+      "name": "Jincao Solution",
       "category": "material",
       "row": 0,
       "icon": "liquid_plant_grass_1"
@@ -3847,7 +3847,7 @@
         "furnance_1"
       ],
       "id": "carbon_powder-plant_moss_powder_1",
-      "name": "碳粉末(荞花粉末)",
+      "name": "Carbon Powder(Buckflower Powder)",
       "category": "material",
       "row": 0,
       "icon": "sJ497s081"
@@ -3864,7 +3864,7 @@
         "furnance_1"
       ],
       "id": "carbon_powder-plant_moss_powder_2",
-      "name": "碳粉末(柑实粉末)",
+      "name": "Carbon Powder(Citrome Powder)",
       "category": "material",
       "row": 0,
       "icon": "EkYDieNFa"
@@ -3881,7 +3881,7 @@
         "furnance_1"
       ],
       "id": "carbon_powder-plant_moss_powder_3",
-      "name": "碳粉末(砂叶粉末)",
+      "name": "Carbon Powder(Sandleaf Powder)",
       "category": "material",
       "row": 0,
       "icon": "-5xQnlo_H"
@@ -3898,7 +3898,7 @@
         "furnance_1"
       ],
       "id": "carbon_powder-plant_grass_powder_1",
-      "name": "碳粉末(锦草粉末)",
+      "name": "Carbon Powder(Jincao Powder)",
       "category": "material",
       "row": 0,
       "icon": "UK3cw32jH"
@@ -3915,7 +3915,7 @@
         "furnance_1"
       ],
       "id": "carbon_powder-plant_grass_powder_2",
-      "name": "碳粉末(芽针粉末)",
+      "name": "Carbon Powder(Yazhen Powder)",
       "category": "material",
       "row": 0,
       "icon": "EyVhscDqY"
@@ -3932,7 +3932,7 @@
         "grinder_1"
       ],
       "id": "carbon_powder-carbon_mtl",
-      "name": "碳粉末(碳块)",
+      "name": "Carbon Powder(Carbon)",
       "category": "material",
       "row": 0,
       "icon": "bfVwkel-1"
@@ -3949,7 +3949,7 @@
         "seedcol_1"
       ],
       "id": "plant_moss_seed_2",
-      "name": "柑实种子",
+      "name": "Citrome Seed",
       "category": "material",
       "row": 1,
       "icon": "plant_moss_seed_2"
@@ -3966,7 +3966,7 @@
         "planter_1"
       ],
       "id": "plant_moss_2",
-      "name": "柑实",
+      "name": "Citrome",
       "category": "material",
       "row": 1,
       "icon": "plant_moss_2"
@@ -3983,7 +3983,7 @@
         "grinder_1"
       ],
       "id": "plant_moss_powder_2",
-      "name": "柑实粉末",
+      "name": "Citrome Powder",
       "category": "material",
       "row": 1,
       "icon": "plant_moss_powder_2"
@@ -4001,7 +4001,7 @@
         "thickener_1"
       ],
       "id": "plant_moss_enr_powder_2",
-      "name": "细磨柑实粉末",
+      "name": "Ground Citrome Powder",
       "category": "material",
       "row": 1,
       "icon": "plant_moss_enr_powder_2"
@@ -4018,7 +4018,7 @@
         "seedcol_1"
       ],
       "id": "plant_bbflower_seed_1",
-      "name": "酮化树种",
+      "name": "Aketine Seed",
       "category": "material",
       "row": 1,
       "icon": "plant_bbflower_seed_1"
@@ -4035,7 +4035,7 @@
         "planter_1"
       ],
       "id": "plant_bbflower_1",
-      "name": "酮化灌木",
+      "name": "Aketine",
       "category": "material",
       "row": 1,
       "icon": "plant_bbflower_1"
@@ -4052,7 +4052,7 @@
         "grinder_1"
       ],
       "id": "plant_bbflower_powder_1",
-      "name": "酮化灌木粉末",
+      "name": "Aketine Powder",
       "category": "material",
       "row": 1,
       "icon": "plant_bbflower_powder_1"
@@ -4069,7 +4069,7 @@
         "seedcol_1"
       ],
       "id": "plant_grass_seed_2",
-      "name": "芽针种子",
+      "name": "Yazhen Seeds",
       "category": "material",
       "row": 1,
       "icon": "plant_grass_seed_2"
@@ -4090,7 +4090,7 @@
         "jinlong"
       ],
       "id": "plant_grass_2",
-      "name": "芽针",
+      "name": "Yazhen",
       "category": "material",
       "row": 1,
       "icon": "plant_grass_2"
@@ -4107,7 +4107,7 @@
         "grinder_1"
       ],
       "id": "plant_grass_powder_2",
-      "name": "芽针粉末",
+      "name": "Yazhen Powder",
       "category": "material",
       "row": 1,
       "icon": "plant_grass_powder_2"
@@ -4126,7 +4126,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_plant_grass_2",
-      "name": "芽针溶液",
+      "name": "Yazhen Solution",
       "category": "material",
       "row": 1,
       "icon": "liquid_plant_grass_2"
@@ -4143,7 +4143,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_moss_1",
-      "name": "碳块(荞花)",
+      "name": "Carbon(Buckflower)",
       "category": "material",
       "row": 1,
       "icon": "lIwML7hJA"
@@ -4160,7 +4160,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_moss_2",
-      "name": "碳块(柑实)",
+      "name": "Carbon(Citrome)",
       "category": "material",
       "row": 1,
       "icon": "wSTIJRUt2"
@@ -4177,7 +4177,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_moss_3",
-      "name": "碳块(砂叶)",
+      "name": "Carbon(Sandleaf)",
       "category": "material",
       "row": 1,
       "icon": "8f-XntBAi"
@@ -4194,7 +4194,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_grass_1",
-      "name": "碳块(锦草)",
+      "name": "Carbon(Jincao)",
       "category": "material",
       "row": 1,
       "icon": "xFMoNt_0-"
@@ -4211,7 +4211,7 @@
         "furnance_1"
       ],
       "id": "carbon_mtl-plant_grass_2",
-      "name": "碳块(芽针)",
+      "name": "Carbon(Yazhen)",
       "category": "material",
       "row": 1,
       "icon": "tF0KCVMNv"
@@ -4230,7 +4230,7 @@
         "mining"
       ],
       "id": "originium_ore",
-      "name": "源矿",
+      "name": "Originium Ore",
       "category": "material",
       "row": 2,
       "icon": "originium_ore"
@@ -4247,7 +4247,7 @@
         "furnance_1"
       ],
       "id": "crystal_powder-originium_powder",
-      "name": "晶体外壳粉末(源石粉末)",
+      "name": "Origocrust Powder(Originium Powder)",
       "category": "material",
       "row": 2,
       "icon": "j2R9Yyfk7"
@@ -4264,7 +4264,7 @@
         "grinder_1"
       ],
       "id": "crystal_powder-crystal_shell",
-      "name": "晶体外壳粉末(晶体外壳)",
+      "name": "Origocrust Powder(Origocrust)",
       "category": "material",
       "row": 2,
       "icon": "b06HlUyW9"
@@ -4282,7 +4282,7 @@
       ],
       "cost": 100,
       "id": "crystal_shell-originium_ore",
-      "name": "晶体外壳(源矿)",
+      "name": "Origocrust(Originium Ore)",
       "category": "material",
       "row": 2,
       "icon": "OIsG_0_gQ"
@@ -4299,7 +4299,7 @@
         "furnance_1"
       ],
       "id": "crystal_shell-crystal_powder",
-      "name": "晶体外壳(晶体外壳粉末)",
+      "name": "Origocrust(Origocrust Powder)",
       "category": "material",
       "row": 2,
       "icon": "tVuwQqAnt"
@@ -4317,7 +4317,7 @@
         "thickener_1"
       ],
       "id": "crystal_enr_powder-crystal_powder",
-      "name": "致密晶体粉末(晶体外壳粉末)",
+      "name": "Dense Origocrust Powder(Origocrust Powder)",
       "category": "material",
       "row": 2,
       "icon": "-PLwC7rav"
@@ -4334,7 +4334,7 @@
         "furnance_1"
       ],
       "id": "crystal_enr",
-      "name": "密制晶体",
+      "name": "Packed Origocrust",
       "category": "material",
       "row": 2,
       "icon": "crystal_enr"
@@ -4352,7 +4352,7 @@
       ],
       "cost": 100,
       "id": "originium_powder",
-      "name": "源石粉末",
+      "name": "Originium Powder",
       "category": "material",
       "row": 2,
       "icon": "originium_powder"
@@ -4370,7 +4370,7 @@
         "thickener_1"
       ],
       "id": "originium_enr_powder",
-      "name": "致密源石粉末",
+      "name": "Dense Originium Powder",
       "category": "material",
       "row": 2,
       "icon": "originium_enr_powder"
@@ -4387,7 +4387,7 @@
         "furnance_1"
       ],
       "id": "crystal_enr_powder-originium_enr_powder",
-      "name": "致密晶体粉末(致密源石粉末)",
+      "name": "Dense Origocrust Powder(Dense Originium Powder)",
       "category": "material",
       "row": 2,
       "icon": "-IDibphrv"
@@ -4405,7 +4405,7 @@
         "thickener_1"
       ],
       "id": "carbon_enr_powder-carbon_powder",
-      "name": "致密碳粉末(碳粉末)",
+      "name": "Dense Carbon Powder(Carbon Powder)",
       "category": "material",
       "row": 2,
       "icon": "aNhoXNVVI"
@@ -4422,7 +4422,7 @@
         "furnance_1"
       ],
       "id": "carbon_enr_powder-plant_moss_enr_powder_1",
-      "name": "致密碳粉末(细磨荞花粉末)",
+      "name": "Dense Carbon Powder(Ground Buckflower Powder)",
       "category": "material",
       "row": 2,
       "icon": "Z2IEDQBer"
@@ -4439,7 +4439,7 @@
         "furnance_1"
       ],
       "id": "carbon_enr_powder-plant_moss_enr_powder_2",
-      "name": "致密碳粉末(细磨柑实粉末)",
+      "name": "Dense Carbon Powder(Ground Citrome Powder)",
       "category": "material",
       "row": 2,
       "icon": "xFsOz8GXn"
@@ -4456,7 +4456,7 @@
         "furnance_1"
       ],
       "id": "carbon_enr",
-      "name": "稳定碳块",
+      "name": "Stabilized Carbon",
       "category": "material",
       "row": 2,
       "icon": "carbon_enr"
@@ -4475,7 +4475,7 @@
         "mining"
       ],
       "id": "quartz_sand",
-      "name": "紫晶矿",
+      "name": "Amethyst Ore",
       "category": "material",
       "row": 3,
       "icon": "quartz_sand"
@@ -4492,7 +4492,7 @@
         "grinder_1"
       ],
       "id": "quartz_powder",
-      "name": "紫晶粉末",
+      "name": "Amethyst Powder",
       "category": "material",
       "row": 3,
       "icon": "quartz_powder"
@@ -4510,7 +4510,7 @@
       ],
       "cost": 100,
       "id": "quartz_glass-quartz_sand",
-      "name": "紫晶纤维(紫晶矿)",
+      "name": "Amethyst Fiber(Amethyst Ore)",
       "category": "material",
       "row": 3,
       "icon": "rNYknIToK"
@@ -4527,7 +4527,7 @@
         "furnance_1"
       ],
       "id": "quartz_glass-quartz_powder",
-      "name": "紫晶纤维(紫晶粉末)",
+      "name": "Amethyst Fiber(Amethyst Powder)",
       "category": "material",
       "row": 3,
       "icon": "5ReMJ-axh"
@@ -4545,7 +4545,7 @@
         "thickener_1"
       ],
       "id": "quartz_enr_powder",
-      "name": "高晶粉末",
+      "name": "Cryston Powder",
       "category": "material",
       "row": 3,
       "icon": "quartz_enr_powder"
@@ -4562,7 +4562,7 @@
         "furnance_1"
       ],
       "id": "quartz_enr",
-      "name": "高晶纤维",
+      "name": "Cryston Fiber",
       "category": "material",
       "row": 3,
       "icon": "quartz_enr"
@@ -4579,7 +4579,7 @@
         "shaper_1"
       ],
       "id": "glass_bottle",
-      "name": "紫晶质瓶",
+      "name": "Amethyst Bottle",
       "category": "material",
       "row": 3,
       "icon": "glass_bottle"
@@ -4596,7 +4596,7 @@
         "shaper_1"
       ],
       "id": "glass_enr_bottle",
-      "name": "高晶质瓶",
+      "name": "Cryston Bottle",
       "category": "material",
       "row": 3,
       "icon": "glass_enr_bottle"
@@ -4613,7 +4613,7 @@
         "cmpt_mc_1"
       ],
       "id": "glass_cmpt",
-      "name": "紫晶零件",
+      "name": "Amethyst Part",
       "category": "material",
       "row": 3,
       "icon": "glass_cmpt"
@@ -4630,7 +4630,7 @@
         "cmpt_mc_1"
       ],
       "id": "glass_enr_cmpt",
-      "name": "高晶零件",
+      "name": "Cryston Part",
       "category": "material",
       "row": 3,
       "icon": "glass_enr_cmpt"
@@ -4648,7 +4648,7 @@
         "mining"
       ],
       "id": "iron_ore",
-      "name": "蓝铁矿",
+      "name": "Ferrium Ore",
       "category": "material",
       "row": 4,
       "icon": "iron_ore"
@@ -4665,7 +4665,7 @@
         "grinder_1"
       ],
       "id": "iron_powder",
-      "name": "蓝铁粉末",
+      "name": "Ferrium Powder",
       "category": "material",
       "row": 4,
       "icon": "iron_powder"
@@ -4683,7 +4683,7 @@
       ],
       "cost": 100,
       "id": "iron_nugget-iron_ore",
-      "name": "蓝铁块(蓝铁矿)",
+      "name": "Ferrium(Ferrium Ore)",
       "category": "material",
       "row": 4,
       "icon": "YP_fqgPjK"
@@ -4700,7 +4700,7 @@
         "furnance_1"
       ],
       "id": "iron_nugget-iron_powder",
-      "name": "蓝铁块(蓝铁粉末)",
+      "name": "Ferrium(Ferrium Powder)",
       "category": "material",
       "row": 4,
       "icon": "rCPd1tfS9"
@@ -4718,7 +4718,7 @@
         "thickener_1"
       ],
       "id": "iron_enr_powder",
-      "name": "致密蓝铁粉末",
+      "name": "Dense Ferrium Powder",
       "category": "material",
       "row": 4,
       "icon": "iron_enr_powder"
@@ -4735,7 +4735,7 @@
         "furnance_1"
       ],
       "id": "iron_enr",
-      "name": "钢块",
+      "name": "Steel",
       "category": "material",
       "row": 4,
       "icon": "iron_enr"
@@ -4752,7 +4752,7 @@
         "shaper_1"
       ],
       "id": "iron_bottle",
-      "name": "蓝铁瓶",
+      "name": "Ferrium Bottle",
       "category": "material",
       "row": 4,
       "icon": "iron_bottle"
@@ -4769,7 +4769,7 @@
         "shaper_1"
       ],
       "id": "iron_enr_bottle",
-      "name": "钢质瓶",
+      "name": "Steel Bottle",
       "category": "material",
       "row": 4,
       "icon": "iron_enr_bottle"
@@ -4786,7 +4786,7 @@
         "cmpt_mc_1"
       ],
       "id": "iron_cmpt",
-      "name": "铁制零件",
+      "name": "Ferrium Part",
       "category": "material",
       "row": 4,
       "icon": "iron_cmpt"
@@ -4803,7 +4803,7 @@
         "cmpt_mc_1"
       ],
       "id": "iron_enr_cmpt",
-      "name": "钢制零件",
+      "name": "Steel Part",
       "category": "material",
       "row": 4,
       "icon": "iron_enr_cmpt"
@@ -4824,7 +4824,7 @@
         "jinlong"
       ],
       "id": "iron_bottle-liquid_plant_grass_1",
-      "name": "蓝铁瓶(锦草溶液)",
+      "name": "Ferrium Bottle(Jincao Solution)",
       "category": "material",
       "row": 4,
       "icon": "7aWLncdum"
@@ -4845,7 +4845,7 @@
         "jinlong"
       ],
       "id": "iron_bottle-liquid_plant_grass_2",
-      "name": "蓝铁瓶(芽针溶液)",
+      "name": "Ferrium Bottle(Yazhen Solution)",
       "category": "material",
       "row": 4,
       "icon": "zSG48A1GN"
@@ -4865,7 +4865,7 @@
         "mining"
       ],
       "id": "copper_ore-liquid_water",
-      "name": "赤铜矿",
+      "name": "Cuprium Ore",
       "category": "material",
       "row": 5,
       "icon": "pSkp8UtzR"
@@ -4882,7 +4882,7 @@
         "grinder_1"
       ],
       "id": "copper_powder",
-      "name": "赤铜粉末",
+      "name": "Cuprium Powder",
       "category": "material",
       "row": 5,
       "icon": "copper_powder"
@@ -4905,7 +4905,7 @@
         "jinlong"
       ],
       "id": "copper_nugget",
-      "name": "赤铜块",
+      "name": "Cuprium",
       "category": "material",
       "row": 5,
       "icon": "copper_nugget"
@@ -4923,7 +4923,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-copper_nugget",
-      "name": "赤铜块(固气转化机)",
+      "name": "Cuprium(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 5,
       "icon": "TIRc8l-Ov"
@@ -4943,7 +4943,7 @@
         "mix_pool_2"
       ],
       "id": "copper_enr",
-      "name": "赫铜块",
+      "name": "Hetonite",
       "category": "material",
       "row": 5,
       "icon": "copper_enr"
@@ -4961,7 +4961,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-copper_enr",
-      "name": "赫铜块(固气转化机)",
+      "name": "Hetonite(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 5,
       "icon": "1x5_iFxrl"
@@ -4979,7 +4979,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-copper_enr2",
-      "name": "灼铜块(固气转化机)",
+      "name": "Pyrrolite(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 5,
       "icon": "grKjDDYLU"
@@ -4996,7 +4996,7 @@
         "shaper_1"
       ],
       "id": "copper_bottle",
-      "name": "赤铜瓶",
+      "name": "Cuprium Bottle",
       "category": "material",
       "row": 5,
       "icon": "copper_bottle"
@@ -5013,7 +5013,7 @@
         "shaper_1"
       ],
       "id": "copper_enr_bottle",
-      "name": "赫铜瓶",
+      "name": "Hetonite Bottle",
       "category": "material",
       "row": 5,
       "icon": "copper_enr_bottle"
@@ -5030,7 +5030,7 @@
         "cmpt_mc_1"
       ],
       "id": "copper_cmpt",
-      "name": "赤铜零件",
+      "name": "Cuprium Part",
       "category": "material",
       "row": 5,
       "icon": "copper_cmpt"
@@ -5047,7 +5047,7 @@
         "cmpt_mc_1"
       ],
       "id": "copper_enr_cmpt",
-      "name": "赫铜零件",
+      "name": "Hetonite Part",
       "category": "material",
       "row": 5,
       "icon": "copper_enr_cmpt"
@@ -5064,7 +5064,7 @@
         "cmpt_mc_1"
       ],
       "id": "copper_enr2_cmpt",
-      "name": "灼铜零件",
+      "name": "Pyrrolite Part",
       "category": "material",
       "row": 5,
       "icon": "copper_enr2_cmpt"
@@ -5085,7 +5085,7 @@
         "jinlong"
       ],
       "id": "copper_bottle-liquid_plant_grass_1",
-      "name": "赤铜瓶(锦草溶液)",
+      "name": "Cuprium Bottle(Jincao Solution)",
       "category": "material",
       "row": 5,
       "icon": "g6eZC2ckR"
@@ -5106,7 +5106,7 @@
         "jinlong"
       ],
       "id": "copper_bottle-liquid_plant_grass_2",
-      "name": "赤铜瓶(芽针溶液)",
+      "name": "Cuprium Bottle(Yazhen Solution)",
       "category": "material",
       "row": 5,
       "icon": "QU3-0LfcJ"
@@ -5127,7 +5127,7 @@
         "jinlong"
       ],
       "id": "copper_jar",
-      "name": "赤铜耐压罐",
+      "name": "Cuprium Canister",
       "category": "material",
       "row": 5,
       "icon": "copper_jar"
@@ -5145,7 +5145,7 @@
         "tools_asm_mc_1"
       ],
       "id": "filter_core",
-      "name": "分离芯",
+      "name": "Separator Core",
       "category": "material",
       "row": 5,
       "icon": "filter_core"
@@ -5164,7 +5164,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_copper",
-      "name": "赤铜溶液",
+      "name": "Cuprium Solution",
       "category": "material",
       "row": 6,
       "icon": "liquid_copper"
@@ -5182,7 +5182,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_copper",
-      "name": "赤铜溶液(液气转化机)",
+      "name": "Cuprium Solution(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "eNbizvaDC"
@@ -5200,7 +5200,7 @@
         "liquid_purifier_1"
       ],
       "id": "liquid_copper_enr",
-      "name": "赫铜溶液",
+      "name": "Hetonite Solution",
       "category": "material",
       "row": 6,
       "icon": "liquid_copper_enr"
@@ -5218,7 +5218,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_copper_enr",
-      "name": "赫铜溶液(液气转化机)",
+      "name": "Hetonite Solution(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "21JXqNHcO"
@@ -5236,7 +5236,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_copper",
-      "name": "气态赤铜(液气转化机)",
+      "name": "Cuprium Gas(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "6cFT0YI85"
@@ -5254,7 +5254,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-gas_copper",
-      "name": "气态赤铜(固气转化机)",
+      "name": "Cuprium Gas(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "MzFhhwu9q"
@@ -5272,7 +5272,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_copper_enr",
-      "name": "气态赫铜(液气转化机)",
+      "name": "Hetonite Gas(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "3nEkFN4v3"
@@ -5290,7 +5290,7 @@
         "liquid_purifier_1"
       ],
       "id": "gas_copper_enr-gas_inert",
-      "name": "气态赫铜(惰气)",
+      "name": "Hetonite Gas(Inergen)",
       "category": "material",
       "row": 6,
       "icon": "LESvbc0cp"
@@ -5308,7 +5308,7 @@
         "liquid_purifier_1"
       ],
       "id": "gas_copper_enr",
-      "name": "气态赫铜",
+      "name": "Hetonite Gas",
       "category": "material",
       "row": 6,
       "icon": "gas_copper_enr"
@@ -5326,7 +5326,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-gas_copper_enr",
-      "name": "气态赫铜(固气转化机)",
+      "name": "Hetonite Gas(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "F26jLFsSM"
@@ -5344,7 +5344,7 @@
         "gas_reactor_1"
       ],
       "id": "gas_copper_enr2",
-      "name": "气态灼铜",
+      "name": "Pyrrolite Gas",
       "category": "material",
       "row": 6,
       "icon": "ynGeJZzIH"
@@ -5362,7 +5362,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-gas_copper_enr2",
-      "name": "气态灼铜(固气转化机)",
+      "name": "Pyrrolite Gas(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 6,
       "icon": "ugzGGeljq"
@@ -5380,7 +5380,7 @@
         "xiranite_oven_1"
       ],
       "id": "xiranite_powder-carbon_mtl",
-      "name": "息壤(碳块)",
+      "name": "Xiranite(Carbon)",
       "category": "material",
       "row": 7,
       "icon": "tk28kQJ4M"
@@ -5398,7 +5398,7 @@
         "xiranite_oven_1"
       ],
       "id": "xiranite_powder-carbon_enr",
-      "name": "息壤(稳定碳块)",
+      "name": "Xiranite(Stabilized Carbon)",
       "category": "material",
       "row": 7,
       "icon": "5FnJGJYHD"
@@ -5415,7 +5415,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-xiranite_powder",
-      "name": "息壤(固气转化机)",
+      "name": "Xiranite(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 7,
       "icon": "D9uBSezBN"
@@ -5435,7 +5435,7 @@
         "mix_pool_2"
       ],
       "id": "xiranite_poly",
-      "name": "壤晶",
+      "name": "Xircon",
       "category": "material",
       "row": 7,
       "icon": "xiranite_poly"
@@ -5453,7 +5453,7 @@
         "xiranite_oven_1"
       ],
       "id": "xiranite_enr_powder",
-      "name": "重息壤",
+      "name": "Heavy Xiranite",
       "category": "material",
       "row": 7,
       "icon": "xiranite_enr_powder"
@@ -5471,7 +5471,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-xiranite_enr_powder",
-      "name": "重息壤(固气转化机)",
+      "name": "Heavy Xiranite(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 7,
       "icon": "o7qlvjIpX"
@@ -5490,7 +5490,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_xiranite",
-      "name": "液化息壤",
+      "name": "Liquid Xiranite",
       "category": "material",
       "row": 7,
       "icon": "liquid_xiranite"
@@ -5508,7 +5508,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_xiranite",
-      "name": "液化息壤(液气转化机)",
+      "name": "Liquid Xiranite(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 7,
       "icon": "KsAbKo-kL"
@@ -5527,7 +5527,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_xiranite_enr",
-      "name": "液化重息壤",
+      "name": "Liquid Heavy Xiranite",
       "category": "material",
       "row": 7,
       "icon": "liquid_xiranite_enr"
@@ -5545,7 +5545,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_xiranite_enr",
-      "name": "液化重息壤(液气转化机)",
+      "name": "Liquid Heavy Xiranite(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 7,
       "icon": "eVII5GgNz"
@@ -5565,7 +5565,7 @@
         "mix_pool_2"
       ],
       "id": "liquid_xiranite_poly",
-      "name": "壤晶废液",
+      "name": "Xircon Effluent",
       "category": "material",
       "row": 7,
       "icon": "liquid_xiranite_poly"
@@ -5583,7 +5583,7 @@
         "liquid_purifier_1"
       ],
       "id": "liquid_xiranite_poly-purifier",
-      "name": "壤晶废液(提纯机)",
+      "name": "Xircon Effluent(Purification Unit)",
       "category": "material",
       "row": 7,
       "icon": "qUq983O5F"
@@ -5601,7 +5601,7 @@
         "mining"
       ],
       "id": "liquid_water",
-      "name": "清水",
+      "name": "Clean Water",
       "category": "material",
       "row": 8,
       "icon": "liquid_water"
@@ -5619,7 +5619,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_water",
-      "name": "清水(液气转化机)",
+      "name": "Clean Water(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "tnHAWZomJ"
@@ -5637,7 +5637,7 @@
         "mining"
       ],
       "id": "liquid_acid",
-      "name": "沉积酸",
+      "name": "Precipitation Acid",
       "category": "material",
       "row": 8,
       "icon": "liquid_acid"
@@ -5655,7 +5655,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-liquid_acid",
-      "name": "沉积酸(液气转化机)",
+      "name": "Precipitation Acid(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "n1F3_H0xn"
@@ -5673,7 +5673,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_water",
-      "name": "水蒸气(液气转化机)",
+      "name": "Aquagen(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "ngnifkfVC"
@@ -5690,7 +5690,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_xiranite",
-      "name": "息壤气(液气转化机)",
+      "name": "Xiragen(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "VM4dhho2c"
@@ -5708,7 +5708,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-gas_xiranite",
-      "name": "息壤气(固气转化机)",
+      "name": "Xiragen(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "eAPSNjYPO"
@@ -5726,7 +5726,7 @@
         "liquid_purifier_1"
       ],
       "id": "gas_xiranite_enr",
-      "name": "重息壤气",
+      "name": "Heavy Xiragen",
       "category": "material",
       "row": 8,
       "icon": "gas_xiranite_enr"
@@ -5744,7 +5744,7 @@
         "liquid_purifier_1"
       ],
       "id": "gas_xiranite_enr-gas_inert",
-      "name": "重息壤气(惰气)",
+      "name": "Heavy Xiragen(Inergen)",
       "category": "material",
       "row": 8,
       "icon": "4N6PISlNQ"
@@ -5762,7 +5762,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_xiranite_enr",
-      "name": "重息壤气(液气转化机)",
+      "name": "Heavy Xiragen(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "08QnmafUO"
@@ -5780,7 +5780,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-gas_xiranite_enr",
-      "name": "重息壤气(固气转化机)",
+      "name": "Heavy Xiragen(Solid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "4uTTruYze"
@@ -5798,7 +5798,7 @@
         "phase_trans_1"
       ],
       "id": "phase_trans_1-gas_acid",
-      "name": "酸气(液气转化机)",
+      "name": "Acridgen(Fluid-Gas Transmuting Unit)",
       "category": "material",
       "row": 8,
       "icon": "BTDiP1-WN"
@@ -5816,7 +5816,7 @@
         "mining"
       ],
       "id": "gas_inert",
-      "name": "惰气",
+      "name": "Inergen",
       "category": "material",
       "row": 999,
       "icon": "gas_inert"
@@ -5834,7 +5834,7 @@
         "mining"
       ],
       "id": "gas_xiranite",
-      "name": "息壤气",
+      "name": "Xiragen",
       "category": "material",
       "row": 999,
       "icon": "gas_xiranite"
@@ -5851,7 +5851,7 @@
         "liquid_cleaner_1"
       ],
       "id": "liquid_cleaner_1-sewage",
-      "name": "废水处理机(污水)",
+      "name": "Water Treatment Unit(Sewage)",
       "category": "material",
       "row": 999,
       "icon": "gMs3wV6Mc"
@@ -5868,7 +5868,7 @@
         "liquid_cleaner_1"
       ],
       "id": "liquid_cleaner_1-xiranite_lowpoly",
-      "name": "废水处理机(惰性壤晶废液)",
+      "name": "Water Treatment Unit(Inert Xircon Effluent)",
       "category": "material",
       "row": 999,
       "icon": "LIU8uRWtP"
@@ -5885,7 +5885,7 @@
         "liquid_cleaner_1"
       ],
       "id": "liquid_cleaner_1-xiranite_poly",
-      "name": "废水处理机(壤晶废液)",
+      "name": "Water Treatment Unit(Xircon Effluent)",
       "category": "material",
       "row": 999,
       "icon": "MZA0Aj7xM"
@@ -5901,7 +5901,7 @@
       ],
       "cost": -30,
       "id": "sewage-treat",
-      "name": "净水节点",
+      "name": "Purification Node",
       "category": "material",
       "row": 999,
       "icon": "RSg0ZawgK"
@@ -5919,7 +5919,7 @@
       ],
       "cost": -50,
       "id": "sewage-treat-export",
-      "name": "壤晶废液(净水节点)",
+      "name": "Xircon Effluent(Purification Node)",
       "category": "material",
       "row": 999,
       "icon": "CZoh2vwOX"
@@ -5937,7 +5937,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_food_1",
-      "name": "柑实罐头",
+      "name": "Canned Citrome [C]",
       "category": "product",
       "row": 0,
       "icon": "bottled_food_1"
@@ -5955,7 +5955,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_food_2",
-      "name": "优质柑实罐头",
+      "name": "Canned Citrome [B]",
       "category": "product",
       "row": 0,
       "icon": "bottled_food_2"
@@ -5973,7 +5973,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_food_3",
-      "name": "精选柑实罐头",
+      "name": "Canned Citrome [A]",
       "category": "product",
       "row": 0,
       "icon": "bottled_food_3"
@@ -5991,7 +5991,7 @@
         "tools_asm_mc_1"
       ],
       "id": "bottled_food_4",
-      "name": "锦草软饮",
+      "name": "Jincao Drink",
       "category": "product",
       "row": 0,
       "icon": "bottled_food_4"
@@ -6009,7 +6009,7 @@
         "tools_asm_mc_1"
       ],
       "id": "bottled_food_5",
-      "name": "优质锦草软饮",
+      "name": "Jincao Tea",
       "category": "product",
       "row": 0,
       "icon": "bottled_food_5"
@@ -6027,7 +6027,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_rec_hp_1",
-      "name": "荞愈胶囊",
+      "name": "Buck Capsule [C]",
       "category": "product",
       "row": 1,
       "icon": "bottled_rec_hp_1"
@@ -6045,7 +6045,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_rec_hp_2",
-      "name": "优质荞愈胶囊",
+      "name": "Buck Capsule [B]",
       "category": "product",
       "row": 1,
       "icon": "bottled_rec_hp_2"
@@ -6063,7 +6063,7 @@
         "filling_pd_mc_1"
       ],
       "id": "bottled_rec_hp_3",
-      "name": "精选荞愈胶囊",
+      "name": "Buck Capsule [A]",
       "category": "product",
       "row": 1,
       "icon": "bottled_rec_hp_3"
@@ -6081,7 +6081,7 @@
         "tools_asm_mc_1"
       ],
       "id": "bottled_rec_hp_4",
-      "name": "芽针针剂",
+      "name": "Yazhen Syringe [C]",
       "category": "product",
       "row": 1,
       "icon": "bottled_rec_hp_4"
@@ -6099,7 +6099,7 @@
         "tools_asm_mc_1"
       ],
       "id": "bottled_rec_hp_5",
-      "name": "优质芽针针剂",
+      "name": "Yazhen Syringe [A]",
       "category": "product",
       "row": 1,
       "icon": "bottled_rec_hp_5"
@@ -6117,7 +6117,7 @@
         "winder_1"
       ],
       "id": "equip_script_1",
-      "name": "紫晶装备原件",
+      "name": "Amethyst Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_1"
@@ -6135,7 +6135,7 @@
         "winder_1"
       ],
       "id": "equip_script_2",
-      "name": "蓝铁装备原件",
+      "name": "Ferrium Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_2"
@@ -6153,7 +6153,7 @@
         "winder_1"
       ],
       "id": "equip_script_3",
-      "name": "高晶装备原件",
+      "name": "Cryston Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_3"
@@ -6171,7 +6171,7 @@
         "winder_1"
       ],
       "id": "equip_script_4",
-      "name": "息壤装备原件",
+      "name": "Xiranite Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_4"
@@ -6189,7 +6189,7 @@
         "winder_1"
       ],
       "id": "equip_script_4_1",
-      "name": "赤铜装备原件",
+      "name": "Cuprium Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_4_1"
@@ -6207,7 +6207,7 @@
         "winder_1"
       ],
       "id": "equip_script_4_2",
-      "name": "赫铜装备原件",
+      "name": "Hetonite Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_4_2"
@@ -6225,7 +6225,7 @@
         "winder_1"
       ],
       "id": "equip_script_4_3",
-      "name": "灼铜装备原件",
+      "name": "Pyrrolite Component",
       "category": "product",
       "row": 2,
       "icon": "equip_script_4_3"
@@ -6243,7 +6243,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_battery_1",
-      "name": "低容谷地电池",
+      "name": "LC Valley Battery",
       "category": "product",
       "row": 3,
       "icon": "proc_battery_1"
@@ -6261,7 +6261,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_battery_2",
-      "name": "中容谷地电池",
+      "name": "SC Valley Battery",
       "category": "product",
       "row": 3,
       "icon": "proc_battery_2"
@@ -6279,7 +6279,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_battery_3",
-      "name": "高容谷地电池",
+      "name": "HC Valley Battery",
       "category": "product",
       "row": 3,
       "icon": "proc_battery_3"
@@ -6297,7 +6297,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_battery_4",
-      "name": "低容武陵电池",
+      "name": "LC Wuling Battery",
       "category": "product",
       "row": 3,
       "icon": "proc_battery_4"
@@ -6315,7 +6315,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_battery_5",
-      "name": "中容武陵电池",
+      "name": "SC Wuling Battery",
       "category": "product",
       "row": 3,
       "icon": "proc_battery_5"
@@ -6333,7 +6333,7 @@
         "tools_asm_mc_1"
       ],
       "id": "proc_bomb_1",
-      "name": "工业爆炸物",
+      "name": "Industrial Explosive",
       "category": "product",
       "row": 4,
       "icon": "proc_bomb_1"
@@ -6349,7 +6349,7 @@
         "power_sta_1"
       ],
       "id": "power_originium_ore",
-      "name": "发电(源矿)",
+      "name": "Power(Originium Ore)",
       "category": "gen-power",
       "row": 0,
       "icon": "vzHASkcwW"
@@ -6365,7 +6365,7 @@
         "power_sta_1"
       ],
       "id": "power_proc_battery_1",
-      "name": "发电(低容谷地电池)",
+      "name": "Power(LC Valley Battery)",
       "category": "gen-power",
       "row": 1,
       "icon": "DCZK3_Hum"
@@ -6381,7 +6381,7 @@
         "power_sta_1"
       ],
       "id": "power_proc_battery_2",
-      "name": "发电(中容谷地电池)",
+      "name": "Power(SC Valley Battery)",
       "category": "gen-power",
       "row": 1,
       "icon": "PZWgDQOzb"
@@ -6397,7 +6397,7 @@
         "power_sta_1"
       ],
       "id": "power_proc_battery_3",
-      "name": "发电(高容谷地电池)",
+      "name": "Power(HC Valley Battery)",
       "category": "gen-power",
       "row": 1,
       "icon": "YvRkgjni9"
@@ -6413,7 +6413,7 @@
         "power_sta_1"
       ],
       "id": "power_proc_battery_4",
-      "name": "发电(低容武陵电池)",
+      "name": "Power(LC Wuling Battery)",
       "category": "gen-power",
       "row": 2,
       "icon": "u_hgkzqGZ"
@@ -6429,7 +6429,7 @@
         "power_sta_1"
       ],
       "id": "power_proc_battery_5",
-      "name": "发电(中容武陵电池)",
+      "name": "Power(SC Wuling Battery)",
       "category": "gen-power",
       "row": 2,
       "icon": "uE4Xzd-Nt"
@@ -6444,7 +6444,7 @@
       },
       "cost": 150,
       "id": "tundra_coupon-crystal_shell",
-      "name": "谷地调度券(晶体外壳)",
+      "name": "Valley Stock Bill(Origocrust)",
       "category": "settlement",
       "row": 0,
       "icon": "FRZxbTuQP",
@@ -6462,7 +6462,7 @@
       },
       "cost": 150,
       "id": "tundra_coupon-glass_bottle",
-      "name": "谷地调度券(紫晶质瓶)",
+      "name": "Valley Stock Bill(Amethyst Bottle)",
       "category": "settlement",
       "row": 0,
       "icon": "fpxipfxQ_",
@@ -6480,7 +6480,7 @@
       },
       "cost": 150,
       "id": "tundra_coupon-glass_cmpt",
-      "name": "谷地调度券(紫晶零件)",
+      "name": "Valley Stock Bill(Amethyst Part)",
       "category": "settlement",
       "row": 0,
       "icon": "WqhucJQl5",
@@ -6498,7 +6498,7 @@
       },
       "cost": 150,
       "id": "tundra_coupon-iron_cmpt",
-      "name": "谷地调度券(铁制零件)",
+      "name": "Valley Stock Bill(Ferrium Part)",
       "category": "settlement",
       "row": 0,
       "icon": "0pLWUXtXS",
@@ -6516,7 +6516,7 @@
       },
       "cost": 150,
       "id": "tundra_coupon-iron_enr_cmpt",
-      "name": "谷地调度券(钢制零件)",
+      "name": "Valley Stock Bill(Steel Part)",
       "category": "settlement",
       "row": 0,
       "icon": "PaI2yXcVi",
@@ -6534,7 +6534,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_food_1",
-      "name": "谷地调度券(柑实罐头)",
+      "name": "Valley Stock Bill(Canned Citrome [C])",
       "category": "settlement",
       "row": 0,
       "icon": "D87_y4QHp",
@@ -6552,7 +6552,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_food_2",
-      "name": "谷地调度券(优质柑实罐头)",
+      "name": "Valley Stock Bill(Canned Citrome [B])",
       "category": "settlement",
       "row": 0,
       "icon": "LChCprdXR",
@@ -6570,7 +6570,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_food_3",
-      "name": "谷地调度券(精选柑实罐头)",
+      "name": "Valley Stock Bill(Canned Citrome [A])",
       "category": "settlement",
       "row": 0,
       "icon": "lG5pYr6_F",
@@ -6588,7 +6588,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_1",
-      "name": "谷地调度券(荞愈胶囊)",
+      "name": "Valley Stock Bill(Buck Capsule [C])",
       "category": "settlement",
       "row": 0,
       "icon": "NXpQnBpZJ",
@@ -6606,7 +6606,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_2",
-      "name": "谷地调度券(优质荞愈胶囊)",
+      "name": "Valley Stock Bill(Buck Capsule [B])",
       "category": "settlement",
       "row": 0,
       "icon": "B33Y1xtAN",
@@ -6624,7 +6624,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-bottled_rec_hp_3",
-      "name": "谷地调度券(精选荞愈胶囊)",
+      "name": "Valley Stock Bill(Buck Capsule [A])",
       "category": "settlement",
       "row": 0,
       "icon": "Wy_OqDd79",
@@ -6642,7 +6642,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-proc_battery_1",
-      "name": "谷地调度券(低容谷地电池)",
+      "name": "Valley Stock Bill(LC Valley Battery)",
       "category": "settlement",
       "row": 0,
       "icon": "be5cdHAfy",
@@ -6660,7 +6660,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-proc_battery_2",
-      "name": "谷地调度券(中容谷地电池)",
+      "name": "Valley Stock Bill(SC Valley Battery)",
       "category": "settlement",
       "row": 0,
       "icon": "HsYpeEhwA",
@@ -6678,7 +6678,7 @@
       },
       "cost": 30,
       "id": "tundra_coupon-proc_battery_3",
-      "name": "谷地调度券(高容谷地电池)",
+      "name": "Valley Stock Bill(HC Valley Battery)",
       "category": "settlement",
       "row": 0,
       "icon": "tcIJgshsc",
@@ -6696,7 +6696,7 @@
       },
       "cost": 150,
       "id": "jinlong_coupon-copper_cmpt",
-      "name": "武陵调度券(赤铜零件)",
+      "name": "Wuling Stock Bill(Cuprium Part)",
       "category": "settlement",
       "row": 1,
       "icon": "fftXa_L3O",
@@ -6714,7 +6714,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-copper_enr_cmpt",
-      "name": "武陵调度券(赫铜零件)",
+      "name": "Wuling Stock Bill(Hetonite Part)",
       "category": "settlement",
       "row": 1,
       "icon": "nL57eW-eu",
@@ -6732,7 +6732,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-copper_enr2_cmpt",
-      "name": "武陵调度券(灼铜零件)",
+      "name": "Wuling Stock Bill(Pyrrolite Part)",
       "category": "settlement",
       "row": 1,
       "icon": "lpxYv1B-a",
@@ -6750,7 +6750,7 @@
       },
       "cost": 150,
       "id": "jinlong_coupon-filter_core",
-      "name": "武陵调度券(分离芯)",
+      "name": "Wuling Stock Bill(Separator Core)",
       "category": "settlement",
       "row": 1,
       "icon": "zbLLpntwq",
@@ -6768,7 +6768,7 @@
       },
       "cost": 150,
       "id": "jinlong_coupon-xiranite_powder",
-      "name": "武陵调度券(息壤)",
+      "name": "Wuling Stock Bill(Xiranite)",
       "category": "settlement",
       "row": 1,
       "icon": "MN3RgE0QK",
@@ -6786,7 +6786,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-xiranite_enr_powder",
-      "name": "武陵调度券(重息壤)",
+      "name": "Wuling Stock Bill(Heavy Xiranite)",
       "category": "settlement",
       "row": 1,
       "icon": "TQnSxeYps",
@@ -6804,7 +6804,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-bottled_food_4",
-      "name": "武陵调度券(锦草软饮)",
+      "name": "Wuling Stock Bill(Jincao Drink)",
       "category": "settlement",
       "row": 2,
       "icon": "TqWZWVpY3",
@@ -6822,7 +6822,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-bottled_food_5",
-      "name": "武陵调度券(优质锦草软饮)",
+      "name": "Wuling Stock Bill(Jincao Tea)",
       "category": "settlement",
       "row": 2,
       "icon": "qA-EMB1fs",
@@ -6840,7 +6840,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-bottled_rec_hp_4",
-      "name": "武陵调度券(芽针针剂)",
+      "name": "Wuling Stock Bill(Yazhen Syringe [C])",
       "category": "settlement",
       "row": 2,
       "icon": "Sjdqh9m2X",
@@ -6858,7 +6858,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-bottled_rec_hp_5",
-      "name": "武陵调度券(优质芽针针剂)",
+      "name": "Wuling Stock Bill(Yazhen Syringe [A])",
       "category": "settlement",
       "row": 2,
       "icon": "VqJ8q3DQp",
@@ -6876,7 +6876,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-proc_battery_4",
-      "name": "武陵调度券(低容武陵电池)",
+      "name": "Wuling Stock Bill(LC Wuling Battery)",
       "category": "settlement",
       "row": 3,
       "icon": "vI10u14eE",
@@ -6894,7 +6894,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-proc_battery_5",
-      "name": "武陵调度券(中容武陵电池)",
+      "name": "Wuling Stock Bill(SC Wuling Battery)",
       "category": "settlement",
       "row": 3,
       "icon": "e13iR_HPS",
@@ -6912,7 +6912,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-activity_xiranite_lung",
-      "name": "武陵调度券(息壤龙泡泡)",
+      "name": "Wuling Stock Bill(Xiranite Chubby Lung)",
       "category": "settlement",
       "row": 4,
       "icon": "DxQbkoaDm",
@@ -6930,7 +6930,7 @@
       },
       "cost": 30,
       "id": "jinlong_coupon-activity_xiranite_enr_lung",
-      "name": "武陵调度券(重息壤龙泡泡)",
+      "name": "Wuling Stock Bill(Heavy Xiranite Chubby Lung)",
       "category": "settlement",
       "row": 4,
       "icon": "nvQgypPJO",
@@ -6951,7 +6951,7 @@
         "tools_asm_mc_1"
       ],
       "id": "activity_xiranite_lung",
-      "name": "息壤龙泡泡",
+      "name": "Xiranite Chubby Lung",
       "category": "activity",
       "row": 0,
       "icon": "activity_xiranite_lung"
@@ -6969,7 +6969,7 @@
         "tools_asm_mc_1"
       ],
       "id": "activity_xiranite_enr_lung",
-      "name": "重息壤龙泡泡",
+      "name": "Heavy Xiranite Chubby Lung",
       "category": "activity",
       "row": 0,
       "icon": "activity_xiranite_enr_lung"
@@ -6986,7 +6986,7 @@
         "furnance_1"
       ],
       "id": "activity_xiranite_nugget",
-      "name": "实验息壤块",
+      "name": "Proto Xiranite",
       "category": "activity",
       "row": 1,
       "icon": "activity_xiranite_nugget"
@@ -7003,7 +7003,7 @@
         "shaper_1"
       ],
       "id": "activity_xiranite_box",
-      "name": "实验龙泡泡外壳",
+      "name": "Proto Chubby Lung Shell",
       "category": "activity",
       "row": 1,
       "icon": "activity_xiranite_box"
@@ -7021,7 +7021,7 @@
         "tools_asm_mc_1"
       ],
       "id": "activity_copper_xiranite_tool",
-      "name": "实验铜骨骼",
+      "name": "Proto Cuprium Frame",
       "category": "activity",
       "row": 1,
       "icon": "activity_copper_xiranite_tool"
@@ -7039,7 +7039,7 @@
         "gas_reactor_1"
       ],
       "id": "activity_copper_poly_gas",
-      "name": "实验息壤铜气",
+      "name": "Proto Xiran-Cuprium Gas",
       "category": "activity",
       "row": 2,
       "icon": "InN_zV0Bo"
@@ -7057,7 +7057,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-activity_copper_poly_gas",
-      "name": "实验息壤铜气(固气转化机)",
+      "name": "Proto Xiran-Cuprium Gas(Solid-Gas Transmuting Unit)",
       "category": "activity",
       "row": 2,
       "icon": "mokYxBo_D"
@@ -7075,7 +7075,7 @@
         "phase_trans_2"
       ],
       "id": "phase_trans_2-activity_copper_poly",
-      "name": "实验息壤铜锭(固气转化机)",
+      "name": "Proto Xiran-Cuprium(Solid-Gas Transmuting Unit)",
       "category": "activity",
       "row": 2,
       "icon": "hOwR0Jem2"
@@ -7092,7 +7092,7 @@
         "cmpt_mc_1"
       ],
       "id": "activity_copper_poly_cmpt",
-      "name": "实验息壤铜零件",
+      "name": "Proto Xiran-Cuprium Part",
       "category": "activity",
       "row": 2,
       "icon": "activity_copper_poly_cmpt"
@@ -7109,7 +7109,7 @@
         "furnance_1"
       ],
       "id": "activity_xiranite_enr_nugget",
-      "name": "实验重息壤块",
+      "name": "Proto Heavy Xiranite",
       "category": "activity",
       "row": 2,
       "icon": "activity_xiranite_enr_nugget"
@@ -7127,7 +7127,7 @@
         "tools_asm_mc_1"
       ],
       "id": "activity_copper_poly_tool",
-      "name": "实验息壤铜骨骼",
+      "name": "Proto Xiran-Cuprium Frame",
       "category": "activity",
       "row": 2,
       "icon": "activity_copper_poly_tool"
@@ -7148,7 +7148,7 @@
         "jinlong"
       ],
       "id": "activity_xiranite_enr_box",
-      "name": "实验龙泡泡重壳",
+      "name": "Proto Chubby Lung Heavy Shell",
       "category": "activity",
       "row": 2,
       "icon": "activity_xiranite_enr_box"
@@ -7165,7 +7165,7 @@
         "bottled_food_1": 150
       },
       "id": "transfer_tundra_bottled_food_1",
-      "name": "柑实罐头",
+      "name": "Canned Citrome [C]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_food_1"
@@ -7182,7 +7182,7 @@
         "bottled_food_2": 75
       },
       "id": "transfer_tundra_bottled_food_2",
-      "name": "优质柑实罐头",
+      "name": "Canned Citrome [B]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_food_2"
@@ -7199,7 +7199,7 @@
         "bottled_food_3": 30
       },
       "id": "transfer_tundra_bottled_food_3",
-      "name": "精选柑实罐头",
+      "name": "Canned Citrome [A]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_food_3"
@@ -7216,7 +7216,7 @@
         "bottled_rec_hp_1": 150
       },
       "id": "transfer_tundra_bottled_rec_hp_1",
-      "name": "荞愈胶囊",
+      "name": "Buck Capsule [C]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_rec_hp_1"
@@ -7233,7 +7233,7 @@
         "bottled_rec_hp_2": 75
       },
       "id": "transfer_tundra_bottled_rec_hp_2",
-      "name": "优质荞愈胶囊",
+      "name": "Buck Capsule [B]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_rec_hp_2"
@@ -7250,7 +7250,7 @@
         "bottled_rec_hp_3": 30
       },
       "id": "transfer_tundra_bottled_rec_hp_3",
-      "name": "精选荞愈胶囊",
+      "name": "Buck Capsule [A]",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "bottled_rec_hp_3"
@@ -7267,7 +7267,7 @@
         "carbon_enr": 1500
       },
       "id": "transfer_tundra_carbon_enr",
-      "name": "稳定碳块",
+      "name": "Stabilized Carbon",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "carbon_enr"
@@ -7284,7 +7284,7 @@
         "carbon_enr_powder": 1500
       },
       "id": "transfer_tundra_carbon_enr_powder",
-      "name": "致密碳粉末",
+      "name": "Dense Carbon Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "carbon_enr_powder"
@@ -7301,7 +7301,7 @@
         "carbon_mtl": 1500
       },
       "id": "transfer_tundra_carbon_mtl",
-      "name": "碳块",
+      "name": "Carbon",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "carbon_mtl"
@@ -7318,7 +7318,7 @@
         "carbon_powder": 1500
       },
       "id": "transfer_tundra_carbon_powder",
-      "name": "碳粉末",
+      "name": "Carbon Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "carbon_powder"
@@ -7335,7 +7335,7 @@
         "crystal_enr": 750
       },
       "id": "transfer_tundra_crystal_enr",
-      "name": "密制晶体",
+      "name": "Packed Origocrust",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "crystal_enr"
@@ -7352,7 +7352,7 @@
         "crystal_enr_powder": 750
       },
       "id": "transfer_tundra_crystal_enr_powder",
-      "name": "致密晶体粉末",
+      "name": "Dense Origocrust Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "crystal_enr_powder"
@@ -7369,7 +7369,7 @@
         "crystal_powder": 1500
       },
       "id": "transfer_tundra_crystal_powder",
-      "name": "晶体外壳粉末",
+      "name": "Origocrust Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "crystal_powder"
@@ -7386,7 +7386,7 @@
         "crystal_shell": 1500
       },
       "id": "transfer_tundra_crystal_shell",
-      "name": "晶体外壳",
+      "name": "Origocrust",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "crystal_shell"
@@ -7403,7 +7403,7 @@
         "equip_script_1": 150
       },
       "id": "transfer_tundra_equip_script_1",
-      "name": "紫晶装备原件",
+      "name": "Amethyst Component",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "equip_script_1"
@@ -7420,7 +7420,7 @@
         "equip_script_2": 75
       },
       "id": "transfer_tundra_equip_script_2",
-      "name": "蓝铁装备原件",
+      "name": "Ferrium Component",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "equip_script_2"
@@ -7437,7 +7437,7 @@
         "equip_script_3": 30
       },
       "id": "transfer_tundra_equip_script_3",
-      "name": "高晶装备原件",
+      "name": "Cryston Component",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "equip_script_3"
@@ -7454,7 +7454,7 @@
         "glass_bottle": 750
       },
       "id": "transfer_tundra_glass_bottle",
-      "name": "紫晶质瓶",
+      "name": "Amethyst Bottle",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "glass_bottle"
@@ -7471,7 +7471,7 @@
         "glass_cmpt": 1500
       },
       "id": "transfer_tundra_glass_cmpt",
-      "name": "紫晶零件",
+      "name": "Amethyst Part",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "glass_cmpt"
@@ -7488,7 +7488,7 @@
         "glass_enr_bottle": 300
       },
       "id": "transfer_tundra_glass_enr_bottle",
-      "name": "高晶质瓶",
+      "name": "Cryston Bottle",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "glass_enr_bottle"
@@ -7505,7 +7505,7 @@
         "glass_enr_cmpt": 750
       },
       "id": "transfer_tundra_glass_enr_cmpt",
-      "name": "高晶零件",
+      "name": "Cryston Part",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "glass_enr_cmpt"
@@ -7522,7 +7522,7 @@
         "iron_bottle": 750
       },
       "id": "transfer_tundra_iron_bottle",
-      "name": "蓝铁瓶",
+      "name": "Ferrium Bottle",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_bottle"
@@ -7539,7 +7539,7 @@
         "iron_cmpt": 1500
       },
       "id": "transfer_tundra_iron_cmpt",
-      "name": "铁制零件",
+      "name": "Ferrium Part",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_cmpt"
@@ -7556,7 +7556,7 @@
         "iron_enr": 750
       },
       "id": "transfer_tundra_iron_enr",
-      "name": "钢块",
+      "name": "Steel",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_enr"
@@ -7573,7 +7573,7 @@
         "iron_enr_bottle": 300
       },
       "id": "transfer_tundra_iron_enr_bottle",
-      "name": "钢质瓶",
+      "name": "Steel Bottle",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_enr_bottle"
@@ -7590,7 +7590,7 @@
         "iron_enr_cmpt": 750
       },
       "id": "transfer_tundra_iron_enr_cmpt",
-      "name": "钢制零件",
+      "name": "Steel Part",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_enr_cmpt"
@@ -7607,7 +7607,7 @@
         "iron_enr_powder": 750
       },
       "id": "transfer_tundra_iron_enr_powder",
-      "name": "致密蓝铁粉末",
+      "name": "Dense Ferrium Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_enr_powder"
@@ -7624,7 +7624,7 @@
         "iron_nugget": 1500
       },
       "id": "transfer_tundra_iron_nugget",
-      "name": "蓝铁块",
+      "name": "Ferrium",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_nugget"
@@ -7641,7 +7641,7 @@
         "iron_powder": 1500
       },
       "id": "transfer_tundra_iron_powder",
-      "name": "蓝铁粉末",
+      "name": "Ferrium Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "iron_powder"
@@ -7658,7 +7658,7 @@
         "originium_enr_powder": 1500
       },
       "id": "transfer_tundra_originium_enr_powder",
-      "name": "致密源石粉末",
+      "name": "Dense Originium Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "originium_enr_powder"
@@ -7675,7 +7675,7 @@
         "originium_powder": 1500
       },
       "id": "transfer_tundra_originium_powder",
-      "name": "源石粉末",
+      "name": "Originium Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "originium_powder"
@@ -7692,7 +7692,7 @@
         "plant_bbflower_1": 1500
       },
       "id": "transfer_tundra_plant_bbflower_1",
-      "name": "酮化灌木",
+      "name": "Aketine",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_bbflower_1"
@@ -7709,7 +7709,7 @@
         "plant_bbflower_powder_1": 1500
       },
       "id": "transfer_tundra_plant_bbflower_powder_1",
-      "name": "酮化灌木粉末",
+      "name": "Aketine Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_bbflower_powder_1"
@@ -7726,7 +7726,7 @@
         "plant_bbflower_seed_1": 1500
       },
       "id": "transfer_tundra_plant_bbflower_seed_1",
-      "name": "酮化树种",
+      "name": "Aketine Seed",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_bbflower_seed_1"
@@ -7743,7 +7743,7 @@
         "plant_grass_1": 1500
       },
       "id": "transfer_tundra_plant_grass_1",
-      "name": "锦草",
+      "name": "Jincao",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_1"
@@ -7760,7 +7760,7 @@
         "plant_grass_2": 1500
       },
       "id": "transfer_tundra_plant_grass_2",
-      "name": "芽针",
+      "name": "Yazhen",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_2"
@@ -7777,7 +7777,7 @@
         "plant_grass_powder_1": 1500
       },
       "id": "transfer_tundra_plant_grass_powder_1",
-      "name": "锦草粉末",
+      "name": "Jincao Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_powder_1"
@@ -7794,7 +7794,7 @@
         "plant_grass_powder_2": 1500
       },
       "id": "transfer_tundra_plant_grass_powder_2",
-      "name": "芽针粉末",
+      "name": "Yazhen Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_powder_2"
@@ -7811,7 +7811,7 @@
         "plant_grass_seed_1": 1500
       },
       "id": "transfer_tundra_plant_grass_seed_1",
-      "name": "锦草种子",
+      "name": "Jincao Seed",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_seed_1"
@@ -7828,7 +7828,7 @@
         "plant_grass_seed_2": 1500
       },
       "id": "transfer_tundra_plant_grass_seed_2",
-      "name": "芽针种子",
+      "name": "Yazhen Seeds",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_grass_seed_2"
@@ -7845,7 +7845,7 @@
         "plant_moss_1": 1500
       },
       "id": "transfer_tundra_plant_moss_1",
-      "name": "荞花",
+      "name": "Buckflower",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_1"
@@ -7862,7 +7862,7 @@
         "plant_moss_2": 1500
       },
       "id": "transfer_tundra_plant_moss_2",
-      "name": "柑实",
+      "name": "Citrome",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_2"
@@ -7879,7 +7879,7 @@
         "plant_moss_3": 1500
       },
       "id": "transfer_tundra_plant_moss_3",
-      "name": "砂叶",
+      "name": "Sandleaf",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_3"
@@ -7896,7 +7896,7 @@
         "plant_moss_enr_powder_1": 1500
       },
       "id": "transfer_tundra_plant_moss_enr_powder_1",
-      "name": "细磨荞花粉末",
+      "name": "Ground Buckflower Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_enr_powder_1"
@@ -7913,7 +7913,7 @@
         "plant_moss_enr_powder_2": 1500
       },
       "id": "transfer_tundra_plant_moss_enr_powder_2",
-      "name": "细磨柑实粉末",
+      "name": "Ground Citrome Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_enr_powder_2"
@@ -7930,7 +7930,7 @@
         "plant_moss_powder_1": 1500
       },
       "id": "transfer_tundra_plant_moss_powder_1",
-      "name": "荞花粉末",
+      "name": "Buckflower Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_powder_1"
@@ -7947,7 +7947,7 @@
         "plant_moss_powder_2": 1500
       },
       "id": "transfer_tundra_plant_moss_powder_2",
-      "name": "柑实粉末",
+      "name": "Citrome Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_powder_2"
@@ -7964,7 +7964,7 @@
         "plant_moss_powder_3": 1500
       },
       "id": "transfer_tundra_plant_moss_powder_3",
-      "name": "砂叶粉末",
+      "name": "Sandleaf Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_powder_3"
@@ -7981,7 +7981,7 @@
         "plant_moss_seed_1": 1500
       },
       "id": "transfer_tundra_plant_moss_seed_1",
-      "name": "荞花种子",
+      "name": "Buckflower Seed",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_seed_1"
@@ -7998,7 +7998,7 @@
         "plant_moss_seed_2": 1500
       },
       "id": "transfer_tundra_plant_moss_seed_2",
-      "name": "柑实种子",
+      "name": "Citrome Seed",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_seed_2"
@@ -8015,7 +8015,7 @@
         "plant_moss_seed_3": 1500
       },
       "id": "transfer_tundra_plant_moss_seed_3",
-      "name": "砂叶种子",
+      "name": "Sandleaf Seed",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "plant_moss_seed_3"
@@ -8032,7 +8032,7 @@
         "proc_battery_1": 75
       },
       "id": "transfer_tundra_proc_battery_1",
-      "name": "低容谷地电池",
+      "name": "LC Valley Battery",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "proc_battery_1"
@@ -8049,7 +8049,7 @@
         "proc_battery_2": 75
       },
       "id": "transfer_tundra_proc_battery_2",
-      "name": "中容谷地电池",
+      "name": "SC Valley Battery",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "proc_battery_2"
@@ -8066,7 +8066,7 @@
         "proc_battery_3": 30
       },
       "id": "transfer_tundra_proc_battery_3",
-      "name": "高容谷地电池",
+      "name": "HC Valley Battery",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "proc_battery_3"
@@ -8083,7 +8083,7 @@
         "proc_bomb_1": 300
       },
       "id": "transfer_tundra_proc_bomb_1",
-      "name": "工业爆炸物",
+      "name": "Industrial Explosive",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "proc_bomb_1"
@@ -8100,7 +8100,7 @@
         "quartz_enr": 750
       },
       "id": "transfer_tundra_quartz_enr",
-      "name": "高晶纤维",
+      "name": "Cryston Fiber",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "quartz_enr"
@@ -8117,7 +8117,7 @@
         "quartz_enr_powder": 750
       },
       "id": "transfer_tundra_quartz_enr_powder",
-      "name": "高晶粉末",
+      "name": "Cryston Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "quartz_enr_powder"
@@ -8134,7 +8134,7 @@
         "quartz_glass": 1500
       },
       "id": "transfer_tundra_quartz_glass",
-      "name": "紫晶纤维",
+      "name": "Amethyst Fiber",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "quartz_glass"
@@ -8151,7 +8151,7 @@
         "quartz_powder": 1500
       },
       "id": "transfer_tundra_quartz_powder",
-      "name": "紫晶粉末",
+      "name": "Amethyst Powder",
       "category": "__domain_transfer",
       "row": 999,
       "icon": "quartz_powder"
@@ -8169,7 +8169,7 @@
         "mining"
       ],
       "id": "__miner_water",
-      "name": "清水",
+      "name": "Clean Water",
       "category": "__internal",
       "row": 999,
       "icon": "liquid_water"
@@ -8178,12 +8178,12 @@
   "locations": [
     {
       "id": "tundra",
-      "name": "四号谷地",
+      "name": "Valley IV",
       "icon": "tundra"
     },
     {
       "id": "jinlong",
-      "name": "武陵",
+      "name": "Wuling",
       "icon": "jinlong"
     }
   ],

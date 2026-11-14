@@ -31,6 +31,7 @@ import {
 import { cva } from 'class-variance-authority';
 import { map } from 'rxjs';
 
+import product from '/public/endfield/product.json';
 import { Button } from '~/components/button/button';
 import { Checkbox } from '~/components/checkbox/checkbox';
 import { ColumnsDialog } from '~/components/columns-dialog/columns-dialog';
@@ -39,11 +40,6 @@ import { FlowSettingsDialog } from '~/components/flow-settings-dialog/flow-setti
 import { FormField } from '~/components/form-field/form-field';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-  PRODUCT_PROFILE,
-} from '~/extensions/product-profile';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { glpkAlgorithmOptions } from '~/state/preferences/glpk-algorithm';
 import { powerUnitOptions } from '~/state/preferences/power-unit';
@@ -51,6 +47,7 @@ import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { themeOptions } from '~/state/preferences/theme';
 import { RouterSync } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
+import { languageOptions } from '~/translate/language';
 import { TranslatePipe } from '~/translate/translate-pipe';
 import { WindowClient } from '~/utils/window-client';
 
@@ -96,8 +93,7 @@ export class Preferences {
   protected readonly routerSync = inject(RouterSync);
   protected readonly settingsStore = inject(SettingsStore);
   private readonly windowClient = inject(WindowClient);
-  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
-  protected readonly product = inject(PRODUCT_PROFILE);
+  protected readonly product = product;
 
   readonly open = signal(false);
 
@@ -138,7 +134,7 @@ export class Preferences {
   protected readonly faTrash = faTrash;
   protected readonly faXmark = faXmark;
   protected readonly FlowSettingsDialog = FlowSettingsDialog;
-  protected readonly languageOptions = this.product.languages;
+  protected readonly languageOptions = languageOptions;
   protected readonly powerUnitOptions = powerUnitOptions;
   protected readonly preferences = this.preferencesStore.state;
   protected readonly themeOptions = themeOptions;
@@ -149,7 +145,9 @@ export class Preferences {
     this.confirm
       .open({
         header: 'preferences.resetHeader',
-        message: 'preferences.resetMessage',
+        message: this.preferencesStore.restoreError()
+          ? 'endfield.recovery.resetPreferences'
+          : 'preferences.resetMessage',
         icon: faExclamationTriangle,
         actions: [
           { text: 'yes', value: 1, icon: faRotateLeft },
@@ -160,9 +158,7 @@ export class Preferences {
       .subscribe((res) => {
         if (!this.lifecycle.ready()) return;
         if (res === 1) {
-          // Do not reset saved states
-          const { states, ...state } = cloneDefaults(this.defaults).preferences;
-          this.preferencesStore.apply(state);
+          this.preferencesStore.resetPreferences();
         } else if (res === 2) {
           window.localStorage.clear();
           this.router

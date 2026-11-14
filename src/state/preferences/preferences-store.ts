@@ -1,25 +1,130 @@
-import { DOCUMENT, effect, inject, Service } from '@angular/core';
+import { DOCUMENT, effect, inject, Service, signal } from '@angular/core';
 
-import {
-  cloneDefaults,
-  EFFECTIVE_DEFAULTS,
-  PRODUCT_PROFILE,
-} from '~/extensions/product-profile';
+import { cloneDefaults, EFFECTIVE_DEFAULTS } from '~/extensions/defaults';
 import { Store } from '~/state/store';
+import { languageOptions } from '~/translate/language';
 import { applyBackgroundLightness, applyHue } from '~/utils/color';
 import { log } from '~/utils/log';
 import { spread } from '~/utils/object';
-import { storedSignal, storeValue } from '~/utils/stored-signal';
+import { getStoredValue, storeValue } from '~/utils/stored-signal';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
-import { PreferencesState } from './preferences-state';
+import { initialPreferencesState, PreferencesState } from './preferences-state';
+
+function object(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Validate one current document before loading any of its fields. */
+function currentPreferences(value: unknown): Partial<PreferencesState> {
+  const fail = (): never => {
+    throw new Error('Invalid preferences');
+  };
+  if (!object(value)) return fail();
+  for (const [key, entry] of Object.entries(value)) {
+    if (
+      key !== 'backgroundLightness' &&
+      !Object.hasOwn(initialPreferencesState, key)
+    )
+      return fail();
+    switch (key) {
+      case 'language':
+        if (!languageOptions.some((option) => option.value === entry)) fail();
+        break;
+      case 'powerUnit':
+        if (![0, 1, 2, 3].includes(entry as number)) fail();
+        break;
+      case 'theme':
+        if (!['system', 'light', 'dark'].includes(entry as string)) fail();
+        break;
+      case 'glpkAlgorithm':
+        if (entry !== 'simplex' && entry !== 'exact') fail();
+        break;
+      case 'hue':
+      case 'chroma':
+      case 'backgroundLightness':
+        if (typeof entry !== 'number' || !Number.isFinite(entry)) fail();
+        break;
+      case 'states':
+        if (
+          !object(entry) ||
+          Object.values(entry).some(
+            (archives) =>
+              !object(archives) ||
+              Object.values(archives).some((url) => typeof url !== 'string'),
+          )
+        )
+          fail();
+        break;
+      case 'columns':
+        if (!object(entry)) return fail();
+        for (const [column, settings] of Object.entries(entry)) {
+          if (
+            !Object.hasOwn(initialPreferencesState.columns, column) ||
+            !object(settings)
+          )
+            return fail();
+          if (
+            Object.keys(settings).some(
+              (field) => field !== 'show' && field !== 'precision',
+            ) ||
+            typeof settings['show'] !== 'boolean' ||
+            (settings['precision'] !== null &&
+              !(
+                typeof settings['precision'] === 'number' &&
+                Number.isInteger(settings['precision']) &&
+                settings['precision'] >= 0 &&
+                settings['precision'] <= 100
+              ))
+          )
+            fail();
+        }
+        break;
+      case 'flowSettings':
+        if (!object(entry)) return fail();
+        for (const [field, setting] of Object.entries(entry)) {
+          const valid =
+            field === 'diagram'
+              ? [0, 1].includes(setting as number)
+              : field === 'linkSize' || field === 'linkText'
+                ? [0, 1, 2, 3, 4, 5].includes(setting as number)
+                : field === 'sankeyAlign'
+                  ? [0, 1, 2, 3].includes(setting as number)
+                  : field === 'hideExcluded'
+                    ? typeof setting === 'boolean'
+                    : field === 'elkAlgorithm' &&
+                      ['layered', 'force', 'stress'].includes(
+                        setting as string,
+                      );
+          if (!valid) fail();
+        }
+        break;
+      case 'sections':
+        if (
+          !object(entry) ||
+          Object.entries(entry).some(
+            ([section, show]) =>
+              !Object.hasOwn(initialPreferencesState.sections, section) ||
+              typeof show !== 'boolean',
+          )
+        )
+          fail();
+        break;
+      default:
+        if (typeof entry !== 'boolean') fail();
+    }
+  }
+  return value;
+}
 
 @Service()
 export class PreferencesStore extends Store<PreferencesState> {
   private readonly document = inject(DOCUMENT);
-  readonly migrationWarnings: string[] = [];
+  private readonly defaults = inject(EFFECTIVE_DEFAULTS);
+  readonly restoreError = signal<string | undefined>(undefined);
+  private readonly canPersist = signal(true);
 
-  readonly stored = storedSignal('preferences');
+  readonly stored = signal(getStoredValue('preferences'));
 
   readonly bypassLanding = this.select('bypassLanding');
   readonly columns = this.select('columns');
@@ -43,28 +148,27 @@ export class PreferencesStore extends Store<PreferencesState> {
       'flowSettings',
     ]);
     const stored = this.stored();
-    let canPersist = true;
-    if (stored) {
+    if (stored != null) {
       try {
-        const restored = inject(PRODUCT_PROFILE).migratePreferences(
-          JSON.parse(stored),
-        );
-        this.migrationWarnings.push(...restored.warnings);
-        if (restored.warnings.length)
-          canPersist = this.backupPreferences(stored);
-        this.load(restored.state);
+        const restored = currentPreferences(JSON.parse(stored));
+        const defaults = cloneDefaults(inject(EFFECTIVE_DEFAULTS)).preferences;
+        this.set({
+          ...defaults,
+          ...restored,
+          columns: { ...defaults.columns, ...restored.columns },
+          flowSettings: { ...defaults.flowSettings, ...restored.flowSettings },
+          sections: { ...defaults.sections, ...restored.sections },
+        });
       } catch (ex) {
-        console.warn('Failed to parse stored preferences', ex);
-        this.migrationWarnings.push('Failed to parse stored preferences');
-        canPersist = this.backupPreferences(stored);
+        console.warn('Failed to restore stored preferences', ex);
+        this.restoreError.set('Invalid preferences');
+        this.canPersist.set(false);
       }
     }
 
-    if (this.migrationWarnings.length)
-      console.warn('Preferences recovery:', this.migrationWarnings);
-
     effect(() => {
-      if (canPersist) storeValue('preferences', JSON.stringify(this.state()));
+      if (this.canPersist())
+        storeValue('preferences', JSON.stringify(this.state()));
     });
 
     effect(() => {
@@ -99,22 +203,14 @@ export class PreferencesStore extends Store<PreferencesState> {
     });
   }
 
-  /** Keep every distinct damaged original available for manual recovery. */
-  private backupPreferences(raw: string): boolean {
-    try {
-      let key = 'preferences.recovery';
-      let index = 0;
-      let previous = localStorage.getItem(key);
-      while (previous != null && previous !== raw) {
-        key = `preferences.recovery.${++index}`;
-        previous = localStorage.getItem(key);
-      }
-      if (previous == null) localStorage.setItem(key, raw);
-      return true;
-    } catch (ex) {
-      console.warn('Failed to back up stored preferences', ex);
-      return false;
-    }
+  resetPreferences(preserveStates = true): void {
+    const defaults = cloneDefaults(this.defaults).preferences;
+    this.set({
+      ...defaults,
+      ...(preserveStates ? { states: this.states() } : {}),
+    });
+    this.restoreError.set(undefined);
+    this.canPersist.set(true);
   }
 
   saveState(modId: string, id: string, value: string): void {

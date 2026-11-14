@@ -1,6 +1,6 @@
 import { computed, inject, Service } from '@angular/core';
 
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
+import { resourceFromObjectiveId } from '~/endfield/domain/model';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
@@ -29,7 +29,6 @@ export class FlowBuilder {
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly translate = inject(Translate);
-  private readonly presentation = inject(PRESENTATION_EXTENSION);
 
   readonly flowData = computed(() => {
     const steps = this.objectivesStore.steps();
@@ -218,11 +217,9 @@ export class FlowBuilder {
           ? data.iconRecord.quality[recipeIcon.quality.id]
           : undefined;
         const id = this.recipeNodeId(step.recipeId, step.recipeObjectiveId);
-        const sourceLabel = this.presentation.sourceLabel(step);
-        const owner = this.presentation.owner(step);
-        const objectiveLabel = sourceLabel
-          ? this.translate.get(sourceLabel)
-          : owner?.kind !== 'extension' && step.recipeObjectiveId
+        const objectiveLabel = resourceFromObjectiveId(step.recipeObjectiveId)
+          ? this.translate.get('endfield.resources.source')
+          : step.recipeObjectiveId
             ? `#${step.recipeObjectiveId}`
             : undefined;
         flow.nodes.push({

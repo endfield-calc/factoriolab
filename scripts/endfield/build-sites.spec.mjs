@@ -178,7 +178,7 @@ async function file(root, name, contents) {
   await writeFile(target, contents);
 }
 
-test('build prepares translations before Angular and packages only after success', async () => {
+test('build prepares assets before Angular and packages only after success', async () => {
   const calls = [];
   await buildSites({
     base: '/nested path/deeper/',
@@ -187,7 +187,7 @@ test('build prepares translations before Angular and packages only after success
     pack: async (options) => calls.push(['package', options.base]),
   });
   assert.deepEqual(calls, [
-    ['prepare', path.join(workspace, '.tmp/endfield-assets/i18n')],
+    ['prepare', path.join(workspace, '.tmp/endfield-assets')],
     ['build', base],
     ['package', base],
   ]);

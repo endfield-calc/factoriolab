@@ -1,3 +1,6 @@
+import rawData from '/public/data/aef/data.json';
+import { ModData } from '~/data/schema/mod-data';
+import { parseRecipe } from '~/data/schema/recipe';
 import type {
   CalculationVariable,
   LinearRule,
@@ -7,12 +10,40 @@ import { Rational, rational } from '~/rational/rational';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 
-import { createEndfieldState, ovenId, resourceIds } from './model';
 import {
-  compileEndfieldRules,
+  createEndfieldState,
+  EndfieldState,
+  ovenId,
+  resourceIds,
+} from './model';
+import {
+  compileEndfieldRules as compileRules,
   deriveEndfieldObjectives,
   tundraTransferRecipeIds,
 } from './rules';
+
+const transferIds = tundraTransferRecipeIds(
+  Object.fromEntries(
+    (rawData as unknown as ModData).recipes.map((raw) => [
+      raw.id,
+      parseRecipe(raw),
+    ]),
+  ),
+);
+
+function compileEndfieldRules(
+  state: EndfieldState,
+  variables: readonly CalculationVariable[],
+  availability?: {
+    readonly recipeIds: ReadonlySet<string>;
+    readonly machineIds: ReadonlySet<string>;
+  },
+): ModelRules {
+  return compileRules(state, variables, {
+    transferRecipeIds: transferIds,
+    availability,
+  });
+}
 
 function variable(
   kind: 'recipe' | 'objective',
@@ -78,16 +109,16 @@ describe('Endfield objective declarations', () => {
         rates: { ...initial.resourceLimits.rates, copper_ore: rate },
       },
       resourceRecipeSettings: {
-        copper_ore: { machineId: 'chosen-miner', modules: [{ id: 'module' }] },
+        copper_ore: { machineId: 'chosen-miner', overclock: rational(125) },
       },
     });
     const output = positive.find(
       (d) => d.objective.id === 'ef:resource:copper_ore',
     )!;
-    expect(output.owner).toBe('resource:copper_ore');
     expect(output.objective.targetId).toBe('copper_ore-liquid_water');
     expect(output.objective.type).toBe(ObjectiveType.Output);
     expect(output.objective.machineId).toBe('chosen-miner');
+    expect(output.objective.overclock).toEqual(rational(125));
     expect(output.fixedOutput).toEqual({
       itemId: 'copper_ore',
       perSecond: rate,
@@ -180,10 +211,31 @@ describe('Endfield model rules', () => {
     expect(compileEndfieldRules(enabled, [water]).integers).toEqual([]);
   });
 
+  it('identifies transfers from positive original key input rather than recipe names', () => {
+    const ids = tundraTransferRecipeIds({
+      renamed: { id: 'renamed', in: { domain_key_tundra: rational.one } },
+      transfer_tundra_fake: { id: 'transfer_tundra_fake', in: {} },
+      zero: { id: 'zero', in: { domain_key_tundra: rational.zero } },
+      negative: { id: 'negative', in: { domain_key_tundra: rational(-1) } },
+    });
+    expect(ids).toEqual(new Set(['renamed']));
+    const result = compileRules(
+      createEndfieldState(),
+      [
+        variable('recipe', 'real', 'renamed'),
+        variable('objective', 'fake', 'transfer_tundra_fake'),
+      ],
+      { transferRecipeIds: ids },
+    );
+    expect(result.integers).toEqual([{ kind: 'recipe', id: 'real' }]);
+    expect(
+      rule(result, 'ef:transfer:tundra').terms.map((term) => term.ref.id),
+    ).toEqual(['real']);
+  });
+
   it('enforces every fixed transfer recipe as an integer with a shared enabled or disabled budget', () => {
-    expect(tundraTransferRecipeIds.length).toBe(59);
-    expect(new Set(tundraTransferRecipeIds).size).toBe(59);
-    const variables = tundraTransferRecipeIds.map((id, index) =>
+    expect(transferIds.size).toBe(59);
+    const variables = [...transferIds].map((id, index) =>
       variable(index % 2 ? 'objective' : 'recipe', `v${index}`, id),
     );
     variables.push(variable('recipe', 'unlisted', 'transfer_tundra_unlisted'));

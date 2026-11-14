@@ -1,7 +1,7 @@
 import { inject, Service } from '@angular/core';
 import { saveAs } from 'file-saver';
 
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import manifest from '/public/endfield/product.json';
 import { FlowData } from '~/flow/flow-data';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
@@ -24,7 +24,6 @@ export class Exporter {
   private readonly itemsStore = inject(ItemsStore);
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
-  private readonly product = inject(PRODUCT_PROFILE);
 
   private readonly itemsState = this.itemsStore.settings;
   private readonly recipesState = this.recipesStore.settings;
@@ -37,14 +36,11 @@ export class Exporter {
     const csv = json.map((row) => fields.map((f) => row[f]).join(','));
     csv.unshift(fields.join(','));
     csv.unshift(`"${window.location.href}"`);
-    this.saveAsCsv(csv.join('\r\n'), `${this.product.exportPrefix}_list`);
+    this.saveAsCsv(csv.join('\r\n'), `${manifest.exportPrefix}_list`);
   }
 
   flowToJson(flowData: FlowData): void {
-    this.saveAsJson(
-      JSON.stringify(flowData),
-      `${this.product.exportPrefix}_flow`,
-    );
+    this.saveAsJson(JSON.stringify(flowData), `${manifest.exportPrefix}_flow`);
   }
 
   // istanbul ignore next: Don't test dependencies (file-saver)

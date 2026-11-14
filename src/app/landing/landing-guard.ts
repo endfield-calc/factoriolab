@@ -2,14 +2,14 @@ import { inject } from '@angular/core';
 import { CanActivateFn, PRIMARY_OUTLET, Router } from '@angular/router';
 
 import { DEFAULT_MOD } from '~/data/datasets';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { PINNED_MOD_ID } from '~/extensions/defaults';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RouterSync } from '~/state/router/router-sync';
 
 export const landingGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const product = inject(PRODUCT_PROFILE);
-  const defaultId = product.defaultModId ?? DEFAULT_MOD;
+  const pinnedModId = inject(PINNED_MOD_ID);
+  const defaultId = pinnedModId ?? DEFAULT_MOD;
   const bypassLanding = inject(PreferencesStore).bypassLanding();
   if (bypassLanding) {
     const queryState = inject(RouterSync).stored();
@@ -21,11 +21,7 @@ export const landingGuard: CanActivateFn = (route) => {
     ) {
       const cached = router.parseUrl(queryState);
       const id = cached.root.children[PRIMARY_OUTLET]?.segments[0]?.path;
-      if (
-        product.allowedModIds == null ||
-        (id != null && product.allowedModIds.includes(id))
-      )
-        return cached;
+      if (pinnedModId == null || id === pinnedModId) return cached;
     }
 
     // Navigate to list, preserving query params from target route

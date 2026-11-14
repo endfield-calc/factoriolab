@@ -1,4 +1,3 @@
-import { NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
@@ -7,11 +6,12 @@ import {
   faList,
 } from '@fortawesome/free-solid-svg-icons';
 
+import manifest from '/public/endfield/product.json';
 import { TabData } from '~/components/tabs/tab-data';
 import { Tabs } from '~/components/tabs/tabs';
 import { Release } from '~/data/release';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { EndfieldGuide } from '~/endfield/ui/guide';
+import { EndfieldResources } from '~/endfield/ui/resources';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -25,7 +25,8 @@ import { Settings } from './settings/settings';
   selector: 'lab-main',
   imports: [
     RouterOutlet,
-    NgComponentOutlet,
+    EndfieldGuide,
+    EndfieldResources,
     Header,
     Objectives,
     Preferences,
@@ -40,9 +41,8 @@ import { Settings } from './settings/settings';
 export class Main {
   private readonly objectivesStore = inject(ObjectivesStore);
   protected readonly release = inject(Release);
-  protected readonly presentation = inject(PRESENTATION_EXTENSION);
   protected readonly lifecycle = inject(WorkspaceLifecycle);
-  protected readonly product = inject(PRODUCT_PROFILE);
+  protected readonly product = manifest;
 
   protected readonly result = this.objectivesStore.matrixResult;
   protected readonly tabs: TabData[] = [

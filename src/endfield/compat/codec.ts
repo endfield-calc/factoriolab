@@ -1,5 +1,4 @@
 import { ModData } from '~/data/schema/mod-data';
-import { Recipe, RecipeJson } from '~/data/schema/recipe';
 import {
   createEndfieldState,
   EndfieldState,
@@ -8,44 +7,11 @@ import {
   resourceIds,
   resourceOwner,
   resourceRecipes,
+  SourceRecipeSettings,
 } from '~/endfield/domain/model';
 import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { Rational, rational } from '~/rational/rational';
-import { BeaconSettings } from '~/state/beacon-settings';
-import { ModuleSettings } from '~/state/module-settings';
 import { RecipeState } from '~/state/recipes/recipe-state';
-import { CostSettings } from '~/state/settings/cost-settings';
-
-export const historicalCostDefaults: Readonly<
-  Pick<CostSettings, 'unproduceable' | 'recycling'>
-> = Object.freeze({
-  unproduceable: rational(1000000n),
-  recycling: rational(1000n),
-});
-
-/** Recognize the original machine identity from migrated settlement data. */
-export function settlementRecipeAlias(
-  recipe:
-    | Pick<Recipe | RecipeJson, 'category' | 'locations' | 'out' | 'producers'>
-    | undefined,
-): string | undefined {
-  if (recipe?.producers != null || recipe?.category !== 'settlement') return;
-  const outputs = Object.keys(recipe.out);
-  if (outputs.length !== 1) return;
-  const location =
-    outputs[0] === 'tundra_coupon'
-      ? 'tundra'
-      : outputs[0] === 'jinlong_coupon'
-        ? 'jinlong'
-        : undefined;
-  if (
-    location == null ||
-    recipe.locations?.length !== 1 ||
-    recipe.locations[0] !== location
-  )
-    return;
-  return `settlement-${location}_coupon`;
-}
 
 export function invalid(
   field: string,
@@ -136,50 +102,6 @@ export function validateEntity(
     invalid(field, `Unknown ${kind} ID at ${field}: ${String(id)}`);
 }
 
-function modules(
-  value: unknown,
-  data: ModData,
-  field: string,
-): ModuleSettings[] {
-  if (!Array.isArray(value)) invalid(field, `Expected an array at ${field}`);
-  return value.map((entry: unknown, index: number) => {
-    const path = `${field}.${index}`;
-    const obj = record(entry, path, ['id', 'count']);
-    if ('id' in obj) validateEntity(data, obj['id'], 'module', `${path}.id`);
-    return {
-      ...('id' in obj ? { id: obj['id'] as string } : {}),
-      ...('count' in obj
-        ? { count: parseNonnegative(obj['count'], `${path}.count`) }
-        : {}),
-    };
-  });
-}
-
-function beacons(
-  value: unknown,
-  data: ModData,
-  field: string,
-): BeaconSettings[] {
-  if (!Array.isArray(value)) invalid(field, `Expected an array at ${field}`);
-  return value.map((entry: unknown, index: number) => {
-    const path = `${field}.${index}`;
-    const obj = record(entry, path, ['id', 'count', 'total', 'modules']);
-    if ('id' in obj) validateEntity(data, obj['id'], 'beacon', `${path}.id`);
-    return {
-      ...('id' in obj ? { id: obj['id'] as string } : {}),
-      ...('count' in obj
-        ? { count: parseNonnegative(obj['count'], `${path}.count`) }
-        : {}),
-      ...('total' in obj
-        ? { total: parseNonnegative(obj['total'], `${path}.total`) }
-        : {}),
-      ...('modules' in obj
-        ? { modules: modules(obj['modules'], data, `${path}.modules`) }
-        : {}),
-    };
-  });
-}
-
 /** Validate actual entity references for either ordinary or derived settings. */
 export function validateRecipeReferences(
   settings: RecipeState,
@@ -196,11 +118,7 @@ export function validateRecipeReferences(
   if (settings.machineId != null) {
     validateEntity(data, settings.machineId, 'machine', `${field}.machineId`);
     const recipe = data.recipes.find((entry) => entry.id === recipeId);
-    if (
-      recipeId != null &&
-      !recipe?.producers?.includes(settings.machineId) &&
-      settlementRecipeAlias(recipe) !== settings.machineId
-    )
+    if (recipeId != null && !recipe?.producers?.includes(settings.machineId))
       invalid(`${field}.machineId`, `Machine is not a producer of ${recipeId}`);
   }
   if (settings.fuelId != null)
@@ -229,76 +147,25 @@ function recipeSettings(
   data: ModData,
   id: ResourceId,
   field: string,
-): RecipeState {
-  const obj = record(value, field, [
-    'machineId',
-    'fuelId',
-    'modules',
-    'beacons',
-    'overclock',
-    'cost',
-    'productivity',
-  ]);
-  const result: RecipeState = {};
+): SourceRecipeSettings {
+  const obj = record(value, field, ['machineId', 'overclock']);
+  const result: { machineId?: string; overclock?: Rational } = {};
   if ('machineId' in obj) {
     validateEntity(data, obj['machineId'], 'machine', `${field}.machineId`);
     result.machineId = obj['machineId'] as string;
   }
-  if ('fuelId' in obj) {
-    validateEntity(data, obj['fuelId'], 'fuel', `${field}.fuelId`);
-    result.fuelId = obj['fuelId'] as string;
-  }
-  if ('modules' in obj)
-    result.modules = modules(obj['modules'], data, `${field}.modules`);
-  if ('beacons' in obj)
-    result.beacons = beacons(obj['beacons'], data, `${field}.beacons`);
-  for (const key of ['overclock', 'productivity'] as const)
-    if (key in obj) result[key] = parseNonnegative(obj[key], `${field}.${key}`);
-  if ('cost' in obj)
-    result.cost = parseSignedRational(obj['cost'], `${field}.cost`);
+  if ('overclock' in obj)
+    result.overclock = parseNonnegative(obj['overclock'], `${field}.overclock`);
   validateRecipeReferences(result, data, field, resourceRecipes[id]);
   return result;
 }
 
-function encodeModules(
-  value: readonly { readonly id?: string; readonly count?: Rational }[],
-): object[] {
-  return value.map((entry) => ({
-    ...(entry.id == null ? {} : { id: entry.id }),
-    ...(entry.count == null ? {} : { count: rationalString(entry.count) }),
-  }));
-}
-
-function encodeRecipe(
-  value: NonNullable<EndfieldState['resourceRecipeSettings'][ResourceId]>,
-): object {
+function encodeRecipe(value: SourceRecipeSettings): object {
   return {
     ...(value.machineId == null ? {} : { machineId: value.machineId }),
-    ...(value.fuelId == null ? {} : { fuelId: value.fuelId }),
-    ...(value.modules == null ? {} : { modules: encodeModules(value.modules) }),
-    ...(value.beacons == null
-      ? {}
-      : {
-          beacons: value.beacons.map((entry) => ({
-            ...(entry.id == null ? {} : { id: entry.id }),
-            ...(entry.count == null
-              ? {}
-              : { count: rationalString(entry.count) }),
-            ...(entry.total == null
-              ? {}
-              : { total: rationalString(entry.total) }),
-            ...(entry.modules == null
-              ? {}
-              : { modules: encodeModules(entry.modules) }),
-          })),
-        }),
     ...(value.overclock == null
       ? {}
       : { overclock: rationalString(value.overclock) }),
-    ...(value.cost == null ? {} : { cost: rationalString(value.cost) }),
-    ...(value.productivity == null
-      ? {}
-      : { productivity: rationalString(value.productivity) }),
   };
 }
 
@@ -344,6 +211,7 @@ export function encodeEndfield(state: EndfieldState): string {
 }
 
 export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
+  if (encoded == null) return createEndfieldState();
   if (
     typeof encoded !== 'string' ||
     !encoded ||
@@ -455,7 +323,9 @@ export function decodeEndfield(encoded: unknown, data: ModData): EndfieldState {
       source: defaults.transfer.source,
     };
   }
-  const resourceRecipeSettings: Partial<Record<ResourceId, RecipeState>> = {};
+  const resourceRecipeSettings: Partial<
+    Record<ResourceId, SourceRecipeSettings>
+  > = {};
   if ('resourceRecipeSettings' in obj) {
     const input = record(
       obj['resourceRecipeSettings'],

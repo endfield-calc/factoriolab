@@ -30,7 +30,7 @@
               !settings().checkedItemIds.size &&
               !settings().checkedRecipeIds.size &&
               !settings().checkedObjectiveIds.size &&
-              !presentation.hasChecked();
+              !endfieldStore.state().checkedDerived.size;
             <button
               type="button"
               labButton
@@ -188,7 +188,7 @@
             <div class="flex justify-center">
               <lab-checkbox
                 ariaLabel="checked"
-                [ngModel]="presentation.checked(step) ?? step.checked"
+                [ngModel]="stepChecked(step)"
                 (ngModelChange)="changeStepChecked(step, $event)"
               ></lab-checkbox>
             </div>
@@ -229,7 +229,7 @@
                     [value]="step.recipeId"
                     type="recipe"
                     [text]="
-                      presentation.sourceLabel(step)
+                      sourceLabel(step)
                         ? ''
                         : step.recipeObjectiveId
                           ? '#' + step.recipeObjectiveId
@@ -286,9 +286,7 @@
                 >{{ data().itemRecord[step.itemId].name }}</span
               >
               <lab-exclude-button [itemId]="step.itemId"></lab-exclude-button>
-              @if (presentation.showNameToggle) {
-                <span>{{ data().itemRecord[step.itemId].name }}</span>
-              }
+              <span>{{ data().itemRecord[step.itemId].name }}</span>
             </div>
           }
         </td>
@@ -481,12 +479,10 @@
                   >{{ data().recipeRecord[step.recipeId].name }}</span
                 >
                 <lab-recipes-select [step]="step"></lab-recipes-select>
-                @if (presentation.sourceLabel(step); as source) {
+                @if (sourceLabel(step); as source) {
                   <span>{{ source | translate }}</span>
                 }
-                @if (presentation.showNameToggle) {
-                  <span>{{ data().recipeRecord[step.recipeId].name }}</span>
-                }
+                <span>{{ data().recipeRecord[step.recipeId].name }}</span>
                 @if (step.recipe.producers?.length) {
                   <lab-select
                     [iconOnly]="true"
@@ -506,9 +502,7 @@
                       )
                     "
                   ></lab-select>
-                  @if (presentation.showNameToggle) {
-                    <span>{{ data().itemRecord[machineId].name }}</span>
-                  }
+                  <span>{{ data().itemRecord[machineId].name }}</span>
                 }
 
                 @if (data().flags.has('overclock')) {
@@ -615,10 +609,10 @@
           <td>
             <div class="gap-1 flex items-center">
               <lab-recipes-select [step]="step"></lab-recipes-select>
-              @if (presentation.sourceLabel(step); as source) {
+              @if (sourceLabel(step); as source) {
                 <span>{{ source | translate }}</span>
               }
-              @if (presentation.showNameToggle && step.recipeId) {
+              @if (step.recipeId) {
                 <span>{{ data().recipeRecord[step.recipeId].name }}</span>
               }
             </div>
@@ -669,7 +663,9 @@
                 target="_blank"
                 routerLink="."
                 [queryParams]="step | stepHref: routerSync.zipConfig() | async"
-                [fragment]="presentation.stepFragment(step)"
+                [fragment]="
+                  sourceLabel(step) ? 'endfield-resources' : undefined
+                "
                 labButton
                 [faIcon]="faArrowUpRightFromSquare"
                 [border]="false"
@@ -678,13 +674,14 @@
               >
               </a>
               @let mod = objectivesStore.stepsModified();
-              @let owner = presentation.owner(step);
               @if (
-                (step.recipeId && mod.recipes[step.recipeId]) ||
+                (step.recipeId &&
+                  !sourceLabel(step) &&
+                  mod.recipes[step.recipeId]) ||
                 (step.itemId && mod.items[step.itemId]) ||
                 (step.recipeObjectiveId &&
                   mod.objectives[step.recipeObjectiveId]) ||
-                (owner && presentation.modified(owner))
+                sourceModified(step)
               ) {
                 <button
                   type="button"

@@ -183,28 +183,8 @@
     </ng-template>
   </lab-accordion-item>
 
-  <lab-accordion-item
-    text="settings.factory"
-    [note]="
-      presentation.showPreset
-        ? (settings().preset | option: settingsStore.presetOptions())?.label
-        : undefined
-    "
-    [expanded]="true"
-  >
+  <lab-accordion-item text="settings.factory" [expanded]="true">
     <ng-template>
-      @if (presentation.showPreset) {
-        <lab-form-field label="settings.preset">
-          <lab-select
-            [options]="settingsStore.presetOptions()"
-            labTooltip="settings.presetTooltip"
-            labTooltipPosition="adjacent"
-            [ngModel]="settings().preset"
-            (ngModelChange)="settingsStore.apply({ preset: $event })"
-          ></lab-select>
-        </lab-form-field>
-      }
-
       @if (options().locations.length > 1) {
         <lab-form-field label="settings.locations">
           <lab-select
@@ -524,10 +504,7 @@
         </lab-form-field>
       }
 
-      @if (
-        options().belts.length &&
-        (presentation.showPreset || options().belts.length > 1)
-      ) {
+      @if (options().belts.length > 1) {
         <lab-form-field label="settings.beltRank">
           <lab-rank-select
             placeholder="settings.beltRankEmpty"

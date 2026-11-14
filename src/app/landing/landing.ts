@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { switchMap } from 'rxjs';
 
+import product from '/public/endfield/product.json';
 import { Button } from '~/components/button/button';
 import { Checkbox } from '~/components/checkbox/checkbox';
 import { FormField } from '~/components/form-field/form-field';
@@ -19,7 +20,6 @@ import { InputNumber } from '~/components/input-number/input-number';
 import { ObjectiveForm } from '~/components/objective-form';
 import { Select } from '~/components/select/select';
 import { Release } from '~/data/release';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { RouterSync } from '~/state/router/router-sync';
@@ -45,7 +45,7 @@ import { TranslatePipe } from '~/translate/translate-pipe';
 })
 export class Landing {
   protected readonly router = inject(Router);
-  protected readonly product = inject(PRODUCT_PROFILE);
+  protected readonly product = product;
   private readonly route = inject(ActivatedRoute);
   protected readonly objectiveForm = inject(ObjectiveForm);
   private readonly objectivesStore = inject(ObjectivesStore);

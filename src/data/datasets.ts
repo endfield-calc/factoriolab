@@ -15,7 +15,7 @@ export const datasets: Datasets = {
   mods: [
     {
       id: 'aef',
-      name: '明日方舟：终末地',
+      name: 'options.game.endfield',
       game: 'endfield',
     },
     { id: '2x1', name: 'Space Age', game: 'factorio' },

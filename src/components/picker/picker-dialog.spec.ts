@@ -343,3 +343,103 @@ describe('PickerDialog', () => {
     expect(component['selectedQuality']()).toEqual('1');
   });
 });
+
+describe('PickerDialog name presentation', () => {
+  it('shows recipe names only while the name toggle is enabled', async () => {
+    PickerDialog['lastCategory'] = null;
+    PickerDialog['lastQuality'] = null;
+    let label = '';
+    await TestBed.configureTestingModule({
+      imports: [TestModule, PickerDialog],
+      providers: [
+        {
+          provide: DIALOG_DATA,
+          useFactory: (): PickerData => {
+            const data = inject(SettingsStore).dataset();
+            const id = data.recipeIds[0];
+            label = data.recipeRecord[id].name;
+            return { type: 'recipe', allIds: [id] };
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PickerDialog);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const button = Array.from(element.querySelectorAll('button')).find(
+      (value) => value.getAttribute('aria-label') === label,
+    );
+    expect(button).toBeDefined();
+    expect(button?.textContent).not.toContain(label);
+    const checkbox =
+      element.querySelector<HTMLInputElement>('lab-checkbox input')!;
+    checkbox.click();
+    fixture.detectChanges();
+    expect(button?.textContent).toContain(label);
+    checkbox.click();
+    fixture.detectChanges();
+    expect(button?.textContent).not.toContain(label);
+  });
+
+  it('starts each picker closed and leaves legacy display storage untouched', async () => {
+    const key = 'endfield.presentation';
+    const backup = 'preferences.recovery.endfield.presentation';
+    const prior = localStorage.getItem(key);
+    const priorBackup = localStorage.getItem(backup);
+    const raw = '{"showNames":true,"hideDuplicateIcons":false}';
+    localStorage.setItem(key, raw);
+    localStorage.setItem(backup, 'legacy display backup');
+    const set = spyOn(Storage.prototype, 'setItem').and.callThrough();
+    const remove = spyOn(Storage.prototype, 'removeItem').and.callThrough();
+    try {
+      await TestBed.configureTestingModule({
+        imports: [TestModule, PickerDialog],
+        providers: [
+          {
+            provide: DIALOG_DATA,
+            useFactory: (): PickerData => {
+              const data = inject(SettingsStore).dataset();
+              return { type: 'item', allIds: data.itemIds };
+            },
+          },
+        ],
+      }).compileComponents();
+      const first = TestBed.createComponent(PickerDialog);
+      first.detectChanges();
+      expect(first.componentInstance['showNames']()).toBeFalse();
+      const checkbox = first.nativeElement.querySelector(
+        'lab-checkbox input',
+      ) as HTMLInputElement;
+      checkbox.click();
+      first.detectChanges();
+      expect(first.componentInstance['showNames']()).toBeTrue();
+      first.destroy();
+      const reopened = TestBed.createComponent(PickerDialog);
+      reopened.detectChanges();
+      expect(reopened.componentInstance['showNames']()).toBeFalse();
+      expect(
+        (
+          reopened.nativeElement.querySelector(
+            'lab-checkbox input',
+          ) as HTMLInputElement
+        ).checked,
+      ).toBeFalse();
+      TestBed.tick();
+      expect(localStorage.getItem(key)).toBe(raw);
+      expect(localStorage.getItem(backup)).toBe('legacy display backup');
+      expect(
+        set.calls.allArgs().some(([name]) => name === key || name === backup),
+      ).toBeFalse();
+      expect(
+        remove.calls
+          .allArgs()
+          .some(([name]) => name === key || name === backup),
+      ).toBeFalse();
+    } finally {
+      if (prior == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, prior);
+      if (priorBackup == null) localStorage.removeItem(backup);
+      else localStorage.setItem(backup, priorBackup);
+    }
+  });
+});

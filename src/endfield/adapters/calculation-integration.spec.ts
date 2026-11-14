@@ -6,50 +6,30 @@ import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { Main } from '~/app/main/main';
 import { ModData } from '~/data/schema/mod-data';
-import { finalizeRecipe } from '~/data/schema/recipe';
-import { CALCULATION_EXTENSION } from '~/extensions/calculation-extension';
-import { PRESENTATION_EXTENSION } from '~/extensions/presentation-extension';
-import {
-  STATE_EXTENSION,
-  WorkspaceRestoreError,
-  WorkspaceState,
-} from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
-import { WorkspacePreparation } from '~/extensions/workspace-preparation';
-import { rational } from '~/rational/rational';
+import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { Adjustment } from '~/state/adjustment';
 import { ItemsStore } from '~/state/items/items-store';
 import { MachinesStore } from '~/state/machines/machines-store';
-import {
-  ObjectiveSettings,
-  ObjectiveState,
-} from '~/state/objectives/objective';
+import { ObjectiveState } from '~/state/objectives/objective';
 import { ObjectiveType } from '~/state/objectives/objective-type';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
-import { RecipeSettings } from '~/state/recipes/recipe-settings';
 import { RecipesStore } from '~/state/recipes/recipes-store';
-import { Migration } from '~/state/router/migration';
-import { Params } from '~/state/router/params';
-import { RouterSync } from '~/state/router/router-sync';
 import { DisplayRate } from '~/state/settings/display-rate';
 import { MaximizeType } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { TableStore } from '~/state/table/table-store';
 import { TestModule } from '~/tests/test-module';
 import { Translate } from '~/translate/translate';
 
-import { settlementRecipeAlias } from '../compat/codec';
+import { decodeEndfield } from '../compat/codec';
 import {
   createEndfieldState,
-  EndfieldState,
   ovenId,
-  resourceIds,
   resourceObjectiveId,
   resourceOwner,
-  resourceRecipes,
 } from '../domain/model';
 import { provideEndfield } from '../providers';
 import { EndfieldCoordinator } from '../state/coordinator';
@@ -102,23 +82,12 @@ describe('Endfield calculation composition with the published aef data', () => {
     });
   });
 
-  it('constructs all four providers without a dependency cycle and skips an empty default workspace', () => {
-    expect(TestBed.inject(PRESENTATION_EXTENSION).mainPanels.length).toBe(2);
+  it('constructs the calculation stores and skips an empty default workspace', () => {
     expect(objectives.calculationContext().objectives).toEqual([]);
     expect(objectives.matrixResult().resultType).toBe('skipped');
   });
 
   it('keeps the complete recipe availability set for every location subset', () => {
-    const current = rawData as unknown as ModData;
-    const previous: ModData = {
-      ...current,
-      recipes: current.recipes.map((recipe) => {
-        const alias = settlementRecipeAlias(recipe);
-        return alias == null
-          ? recipe
-          : { ...recipe, locations: undefined, producers: [alias] };
-      }),
-    };
     for (const locations of [
       [],
       ['tundra'],
@@ -126,13 +95,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       ['tundra', 'jinlong'],
     ]) {
       settings.apply({ locationIds: new Set(locations) });
-      settings['modDataResource'].set(previous);
-      const oldAvailable = settings.settings().availableRecipeIds;
-      settings['modDataResource'].set(current);
       const newAvailable = settings.settings().availableRecipeIds;
-      expect(newAvailable)
-        .withContext(locations.join('+') || 'none')
-        .toEqual(oldAvailable);
       expect(newAvailable.has('tundra_coupon-glass_bottle')).toBe(
         locations.includes('tundra'),
       );
@@ -142,159 +105,8 @@ describe('Endfield calculation composition with the published aef data', () => {
     }
   });
 
-  it('matches upstream alias calculations for ordinary recipes and all explicit objective types', () => {
-    const baseline = TestBed.runInInjectionContext(() => new Adjustment());
-    const machineStore = TestBed.inject(MachinesStore);
-    const itemStore = TestBed.inject(ItemsStore);
-    const cases = [
-      {
-        global: 100,
-        machine: undefined,
-        recipe: undefined,
-        objective: undefined,
-      },
-      {
-        global: 150,
-        machine: undefined,
-        recipe: undefined,
-        objective: undefined,
-      },
-      { global: 150, machine: 125, recipe: 200, objective: undefined },
-      { global: 150, machine: 125, recipe: 200, objective: rational(175) },
-      { global: 150, machine: 125, recipe: 200, objective: rational(225, 2) },
-    ];
-    const actualAdjustment = TestBed.inject(Adjustment);
-    for (const [id, alias] of [
-      ['tundra_coupon-glass_bottle', 'settlement-tundra_coupon'],
-      ['jinlong_coupon-copper_cmpt', 'settlement-jinlong_coupon'],
-    ] as const) {
-      for (const example of cases) {
-        settings.apply({ overclock: rational(example.global) });
-        machineStore.set({
-          [alias]:
-            example.machine == null
-              ? {}
-              : { overclock: rational(example.machine) },
-        });
-        const saved = {
-          machineId: alias,
-          overclock:
-            example.recipe == null ? undefined : rational(example.recipe),
-          productivity: rational(25),
-          fuelId: 'ignored',
-          modules: [{ id: 'ignored' }],
-          beacons: [{ id: 'ignored' }],
-        };
-        recipes.set({ [id]: saved });
-        const machines = machineStore.settings();
-        const current = recipes.adjustedDataset();
-        const nativeRecipe = current.recipeRecord[id];
-        const oldRecipe = {
-          ...nativeRecipe,
-          producers: [alias],
-          locations: undefined,
-        };
-        const previous = {
-          ...current,
-          recipeRecord: { ...current.recipeRecord, [id]: oldRecipe },
-        };
-        const previousSettings: RecipeSettings = { ...saved };
-        baseline.computeRecipeSettings(
-          previousSettings,
-          oldRecipe,
-          machines,
-          settings.settings(),
-          previous,
-        );
-        const prepared = recipes.settings()[id];
-        expect(prepared.machineId).toBeUndefined();
-        expect(prepared.defaultMachineId).toBeUndefined();
-        expect(prepared.machineOptions).toBeUndefined();
-        for (const field of [
-          'overclock',
-          'defaultOverclock',
-          'productivity',
-          'fuelId',
-          'modules',
-          'beacons',
-        ] as const)
-          expect(prepared[field])
-            .withContext(`${id} ${field}`)
-            .toEqual(previousSettings[field]);
-        expect(recipes.state()[id]).toEqual(saved);
-        expect(nativeRecipe.producers).toBeUndefined();
-
-        const oldAdjusted = baseline.adjustRecipe(
-          id,
-          previousSettings,
-          itemStore.settings(),
-          settings.settings(),
-          previous,
-        );
-        finalizeRecipe(oldAdjusted);
-        const adjusted = current.adjustedRecipe[id];
-        for (const field of ['time', 'in', 'out', 'output', 'effects'] as const)
-          expect(adjusted[field])
-            .withContext(`${id} ordinary ${field}`)
-            .toEqual(oldAdjusted[field]);
-
-        for (const type of [
-          ObjectiveType.Output,
-          ObjectiveType.Input,
-          ObjectiveType.Maximize,
-          ObjectiveType.Limit,
-        ]) {
-          const objective: ObjectiveState = {
-            ...machineObjective('1', id),
-            type,
-            machineId: alias,
-            overclock: example.objective,
-            productivity: rational(99),
-          };
-          const oldObjective = baseline.adjustObjective(
-            objective,
-            itemStore.settings(),
-            { ...recipes.settings(), [id]: previousSettings },
-            machines,
-            settings.settings(),
-            previous,
-          );
-          const actual = actualAdjustment.adjustObjective(
-            objective,
-            itemStore.settings(),
-            recipes.settings(),
-            machines,
-            settings.settings(),
-            current,
-          );
-          expect(actual.machineId).toBeUndefined();
-          expect(actual.productivity).toEqual(rational(25));
-          expect(actual.overclock).toEqual(oldObjective.overclock);
-          for (const field of [
-            'time',
-            'in',
-            'out',
-            'output',
-            'effects',
-          ] as const)
-            expect(actual.recipe![field])
-              .withContext(`${id} objective ${type} ${field}`)
-              .toEqual(oldObjective.recipe![field]);
-          expect(objective.machineId).toBe(alias);
-          if (
-            example.recipe === 200 &&
-            example.machine === 125 &&
-            example.objective == null
-          )
-            expect(actual.overclock).toEqual(rational(125));
-        }
-      }
-    }
-  });
-
   it('retains raw or overridden settlement costs independently of production rate', () => {
     const id = 'tundra_coupon-bottled_food_3';
-    const adjustment = TestBed.inject(Adjustment);
     settings.apply({
       overclock: rational(200),
       costs: {
@@ -309,117 +121,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       const current = recipes.adjustedDataset();
       const expected = override ?? rational(60);
       expect(current.adjustedRecipe[id].cost).toEqual(expected);
-      const objective = adjustment.adjustObjective(
-        { ...machineObjective('1', id), cost: override },
-        TestBed.inject(ItemsStore).settings(),
-        recipes.settings(),
-        TestBed.inject(MachinesStore).settings(),
-        settings.settings(),
-        current,
-      );
-      expect(objective.recipe!.cost).toEqual(expected);
     }
-  });
-
-  it('restores, re-encodes and resets v11 and v12 settlement alias settings', async () => {
-    const router = TestBed.inject(RouterSync);
-    const migration = TestBed.inject(Migration);
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const machines = TestBed.inject(MachinesStore);
-    const id = 'tundra_coupon-glass_bottle';
-    const alias = 'settlement-tundra_coupon';
-    const restore = async (query: string): Promise<void> => {
-      const ticket = lifecycle.begin(query);
-      const params = await router.unzipQueryParams(router.toParams(query));
-      const plan = extension.prepare({ modId: 'aef', params });
-      const migrated = migration.migrate(
-        plan.modId,
-        plan.params,
-        plan.legacyModHashes,
-      );
-      router.updateState(
-        migrated.modId,
-        migrated.params,
-        migrated.isBare,
-        rawData as unknown as ModData,
-        rawHash,
-        plan,
-        ticket,
-      );
-      expect(lifecycle.ready())
-        .withContext(JSON.stringify(lifecycle.diagnostics()))
-        .toBeTrue();
-    };
-    const zip = (): Promise<unknown> =>
-      router.getHash(
-        router.zipState({
-          objectives: objectives.state(),
-          items: TestBed.inject(ItemsStore).state(),
-          recipes: recipes.state(),
-          machines: machines.state(),
-          settings: settings.state(),
-          table: TestBed.inject(TableStore).state(),
-          data: settings.dataset(),
-          hash: rawHash,
-          extension: store.snapshot(),
-        }),
-      );
-    for (const version of ['11', '12']) {
-      const query = `v=${version}&o=${id}**3**${alias}***175&r=${id}*${alias}***200***25&m=${alias}****125&moc=150`;
-      await restore(query);
-      expect(recipes.state()[id].machineId).toBe(alias);
-      expect(recipes.state()[id].overclock).toEqual(rational(200));
-      expect(recipes.state()[id].productivity).toEqual(rational(25));
-      expect(machines.state()[alias].overclock).toEqual(rational(125));
-      expect(settings.state().overclock).toEqual(rational(150));
-      expect(objectives.state()['1'].machineId).toBe(alias);
-      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
-      const adjusted = recipes.adjustedDataset().adjustedRecipe[id];
-      expect(adjusted.time).toEqual(rational.one);
-      expect(adjusted.output['tundra_coupon']).toEqual(rational(5, 2));
-      const encoded = router.toString((await zip()) as Params);
-      recipes.set({});
-      machines.set({});
-      objectives.set({});
-      await restore(encoded);
-      expect(recipes.state()[id].machineId).toBe(alias);
-      expect(recipes.state()[id].overclock).toEqual(rational(200));
-      expect(machines.state()[alias].overclock).toEqual(rational(125));
-      expect(objectives.state()['1'].machineId).toBe(alias);
-      expect(objectives.objectives()[0].overclock).toEqual(rational(175));
-      expect(
-        recipes.adjustedDataset().adjustedRecipe[id].output['tundra_coupon'],
-      ).toEqual(rational(5, 2));
-      const before = {
-        recipes: recipes.state(),
-        machines: machines.state(),
-        objectives: objectives.state(),
-      };
-      await expectAsync(
-        restore(`v=${version}&o=${id}**3**settlement-jinlong_coupon`),
-      ).toBeRejectedWithError(WorkspaceRestoreError);
-      expect(recipes.state()).toBe(before.recipes);
-      expect(machines.state()).toBe(before.machines);
-      expect(objectives.state()).toBe(before.objectives);
-      recipes.resetId(id);
-      expect(recipes.state()[id]).toBeUndefined();
-      expect(recipes.settings()[id].machineId).toBeUndefined();
-      expect(recipes.settings()[id].overclock).toEqual(rational(125));
-    }
-  });
-
-  it('rejects a restoration without dataset identity and leaves live stores intact', () => {
-    const initial = settings.state();
-    expect(() =>
-      TestBed.inject(WorkspacePreparation).prepareObjectives(
-        {},
-        rawData as unknown as ModData,
-        rawHash,
-        [],
-      ),
-    ).toThrowError('Cannot prepare an unknown or unavailable mod');
-    expect(settings.state()).toBe(initial);
   });
 
   it('retains a restored exact tiny supply and reports its unrepresentable solver bound', () => {
@@ -432,20 +134,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
     const params = { v: '12', ef };
-    const state: WorkspaceState = { settingsState: { modId: 'aef' } };
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const plan = extension.prepare({ modId: 'aef', params });
-    expect(
-      extension.preflight({ state, plan, data: rawData as unknown as ModData }),
-    ).toEqual([]);
-    const decoded = extension.decode({
-      state,
-      params,
-      plan,
-      data: rawData as unknown as ModData,
-      hash: rawHash,
-    });
-    extension.commit(decoded.extension);
+    store.set(decodeEndfield(params.ef, rawData as unknown as ModData));
 
     const tiny = rational(1n, 10n ** 400n);
     expect(
@@ -482,39 +171,69 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(recipe.cost?.eq(rational(-30))).toBeTrue();
   });
 
-  it('rejects malformed extension declarations without changing visible objectives', () => {
-    const policy = TestBed.inject(CALCULATION_EXTENSION);
-    const declaration = (
-      id: string,
-      targetId: string,
-    ): { owner: string; objective: ObjectiveState } => ({
-      owner: resourceOwner('originium_ore'),
-      objective: machineObjective(id, targetId),
+  it('rejects a source whose adjusted output is not positive without changing visible objectives', () => {
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, originium_ore: rational.one },
+      },
     });
-    const spy = spyOn(policy, 'derive');
-    spy.and.returnValue([declaration('invalid', 'missing')]);
+    const adjustment = TestBed.inject(Adjustment);
+    const original = adjustment.adjustObjective.bind(adjustment);
+    let output: Rational | undefined;
+    spyOn(adjustment, 'adjustObjective').and.callFake((...args) => {
+      const result = original(...args);
+      if (result.id !== resourceObjectiveId('originium_ore')) return result;
+      return {
+        ...result,
+        recipe: {
+          ...result.recipe!,
+          output: { ...result.recipe!.output, originium_ore: output! },
+        },
+      };
+    });
+    for (output of [rational.zero, rational(-1), undefined]) {
+      store.set({ ...store.snapshot() });
+      expect(() => objectives.calculationContext()).toThrowError(
+        /no positive adjusted output/,
+      );
+    }
+    expect(objectives.state()).toEqual({});
+  });
+
+  it('rejects a missing current resource recipe before solving', () => {
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: { ...initial.resourceLimits, enabled: true },
+    });
+    const data = recipes.adjustedDataset();
+    const recipeRecord = { ...data.recipeRecord };
+    delete recipeRecord['originium_ore'];
+    spyOn(recipes, 'adjustedDataset').and.returnValue({
+      ...data,
+      recipeRecord,
+    });
     expect(() => objectives.calculationContext()).toThrowError(
-      /Unknown derived target/,
+      /Unknown derived target: originium_ore/,
     );
-    spy.and.returnValue([
-      declaration('duplicate', 'originium_ore'),
-      declaration('duplicate', 'originium_ore'),
-    ]);
-    settings.apply({ miningBonus: rational.one });
+    expect(objectives.state()).toEqual({});
+  });
+
+  it('rejects an ordinary objective with the same ID as a derived resource limit', () => {
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: { ...initial.resourceLimits, enabled: true },
+    });
+    const id = 'ef:limit:originium_ore';
+    objectives.set({ [id]: machineObjective(id, 'originium_ore') });
     expect(() => objectives.calculationContext()).toThrowError(
       /Duplicate derived objective ID/,
     );
-    spy.and.returnValue([
-      {
-        ...declaration('bad-output', 'sewage-treat'),
-        fixedOutput: { itemId: 'originium_ore', perSecond: rational.one },
-      },
-    ]);
-    settings.apply({ miningBonus: rational(2) });
-    expect(() => objectives.calculationContext()).toThrowError(
-      /no positive adjusted output/,
-    );
-    expect(objectives.state()).toEqual({});
+    expect(objectives.state()[id].targetId).toBe('originium_ore');
   });
 
   it('shows the product title if an interface dictionary lacks the application key', () => {
@@ -538,125 +257,14 @@ describe('Endfield calculation composition with the published aef data', () => {
       },
     });
     TestBed.tick();
-    expect(TestBed.inject(Title).getTitle()).toBe('源矿 | First title');
+    expect(TestBed.inject(Title).getTitle()).toBe(
+      `${data.itemRecord['originium_ore'].name} | First title`,
+    );
     translate.data.set({ 'app.name': '第二标题' });
     TestBed.tick();
-    expect(TestBed.inject(Title).getTitle()).toBe('源矿 | 第二标题');
-  });
-
-  it('restores all six legacy supplies using complete detached mining and speed adjustments', () => {
-    const initial = store.snapshot();
-    const legacy: WorkspaceState = {
-      objectivesState: Object.fromEntries(
-        resourceIds.map((id, index) => [
-          String(index + 1),
-          {
-            ...machineObjective(
-              String(index + 1),
-              resourceRecipes[id],
-              rational(5),
-            ),
-            type: 12 as ObjectiveType,
-            overclock: rational(150),
-          },
-        ]),
-      ),
-      settingsState: {
-        modId: 'aef',
-        miningBonus: rational(50),
-        locationIds: new Set(['tundra', 'jinlong']),
-      },
-    };
-    const extension = TestBed.inject(STATE_EXTENSION);
-    const params = { v: '11' };
-    const plan = extension.prepare({ modId: 'aef', params });
-    const selected = extension.preflight({
-      state: legacy,
-      plan,
-      data: rawData as unknown as ModData,
-    });
-    expect(selected).toEqual(['1', '2', '3', '4', '5', '6']);
-    const preparedObjectives = TestBed.inject(
-      WorkspacePreparation,
-    ).prepareObjectives(
-      legacy,
-      rawData as unknown as ModData,
-      rawHash,
-      selected,
+    expect(TestBed.inject(Title).getTitle()).toBe(
+      `${data.itemRecord['originium_ore'].name} | 第二标题`,
     );
-    const decoded = extension.decode({
-      state: legacy,
-      params,
-      plan,
-      preparedObjectives,
-      data: rawData as unknown as ModData,
-      hash: rawHash,
-    }).extension as EndfieldState;
-    for (const id of resourceIds) {
-      const recipe = rawData.recipes.find(
-        (entry) => entry.id === resourceRecipes[id],
-      )!;
-      const miningFactor = recipe.flags?.includes('mining')
-        ? rational(3, 2)
-        : rational.one;
-      const expected = rational(5)
-        .mul(miningFactor)
-        .mul(rational(3, 2))
-        .div(rational(recipe.time));
-      expect(decoded.resourceLimits.rates[id].eq(expected))
-        .withContext(id)
-        .toBeTrue();
-      expect(decoded.resourceRecipeSettings[id]?.overclock?.eq(rational(150)))
-        .withContext(id)
-        .toBeTrue();
-    }
-    expect(objectives.state()).toEqual({});
-    expect(store.snapshot()).toBe(initial);
-  });
-
-  it('prepares candidate physical output without reading live electric or recipe settings', () => {
-    recipes.set({ originium_ore: { machineId: 'miner_2' } });
-    settings.apply({ miningBonus: rational.zero });
-    const initial = store.snapshot();
-    const candidate: WorkspaceState = {
-      settingsState: {
-        modId: 'aef',
-        miningBonus: rational(50),
-        locationIds: new Set(['tundra', 'jinlong']),
-      },
-      objectivesState: {
-        1: {
-          ...machineObjective('1', 'originium_ore'),
-          machineId: 'miner_3',
-          overclock: rational(150),
-        },
-      },
-    };
-    const preparation = TestBed.inject(WorkspacePreparation);
-    const snapshot = spyOn(store, 'snapshot').and.callThrough();
-    store.set({ ...initial, electric: rational(2) });
-    const first = preparation.prepareObjectives(
-      candidate,
-      rawData as unknown as ModData,
-      rawHash,
-      ['1'],
-    );
-    store.set({ ...initial, electric: rational(17) });
-    const second = preparation.prepareObjectives(
-      candidate,
-      rawData as unknown as ModData,
-      rawHash,
-      ['1'],
-    );
-    expect(snapshot).not.toHaveBeenCalled();
-    expect(first['1'].machineId).toBe('miner_3');
-    expect(
-      first['1'].recipe!.output['originium_ore'].eq(rational(3, 4)),
-    ).toBeTrue();
-    expect(second).toEqual(first);
-    expect(recipes.state()['originium_ore'].machineId).toBe('miner_2');
-    expect(settings.state().miningBonus?.isZero()).toBeTrue();
-    expect(store.state().electric.eq(rational(17))).toBeTrue();
   });
 
   it('keeps a fixed physical supply after machine speed changes and leaves visible objectives unchanged', () => {
@@ -677,8 +285,8 @@ describe('Endfield calculation composition with the published aef data', () => {
       },
     });
     for (const machineId of ['miner_2', 'miner_3']) {
-      store.updateRecipeField('originium_ore', 'machineId', machineId);
-      store.updateRecipeField(
+      store.updateResourceRecipeField('originium_ore', 'machineId', machineId);
+      store.updateResourceRecipeField(
         'originium_ore',
         'overclock',
         machineId === 'miner_2' ? rational(100) : rational(150),
@@ -701,10 +309,6 @@ describe('Endfield calculation composition with the published aef data', () => {
           machineId === 'miner_2' ? rational(84) : rational(112, 3),
         ),
       ).toBeTrue();
-      expect(context.owners[supply.id]).toEqual({
-        kind: 'extension',
-        id: resourceOwner('originium_ore'),
-      });
       expect(
         context.objectives.filter(
           (o) =>
@@ -871,14 +475,6 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(
       recipes.adjustedDataset().adjustedRecipe['sewage-treat'].cost?.isZero(),
     ).toBeTrue();
-    objectives.set({ 1: machineObjective('1', 'sewage-treat') });
-    expect(
-      objectives.objectives()[0].recipe?.cost?.eq(rational(-30)),
-    ).toBeTrue();
-    objectives.set({
-      1: { ...machineObjective('1', 'sewage-treat'), cost: rational.zero },
-    });
-    expect(objectives.objectives()[0].recipe?.cost?.isZero()).toBeTrue();
     const ordinary =
       recipes.adjustedDataset().adjustedRecipe['originium_ore'].cost!;
     store.set({ ...store.snapshot(), electric: rational(2) });
@@ -888,7 +484,10 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(settings.settings().costs.factor.eq(rational.one)).toBeTrue();
   });
 
-  it('updates ordinary, explicit and derived machine costs from the chosen base machine', () => {
+  it('keeps ordinary, explicit and derived machine settings independent', () => {
+    recipes.set({
+      originium_ore: { machineId: 'miner_2', overclock: rational(100) },
+    });
     const initial = store.snapshot();
     store.set({
       ...initial,
@@ -897,7 +496,7 @@ describe('Endfield calculation composition with the published aef data', () => {
         rates: { ...initial.resourceLimits.rates, originium_ore: rational.one },
       },
       resourceRecipeSettings: {
-        originium_ore: { machineId: 'miner_3', overclock: rational(150) },
+        originium_ore: { machineId: 'miner_3', overclock: rational(125) },
       },
     });
     objectives.set({
@@ -916,30 +515,136 @@ describe('Endfield calculation composition with the published aef data', () => {
         .calculationContext()
         .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))!;
       expect(ordinary.cost).toEqual(rational(5).mul(electric));
-      expect(explicit.recipe!.cost).toEqual(rational(10).mul(electric));
-      expect(derived.recipe!.cost).toEqual(rational(10).mul(electric));
+      expect(recipes.settings()['originium_ore'].machineId).toBe('miner_2');
+      expect(recipes.settings()['originium_ore'].overclock).toEqual(
+        rational(100),
+      );
       expect(explicit.machineId).toBe('miner_3');
+      expect(explicit.overclock).toEqual(rational(150));
       expect(derived.machineId).toBe('miner_3');
+      expect(derived.overclock).toEqual(rational(125));
     }
-    objectives.set({
-      1: { ...machineObjective('1', 'originium_ore'), cost: rational(-3) },
+    store.setResourceChecked('originium_ore', true);
+    const enabled = store.snapshot();
+    store.set({
+      ...enabled,
+      resourceLimits: { ...enabled.resourceLimits, enabled: false },
     });
-    store.updateRecipeField('originium_ore', 'cost', rational.zero);
-    expect(objectives.objectives()[0].recipe!.cost).toEqual(rational(-3));
     expect(
       objectives
         .calculationContext()
-        .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))!
-        .recipe!.cost,
-    ).toEqual(rational.zero);
+        .objectives.some((o) => o.id === resourceObjectiveId('originium_ore')),
+    ).toBeFalse();
+    expect(recipes.settings()['originium_ore'].machineId).toBe('miner_2');
+    expect(objectives.objectives()[0].overclock).toEqual(rational(150));
+    expect(
+      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
+    ).toBeTrue();
+    store.set({ ...store.snapshot(), resourceLimits: enabled.resourceLimits });
+    expect(
+      objectives
+        .calculationContext()
+        .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))
+        ?.overclock,
+    ).toEqual(rational(125));
   });
 
-  it('preserves raw, override and recycling costs in both public adjustment paths', () => {
+  it('restores ordinary mining when a separate source is disabled and reuses its settings when reopened', () => {
+    recipes.set({
+      originium_ore: { machineId: 'miner_2', overclock: rational(100) },
+    });
+    objectives.set({
+      1: {
+        ...machineObjective('1', 'originium_ore'),
+        machineId: 'miner_3',
+        overclock: rational(150),
+      },
+      2: {
+        id: '2',
+        targetId: 'originium_ore',
+        value: rational(540),
+        type: ObjectiveType.Output,
+        unit: ObjectiveUnit.Items,
+      },
+    });
+    const initial = store.snapshot();
+    store.set({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: {
+          ...initial.resourceLimits.rates,
+          originium_ore: rational(560, 60),
+        },
+      },
+      resourceRecipeSettings: {
+        originium_ore: { machineId: 'miner_3', overclock: rational(125) },
+      },
+    });
+    store.setResourceChecked('originium_ore', true);
+    const sourceId = resourceObjectiveId('originium_ore');
+    expect(objectives.matrixResult().resultType).toBe('solved');
+    const source = objectives
+      .steps()
+      .find((s) => s.recipeObjectiveId === sourceId)!;
+    expect(source.recipeSettings?.machineId).toBe('miner_3');
+    expect(source.recipeSettings?.overclock).toEqual(rational(125));
+    expect(
+      source
+        .machines!.mul(source.recipe!.output['originium_ore'])
+        .eq(rational(560, 60)),
+    ).toBeTrue();
+    expect(
+      objectives
+        .steps()
+        .some(
+          (s) => s.recipeId === 'originium_ore' && s.recipeObjectiveId == null,
+        ),
+    ).toBeFalse();
+    expect(
+      objectives.steps().find((s) => s.recipeObjectiveId === '1')
+        ?.recipeSettings?.overclock,
+    ).toEqual(rational(150));
+
+    const enabled = store.snapshot();
+    store.set({
+      ...enabled,
+      resourceLimits: { ...enabled.resourceLimits, enabled: false },
+    });
+    expect(objectives.matrixResult().resultType).toBe('solved');
+    expect(
+      objectives.steps().some((s) => s.recipeObjectiveId === sourceId),
+    ).toBeFalse();
+    const ordinary = objectives
+      .steps()
+      .find(
+        (s) => s.recipeId === 'originium_ore' && s.recipeObjectiveId == null,
+      )!;
+    expect(ordinary.machines!.gt(rational.zero)).toBeTrue();
+    expect(ordinary.recipeSettings?.machineId).toBe('miner_2');
+    expect(ordinary.recipeSettings?.overclock).toEqual(rational(100));
+    expect(
+      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
+    ).toBeTrue();
+
+    store.set({ ...store.snapshot(), resourceLimits: enabled.resourceLimits });
+    expect(objectives.matrixResult().resultType).toBe('solved');
+    const restored = objectives
+      .steps()
+      .find((s) => s.recipeObjectiveId === sourceId)!;
+    expect(restored.recipeSettings?.machineId).toBe('miner_3');
+    expect(restored.recipeSettings?.overclock).toEqual(rational(125));
+    expect(
+      restored
+        .machines!.mul(restored.recipe!.output['originium_ore'])
+        .eq(rational(560, 60)),
+    ).toBeTrue();
+  });
+
+  it('preserves raw, override and recycling costs in ordinary recipe costs', () => {
     const adjustment = TestBed.inject(Adjustment);
     const data = recipes.adjustedDataset();
     const recipeSettings = recipes.settings();
-    const items = TestBed.inject(ItemsStore).settings();
-    const machines = TestBed.inject(MachinesStore).settings();
     const costSettings = {
       ...settings.settings().costs,
       factor: rational(2),
@@ -1003,24 +708,13 @@ describe('Endfield calculation composition with the published aef data', () => {
         costSettings,
         candidate,
       );
-      const objective = adjustment.adjustObjective(
-        { ...machineObjective('1', id), cost: example.override },
-        items,
-        recipeSettings,
-        machines,
-        { ...settings.settings(), costs: costSettings },
-        candidate,
-      );
       expect(ordinary.cost)
-        .withContext(`case ${index}`)
-        .toEqual(example.expected);
-      expect(objective.recipe!.cost)
         .withContext(`case ${index}`)
         .toEqual(example.expected);
     }
   });
 
-  it('uses selected base machine usage and footprint in both adjustment paths', () => {
+  it('uses selected base machine usage and footprint in ordinary recipe costs', () => {
     const adjustment = TestBed.inject(Adjustment);
     const data = recipes.adjustedDataset();
     const recipeSettings = recipes.settings();
@@ -1068,7 +762,6 @@ describe('Endfield calculation composition with the published aef data', () => {
     );
     // 2 * electric(2) * base usage(50) + 2 * footprint area(25).
     expect(ordinary.cost).toEqual(rational(250));
-    expect(objective.recipe!.cost).toEqual(rational(250));
     const adjustedPower =
       objective.recipe!.drain ?? objective.recipe!.consumption;
     expect(adjustedPower).toBeDefined();
@@ -1080,50 +773,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       costs,
       candidate,
     );
-    const withoutFootprint = adjustment.adjustObjective(
-      {
-        ...machineObjective('1', id),
-        machineId: 'miner_2',
-        overclock: rational(150),
-      },
-      TestBed.inject(ItemsStore).settings(),
-      recipeSettings,
-      TestBed.inject(MachinesStore).settings(),
-      { ...settings.settings(), costs },
-      candidate,
-    );
     expect(ordinary.cost).toEqual(rational(200));
-    expect(withoutFootprint.recipe!.cost).toEqual(rational(200));
-  });
-
-  it('keeps machine-less objective costs on the public adjustment path', () => {
-    const id = 'originium_ore';
-    const data = recipes.adjustedDataset();
-    const candidate = {
-      ...data,
-      recipeRecord: {
-        ...data.recipeRecord,
-        [id]: {
-          ...data.recipeRecord[id],
-          producers: undefined,
-          cost: undefined,
-        },
-      },
-    };
-    const adjust = (cost?: ReturnType<typeof rational>): ObjectiveSettings =>
-      TestBed.inject(Adjustment).adjustObjective(
-        { ...machineObjective('1', id), cost },
-        TestBed.inject(ItemsStore).settings(),
-        recipes.settings(),
-        TestBed.inject(MachinesStore).settings(),
-        settings.settings(),
-        candidate,
-      );
-    const result = adjust();
-    expect(result.machineId).toBeUndefined();
-    expect(result.recipe!.cost).toEqual(settings.settings().costs.machine);
-    expect(adjust(rational.zero).recipe!.cost).toEqual(rational.zero);
-    expect(data.recipeRecord[id].producers).toBeDefined();
   });
 
   it('matches the visible integer objective to an independent dot product of every solved model variable', () => {
@@ -1287,7 +937,7 @@ describe('Endfield calculation composition with the published aef data', () => {
     ).toBeUndefined();
   });
 
-  it('routes recipe edits and check state to their resource owner without creating ordinary targets', () => {
+  it('isolates source edits and check state from ordinary objectives and settings', () => {
     const state = store.snapshot();
     store.set({
       ...state,
@@ -1301,30 +951,65 @@ describe('Endfield calculation composition with the published aef data', () => {
       recipeId: 'originium_ore',
       recipeObjectiveId: resourceObjectiveId('originium_ore'),
     };
-    objectives.updateRecipeField(step, 'cost', rational.zero);
-    expect(
-      store.state().resourceRecipeSettings.originium_ore?.cost?.isZero(),
-    ).toBeTrue();
+    objectives.updateRecipeField(step, 'machineId', 'miner_3');
+    objectives.updateRecipeField(step, 'overclock', rational(125));
+    objectives.updateRecipeField(step, 'cost', rational(-1));
+    expect(store.snapshot().resourceRecipeSettings.originium_ore).toEqual({
+      machineId: 'miner_3',
+      overclock: rational(125),
+    });
     expect(objectives.state()).toEqual({});
+    expect(recipes.state()['originium_ore']).toBeUndefined();
     expect(
       objectives.stepsModified().objectives[
         resourceObjectiveId('originium_ore')
       ],
     ).toBeTrue();
-    const presentation = TestBed.inject(PRESENTATION_EXTENSION);
-    expect(presentation.toggleChecked(step, true)).toBeTrue();
-    expect(presentation.checked(step)).toBeTrue();
+    expect(objectives.recipesModified().machines).toBeTrue();
+    expect(objectives.recipesModified().beacons).toBeFalse();
+    expect(objectives.recipesModified().cost).toBeFalse();
+    store.setResourceChecked('originium_ore', true);
+    const solved = objectives
+      .steps()
+      .find((value) => value.recipeObjectiveId === step.recipeObjectiveId)!;
+    expect(solved.itemId).toBe('originium_ore');
+    expect(solved.checked).toBeFalse();
+    expect(
+      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
+    ).toBeTrue();
     expect(settings.state().checkedObjectiveIds.size).toBe(0);
-    presentation.clearChecked();
-    expect(presentation.hasChecked()).toBeFalse();
-    spyOn(presentation, 'owner').and.returnValue({
-      kind: 'extension',
-      id: 'unknown',
+    store.clearResourceChecked();
+    expect(store.snapshot().checkedDerived.size).toBe(0);
+    store.resetResourceRecipe('originium_ore');
+    expect(objectives.recipesModified().machines).toBeFalse();
+    store.updateResourceRecipeField(
+      'originium_ore',
+      'overclock',
+      rational(125),
+    );
+    expect(objectives.recipesModified().machines).toBeTrue();
+  });
+
+  it('gives item checks priority over a source objective on the same step', () => {
+    const state = store.snapshot();
+    store.set({
+      ...state,
+      checkedDerived: new Set([resourceOwner('originium_ore')]),
     });
-    expect(() => {
-      objectives.updateRecipeField(step, 'cost', rational.one);
-    }).toThrowError('Unhandled extension recipe owner: unknown');
-    expect(objectives.state()).toEqual({});
+    const recipeObjectiveId = resourceObjectiveId('originium_ore');
+    spyOn(objectives['normalization'], 'normalizeSteps').and.returnValue([
+      {
+        id: 'item',
+        itemId: 'originium_ore',
+        recipeObjectiveId,
+        checked: false,
+      },
+      { id: 'source', recipeObjectiveId, checked: false },
+    ]);
+    expect(objectives.steps().map((step) => step.checked)).toEqual([
+      false,
+      true,
+    ]);
   });
 
   it('gates solving and derived preparation while workspace resources are being restored', () => {

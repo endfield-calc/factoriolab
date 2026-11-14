@@ -13,8 +13,7 @@
             [disabled]="!ready()"
             [step]="rational(10)"
             stepType="multiply"
-            [maximum]="key === 'maximize' ? rational.zero : undefined"
-            [minimum]="key === 'maximize' ? undefined : rational.zero"
+            [minimum]="undefined"
             [ngModel]="editValue()[key]"
             (ngModelChange)="apply(key, $event)"
           ></lab-input-number>
@@ -23,18 +22,16 @@
     }
   </tbody>
 </table>
-@if (presentation.additionalCost; as additional) {
-  <lab-form-field [label]="additional.label">
-    <lab-input-number
-      [buttons]="true"
-      [disabled]="!ready()"
-      [minimum]="rational.zero"
-      [value]="editAdditionalCost()"
-      (valueChange)="applyAdditionalCost($event)"
-    ></lab-input-number>
-  </lab-form-field>
-  <p>{{ additional.description | translate }}</p>
-}
+<lab-form-field label="endfield.electric.title">
+  <lab-input-number
+    [buttons]="true"
+    [disabled]="!ready()"
+    [minimum]="rational.zero"
+    [value]="editElectric()"
+    (valueChange)="applyElectric($event)"
+  ></lab-input-number>
+</lab-form-field>
+<p>{{ 'endfield.electric.description' | translate }}</p>
 
 <div class="gap-1 sm:gap-2 flex justify-end">
   @if (modified()) {

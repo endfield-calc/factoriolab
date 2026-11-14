@@ -1,33 +1,33 @@
+import { TestBed } from '@angular/core/testing';
+
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import { EnergyType } from '~/data/schema/energy-type';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
+import { createEndfieldState, EndfieldState } from '~/endfield/domain/model';
+import { provideEndfield } from '~/endfield/providers';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import {
-  createEndfieldState,
-  EndfieldState,
-  resourceOwner,
-} from '~/endfield/domain/model';
-import {
-  StateExtension,
   WorkspaceRestoreError,
   WorkspaceState,
 } from '~/extensions/state-extension';
 import { rational } from '~/rational/rational';
-import {
-  ObjectiveSettings,
-  ObjectiveState,
-} from '~/state/objectives/objective';
+import { ItemsStore } from '~/state/items/items-store';
+import { MachinesStore } from '~/state/machines/machines-store';
+import { ObjectiveState } from '~/state/objectives/objective';
 import { ObjectiveUnit } from '~/state/objectives/objective-unit';
+import { ObjectivesStore } from '~/state/objectives/objectives-store';
+import { RecipesStore } from '~/state/recipes/recipes-store';
+import { Migration } from '~/state/router/migration';
+import { RouterSync } from '~/state/router/router-sync';
 import { DisplayRate } from '~/state/settings/display-rate';
+import { SettingsStore } from '~/state/settings/settings-store';
+import { TableStore } from '~/state/table/table-store';
+import { TestModule } from '~/tests/test-module';
 
-import { encodeEndfield } from './codec';
-import legacyHash from './legacy-hash.json';
-import {
-  decodeWorkspace,
-  preflightWorkspace,
-  prepareEndfield,
-} from './restore';
+import { decodeEndfield, encodeEndfield } from './codec';
+import { validateCurrentWorkspace } from './restore';
 
 const data = rawData as unknown as ModData;
 const hash = rawHash as unknown as ModHash;
@@ -99,32 +99,118 @@ function objective(
     ...settings,
   };
 }
-function prepared(
-  id: string,
-  item: string,
-  output: ReturnType<typeof rational>,
-): ObjectiveSettings {
-  return {
-    id,
-    recipe: { output: { [item]: output } },
-  } as unknown as ObjectiveSettings;
-}
 function decode(
   state: WorkspaceState,
-  params: Record<string, string> = { v: '11' },
-  preparedObjectives: Record<string, ObjectiveSettings> = {},
-): ReturnType<StateExtension['decode']> {
-  return decodeWorkspace({
-    state,
-    params,
-    plan: prepareEndfield({ modId: 'aef', params }),
-    data,
-    hash,
-    preparedObjectives,
-  });
+  params: Record<string, string> = { v: '12' },
+): { state: WorkspaceState; extension: EndfieldState } {
+  validateCurrentWorkspace(state, data);
+  return { state, extension: decodeEndfield(params['ef'], data) };
 }
 
 describe('Endfield workspace restoration', () => {
+  it('rejects negative ordinary machine quantities while retaining zero, positive values and signed costs', () => {
+    for (const type of [0, 1, 2, 3]) {
+      const entry = objective(
+        '1',
+        'originium_ore',
+        type,
+        -1,
+        ObjectiveUnit.Machines,
+      );
+      const state = { objectivesState: { 1: entry } };
+      expectDiagnostic(() => decode(state, { v: '12' }), 'objectives.1.value');
+      expect(state.objectivesState[1]).toBe(entry);
+      expect(entry.value).toEqual(rational(-1));
+    }
+    for (const value of [0, 2]) {
+      const entry = objective(
+        '1',
+        'originium_ore',
+        0,
+        value,
+        ObjectiveUnit.Machines,
+        {
+          cost: rational(-3),
+        },
+      );
+      const result = decode(
+        {
+          objectivesState: { 1: entry },
+          settingsState: { costs: { machine: rational(-2) } },
+        },
+        { v: '12' },
+      );
+      expect(result.state.objectivesState?.['1'].value).toEqual(
+        rational(value),
+      );
+      expect(result.state.objectivesState?.['1'].cost).toEqual(rational(-3));
+      expect(result.state.settingsState?.costs?.machine).toEqual(rational(-2));
+    }
+  });
+
+  it('validates detached enum and table values, including custom preset IDs', () => {
+    const invalidCases: [WorkspaceState, string][] = [
+      ...[-1, 4, 999, 1.5, NaN, Infinity].map(
+        (value): [WorkspaceState, string] => [
+          { settingsState: { displayRate: value } },
+          'settings.displayRate',
+        ],
+      ),
+      ...[-1, 2, 999, 0.5, NaN, Infinity].map(
+        (value): [WorkspaceState, string] => [
+          { settingsState: { maximizeType: value } },
+          'settings.maximizeType',
+        ],
+      ),
+      ...[-1, 1, 999, 0.5, NaN, Infinity].map(
+        (value): [WorkspaceState, string] => [
+          { settingsState: { preset: value } },
+          'settings.preset',
+        ],
+      ),
+      ...[-1, 0.5, NaN, Infinity].map((page): [WorkspaceState, string] => [
+        { tableState: { page } },
+        'table.page',
+      ]),
+      ...[-1, 0, 0.5, NaN, Infinity].map((rows): [WorkspaceState, string] => [
+        { tableState: { rows } },
+        'table.rows',
+      ]),
+    ];
+    for (const [state, field] of invalidCases) {
+      expectDiagnostic(() => {
+        validateCurrentWorkspace(state, data);
+      }, field);
+      expectDiagnostic(() => decode(state, { v: '12' }), field);
+    }
+    for (const displayRate of [0, 1, 2, 3])
+      for (const maximizeType of [0, 1]) {
+        const state: WorkspaceState = {
+          settingsState: { displayRate, maximizeType, preset: 0 },
+          tableState: { page: 0, rows: 37 },
+        };
+        expect(decode(state, { v: '12' }).state.tableState).toEqual(
+          state.tableState,
+        );
+      }
+
+    const customData: ModData = {
+      ...data,
+      defaults: { presets: [{ id: 7, label: 'custom' }] },
+    };
+    const state: WorkspaceState = { settingsState: { preset: 7 } };
+    expect(() => {
+      validateCurrentWorkspace(state, customData);
+    }).not.toThrow();
+    const withoutCustomPresets: ModData = { ...data, defaults: undefined };
+    expect(() => {
+      validateCurrentWorkspace(
+        { settingsState: { preset: 1 } },
+        withoutCustomPresets,
+      );
+    }).not.toThrow();
+  });
+
   it('rejects non-Rational values at the public detached workspace boundary without modifying the input', () => {
     for (const value of ['1', 1, { p: 1n, q: 1n }]) {
       const entry = {
@@ -138,78 +224,7 @@ describe('Endfield workspace restoration', () => {
     }
   });
 
-  it('preserves typed recipe fields on the detached legacy-supply API independently of wire serialization', () => {
-    const source = objective(
-      '1',
-      'originium_ore',
-      12,
-      2,
-      ObjectiveUnit.Machines,
-      { cost: rational(-3), productivity: rational(7, 5) },
-    );
-    const restored = decode(
-      { objectivesState: { 1: source } },
-      { v: '11' },
-      { 1: prepared('1', 'originium_ore', rational(1, 3)) },
-    ).extension as EndfieldState;
-    expect(
-      restored.resourceRecipeSettings.originium_ore?.cost?.eq(rational(-3)),
-    ).toBeTrue();
-    expect(
-      restored.resourceRecipeSettings.originium_ore?.productivity?.eq(
-        rational(7, 5),
-      ),
-    ).toBeTrue();
-    expect(
-      restored.resourceLimits.rates.originium_ore.eq(rational(2, 3)),
-    ).toBeTrue();
-  });
-  it('rejects zero-speed ordinary and legacy recipe settings before preparation', () => {
-    for (const type of [0, 12]) {
-      const state = {
-        objectivesState: {
-          1: objective('1', 'originium_ore', type, 1, ObjectiveUnit.Machines, {
-            overclock: rational.zero,
-          }),
-        },
-      };
-      expect(() =>
-        type === 12
-          ? preflightWorkspace({
-              state,
-              plan: prepareEndfield({ modId: 'aef', params: { v: '11' } }),
-              data,
-            })
-          : decode(state, { v: '12' }),
-      ).toThrowError(WorkspaceRestoreError, /overclock must be positive/);
-    }
-  });
-  it('selects frozen historic tables by original v even when ef exists', () => {
-    const ef = encodeEndfield(createEndfieldState());
-    const plan = prepareEndfield({ modId: 'aef', params: { v: '11', ef } });
-    expect(plan.hash).toEqual(legacyHash);
-    expect(plan.legacyModHashes?.modHash[16]).toBe('aef');
-    expect(plan.legacyModHashes?.modHashV0[2]).toBe('aef');
-    expect(Object.isFrozen(plan.hash?.recipes)).toBeTrue();
-    expect(plan.prepareObjectives).toBeFalse();
-    expect(
-      prepareEndfield({ params: { v: '11' } }).prepareObjectives,
-    ).toBeTrue();
-    expect(prepareEndfield({ params: { v: '12' } }).hash).toBeUndefined();
-    expect(Object.isFrozen(plan.legacyModHashes?.modHash)).toBeTrue();
-    expect(Object.isFrozen(plan.legacyModHashes?.modHashV0)).toBeTrue();
-    expect(prepareEndfield({ params: {} }).hash).toBeUndefined();
-    expect(prepareEndfield({ params: { o: 'iron_ore' } }).hash).toEqual(
-      legacyHash,
-    );
-    expectDiagnostic(
-      () => prepareEndfield({ params: { v: ['11', '12'] } }),
-      'v',
-    );
-  });
-
-  it('validates ordinary setting IDs before preparing and retains valid state', () => {
-    const plan = prepareEndfield({ params: { v: '11' } });
+  it('validates ordinary setting IDs before commit and retains valid state', () => {
     const state: WorkspaceState = {
       itemsState: { copper_ore: { beltId: 'belt', wagonId: 'test-wagon' } },
       recipesState: {
@@ -244,56 +259,13 @@ describe('Endfield workspace restoration', () => {
         overclock: rational(100),
       },
     };
-    expect(preflightWorkspace({ state, plan, data: supportedData })).toEqual(
-      [],
-    );
-    const result = decodeWorkspace({
-      state,
-      params: { v: '11' },
-      plan,
-      data: supportedData,
-      hash,
-    });
-    expect(result.state).toEqual({
-      ...state,
-      settingsState: {
-        ...state.settingsState,
-        costs: {
-          unproduceable: rational(1000000),
-          recycling: rational(1000),
-        },
-      },
-    });
+    expect(() => {
+      validateCurrentWorkspace(state, supportedData);
+    }).not.toThrow();
     expect(state.settingsState?.costs).toBeUndefined();
     expect(
       state.recipesState?.['copper_ore-liquid_water'].modules?.[0].id,
     ).toBe('test-module');
-  });
-
-  it('keeps a truly empty detached workspace sparse and fills historical costs without mutating input', () => {
-    const input: WorkspaceState = {};
-    const fresh = decode(input, {});
-    expect(fresh.state).toEqual({});
-    expect(Object.hasOwn(fresh.state, 'settingsState')).toBeFalse();
-    const historical = decode(input, { v: '12' });
-    expect(historical.state).toEqual({
-      settingsState: {
-        costs: {
-          unproduceable: rational(1000000),
-          recycling: rational(1000),
-        },
-      },
-    });
-    expect(input).toEqual({});
-
-    const explicit: WorkspaceState = {
-      settingsState: { costs: { recycling: rational.zero } },
-    };
-    expect(decode(explicit, { v: '12' }).state.settingsState?.costs).toEqual({
-      unproduceable: rational(1000000),
-      recycling: rational.zero,
-    });
-    expect(explicit.settingsState?.costs).toEqual({ recycling: rational.zero });
   });
 
   it('reports the field of invalid ordinary and global setting references', () => {
@@ -380,488 +352,267 @@ describe('Endfield workspace restoration', () => {
         'recipes.originium_ore.overclock',
       ],
     ];
-    const plan = prepareEndfield({ params: { v: '11' } });
     for (const [state, field] of cases)
-      expectDiagnostic(
-        () => preflightWorkspace({ state, plan, data: supportedData }),
-        field,
-      );
+      expectDiagnostic(() => {
+        validateCurrentWorkspace(state, supportedData);
+      }, field);
   });
 
-  it('preflights preparation references and selects only legacy supply objectives', () => {
-    const state: WorkspaceState = {
-      objectivesState: {
-        '1': objective('1', 'originium_ore', 11, 0, ObjectiveUnit.Machines),
-        '2': objective(
-          '2',
-          'copper_ore-liquid_water',
-          12,
-          3,
-          ObjectiveUnit.Machines,
-          { machineId: 'miner_4' },
-        ),
-        '3': objective('3', 'originium_ore', 0, 1, ObjectiveUnit.Machines),
-      },
-    };
-    const plan = prepareEndfield({ params: { v: '11' } });
-    expect(preflightWorkspace({ state, plan, data })).toEqual(['2']);
-    const invalidState: WorkspaceState = {
-      ...state,
-      objectivesState: {
-        ...state.objectivesState,
-        '2': objective(
-          '2',
-          'copper_ore-liquid_water',
-          12,
-          3,
-          ObjectiveUnit.Machines,
-          { machineId: 'missing' },
-        ),
-      },
-    };
-    expect(() =>
-      preflightWorkspace({ state: invalidState, plan, data }),
-    ).toThrowError(WorkspaceRestoreError);
-    const efPlan = prepareEndfield({
-      params: { v: '11', ef: encodeEndfield(createEndfieldState()) },
+  it('validates ordinary objective fields and ignores unsupported objective fields', () => {
+    const invalid = objective('1', 'missing', 0, -1, ObjectiveUnit.Machines, {
+      overclock: rational.zero,
     });
-    expect(
-      preflightWorkspace({ state: invalidState, plan: efPlan, data }),
-    ).toEqual([]);
-    expect(() =>
-      preflightWorkspace({
-        state,
-        plan: prepareEndfield({ params: { v: '11', ef: 'corrupt' } }),
-        data,
-      }),
-    ).toThrowError(WorkspaceRestoreError);
-    expect(() =>
-      preflightWorkspace({
-        state: { recipesState: { missing: { machineId: 'miner_4' } } },
-        plan,
-        data,
-      }),
-    ).toThrowError(WorkspaceRestoreError);
-  });
-
-  it('extracts legacy supply, machine and transfer with adjusted rates and preserves ordinary order and checks', () => {
-    const state: WorkspaceState = {
-      objectivesState: {
-        '1': objective('1', 'originium_ore', 11, 0, ObjectiveUnit.Machines),
-        '2': objective(
-          '2',
-          'copper_ore-liquid_water',
-          12,
-          28,
-          ObjectiveUnit.Machines,
-          { machineId: 'miner_4', overclock: rational(125) },
-        ),
-        '3': objective('3', 'xiranite_powder', 0, 4, ObjectiveUnit.Machines),
-        '4': objective('4', 'originium_ore', 0, 86400, ObjectiveUnit.Items),
-        '5': objective(
-          '5',
-          'copper_ore-liquid_water',
-          12,
-          6,
-          ObjectiveUnit.Machines,
-          { machineId: 'miner_4' },
-        ),
-        '6': objective('6', 'xiranite_oven_1', 13, 12, ObjectiveUnit.Items),
-        '7': objective('7', 'xiranite_oven_1', 13, 9, ObjectiveUnit.Items),
-        '8': objective('8', 'domain_key_tundra', 14, 1, ObjectiveUnit.Items),
-        '9': objective('9', 'xiranite_powder', 1, 3, ObjectiveUnit.Items),
-      },
-      settingsState: {
-        displayRate: 3 as DisplayRate,
-        checkedObjectiveIds: new Set(['2', '3', '4', '9']),
-        checkedItemIds: new Set(['copper_ore']),
-      },
-    };
-    const output = decode(
-      state,
-      { v: '11', cet: '3/2' },
-      {
-        '2': prepared('2', 'copper_ore', rational(1, 3)),
-        '5': prepared('5', 'copper_ore', rational(2, 3)),
-      },
-    );
-    const extension = output.extension as EndfieldState;
-    expect(extension.resourceLimits.enabled).toBeTrue();
-    expect(extension.resourceLimits.rates.copper_ore).toEqual(rational(4));
-    expect(extension.resourceRecipeSettings.copper_ore).toEqual({
-      machineId: 'miner_4',
-    });
-    expect(extension.machineLimits.limits['xiranite_oven_1']).toEqual(
-      rational(9),
-    );
-    expect(extension.transfer.enabled).toBeTrue();
-    expect(extension.electric).toEqual(rational(3, 2));
-    expect(
-      extension.checkedDerived.has(resourceOwner('copper_ore')),
-    ).toBeTrue();
-    expect(output.diagnostics.map((d) => d.code)).toEqual([
-      'duplicate-legacy-objective',
-      'duplicate-legacy-objective',
-    ]);
-    expect(
-      Object.values(output.state.objectivesState ?? {}).map((o) => [
-        o.id,
-        o.targetId,
-        o.value.toString(),
-        o.unit,
-      ]),
-    ).toEqual([
-      ['1', 'xiranite_powder-carbon_enr', '4', ObjectiveUnit.Machines],
-      ['2', 'originium_ore', '86400', ObjectiveUnit.Items],
-      ['3', 'xiranite_powder', '3', ObjectiveUnit.Items],
-    ]);
-    expect(output.state.settingsState?.displayRate).toBe(3 as DisplayRate);
-    expect(output.state.settingsState?.checkedObjectiveIds).toEqual(
-      new Set(['1', '2', '3']),
-    );
-    expect(output.state.settingsState?.checkedItemIds).toEqual(
-      new Set(['copper_ore']),
-    );
-  });
-
-  it('preserves valid ef ahead of legacy fields and does not migrate their checked IDs', () => {
-    const defaults = createEndfieldState();
-    const saved = {
-      ...defaults,
-      electric: rational(5),
-      checkedDerived: new Set([resourceOwner('iron_ore')]),
-    };
-    const out = decode(
-      {
-        objectivesState: {
-          '1': objective(
-            '1',
-            'copper_ore-liquid_water',
-            12,
-            1,
-            ObjectiveUnit.Machines,
-          ),
-          '2': objective('2', 'iron_ore', 0, 3, ObjectiveUnit.Items),
-        },
-        settingsState: { checkedObjectiveIds: new Set(['1', '2']) },
-      },
-      { v: '11', cet: '2', ef: encodeEndfield(saved) },
-    );
-    expect(out.extension).toEqual(saved);
-    expect(out.state.settingsState?.checkedObjectiveIds).toEqual(
-      new Set(['1']),
-    );
-    expect(out.diagnostics.map((d) => d.code)).toEqual([
-      'ignored-legacy-extension',
-    ]);
-  });
-
-  it('rejects invalid hidden goals with the original state and field intact', () => {
-    const cases: [
-      ObjectiveState,
-      string,
-      Record<string, ObjectiveSettings>?,
-    ][] = [
-      [
-        objective('1', 'originium_ore', 11, 0, ObjectiveUnit.Items),
-        'objectives.1.unit',
-      ],
-      [
-        objective('1', 'missing-recipe', 11, 0, ObjectiveUnit.Machines),
-        'objectives.1.targetId',
-      ],
-      [
-        objective('1', 'originium_ore', 11, 1, ObjectiveUnit.Machines),
-        'objectives.1.value',
-      ],
-      [
-        objective('1', 'originium_ore', 12, -1, ObjectiveUnit.Machines),
-        'objectives.1.value',
-      ],
-      [
-        objective('1', 'originium_ore', 12, 1, ObjectiveUnit.Machines),
-        'objectives.1.recipe.output.originium_ore',
-      ],
-      [
-        objective('1', 'originium_ore', 12, 1, ObjectiveUnit.Machines),
-        'objectives.1.recipe.output.originium_ore',
-        { '1': prepared('1', 'originium_ore', rational.zero) },
-      ],
-      [
-        objective('1', 'originium_ore', 12, 1, ObjectiveUnit.Machines),
-        'objectives.1.recipe.output.originium_ore',
-        { '1': prepared('1', 'iron_ore', rational.one) },
-      ],
-      [
-        objective('1', 'miner_4', 13, 1, ObjectiveUnit.Items),
-        'objectives.1.targetId',
-      ],
-      [
-        objective('1', 'xiranite_oven_1', 13, 1, ObjectiveUnit.Machines),
-        'objectives.1.targetId',
-      ],
-      [
-        objective('1', 'domain_key_tundra', 14, 1, ObjectiveUnit.Machines),
-        'objectives.1.targetId',
-      ],
-      [
-        objective('1', 'domain_key_jinlong', 14, 1, ObjectiveUnit.Items),
-        'objectives.1.targetId',
-      ],
-      [
-        objective('1', 'originium_ore', 15, 1, ObjectiveUnit.Machines),
-        'objectives.1.type',
-      ],
-      [
-        objective('1', 'originium_ore', 0, 1, 9 as ObjectiveUnit),
-        'objectives.1.unit',
-      ],
-    ];
-    for (const [goal, field, preparedObjectives] of cases) {
-      const state: WorkspaceState = {
-        objectivesState: { '1': goal },
-        settingsState: { checkedObjectiveIds: new Set(['1']) },
-      };
-      expectDiagnostic(
-        () => decode(state, { v: '11' }, preparedObjectives),
-        field,
-      );
-      expect(state.objectivesState?.['1']).toBe(goal);
-      expect(state.settingsState?.checkedObjectiveIds).toEqual(new Set(['1']));
-    }
-    const legacy = {
-      objectivesState: {
-        '1': objective('1', 'originium_ore', 11, 0, ObjectiveUnit.Machines),
-      },
-    };
-    expectDiagnostic(() => decode(legacy, { v: '12' }), 'objectives.1.type');
-    expectDiagnostic(() => decode({}, { v: '12', cet: '1' }), 'cet');
-  });
-
-  it('copies legacy settings deeply and uses the last duplicate supply and transfer without changing input', () => {
-    const firstSettings = {
-      machineId: 'miner_4',
-      fuelId: 'test-fuel',
-      overclock: rational(125),
-      modules: [{ id: 'test-module', count: rational(2) }],
-      beacons: [
-        {
-          id: 'test-beacon',
-          count: rational.one,
-          total: rational(2),
-          modules: [{ id: 'test-module', count: rational.one }],
-        },
-      ],
-    };
-    const input: WorkspaceState = {
-      objectivesState: {
-        '1': objective(
-          '1',
-          'copper_ore-liquid_water',
-          12,
-          2,
-          ObjectiveUnit.Machines,
-          firstSettings,
-        ),
-        '2': objective(
-          '2',
-          'copper_ore-liquid_water',
-          12,
-          4,
-          ObjectiveUnit.Machines,
-          firstSettings,
-        ),
-        '3': objective('3', 'domain_key_tundra', 14, 1, ObjectiveUnit.Items),
-        '4': objective('4', 'domain_key_tundra', 14, 1, ObjectiveUnit.Items),
-      },
-      settingsState: { checkedObjectiveIds: new Set(['2']) },
-    };
-    const params = { v: '11' };
-    const plan = prepareEndfield({ params });
-    const result = decodeWorkspace({
-      state: input,
-      params,
-      plan,
-      data: supportedData,
-      hash,
-      preparedObjectives: {
-        '1': prepared('1', 'copper_ore', rational(1, 3)),
-        '2': prepared('2', 'copper_ore', rational(2, 3)),
-      },
-    });
-    const extension = result.extension as EndfieldState;
-    expect(extension.resourceLimits.rates.copper_ore).toEqual(rational(8, 3));
-    expect(extension.resourceRecipeSettings.copper_ore).toEqual(firstSettings);
-    expect(extension.resourceRecipeSettings.copper_ore?.modules).not.toBe(
-      firstSettings.modules,
-    );
-    expect(
-      extension.resourceRecipeSettings.copper_ore?.beacons?.[0].modules,
-    ).not.toBe(firstSettings.beacons[0].modules);
-    expect(result.diagnostics.map((entry) => entry.code)).toEqual([
-      'duplicate-legacy-objective',
-      'duplicate-legacy-objective',
-    ]);
-    firstSettings.modules[0].id = 'changed';
-    firstSettings.beacons[0].modules[0].id = 'changed';
-    expect(extension.resourceRecipeSettings.copper_ore?.modules?.[0].id).toBe(
-      'test-module',
-    );
-    expect(
-      extension.resourceRecipeSettings.copper_ore?.beacons?.[0].modules?.[0].id,
-    ).toBe('test-module');
-    expect(input.settingsState?.checkedObjectiveIds).toEqual(new Set(['2']));
-  });
-
-  it('uses the later duplicate supply settings even when the later settings are empty', () => {
-    const state: WorkspaceState = {
-      objectivesState: {
-        '1': objective(
-          '1',
-          'copper_ore-liquid_water',
-          12,
-          2,
-          ObjectiveUnit.Machines,
-          { machineId: 'miner_4' },
-        ),
-        '2': objective(
-          '2',
-          'copper_ore-liquid_water',
-          12,
-          3,
-          ObjectiveUnit.Machines,
-        ),
-      },
-    };
-    const output = decode(
-      state,
-      { v: '11' },
-      {
-        '1': prepared('1', 'copper_ore', rational(1, 3)),
-        '2': prepared('2', 'copper_ore', rational(1, 3)),
-      },
-    );
-    const extension = output.extension as EndfieldState;
-    expect(extension.resourceLimits.rates.copper_ore).toEqual(rational.one);
-    expect(extension.resourceRecipeSettings.copper_ore).toBeUndefined();
-    expect(output.diagnostics.map((entry) => entry.code)).toEqual([
-      'duplicate-legacy-objective',
-    ]);
-    expect(state.objectivesState?.['1'].machineId).toBe('miner_4');
-  });
-
-  it('distinguishes an enabled zero limit, and never falls back from invalid ef to legacy', () => {
-    const state: WorkspaceState = {
-      objectivesState: {
-        '1': objective('1', 'originium_ore', 11, 0, ObjectiveUnit.Machines),
-      },
-    };
-    const output = decode(state);
-    expect(
-      (output.extension as EndfieldState).resourceLimits.enabled,
-    ).toBeTrue();
-    expect(
-      (output.extension as EndfieldState).resourceLimits.rates.originium_ore,
-    ).toEqual(rational.zero);
-    expect(output.state.objectivesState).toEqual({});
-    const unknownVersion = btoa('{"version":2}').replace(/=+$/, '');
-    for (const ef of ['broken', unknownVersion]) {
-      const params = { v: '11', ef, cet: '3' };
-      const original = { ...params };
-      const plan = prepareEndfield({ params });
-      expectDiagnostic(
-        () => preflightWorkspace({ state, plan, data }),
-        ef === 'broken' ? 'ef' : 'ef.version',
-        ef === 'broken'
-          ? 'invalid-endfield-state'
-          : 'unsupported-endfield-version',
-      );
-      expectDiagnostic(
-        () => decode(state, params),
-        ef === 'broken' ? 'ef' : 'ef.version',
-        ef === 'broken'
-          ? 'invalid-endfield-state'
-          : 'unsupported-endfield-version',
-      );
-      expect(params).toEqual(original);
-      expect(Number(state.objectivesState?.['1'].type)).toBe(11);
-    }
-  });
-
-  it('aliases the confirmed retired recipe only in legacy recipe objectives', () => {
-    expect(legacyHash.recipes).toContain('xiranite_powder');
-    expect(
-      data.recipes.some((entry) => entry.id === 'xiranite_powder'),
-    ).toBeFalse();
-    expect(
-      data.items.some((entry) => entry.id === 'xiranite_powder'),
-    ).toBeTrue();
-    const recipeGoal = objective(
+    expectDiagnostic(() => {
+      validateCurrentWorkspace({ objectivesState: { 1: invalid } }, data);
+    }, 'objectives.1.targetId');
+    const invalidUnit = objective(
       '1',
-      'xiranite_powder',
+      'originium_ore',
       0,
-      4,
-      ObjectiveUnit.Machines,
-      {
-        machineId: 'xiranite_oven_1',
-        overclock: rational(125),
-      },
+      1,
+      999 as ObjectiveUnit,
+    );
+    expectDiagnostic(() => {
+      validateCurrentWorkspace({ objectivesState: { 1: invalidUnit } }, data);
+    }, 'objectives.1.unit');
+    const unsupported = [11, 12, 13, 14, 999].map((type, index) =>
+      objective(
+        String(index + 1),
+        'missing',
+        type,
+        -1,
+        ObjectiveUnit.Machines,
+        { overclock: rational.zero },
+      ),
     );
     const state: WorkspaceState = {
-      objectivesState: {
-        '1': recipeGoal,
-        '2': objective('2', 'xiranite_powder', 1, 7, ObjectiveUnit.Items),
+      objectivesState: Object.fromEntries(
+        unsupported.map((entry) => [entry.id, entry]),
+      ),
+      settingsState: {
+        checkedObjectiveIds: new Set(['2', '4']),
+        costs: { recycling: rational.zero },
       },
     };
-    const output = decode(state);
-    expect(output.state.objectivesState?.['1']).toEqual({
-      ...recipeGoal,
-      targetId: 'xiranite_powder-carbon_enr',
-    });
-    expect(output.state.objectivesState?.['2']).toEqual(
-      state.objectivesState?.['2'],
+    expect(() => {
+      validateCurrentWorkspace(state, data);
+    }).not.toThrow();
+    expect(state.settingsState?.checkedObjectiveIds).toEqual(
+      new Set(['2', '4']),
     );
-    expect(state.objectivesState?.['1'].targetId).toBe('xiranite_powder');
-    expectDiagnostic(() => decode(state, { v: '12' }), 'objectives.1.targetId');
+    expect(state.settingsState?.costs?.recycling).toEqual(rational.zero);
   });
 
-  it('does not hide invalid fields, retired objectives or unknown special targets', () => {
-    const invalidStates: WorkspaceState[] = [
-      {
-        objectivesState: {
-          '1': objective('1', 'missing', 0, 1, ObjectiveUnit.Items),
-        },
-      },
-      {
-        objectivesState: {
-          '1': objective('1', 'originium_ore', 10, 0, ObjectiveUnit.Machines),
-        },
-      },
-      {
-        objectivesState: {
-          '1': objective('1', 'iron_ore', 12, 1, ObjectiveUnit.Machines),
-        },
-      },
-      {
-        objectivesState: {
-          '1': objective('1', 'domain_key_jinlong', 14, 1, ObjectiveUnit.Items),
-        },
-      },
-      { itemsState: { missing: { beltId: 'belt' } } },
-      { recipesState: { missing: { machineId: 'miner_4' } } },
-      { machinesState: { missing: { overclock: rational(100) } } },
-      { settingsState: { checkedItemIds: new Set(['missing']) } },
-    ];
-    for (const state of invalidStates)
-      expect(() => decode(state)).toThrowError(WorkspaceRestoreError);
-    expect(() => decode({}, { v: '11', cet: '-1' })).toThrowError(
-      WorkspaceRestoreError,
+  it('rejects zero ordinary recipe speed and unknown producers', () => {
+    for (const settings of [
+      { overclock: rational.zero },
+      { machineId: 'miner_4' },
+    ]) {
+      const entry = objective(
+        '1',
+        'originium_ore',
+        0,
+        1,
+        ObjectiveUnit.Machines,
+        settings,
+      );
+      expect(() => {
+        validateCurrentWorkspace({ objectivesState: { 1: entry } }, data);
+      }).toThrowError(WorkspaceRestoreError);
+    }
+  });
+});
+
+describe('Endfield router validation', () => {
+  let router: RouterSync;
+  let settings: SettingsStore;
+  let objectives: ObjectivesStore;
+  let items: ItemsStore;
+  let recipes: RecipesStore;
+  let machines: MachinesStore;
+  let table: TableStore;
+  let endfield: EndfieldStore;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [TestModule],
+      providers: [
+        ...provideEndfield(),
+        { provide: SettingsStore, useClass: SettingsStore },
+      ],
+    });
+    settings = TestBed.inject(SettingsStore);
+    settings.apply({ modId: 'aef', displayRate: DisplayRate.PerHour });
+    settings['modDataResource'].set(data);
+    settings['modHashResource'].set(hash);
+    router = TestBed.inject(RouterSync);
+    objectives = TestBed.inject(ObjectivesStore);
+    items = TestBed.inject(ItemsStore);
+    recipes = TestBed.inject(RecipesStore);
+    machines = TestBed.inject(MachinesStore);
+    table = TestBed.inject(TableStore);
+    endfield = TestBed.inject(EndfieldStore);
+  });
+
+  function restore(query: string): void {
+    const params = router.toParams(query);
+    const migrated = TestBed.inject(Migration).migrate('aef', params);
+    router.updateState(
+      migrated.modId,
+      migrated.params,
+      migrated.isBare,
+      data,
+      hash,
     );
-    expect(() => decode({}, { v: '11', cet: '2', ef: 'corrupt' })).toThrowError(
-      WorkspaceRestoreError,
+  }
+
+  it('reads ef exactly once and does not read cet', () => {
+    let reads = 0;
+    const encoded = encodeEndfield({
+      ...createEndfieldState(),
+      electric: rational(3),
+    });
+    const params = Object.defineProperties(
+      { v: '12' },
+      {
+        ef: {
+          get: () => {
+            reads++;
+            return encoded;
+          },
+        },
+        cet: {
+          get: () => {
+            throw new Error('cet must not be read');
+          },
+        },
+      },
     );
-    expect(
-      (decode({}, { v: '12' }).extension as EndfieldState).electric,
-    ).toEqual(rational.one);
+    router.updateState('aef', params, true, data, hash);
+    expect(reads).toBe(1);
+    expect(endfield.state().electric).toEqual(rational(3));
+  });
+
+  it('rejects invalid wire values without publishing any part of the candidate', () => {
+    objectives.set({
+      1: objective('1', 'originium_ore', 0, 3, ObjectiveUnit.Machines),
+    });
+    items.set({ iron_ore: { beltId: 'belt' } });
+    recipes.set({ 'sewage-treat': { cost: rational(-4) } });
+    machines.set({ miner_4: { overclock: rational(125) } });
+    table.set({ asc: true, page: 2, rows: 25, filter: 'retained' });
+    endfield.set({ ...createEndfieldState(), electric: rational(8) });
+    const before = {
+      objectives: objectives.state(),
+      items: items.state(),
+      recipes: recipes.state(),
+      machines: machines.state(),
+      settings: settings.state(),
+      table: table.state(),
+      extension: endfield.state(),
+    };
+    const dispatch = spyOn(router, 'dispatch').and.callThrough();
+    const commit = spyOn(endfield, 'set').and.callThrough();
+    for (const input of [
+      'o=sewage-treat*-1*3*0',
+      'odr=999',
+      'odr=Infinity',
+      'omt=999',
+      'mpr=1',
+      'tpg=-1',
+      'tpg=1.5',
+      'tro=0',
+      'tro=-1',
+      'tro=1.5',
+    ]) {
+      expect(() => {
+        restore(`v=12&${input}`);
+      })
+        .withContext(input)
+        .toThrowError(WorkspaceRestoreError);
+      expect(objectives.state()).toBe(before.objectives);
+      expect(items.state()).toBe(before.items);
+      expect(recipes.state()).toBe(before.recipes);
+      expect(machines.state()).toBe(before.machines);
+      expect(settings.state()).toBe(before.settings);
+      expect(table.state()).toBe(before.table);
+      expect(endfield.state()).toBe(before.extension);
+    }
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(commit).not.toHaveBeenCalled();
+    expect(objectives.state()['1'].value).toEqual(rational(3));
+    expect(endfield.state().electric).toEqual(rational(8));
+  });
+
+  it('rolls back previously loaded stores if a later store load fails', () => {
+    objectives.set({
+      1: objective('1', 'originium_ore', 0, 3, ObjectiveUnit.Machines),
+    });
+    settings.apply({
+      costs: { ...settings.state().costs, machine: rational(-2) },
+    });
+    endfield.set({ ...createEndfieldState(), electric: rational(8) });
+    const previous = {
+      objectives: objectives.state(),
+      items: items.state(),
+      recipes: recipes.state(),
+      machines: machines.state(),
+      settings: settings.state(),
+      table: table.state(),
+      endfield: encodeEndfield(endfield.snapshot()),
+    };
+    spyOn(table, 'load').and.throwError('table load failed');
+    expect(() => {
+      restore('v=12&o=xiranite_powder*2&cma=0');
+    }).toThrowError('table load failed');
+    expect(objectives.state()).toBe(previous.objectives);
+    expect(items.state()).toBe(previous.items);
+    expect(recipes.state()).toBe(previous.recipes);
+    expect(machines.state()).toBe(previous.machines);
+    expect(settings.state()).toBe(previous.settings);
+    expect(table.state()).toBe(previous.table);
+    expect(encodeEndfield(endfield.snapshot())).toBe(previous.endfield);
+  });
+
+  it('reports both a commit failure and a subsequent rollback failure', () => {
+    spyOn(table, 'load').and.throwError('table load failed');
+    const originalSet = items.set.bind(items);
+    let calls = 0;
+    spyOn(items, 'set').and.callFake((state) => {
+      if (++calls === 2) throw new Error('items rollback failed');
+      originalSet(state);
+    });
+    let error: unknown;
+    try {
+      restore('v=12&o=xiranite_powder*2');
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(AggregateError);
+    if (error instanceof AggregateError)
+      expect(error.errors.map((cause: Error) => cause.message)).toEqual([
+        'table load failed',
+        'items rollback failed',
+      ]);
+  });
+
+  it('publishes valid enum and page values, machine quantities and signed costs', () => {
+    for (const [displayRate, maximizeType, page, rows, value] of [
+      [0, 0, 0, 1, 0],
+      [1, 1, 1, 10, 1],
+      [2, 0, 2, 25, 2],
+      [3, 1, 3, 37, 3],
+    ]) {
+      restore(
+        `v=12&odr=${displayRate}&omt=${maximizeType}&mpr=0&tpg=${page}&tro=${rows}&cma=-2&o=sewage-treat*${value}*3*0`,
+      );
+      expect(settings.state().displayRate).toBe(displayRate);
+      expect(settings.state().maximizeType).toBe(maximizeType);
+      expect(settings.state().preset).toBe(0);
+      expect(settings.state().costs.machine).toEqual(rational(-2));
+      expect(table.state().page).toBe(page);
+      expect(table.state().rows).toBe(rows);
+      expect(objectives.state()['1'].value).toEqual(rational(value));
+    }
   });
 });

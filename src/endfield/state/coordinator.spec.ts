@@ -1,15 +1,10 @@
 import { effect, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import {
-  EFFECTIVE_DEFAULTS,
-  upstreamProduct,
-} from '~/extensions/product-profile';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { rational } from '~/rational/rational';
 import { SettingsStore } from '~/state/settings/settings-store';
 
-import { createEndfieldState } from '../domain/model';
 import { EndfieldCoordinator } from './coordinator';
 
 describe('EndfieldCoordinator', () => {
@@ -34,13 +29,6 @@ describe('EndfieldCoordinator', () => {
     settings = signal(initial());
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: EFFECTIVE_DEFAULTS,
-          useValue: {
-            ...upstreamProduct.defaults(),
-            extension: createEndfieldState(),
-          },
-        },
         {
           provide: SettingsStore,
           useValue: {

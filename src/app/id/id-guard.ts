@@ -2,15 +2,15 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 
 import { DEFAULT_MOD } from '~/data/datasets';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
+import { PINNED_MOD_ID } from '~/extensions/defaults';
 import { Migration } from '~/state/router/migration';
 import { RouterSync } from '~/state/router/router-sync';
 import { coalesce } from '~/utils/nullish';
 
 export const idGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const product = inject(PRODUCT_PROFILE);
-  const defaultId = product.defaultModId ?? DEFAULT_MOD;
+  const pinnedModId = inject(PINNED_MOD_ID);
+  const defaultId = pinnedModId ?? DEFAULT_MOD;
 
   const id = route.params['id'] as string | undefined;
 
@@ -20,7 +20,7 @@ export const idGuard: CanActivateFn = (route) => {
     case 'wizard':
     case 'flow':
     case 'data': {
-      if (product.allowedModIds != null)
+      if (pinnedModId != null)
         return router.createUrlTree([defaultId, id], {
           queryParams: route.queryParams,
         });
@@ -42,10 +42,8 @@ export const idGuard: CanActivateFn = (route) => {
     }
   }
 
-  if (product.allowedModIds != null)
-    return id && product.allowedModIds.includes(id)
-      ? true
-      : router.createUrlTree([defaultId]);
+  if (pinnedModId != null)
+    return id === pinnedModId ? true : router.createUrlTree([defaultId]);
 
   switch (id) {
     case 'factorio':
@@ -66,9 +64,6 @@ export const idGuard: CanActivateFn = (route) => {
 };
 
 export const editorGuard: CanActivateFn = () => {
-  const product = inject(PRODUCT_PROFILE);
-  return (
-    product.allowEditor ||
-    inject(Router).createUrlTree([product.defaultModId ?? DEFAULT_MOD])
-  );
+  const pinnedModId = inject(PINNED_MOD_ID);
+  return pinnedModId == null || inject(Router).createUrlTree([pinnedModId]);
 };

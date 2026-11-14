@@ -5,25 +5,25 @@ import {
   faPauseCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
+import manifest from '/public/endfield/product.json';
 import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
 import {
-  CALCULATION_EXTENSION,
-  CalculationInput,
-  upstreamCalculation,
+  resourceFromObjectiveId,
+  resourceOwner,
+} from '~/endfield/domain/model';
+import {
+  compileEndfieldRules,
+  deriveEndfieldObjectives,
+  tundraTransferRecipeIds,
+} from '~/endfield/domain/rules';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
+import {
+  CalculationModelContext,
+  ModelRules,
 } from '~/extensions/calculation-extension';
-import { immutableValue, mutableValue } from '~/extensions/immutable';
-import {
-  PRESENTATION_EXTENSION,
-  StepOwner,
-  upstreamPresentation,
-} from '~/extensions/presentation-extension';
-import { PRODUCT_PROFILE } from '~/extensions/product-profile';
-import {
-  STATE_EXTENSION,
-  WorkspaceRestoreError,
-} from '~/extensions/state-extension';
+import { WorkspaceRestoreError } from '~/extensions/state-extension';
 import { WorkspaceLifecycle } from '~/extensions/workspace-lifecycle';
 import { Option } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
@@ -68,10 +68,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   private readonly settingsStore = inject(SettingsStore);
   private readonly solver = inject(Solver);
   private readonly lifecycle = inject(WorkspaceLifecycle);
-  private readonly calculation = inject(CALCULATION_EXTENSION);
-  private readonly extension = inject(STATE_EXTENSION);
-  private readonly presentation = inject(PRESENTATION_EXTENSION);
-  private readonly product = inject(PRODUCT_PROFILE);
+  private readonly endfieldStore = inject(EndfieldStore);
   private readonly translate = inject(Translate);
 
   readonly baseObjectives = computed(() => {
@@ -113,26 +110,27 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     ),
   );
 
-  /** A single immutable input and complete settings index for solving and steps. */
+  /** Snapshot only independent Endfield state and the small rule inputs. */
   readonly calculationContext = computed(() => {
     const ordinary = this.objectives();
     const data = this.recipesStore.adjustedDataset();
     const settings = this.settingsStore.settings();
     const recipeSettings = this.recipesStore.settings();
-    const input: CalculationInput = immutableValue({
-      data,
-      settings,
-      recipeSettings,
-      objectives: ordinary,
-      extension: this.extension.snapshot(),
-    });
-    const declarations = this.lifecycle.ready()
-      ? this.calculation.derive(input)
-      : [];
-    const owners: Record<string, StepOwner> = {};
+    const isEndfield = data.modId === 'aef';
+    const state = isEndfield ? this.endfieldStore.snapshot() : undefined;
+    const declarations =
+      this.lifecycle.ready() &&
+      state != null &&
+      (ordinary.length > 0 ||
+        state.resourceLimits.enabled ||
+        state.machineLimits.enabled ||
+        state.transfer.enabled)
+        ? deriveEndfieldObjectives(state)
+        : [];
+    const ids = new Set(ordinary.map((objective) => objective.id));
     const rates = new Map<string, Rational>();
     const derived = declarations.map((declaration) => {
-      const base = mutableValue<ObjectiveState>(declaration.objective);
+      const base: ObjectiveState = { ...declaration.objective };
       const exists = isRecipeObjective(base)
         ? data.recipeRecord[base.targetId] != null
         : data.itemRecord[base.targetId] != null;
@@ -141,11 +139,9 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
           base.id,
           `Unknown derived target: ${base.targetId}`,
         );
-      if (
-        ordinary.some((objective) => objective.id === base.id) ||
-        owners[base.id] != null
-      )
+      if (ids.has(base.id))
         this.invalidDerived(base.id, 'Duplicate derived objective ID');
+      ids.add(base.id);
       let prepared = this.adjustment.adjustObjective(
         base,
         this.itemsStore.settings(),
@@ -175,7 +171,6 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
           ),
         };
       }
-      owners[base.id] = { kind: 'extension', id: declaration.owner };
       return prepared;
     });
     const objectives = [...ordinary, ...derived];
@@ -191,9 +186,8 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     return {
       objectives,
       normalized,
-      owners,
-      input,
-      recipeSettings: input.recipeSettings,
+      state,
+      recipeSettings,
     };
   });
 
@@ -211,6 +205,35 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     const data = this.recipesStore.adjustedDataset();
     const paused = this.preferencesStore.paused();
     const glpkAlgorithm = this.preferencesStore.glpkAlgorithm();
+    let modelContext: CalculationModelContext | undefined;
+    if (context.state != null) {
+      const state = context.state;
+      const raw = this.settingsStore.dataset();
+      const transferRecipeIds = tundraTransferRecipeIds(raw.recipeRecord);
+      const availability = {
+        recipeIds: settings.availableRecipeIds,
+        machineIds: new Set(
+          Object.entries(raw.machineRecord)
+            .filter(
+              ([id, machine]) =>
+                settings.availableItemIds.has(id) &&
+                (machine.locations == null ||
+                  machine.locations.some((location) =>
+                    settings.locationIds.has(location),
+                  )),
+            )
+            .map(([id]) => id),
+        ),
+      };
+      modelContext = {
+        recipeSettings: context.recipeSettings,
+        compile: (variables): ModelRules =>
+          compileEndfieldRules(state, variables, {
+            availability,
+            transferRecipeIds,
+          }),
+      };
+    }
 
     return this.solver.solve(
       objectives,
@@ -218,13 +241,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
       data,
       paused,
       glpkAlgorithm,
-      this.calculation === upstreamCalculation
-        ? undefined
-        : {
-            recipeSettings: context.recipeSettings,
-            compile: (variables) =>
-              this.calculation.rules(context.input, variables),
-          },
+      modelContext,
     );
   });
 
@@ -236,11 +253,14 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
       result.steps,
       objectives,
     );
-    if (this.presentation === upstreamPresentation) return normalized;
-    return normalized.map((step) => ({
-      ...step,
-      checked: this.presentation.checked(step) ?? step.checked,
-    }));
+    if (this.recipesStore.adjustedDataset().modId !== 'aef') return normalized;
+    const checked = this.endfieldStore.state().checkedDerived;
+    return normalized.map((step) => {
+      const resource = resourceFromObjectiveId(step.recipeObjectiveId);
+      return step.itemId == null && resource != null
+        ? { ...step, checked: checked.has(resourceOwner(resource)) }
+        : step;
+    });
   });
 
   readonly stepsModified = computed(() => {
@@ -260,9 +280,18 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
           return e;
         },
         Object.fromEntries(
-          Object.entries(this.calculationContext().owners).map(
-            ([id, owner]) => [id, this.presentation.modified(owner)],
-          ),
+          this.calculationContext().objectives.flatMap((objective) => {
+            const resource = resourceFromObjectiveId(objective.id);
+            if (resource == null) return [];
+            const value =
+              this.endfieldStore.state().resourceRecipeSettings[resource];
+            return [
+              [
+                objective.id,
+                value != null && Object.values(value).some((v) => v != null),
+              ],
+            ];
+          }),
         ),
       ),
       items: steps.reduce((e: Record<string, boolean>, s) => {
@@ -759,19 +788,13 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
             p.modules != null ||
             p.overclock != null,
         ) ||
-        this.presentation.modified(undefined, [
-          'fuelId',
-          'machineId',
-          'modules',
-          'overclock',
-        ]),
+        Object.values(this.endfieldStore.state().resourceRecipeSettings).some(
+          (source) => source?.machineId != null || source?.overclock != null,
+        ),
       beacons:
         Object.keys(state).some((id) => state[id].beacons != null) ||
-        objectives.some((p) => p.beacons != null) ||
-        this.presentation.modified(undefined, ['beacons']),
-      cost:
-        Object.keys(state).some((id) => state[id].cost) ||
-        this.presentation.modified(undefined, ['cost']),
+        objectives.some((p) => p.beacons != null),
+      cost: Object.keys(state).some((id) => state[id].cost),
     };
   });
 
@@ -845,7 +868,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         )
         .find((n) => n != null);
       const localized = this.translate.get('app.name');
-      const appName = localized === 'app.name' ? this.product.name : localized;
+      const appName = localized === 'app.name' ? manifest.name : localized;
       if (name == null) this.title.setTitle(appName);
       else this.title.setTitle(`${name} | ${appName}`);
     });
@@ -887,14 +910,24 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     value: ObjectiveState[K],
     def?: ObjectiveState[K],
   ): void {
-    const owner = this.presentation.owner(step);
-    if (
-      owner != null &&
-      this.presentation.updateRecipeField(owner, field, value, def)
-    )
+    const resource = resourceFromObjectiveId(step.recipeObjectiveId);
+    if (resource != null) {
+      if (field === 'machineId')
+        this.endfieldStore.updateResourceRecipeField(
+          resource,
+          'machineId',
+          value as RecipeState['machineId'],
+          def as RecipeState['machineId'],
+        );
+      else if (field === 'overclock')
+        this.endfieldStore.updateResourceRecipeField(
+          resource,
+          'overclock',
+          value as RecipeState['overclock'],
+          def as RecipeState['overclock'],
+        );
       return;
-    if (owner?.kind === 'extension')
-      throw new Error(`Unhandled extension recipe owner: ${owner.id}`);
+    }
     if (step.recipeObjectiveId) {
       this.updateRecordField(step.recipeObjectiveId, field, value, def);
       if (field === 'machineId')

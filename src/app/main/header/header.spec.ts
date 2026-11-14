@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import manifest from '/public/endfield/product.json';
+import { PINNED_MOD_ID } from '~/extensions/defaults';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
 
@@ -52,5 +55,30 @@ describe('Header', () => {
       component.setGame('factorio');
       expect(component['router'].navigate).toHaveBeenCalledWith(['spa']);
     });
+  });
+});
+
+describe('Header with Endfield dataset', () => {
+  it('links to the product source and hides unavailable game and editor links', async () => {
+    await TestBed.configureTestingModule({
+      imports: [TestModule, Header],
+      providers: [{ provide: PINNED_MOD_ID, useValue: 'aef' }],
+    }).compileComponents();
+    TestBed.inject(SettingsStore).apply({ modId: 'aef' });
+    const fixture = TestBed.createComponent(Header);
+    setInputs(fixture, {
+      preferencesOpen: false,
+      settingsOpen: false,
+      settingsXlHidden: false,
+    });
+    fixture.detectChanges();
+    const html = fixture.nativeElement as HTMLElement;
+    expect(
+      html.querySelector(`a[href="${manifest.sourceUrl}"]`),
+    ).not.toBeNull();
+    expect(html.querySelector('a[href*="discord.gg"]')).toBeNull();
+    expect(html.querySelector('a[href*="ko-fi.com"]')).toBeNull();
+    expect(html.querySelector('a[href="/editor"]')).toBeNull();
+    expect(html.querySelector('lab-select')).toBeNull();
   });
 });

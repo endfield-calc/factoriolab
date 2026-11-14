@@ -1,11 +1,6 @@
 import { rational } from '~/rational/rational';
 
-import {
-  copyResourceRecipeSettings,
-  createEndfieldState,
-  ovenId,
-  resourceOwner,
-} from './model';
+import { createEndfieldState, ovenId, resourceOwner } from './model';
 import { applyEndfieldAction, EndfieldSettingsSnapshot } from './presets';
 
 describe('Endfield resource actions', () => {
@@ -104,21 +99,13 @@ describe('Endfield resource actions', () => {
     expect(cleared.settings.excludedRecipeIds).toEqual(new Set(['unrelated']));
   });
 
-  it('copies nested settings, preserves them when the rate changes, and rejects invalid inputs', () => {
-    const input = {
-      modules: [{ id: 'm' }],
-      beacons: [{ modules: [{ id: 'b' }] }],
-    };
+  it('preserves source settings when the rate changes and rejects invalid inputs', () => {
     const initial = {
       ...createEndfieldState(),
-      resourceRecipeSettings: { iron_ore: copyResourceRecipeSettings(input) },
+      resourceRecipeSettings: {
+        iron_ore: { machineId: 'miner_3', overclock: rational(125) },
+      },
     };
-    input.modules[0].id = 'mutated';
-    input.beacons[0].modules[0].id = 'mutated';
-    expect(initial.resourceRecipeSettings.iron_ore?.modules?.[0].id).toBe('m');
-    expect(
-      initial.resourceRecipeSettings.iron_ore?.beacons?.[0].modules?.[0].id,
-    ).toBe('b');
     const next = applyEndfieldAction(
       initial,
       { type: 'resourceRate', id: 'iron_ore', value: rational(5) },

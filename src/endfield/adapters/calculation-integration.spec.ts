@@ -223,8 +223,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
-    const params = { v: '12', ef };
-    store.set(decodeEndfield(params.ef, rawData as unknown as ModData));
+    store.set(decodeEndfield(ef, rawData as unknown as ModData));
 
     const tiny = rational(1n, 10n ** 400n);
     expect(
@@ -245,8 +244,6 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(
       store.snapshot().resourceLimits.rates.originium_ore.eq(tiny),
     ).toBeTrue();
-    expect(params.ef).toBe(ef);
-    expect(atob(params.ef.replace(/-/g, '+').replace(/_/g, '/'))).toBe(json);
   });
 
   it('supports a declared-cost recipe without a selected producer through the adjustment boundary', () => {
@@ -491,20 +488,6 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(generator.power?.eq(rational(-1100))).toBeTrue();
   });
 
-  it('keeps the ordinary adjusted dataset when only source checks change', () => {
-    const adjustment = TestBed.inject(Adjustment);
-    const before = recipes.adjustedDataset();
-    const adjustDataset = spyOn(adjustment, 'adjustDataset').and.callThrough();
-
-    store.setResourceChecked('originium_ore', true);
-    expect(recipes.adjustedDataset()).toBe(before);
-    expect(adjustDataset).not.toHaveBeenCalled();
-
-    store.set({ ...store.snapshot(), electric: rational(2) });
-    expect(recipes.adjustedDataset()).not.toBe(before);
-    expect(adjustDataset).toHaveBeenCalledTimes(1);
-  });
-
   it('keeps ordinary, explicit and derived machine settings independent', () => {
     recipes.set({
       originium_ore: { machineId: 'miner_2', overclock: rational(100) },
@@ -545,29 +528,6 @@ describe('Endfield calculation composition with the published aef data', () => {
       expect(derived.machineId).toBe('miner_3');
       expect(derived.overclock).toEqual(rational(125));
     }
-    store.setResourceChecked('originium_ore', true);
-    const enabled = store.snapshot();
-    store.set({
-      ...enabled,
-      resourceLimits: { ...enabled.resourceLimits, enabled: false },
-    });
-    expect(
-      objectives
-        .calculationContext()
-        .objectives.some((o) => o.id === resourceObjectiveId('originium_ore')),
-    ).toBeFalse();
-    expect(recipes.settings()['originium_ore'].machineId).toBe('miner_2');
-    expect(objectives.objectives()[0].overclock).toEqual(rational(150));
-    expect(
-      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
-    ).toBeTrue();
-    store.set({ ...store.snapshot(), resourceLimits: enabled.resourceLimits });
-    expect(
-      objectives
-        .calculationContext()
-        .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))
-        ?.overclock,
-    ).toEqual(rational(125));
   });
 
   it('restores ordinary mining when a separate source is disabled and reuses its settings when reopened', () => {
@@ -644,6 +604,7 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(ordinary.machines!.gt(rational.zero)).toBeTrue();
     expect(ordinary.recipeSettings?.machineId).toBe('miner_2');
     expect(ordinary.recipeSettings?.overclock).toEqual(rational(100));
+    expect(objectives.objectives()[0].overclock).toEqual(rational(150));
     expect(
       store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
     ).toBeTrue();

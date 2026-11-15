@@ -147,14 +147,12 @@ describe('Steps', () => {
         ...step,
         ...{ recipeSettings: { machineId: ItemId.AssemblingMachine3 } },
       };
-      spyOn(component['objectivesStore'], 'updateRecipeField');
+      spyOn(component['recipesStore'], 'updateRecord');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(
-        component['objectivesStore'].updateRecipeField,
-      ).toHaveBeenCalledWith(step, 'modules', []);
-      expect(
-        component['objectivesStore'].updateRecipeField,
-      ).toHaveBeenCalledWith(step, 'beacons', []);
+      expect(component['recipesStore'].updateRecord).toHaveBeenCalledWith(
+        step.id,
+        { modules: [], beacons: [] },
+      );
     });
 
     it('should update recipe objective modules and beacons', () => {
@@ -166,49 +164,32 @@ describe('Steps', () => {
           recipeSettings: { machineId: ItemId.AssemblingMachine3 },
         },
       };
-      spyOn(component['objectivesStore'], 'updateRecipeField');
+      spyOn(component['objectivesStore'], 'updateRecord');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(
-        component['objectivesStore'].updateRecipeField,
-      ).toHaveBeenCalledWith(step, 'modules', []);
-      expect(
-        component['objectivesStore'].updateRecipeField,
-      ).toHaveBeenCalledWith(step, 'beacons', []);
+      expect(component['objectivesStore'].updateRecord).toHaveBeenCalledWith(
+        'id',
+        { modules: [], beacons: [] },
+      );
     });
 
     it('should exit early if no recipe or machineId is found', () => {
       const step = mocks.step1();
-      spyOn(component['objectivesStore'], 'updateRecipeField');
+      spyOn(component['recipesStore'], 'updateRecord');
       component.changeModulesBeacons(step, { modules: [], beacons: [] });
-      expect(
-        component['objectivesStore'].updateRecipeField,
-      ).not.toHaveBeenCalled();
+      expect(component['recipesStore'].updateRecord).not.toHaveBeenCalled();
     });
 
-    it('clears ordinary overrides when selections return to defaults', () => {
+    it('does not create recipe or objective records for a source', () => {
       const step = {
         ...mocks.step1(),
+        recipeObjectiveId: resourceObjectiveId('iron_ore'),
         recipeSettings: { machineId: ItemId.AssemblingMachine3 },
       };
-      const id = step.recipeId;
-      if (id == null) throw new Error('Expected recipe in test fixture');
-      component['recipesStore'].updateRecord(id, {
-        modules: [{ id: 'module' }],
-        beacons: [{ id: 'beacon' }],
-      });
-      spyOn(component['hydration'], 'dehydrateModules').and.returnValue(
-        undefined,
-      );
-      spyOn(component['hydration'], 'dehydrateBeacons').and.returnValue(
-        undefined,
-      );
-      component.changeModulesBeacons(step, { modules: [{ id: 'module' }] });
-      expect(component['recipesStore'].state()[id]?.modules).toBeUndefined();
-      expect(component['recipesStore'].state()[id]?.beacons).toEqual([
-        { id: 'beacon' },
-      ]);
-      component.changeModulesBeacons(step, { beacons: [{ id: 'beacon' }] });
-      expect(component['recipesStore'].state()[id]).toBeUndefined();
+      spyOn(component['recipesStore'], 'updateRecord');
+      spyOn(component['objectivesStore'], 'updateRecord');
+      component.changeModulesBeacons(step, { modules: [], beacons: [] });
+      expect(component['recipesStore'].updateRecord).not.toHaveBeenCalled();
+      expect(component['objectivesStore'].updateRecord).not.toHaveBeenCalled();
     });
   });
 

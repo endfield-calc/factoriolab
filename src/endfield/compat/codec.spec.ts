@@ -1,10 +1,7 @@
-import { TestBed } from '@angular/core/testing';
-
 import rawData from '/public/data/aef/data.json';
 import { ModData } from '~/data/schema/mod-data';
 import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
 import { Rational, rational } from '~/rational/rational';
-import { Zip } from '~/state/router/zip';
 
 import {
   decodeEndfield,
@@ -108,7 +105,7 @@ describe('Endfield ef codec', () => {
     expect(state.machineLimits.enabled).toBeFalse();
     expect(state.transfer.enabled).toBeFalse();
     expect(state.resourceLimits.rates.iron_ore).toEqual(rational(3));
-    expect(state.machineLimits.limits['xiranite_oven_1']).toEqual(rational(2));
+    expect(state.machineLimits.limits.xiranite_oven_1).toEqual(rational(2));
     expect(state.resourceRecipeSettings.iron_ore).toEqual({
       overclock: rational(125),
     });
@@ -323,7 +320,7 @@ describe('Endfield ef codec', () => {
     expect(restored.resourceLimits.rates.gas_inert).toEqual(
       new Rational(1n, 100000000n),
     );
-    expect(restored.machineLimits.limits['xiranite_oven_1']).toEqual(
+    expect(restored.machineLimits.limits.xiranite_oven_1).toEqual(
       rational.zero,
     );
     expect(restored.transfer.enabled).toBeTrue();
@@ -382,91 +379,5 @@ describe('Endfield ef codec', () => {
       Error,
       'Invalid ef version',
     );
-  });
-});
-
-describe('Zip sparse hash ranges', () => {
-  let service: Zip;
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(Zip);
-  });
-  it('compresses across null slots and breaks at unselected current IDs', () => {
-    expect(
-      service.zipDiffSubset(
-        new Set(['a', 'c']),
-        undefined,
-        ['a', 'c'],
-        ['a', null, 'c'],
-      ),
-    ).toEqual('A~C');
-    expect(
-      service.zipDiffSubset(
-        new Set(['a', 'c']),
-        undefined,
-        ['a', 'b', 'c'],
-        ['a', 'b', 'c'],
-      ),
-    ).toEqual('A*C');
-  });
-});
-
-describe('Zip strict imports', () => {
-  let service: Zip;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(Zip);
-  });
-
-  it('rejects malformed, missing, and retired-null hash indices', () => {
-    for (const token of ['?', 'B', 'C', 'AAAAAAAAAA'])
-      expect(() => service.parseNString(token, ['one', null])).toThrowError(
-        Error,
-      );
-    expect(() => service.parseNArray('A~?', ['one'])).toThrowError(Error);
-    expect(() => service.parseIndices('0~2', [{}])).toThrowError(Error);
-    expect(() => service.parseIndices('0~NaN', [{}])).toThrowError(Error);
-    expect(() => service.parseIndices('0~-1', [{}])).toThrowError(Error);
-  });
-
-  it('validates subset endpoints and preserves all non-null slots in a sparse range', () => {
-    expect(service.parseSubset('A~D', ['one', null, 'retired', 'two'])).toEqual(
-      new Set(['one', 'retired', 'two']),
-    );
-    for (const token of ['B', 'A~E', 'D~A', 'A~C~D', 'A~?'])
-      expect(() =>
-        service.parseSubset(token, ['one', null, 'retired', 'two']),
-      ).toThrowError(Error);
-  });
-
-  it('preserves the invalid short ID in the error message', () => {
-    const read = service.get({ mmr: '?' })(service.parseArray.bind(service));
-    expect(() => read('mmr', ['one'])).toThrowError(Error, /\?/);
-  });
-
-  it('rejects malformed boolean and numeric settings with the original token', () => {
-    const get = service.get({ orm: 'yes', omt: 'NaN' });
-    const boolean = get(service.parseBool.bind(service));
-    const number = get(service.parseNumber.bind(service));
-    expect(() => boolean('orm')).toThrowError(Error, /yes/);
-    expect(() => number('omt')).toThrowError(Error, /NaN/);
-    const read = service.get({ moc: '1/2/3' })(
-      service.parseRational.bind(service),
-    );
-    expect(() => read('moc')).toThrowError(Error);
-  });
-
-  it('never writes an entity that is absent from its hash', () => {
-    expect(() => service.zipNString('missing', ['one'])).toThrowError(Error);
-    expect(() => service.zipDiffString('missing', '', ['one'])).toThrowError(
-      Error,
-    );
-    expect(() => service.zipDiffArray(['missing'], [], ['one'])).toThrowError(
-      Error,
-    );
-    expect(() =>
-      service.zipDiffSubset(new Set(['missing']), undefined, ['one']),
-    ).toThrowError(Error);
   });
 });

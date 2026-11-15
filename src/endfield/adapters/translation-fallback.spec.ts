@@ -13,10 +13,7 @@ import { SettingsStore } from '~/state/settings/settings-store';
 import { mockModHash } from '~/tests/mocks/data';
 import { Translate, TRANSLATION_FALLBACK } from '~/translate/translate';
 
-import {
-  endfieldTranslationFallback,
-  mergeTranslation,
-} from './translation-fallback';
+import { endfieldTranslationFallback } from './translation-fallback';
 
 describe('Endfield interface translation fallback', () => {
   let translate: Translate;
@@ -47,7 +44,7 @@ describe('Endfield interface translation fallback', () => {
     else localStorage.setItem('preferences', originalPreferences);
   });
 
-  it('keeps complete English and product strings available even if the first request fails', async () => {
+  it('starts with bundled English while the first request is pending and keeps it after failure', async () => {
     let settled = false;
     const loaded = translate.load().then((value) => {
       settled = true;
@@ -55,7 +52,11 @@ describe('Endfield interface translation fallback', () => {
     });
     TestBed.tick();
     await Promise.resolve();
-    expect(settled).toBeFalse();
+    expect(settled).toBeTrue();
+    expect(translate.get('app.name')).toBe('EndfieldLab');
+    expect(translate.get('endfield.resources.title')).toBe(
+      'Resource configuration',
+    );
     http
       .expectOne('i18n/en.json')
       .flush('unavailable', { status: 503, statusText: 'Unavailable' });
@@ -87,15 +88,6 @@ describe('Endfield interface translation fallback', () => {
       .expectOne('i18n/fr.json')
       .flush('missing', { status: 404, statusText: 'Not Found' });
     expect(translate.get('app.name')).toBe('EndfieldLab');
-  });
-
-  it('merges independent nested overrides without dropping unrelated English entries', () => {
-    expect(
-      mergeTranslation(
-        { a: { one: '1', two: '2' }, b: 'old', c: { old: 'old' } },
-        { a: { one: 'new' }, b: { child: 'new' }, c: 'new' },
-      ),
-    ).toEqual({ a: { one: 'new', two: '2' }, b: { child: 'new' }, c: 'new' });
   });
 });
 

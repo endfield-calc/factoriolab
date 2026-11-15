@@ -222,9 +222,14 @@ export class Steps {
   ): void {
     const settings = step.recipeSettings;
     if (step.recipeId == null || settings?.machineId == null) return;
+    if (resourceFromObjectiveId(step.recipeObjectiveId) != null) return;
 
-    const updateModules = state.modules != null;
-    const updateBeacons = state.beacons != null;
+    const id = step.recipeObjectiveId ?? step.recipeId;
+    const update =
+      step.recipeObjectiveId != null
+        ? this.objectivesStore.updateRecord.bind(this.objectivesStore)
+        : this.recipesStore.updateRecord.bind(this.recipesStore);
+
     const machine = this.data().machineRecord[settings.machineId];
     const machineSettings = this.machinesStore.settings()[settings.machineId];
     if (state.modules) {
@@ -244,10 +249,7 @@ export class Steps {
       );
     }
 
-    if (updateModules)
-      this.objectivesStore.updateRecipeField(step, 'modules', state.modules);
-    if (updateBeacons)
-      this.objectivesStore.updateRecipeField(step, 'beacons', state.beacons);
+    update(id, state);
   }
 
   changeStepChecked(step: Step, value: boolean): void {

@@ -1,4 +1,4 @@
-import { Rational, rational } from '~/rational/rational';
+import { rational } from '~/rational/rational';
 import type {
   CalculationVariable,
   LinearRule,
@@ -51,15 +51,10 @@ export function compileEndfieldRules(
     }
   }
 
-  for (const [machineId, limit] of Object.entries(state.machineLimits.limits)) {
-    if (machineId !== ovenId)
-      throw new Error(`Unknown machine limit ID: ${machineId}`);
-    if (!(limit instanceof Rational) || limit.lt(rational.zero))
-      throw new Error(`Invalid machine limit: ${machineId}`);
-  }
+  const limit = state.machineLimits.limits[ovenId];
+  if (limit.lt(rational.zero))
+    throw new Error(`Invalid machine limit: ${ovenId}`);
   if (state.machineLimits.enabled) {
-    const limit = state.machineLimits.limits[ovenId];
-    if (limit == null) throw new Error(`Missing machine limit: ${ovenId}`);
     const selected = variables.filter(
       (variable) => variable.machineId === ovenId,
     );

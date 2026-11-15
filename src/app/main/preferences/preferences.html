@@ -163,13 +163,9 @@
   </div>
 
   <lab-form-field label="preferences.language">
-    <a
-      action
-      class="link text-sm"
-      [href]="product.sourceUrl + '#readme'"
-      target="_blank"
-      >{{ 'preferences.helpTranslate' | translate }}</a
-    >
+    <a action class="link text-sm" [href]="product.readmeUrl" target="_blank">{{
+      'preferences.helpTranslate' | translate
+    }}</a>
     <lab-select
       [options]="languageOptions"
       [ngModel]="preferences().language"

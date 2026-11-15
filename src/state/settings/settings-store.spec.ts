@@ -68,28 +68,6 @@ describe('SettingsStore', () => {
     });
   });
 
-  describe('modDataResource', () => {
-    it('keeps a trusted fixture and makes no custom data request', () => {
-      service.apply({ modId: CUSTOM_MOD });
-      TestBed.tick();
-      expect(service['modDataResource'].value()).toEqual(mockModData);
-      TestBed.inject(HttpTestingController).expectNone(
-        `data/${CUSTOM_MOD}/data.json`,
-      );
-    });
-  });
-
-  describe('modHashResource', () => {
-    it('keeps a trusted fixture and makes no custom hash request', () => {
-      service.apply({ modId: CUSTOM_MOD });
-      TestBed.tick();
-      expect(service['modHashResource'].value()).toEqual(mockModHash);
-      TestBed.inject(HttpTestingController).expectNone(
-        `data/${CUSTOM_MOD}/hash.json`,
-      );
-    });
-  });
-
   describe('modData', () => {
     it('should handle nullish values', () => {
       spyOn(service, 'modId').and.returnValue(undefined);

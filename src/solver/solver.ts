@@ -457,7 +457,6 @@ export class Solver {
             machineId: state.modelContext.recipeSettings[recipeId]?.machineId,
           },
           variable: recipeVarRecord[recipeId],
-          lower: rational.zero,
           upper: state.recipeLimits[recipeId],
         });
       }
@@ -486,8 +485,7 @@ export class Solver {
             machineId: (obj as RecipeObjective & RecipeState).machineId,
           },
           variable: recipeObjectiveVarRecord[obj.id],
-          lower: obj.type === ObjectiveType.Output ? obj.value : rational.zero,
-          upper: obj.type === ObjectiveType.Output ? obj.value : undefined,
+          ...(obj.type === ObjectiveType.Output ? { fixed: obj.value } : {}),
         });
       }
 

@@ -59,12 +59,9 @@ export class Translate {
 
   load(): Promise<boolean> {
     return firstValueFrom(
-      toObservable(
-        computed(
-          () => this.httpData.hasValue() || this.httpData.error() != null,
-        ),
-        { injector: this.injector },
-      ).pipe(filter((ready) => ready)),
+      toObservable(this.httpData.isLoading, { injector: this.injector }).pipe(
+        filter((v) => v),
+      ),
     );
   }
 

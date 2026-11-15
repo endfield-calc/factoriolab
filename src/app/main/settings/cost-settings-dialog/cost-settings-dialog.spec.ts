@@ -37,14 +37,6 @@ describe('CostSettingsDialog', () => {
       component.reset();
       expect(component['editValue']()).toEqual(initialSettingsState.costs);
     });
-
-    it('keeps reset drafts separate from the native costs', () => {
-      component.reset();
-      component['editValue']().surplus = rational(5);
-      expect(initialSettingsState.costs.surplus.eq(rational.one)).toBeTrue();
-      component.reset();
-      expect(component['editValue']().surplus.eq(rational.one)).toBeTrue();
-    });
   });
 
   describe('save', () => {

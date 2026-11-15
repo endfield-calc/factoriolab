@@ -540,6 +540,42 @@ describe('Solver model extension', () => {
     expect(solver['glpk'](limited).error).toBeTrue();
   });
 
+  it('treats a zero-capped automatic oven exception as fixed', () => {
+    const addRow = spyOn(Model.prototype, 'addConstr').and.callThrough();
+    const exception = recipe('xiranite_enr_powder');
+    const machines = { xiranite_enr_powder: ovenId };
+    for (const cap of [rational(10n ** 400n), rational(1n, 10n ** 400n)]) {
+      const s = state([exception]);
+      s.recipeLimits['xiranite_enr_powder'] = rational.zero;
+      s.unproduceableIds.add('product');
+      s.modelContext = ovenContext(cap, machines);
+      const result = solver['glpk'](s);
+      expect(result.error).toBeFalse();
+      expect(result.recipes['xiranite_enr_powder']).toBeUndefined();
+      expect(result.unproduceable['product']).toEqual(rational(1n, 2n));
+      expect(addRow.calls.allArgs().map(([row]) => row?.name)).toEqual([
+        'product',
+      ]);
+      addRow.calls.reset();
+    }
+
+    const integer = recipe('integral');
+    const s = state([exception, integer]);
+    s.recipeLimits['xiranite_enr_powder'] = rational.zero;
+    s.modelContext = ovenContext(rational.one, {
+      ...machines,
+      integral: ovenId,
+    });
+    const result = solver['glpk'](s);
+    expect(result.error).toBeFalse();
+    expect(result.recipes['integral']).toEqual(rational.one);
+    expect(result.recipes['xiranite_enr_powder']).toBeUndefined();
+    expect(addRow.calls.allArgs().map(([row]) => row?.name)).toEqual([
+      'product',
+      `ef:machine:${ovenId}:integer`,
+    ]);
+  });
+
   it('projects the mixed oven budget without excluding a valid exception', () => {
     const x = recipe('fixed');
     x.out = {};
@@ -574,11 +610,11 @@ describe('Solver model extension', () => {
   it('subtracts the fixed oven exception exactly before flooring the integer budget', () => {
     const x = recipe('x');
     const exception = recipe('xiranite_enr_powder');
-    const solve = (cap: Rational): boolean => {
+    const solve = (cap: Rational, count = rational.one): boolean => {
       const s = state([]);
       s.itemValues = {};
       s.recipeObjectives = [
-        objective('x', x, rational.one, ObjectiveType.Output, ovenId),
+        objective('x', x, count, ObjectiveType.Output, ovenId),
         objective(
           'fraction',
           exception,
@@ -594,70 +630,10 @@ describe('Solver model extension', () => {
     expect(
       solve(rational(149999999999999999n, 100000000000000000n)),
     ).toBeTrue();
-  });
-
-  it('preserves weight 3 and continuous lower bounds in integer projections', () => {
-    const prepare = (upper: Rational): ModelRow[] => {
-      const model = new Model();
-      const integer = model.addVar({ name: 'integer', lb: 0 });
-      const fixed = model.addVar({ name: 'fixed', lb: 0.5, ub: 0.5 });
-      const free = model.addVar({ name: 'free', lb: 0.5 });
-      const bindings: ModelBinding[] = [
-        {
-          variable: integer,
-          description: { ref: recipeRef('integer'), recipeId: 'integer' },
-          lower: rational.zero,
-        },
-        {
-          variable: fixed,
-          description: { ref: recipeRef('fixed'), recipeId: 'fixed' },
-          lower: rational(1n, 2n),
-          upper: rational(1n, 2n),
-        },
-        {
-          variable: free,
-          description: { ref: recipeRef('free'), recipeId: 'free' },
-          lower: rational(1n, 2n),
-        },
-      ];
-      const rows: ModelRow[] = [];
-      const bound = bindModelRules(
-        model,
-        context(() => ({
-          constraints: [
-            {
-              id: 'weighted',
-              terms: [
-                { ref: recipeRef('integer'), coefficient: 3 },
-                { ref: recipeRef('fixed'), coefficient: 1 },
-                { ref: recipeRef('free'), coefficient: 3 },
-              ],
-              upper,
-            },
-          ],
-          integers: [recipeRef('integer')],
-        })),
-        bindings,
-        rows,
-      );
-      expect(bound.infeasible).toBeFalse();
-      expect(bound.integerVariables.has(integer)).toBeTrue();
-      expect(rows[0].coeffs).toEqual([
-        [integer, 3],
-        [fixed, 1],
-        [free, 3],
-      ]);
-      expect(rows[1].coeffs).toEqual([[integer, 3]]);
-      return rows;
-    };
-    expect(prepare(rational(5))[1].upper).toBe(3);
-    expect(
-      prepare(rational(499999999999999999n, 100000000000000000n))[1].upper,
-    ).toBe(2);
     // A negative fractional residual must floor to -1, not truncate to 0.
     expect(
-      prepare(rational(199999999999999999n, 100000000000000000n))[1].upper,
-    ).toBe(-1);
+      solve(rational(49999999999999999n, 100000000000000000n), rational.zero),
+    ).toBeTrue();
   });
 
   it('checks weight 3 and missing values in the final integer budget', () => {
@@ -680,7 +656,6 @@ describe('Solver model extension', () => {
         {
           variable,
           description: { ref: recipeRef('weighted'), recipeId: 'weighted' },
-          lower: rational.zero,
         },
       ],
       rows,
@@ -688,27 +663,22 @@ describe('Solver model extension', () => {
     expect(model.simplex({ msgLevel: 'off' })).toBe('ok');
     expect(model.intopt({ msgLevel: 'off' })).toBe('ok');
     expect(model.statusMIP).toBe('optimal');
-    const variables = spyOnProperty(model, 'vars', 'get').and.returnValue([]);
-    expect(() =>
+    const validate = (): void => {
       validateModelSolution(
         model,
         rows,
         bound.integerVariables,
         bound.integerRows,
         true,
-      ),
-    ).toThrowError('Invalid exact integer row: weighted:integer');
+      );
+    };
+    const variables = spyOnProperty(model, 'vars', 'get').and.returnValue([]);
+    expect(validate).toThrowError(
+      'Invalid exact integer row: weighted:integer',
+    );
     variables.and.callThrough();
     spyOnProperty(Variable.prototype, 'valueMIP', 'get').and.returnValue(1);
-    expect(() =>
-      validateModelSolution(
-        model,
-        rows,
-        bound.integerVariables,
-        bound.integerRows,
-        true,
-      ),
-    ).toThrowError(/exact integer upper constraint/);
+    expect(validate).toThrowError(/exact integer upper constraint/);
   });
 
   it('keeps the original mixed row when exact fixed residuals underflow or are slightly negative', () => {
@@ -729,8 +699,7 @@ describe('Solver model extension', () => {
               recipeId: 'xiranite_enr_powder',
               machineId: ovenId,
             },
-            lower: fixed,
-            upper: fixed,
+            fixed,
           },
           {
             variable: freeVariable,
@@ -739,7 +708,6 @@ describe('Solver model extension', () => {
               recipeId: 'xiranite_enr_powder',
               machineId: ovenId,
             },
-            lower: rational.zero,
           },
         ],
         rows,
@@ -960,13 +928,32 @@ describe('Solver model extension', () => {
   });
 
   it('reports an integer-infeasible model as failure even when its LP is feasible', () => {
-    const s = state();
-    s.modelContext = context((variables) =>
-      budget(variables, rational(1n, 2n)),
-    );
+    const lp = spyOn<any>(solver, 'glpkSimplex').and.callThrough();
+    const mip = spyOn(Model.prototype, 'intopt').and.callThrough();
+    const r = recipe('r');
+    r.in = { raw: rational.one };
+    r.output['raw'] = rational(-1);
+    const s = state([r]);
+    s.itemValues['raw'] = {
+      out: rational.zero,
+      in: rational(3n, 4n),
+      lim: rational(3n, 4n),
+    };
+    s.itemIds.push('raw');
+    s.unproduceableIds.add('raw');
+    s.data.itemAvailableIoRecipeIds['raw'] = ['r'];
+    s.modelContext = context((variables) => budget(variables, rational.one));
     const result = solver['glpk'](s);
+    expect(lp).toHaveBeenCalledTimes(1);
+    expect(lp.calls.mostRecent().returnValue).toEqual(['ok', 'optimal']);
+    expect(mip).toHaveBeenCalledTimes(1);
+    expect(mip.calls.mostRecent().returnValue).toBe('ok');
+    expect((mip.calls.mostRecent().object as Model).statusMIP).toBe(
+      'no_feasible',
+    );
     expect(result.error).toBeTrue();
-    expect(result.status).not.toBe('optimal');
+    expect(result.returnCode).toBe('ok');
+    expect(result.status).toBe('no_feasible');
   });
 
   it('fails closed if the reported MIP objective differs from the variable values', () => {
@@ -1123,7 +1110,6 @@ describe('Solver model extension', () => {
                 ref: recipeRef('r'),
                 recipeId: 'r',
               },
-              lower: rational.zero,
               upper,
             },
           ],
@@ -1145,7 +1131,6 @@ describe('Solver model extension', () => {
       const binding = (id: string): ModelBinding => ({
         variable: x,
         description: { ref: recipeRef(id), recipeId: id },
-        lower: rational.zero,
       });
       expect(() =>
         bindModelRules(

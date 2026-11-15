@@ -317,19 +317,7 @@ describe('FlowService', () => {
       ).toEqual(1);
     });
   });
-});
 
-describe('FlowBuilder objective presentation', () => {
-  let service: FlowBuilder;
-  let mocks: Mocks;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-    });
-    service = TestBed.inject(FlowBuilder);
-    mocks = TestBed.inject(Mocks);
-  });
   it('keeps same-recipe objective nodes, their labels and links distinct', () => {
     spyOn(service['translate'], 'get').and.returnValue('Resource supply');
     const recipeId = RecipeId.AdvancedOilProcessing;

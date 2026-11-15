@@ -456,8 +456,8 @@ export class Flow {
       .attr('y', (d) => coalesce(d.y, 0))
       .on('click', this.clickHandler())
       .call(
-        drag<SVGSVGElement, BoxNode>()
-          .subject((d) => d as BoxNode)
+        drag<SVGSVGElement, Node & ElkNode>()
+          .subject((d) => d as Node & ElkNode)
           .on('drag', function (this, event: { dy: number; dx: number }, d) {
             d.y = coalesce(d.y, 0) + event.dy;
             d.x = coalesce(d.x, 0) + event.dx;

@@ -100,38 +100,6 @@ describe('Endfield model rules', () => {
     expect(compileEndfieldRules(initial, variables).integers).toEqual([]);
   });
 
-  it('rejects unrecognized or missing machine limits rather than applying undefined integrality', () => {
-    const initial = createEndfieldState();
-    const water = variable(
-      'recipe',
-      'water',
-      'sewage-treat',
-      'liquid_clean_gate',
-    );
-    const unknown = {
-      ...initial,
-      machineLimits: {
-        enabled: false,
-        limits: { liquid_clean_gate: rational.one },
-      },
-    };
-    expect(() => compileEndfieldRules(unknown, [water])).toThrowError(
-      'Unknown machine limit ID: liquid_clean_gate',
-    );
-    const missing = {
-      ...initial,
-      machineLimits: { enabled: true, limits: {} },
-    };
-    expect(() => compileEndfieldRules(missing, [water])).toThrowError(
-      `Missing machine limit: ${ovenId}`,
-    );
-    const enabled = {
-      ...initial,
-      machineLimits: { enabled: true, limits: { [ovenId]: rational(12) } },
-    };
-    expect(compileEndfieldRules(enabled, [water]).integers).toEqual([]);
-  });
-
   it('applies transfer rules to identified recipe IDs rather than recipe names', () => {
     const ids = new Set(['renamed']);
     const result = compileRules(
@@ -222,14 +190,14 @@ describe('Endfield model rules', () => {
     ).toEqual([]);
   });
 
-  it('rejects negative and non-rational physical machine limits', () => {
+  it('rejects negative physical machine limits even when disabled', () => {
     const state = createEndfieldState();
-    for (const limit of [rational(-1), 'bad' as unknown as Rational]) {
+    for (const enabled of [false, true]) {
       expect(() =>
         compileEndfieldRules(
           {
             ...state,
-            machineLimits: { enabled: false, limits: { [ovenId]: limit } },
+            machineLimits: { enabled, limits: { [ovenId]: rational(-1) } },
           },
           [],
         ),

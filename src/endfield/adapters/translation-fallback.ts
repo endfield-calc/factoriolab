@@ -3,7 +3,7 @@ import english from '/public/i18n/en.json';
 import { LangData } from '~/translate/translate';
 
 /** The same source overlays used by the asset generator, available even offline. */
-export function mergeTranslation(base: LangData, overlay: LangData): LangData {
+function mergeTranslation(base: LangData, overlay: LangData): LangData {
   const result = { ...base };
   for (const [key, value] of Object.entries(overlay)) {
     const original = result[key];

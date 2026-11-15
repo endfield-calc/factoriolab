@@ -355,17 +355,7 @@ export class SettingsStore extends Store<SettingsState> {
   });
 
   constructor() {
-    super(
-      {
-        ...initialSettingsState,
-        checkedObjectiveIds: new Set(initialSettingsState.checkedObjectiveIds),
-        excludedItemIds: new Set(initialSettingsState.excludedItemIds),
-        checkedItemIds: new Set(initialSettingsState.checkedItemIds),
-        checkedRecipeIds: new Set(initialSettingsState.checkedRecipeIds),
-        costs: { ...initialSettingsState.costs },
-      },
-      ['costs'],
-    );
+    super(initialSettingsState, ['costs']);
 
     effect(() => {
       const modId = this.modId();

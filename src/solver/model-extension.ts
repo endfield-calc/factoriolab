@@ -50,8 +50,9 @@ export type ModelGlpkResult = Omit<GlpkResult, 'returnCode'> & {
 export interface ModelBinding {
   readonly description: CalculationVariable;
   readonly variable: Variable;
-  /** Exact original bounds, before conversion to GLPK doubles. */
-  readonly lower: Rational;
+  /** Exact fixed value (lb = ub); otherwise the lower bound is zero. */
+  readonly fixed?: Rational;
+  /** Exact upper bound for a non-fixed column; fixed takes precedence. */
   readonly upper?: Rational;
 }
 
@@ -164,9 +165,9 @@ export function bindModelRules(
       throw new Error(`Duplicate integer binding: ${key}`);
     integerKeys.add(key);
     const binding = lookup(ref);
-    const lower = ceil(binding.lower);
-    const upper =
-      binding.upper === undefined ? undefined : floor(binding.upper);
+    const lower = ceil(binding.fixed ?? rational.zero);
+    const exactUpper = binding.fixed ?? binding.upper;
+    const upper = exactUpper === undefined ? undefined : floor(exactUpper);
     const numericLower = safeInteger(lower, `lower bound of ${key}`);
     const numericUpper =
       upper === undefined
@@ -182,7 +183,6 @@ export function bindModelRules(
     const originalTerms: [Variable, number][] = [];
     const integerTerms: [Variable, number][] = [];
     let fixed = rational.zero;
-    let minimum = rational.zero;
     let hasFreeContinuous = false;
     const seen = new Set<string>();
     for (const term of rule.terms) {
@@ -196,13 +196,14 @@ export function bindModelRules(
       if (integerKeys.has(key)) {
         integerTerms.push([binding.variable, coefficient]);
       } else if (
-        binding.upper !== undefined &&
-        binding.lower.eq(binding.upper)
+        binding.fixed !== undefined ||
+        binding.upper?.eq(rational.zero)
       ) {
-        fixed = fixed.add(rational(coefficient).mul(binding.lower));
+        fixed = fixed.add(
+          rational(coefficient).mul(binding.fixed ?? rational.zero),
+        );
       } else {
         hasFreeContinuous = true;
-        minimum = minimum.add(rational(coefficient).mul(binding.lower));
       }
     }
 
@@ -226,7 +227,7 @@ export function bindModelRules(
       // exact residual is equivalent without free continuous terms and a
       // necessary projection when free continuous terms are present.
       const name = `${rule.id}:integer`;
-      const upper = floor(rule.upper.sub(fixed).sub(minimum));
+      const upper = floor(rule.upper.sub(fixed));
       integerRows.push({
         name,
         coeffs: integerTerms.map(([variable, coefficient]) => [

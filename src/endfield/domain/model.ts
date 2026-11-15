@@ -30,7 +30,7 @@ export interface EndfieldState {
   readonly machineLimits: {
     readonly enabled: boolean;
     /** Physical machine counts, not rates. */
-    readonly limits: Readonly<Record<string, Rational>>;
+    readonly limits: Readonly<Record<typeof ovenId, Rational>>;
   };
   readonly transfer: {
     readonly enabled: boolean;

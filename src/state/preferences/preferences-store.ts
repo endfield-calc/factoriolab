@@ -15,7 +15,6 @@ import { spread } from '~/utils/object';
 import { getStoredValue, storeValue } from '~/utils/stored-signal';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
-import { ColumnsState, copyColumnsState } from './columns-state';
 import { elkAlgorithmOptions } from './elk-algorithm';
 import { flowDiagramOptions } from './flow-diagram';
 import { glpkAlgorithmOptions } from './glpk-algorithm';
@@ -142,7 +141,6 @@ function currentPreferences(value: unknown): Partial<PreferencesState> {
 @Service()
 export class PreferencesStore extends Store<PreferencesState> {
   private readonly document = inject(DOCUMENT);
-  private readonly defaultLanguage = this.initial.language;
   private readonly restoreErrorState = signal<string | undefined>(undefined);
   readonly restoreError = this.restoreErrorState.asReadonly();
 
@@ -169,12 +167,6 @@ export class PreferencesStore extends Store<PreferencesState> {
       {
         ...initialPreferencesState,
         language: initialLanguage(!isDevMode(), navigator.language),
-        states: {},
-        columns: copyColumnsState(
-          initialPreferencesState.columns,
-        ) as ColumnsState,
-        flowSettings: { ...initialPreferencesState.flowSettings },
-        sections: { ...initialPreferencesState.sections },
       },
       ['states', 'flowSettings'],
     );
@@ -235,14 +227,8 @@ export class PreferencesStore extends Store<PreferencesState> {
 
   resetPreferences(preserveStates = true): void {
     this.set({
-      ...initialPreferencesState,
-      language: this.defaultLanguage,
+      ...this.initial,
       states: preserveStates ? this.states() : {},
-      columns: copyColumnsState(
-        initialPreferencesState.columns,
-      ) as ColumnsState,
-      flowSettings: { ...initialPreferencesState.flowSettings },
-      sections: { ...initialPreferencesState.sections },
     });
     this.restoreErrorState.set(undefined);
   }

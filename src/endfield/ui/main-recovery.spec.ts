@@ -269,10 +269,6 @@ describe('Flow recovery and source labels', () => {
     });
   });
   describe('rebuildSankey', () => {
-    beforeEach(() => {
-      select(`#${SVG_ID} > *`).remove();
-      component.rebuildSankey(mocks.flow(), sankeySettings);
-    });
     it('uses safe objective labels and keeps the selected step', () => {
       select(container()).selectAll('*').remove();
       component.rebuildSankey(labeledFlow(), sankeySettings);
@@ -280,9 +276,6 @@ describe('Flow recovery and source labels', () => {
     });
   });
   describe('rebuildBoxLine', () => {
-    beforeEach(() => {
-      select(`#${SVG_ID} > *`).remove();
-    });
     it('uses safe objective labels and keeps the selected step', async () => {
       const rebuild = component.rebuildBoxLine.bind(component);
       const rendered = new Promise<void>((resolve, reject) => {

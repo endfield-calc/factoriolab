@@ -112,7 +112,7 @@ export class CostSettingsDialog implements DialogData {
   reset(): void {
     if (!this.ready()) return;
     this.draft.set({
-      costs: { ...initialSettingsState.costs },
+      costs: initialSettingsState.costs,
       electric: rational.one,
     });
   }

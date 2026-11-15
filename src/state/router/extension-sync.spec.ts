@@ -599,6 +599,7 @@ describe('RouterSync real Endfield restoration', () => {
       const lifecycle = TestBed.inject(WorkspaceLifecycle);
       const settings = service['settingsStore'];
       settings.apply({ modId: 'aef' });
+      const apply = spyOn(settings, 'apply').and.callThrough();
       const previousSettings = settings.state();
       const previousObjectives = service['objectivesStore'].state();
       const previousExtension = TestBed.inject(EndfieldStore).state();
@@ -622,6 +623,7 @@ describe('RouterSync real Endfield restoration', () => {
         'Workspace mod is not available: 1.1',
       );
       expect(lifecycle.originalInput()).toEqual(url);
+      expect(apply).not.toHaveBeenCalled();
       expect(settings.state()).toBe(previousSettings);
       expect(service['objectivesStore'].state()).toBe(previousObjectives);
       expect(TestBed.inject(EndfieldStore).state()).toEqual(previousExtension);
@@ -630,37 +632,6 @@ describe('RouterSync real Endfield restoration', () => {
       expect(router.url).toEqual(url);
     });
   }
-
-  it('rejects an upstream mod without applying or replacing the workspace', async () => {
-    TestBed.configureTestingModule({ imports: [TestModule] });
-    const service = TestBed.inject(RouterSync);
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const settings = service['settingsStore'];
-    settings.apply({ modId: 'aef' });
-    const previousSettings = settings.state();
-    const previousObjectives = service['objectivesStore'].state();
-    const previousEndfield = TestBed.inject(EndfieldStore).state();
-    const apply = spyOn(settings, 'apply').and.callThrough();
-    (service as any).resources = new BehaviorSubject({
-      modId: '1.1',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    const params = new Subject<Params>();
-    const queryParams = new Subject<Params>();
-    service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
-    params.next({ id: '2.0' });
-    queryParams.next({ v: '10', b: '1.1' });
-    for (let i = 0; i < 15; i++) await Promise.resolve();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual(['Workspace mod is not available: 1.1']);
-    expect(apply).not.toHaveBeenCalled();
-    expect(settings.state()).toBe(previousSettings);
-    expect(service['objectivesStore'].state()).toBe(previousObjectives);
-    expect(TestBed.inject(EndfieldStore).state()).toEqual(previousEndfield);
-  });
 
   it('round trips ordinary and derived links with multiple checked objectives', async () => {
     TestBed.configureTestingModule({

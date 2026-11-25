@@ -2,12 +2,6 @@
   "version": {
     "arknights-endfield": "v1.7.2"
   },
-  "flags": [
-    "consumptionAsDrain",
-    "power",
-    "resourcePurity",
-    "hideMachineSettings"
-  ],
   "icons": [
     {
       "id": "missing-icon",

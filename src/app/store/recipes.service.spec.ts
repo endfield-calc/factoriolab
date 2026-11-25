@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
+import { spread } from '~/helpers';
 import { rational } from '~/models/rational';
-import { ItemId, Mocks, TestModule } from '~/tests';
+import { ItemId, Mocks, RecipeId, TestModule } from '~/tests';
 
 import { RecipesService } from './recipes.service';
 
@@ -40,6 +41,32 @@ describe('RecipesService', () => {
       });
       const result = service.settings();
       expect(result[Mocks.item1.id].beacons?.[0].total).toBeUndefined();
+    });
+
+    it('restores a formation recipe with the previous virtual machine', () => {
+      const recipe = Mocks.dataset.recipeEntities[RecipeId.IronPlate];
+      const data = spread(Mocks.dataset, {
+        recipeEntities: spread(Mocks.dataset.recipeEntities, {
+          [recipe.id]: spread(recipe, {
+            flags: new Set([...recipe.flags, 'formation' as const]),
+            producers: [ItemId.ElectricFurnace],
+          }),
+        }),
+      });
+      spyOn(service.settingsSvc, 'dataset').and.returnValue(data);
+      service.load({ [recipe.id]: { machineId: '__formation_position' } });
+
+      expect(service.settings()[recipe.id].machineId).toEqual(
+        ItemId.ElectricFurnace,
+      );
+      expect(service.state()[recipe.id].machineId).toEqual(
+        '__formation_position',
+      );
+      expect(
+        service.adjustedDataset().adjustedRecipe[recipe.id].flags.has(
+          'formation',
+        ),
+      ).toBeTrue();
     });
   });
 

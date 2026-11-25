@@ -38,22 +38,13 @@ describe('TooltipComponent', () => {
       const formation = {
         ...recipe,
         id: 'formation-example',
-        producers: ['__formation_position'],
+        flags: new Set([...recipe.flags, 'formation' as const]),
       };
       component.data = signal({
         ...Mocks.adjustedDataset,
         recipeEntities: {
           ...Mocks.adjustedDataset.recipeEntities,
           [formation.id]: formation,
-        },
-        itemEntities: {
-          ...Mocks.adjustedDataset.itemEntities,
-          __formation_position: {
-            id: '__formation_position',
-            name: '',
-            category: '',
-            row: 0,
-          },
         },
       });
       setInputs(fixture, { id: recipe.id, type: 'recipe' });

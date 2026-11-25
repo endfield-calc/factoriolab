@@ -709,689 +709,684 @@
       "color": "#a1927e"
     },
     {
-      "id": "__formation_position",
-      "position": "-320px -512px",
-      "color": "#a0a1a3"
-    },
-    {
       "id": "cmpt_mc_1",
-      "position": "-384px -512px",
-      "color": "#858581"
+      "position": "-320px -512px",
+      "color": "#848583"
     },
     {
       "id": "filling_pd_mc_1",
+      "position": "-384px -512px",
+      "color": "#818181"
+    },
+    {
+      "id": "formation_magic_heng_1",
       "position": "-448px -512px",
-      "color": "#828082"
+      "color": "#0eb48a"
+    },
+    {
+      "id": "formation_magic_hui_1",
+      "position": "-512px -512px",
+      "color": "#888a8a"
+    },
+    {
+      "id": "formation_magic_ming_1",
+      "position": "-576px -512px",
+      "color": "#cccdce"
     },
     {
       "id": "furnance_1",
-      "position": "-512px -512px",
-      "color": "#a89e9a"
+      "position": "-640px -512px",
+      "color": "#a99d99"
     },
     {
       "id": "gas_pump_1",
-      "position": "-576px -512px",
-      "color": "#a4a5a2"
+      "position": "-704px -512px",
+      "color": "#a6a7a2"
     },
     {
       "id": "gas_reactor_1",
-      "position": "-640px -512px",
-      "color": "#919589"
+      "position": "-768px -512px",
+      "color": "#919689"
     },
     {
       "id": "grinder_1",
-      "position": "-704px -512px",
-      "color": "#92979a"
+      "position": "-832px -512px",
+      "color": "#90959a"
     },
     {
       "id": "liquid_clean_gate",
-      "position": "-768px -512px",
+      "position": "-896px -512px",
       "color": "#999a99"
     },
     {
       "id": "liquid_cleaner_1",
-      "position": "-832px -512px",
-      "color": "#787d7e"
+      "position": "-960px -512px",
+      "color": "#7a7e7d"
     },
     {
       "id": "liquid_purifier_1",
-      "position": "-896px -512px",
+      "position": "-1024px -512px",
       "color": "#8d9291"
     },
     {
       "id": "magic_balancer_1",
-      "position": "-960px -512px",
-      "color": "#9a9a99"
+      "position": "0px -576px",
+      "color": "#99999a"
     },
     {
       "id": "miner_2",
-      "position": "-1024px -512px",
-      "color": "#858685"
+      "position": "-64px -576px",
+      "color": "#878485"
     },
     {
       "id": "miner_3",
-      "position": "0px -576px",
-      "color": "#91898a"
+      "position": "-128px -576px",
+      "color": "#928988"
     },
     {
       "id": "miner_4",
-      "position": "-64px -576px",
-      "color": "#8f8c89"
+      "position": "-192px -576px",
+      "color": "#8c8e8b"
     },
     {
       "id": "mix_pool_1",
-      "position": "-128px -576px",
-      "color": "#8a898c"
+      "position": "-256px -576px",
+      "color": "#89898e"
     },
     {
       "id": "mix_pool_2",
-      "position": "-192px -576px",
-      "color": "#84867b"
+      "position": "-320px -576px",
+      "color": "#848779"
     },
     {
       "id": "phase_trans_1",
-      "position": "-256px -576px",
-      "color": "#919592"
+      "position": "-384px -576px",
+      "color": "#929491"
     },
     {
       "id": "phase_trans_2",
-      "position": "-320px -576px",
-      "color": "#7c7f7d"
+      "position": "-448px -576px",
+      "color": "#7d7e7f"
     },
     {
       "id": "planter_1",
-      "position": "-384px -576px",
-      "color": "#7e807d"
+      "position": "-512px -576px",
+      "color": "#7c817e"
     },
     {
       "id": "power_sta_1",
-      "position": "-448px -576px",
-      "color": "#919ea3"
+      "position": "-576px -576px",
+      "color": "#909fa0"
     },
     {
       "id": "pump_1",
-      "position": "-512px -576px",
-      "color": "#8c8d86"
+      "position": "-640px -576px",
+      "color": "#8e8f87"
     },
     {
       "id": "pump_2",
-      "position": "-576px -576px",
-      "color": "#888378"
+      "position": "-704px -576px",
+      "color": "#898279"
     },
     {
       "id": "seedcol_1",
-      "position": "-640px -576px",
-      "color": "#767f77"
+      "position": "-768px -576px",
+      "color": "#767d76"
     },
     {
       "id": "shaper_1",
-      "position": "-704px -576px",
-      "color": "#919291"
+      "position": "-832px -576px",
+      "color": "#909191"
     },
     {
       "id": "thickener_1",
-      "position": "-768px -576px",
-      "color": "#8a898a"
+      "position": "-896px -576px",
+      "color": "#8a888b"
     },
     {
       "id": "tools_asm_mc_1",
-      "position": "-832px -576px",
-      "color": "#848989"
+      "position": "-960px -576px",
+      "color": "#858b89"
     },
     {
       "id": "winder_1",
-      "position": "-896px -576px",
-      "color": "#969493"
+      "position": "-1024px -576px",
+      "color": "#949592"
     },
     {
       "id": "xiranite_oven_1",
-      "position": "-960px -576px",
-      "color": "#a1a799"
+      "position": "0px -640px",
+      "color": "#a3a799"
     },
     {
       "id": "aNhoXNVVI",
-      "position": "-1024px -576px",
-      "color": "#48494a"
+      "position": "-64px -640px",
+      "color": "#4b484a"
     },
     {
       "id": "Z2IEDQBer",
-      "position": "0px -640px",
-      "color": "#635351"
+      "position": "-128px -640px",
+      "color": "#615252"
     },
     {
       "id": "xFsOz8GXn",
-      "position": "-64px -640px",
-      "color": "#635c52"
+      "position": "-192px -640px",
+      "color": "#615d52"
     },
     {
       "id": "xFMoNt_0-",
-      "position": "-128px -640px",
-      "color": "#4d524e"
+      "position": "-256px -640px",
+      "color": "#4f534d"
     },
     {
       "id": "tF0KCVMNv",
-      "position": "-192px -640px",
-      "color": "#45454a"
+      "position": "-320px -640px",
+      "color": "#464748"
     },
     {
       "id": "lIwML7hJA",
-      "position": "-256px -640px",
-      "color": "#4b4741"
+      "position": "-384px -640px",
+      "color": "#494640"
     },
     {
       "id": "wSTIJRUt2",
-      "position": "-320px -640px",
-      "color": "#4a4f40"
+      "position": "-448px -640px",
+      "color": "#494d42"
     },
     {
       "id": "8f-XntBAi",
-      "position": "-384px -640px",
-      "color": "#595244"
+      "position": "-512px -640px",
+      "color": "#585244"
     },
     {
       "id": "bfVwkel-1",
-      "position": "-448px -640px",
-      "color": "#494d4e"
+      "position": "-576px -640px",
+      "color": "#4a4e4d"
     },
     {
       "id": "UK3cw32jH",
-      "position": "-512px -640px",
-      "color": "#787a6c"
+      "position": "-640px -640px",
+      "color": "#78786c"
     },
     {
       "id": "EyVhscDqY",
-      "position": "-576px -640px",
-      "color": "#76665d"
+      "position": "-704px -640px",
+      "color": "#75655c"
     },
     {
       "id": "sJ497s081",
-      "position": "-640px -640px",
-      "color": "#705854"
+      "position": "-768px -640px",
+      "color": "#715b55"
     },
     {
       "id": "EkYDieNFa",
-      "position": "-704px -640px",
-      "color": "#857d58"
+      "position": "-832px -640px",
+      "color": "#867e59"
     },
     {
       "id": "-5xQnlo_H",
-      "position": "-768px -640px",
+      "position": "-896px -640px",
       "color": "#655745"
     },
     {
       "id": "g6eZC2ckR",
-      "position": "-832px -640px",
-      "color": "#968a81"
+      "position": "-960px -640px",
+      "color": "#948982"
     },
     {
       "id": "QU3-0LfcJ",
-      "position": "-896px -640px",
-      "color": "#898759"
+      "position": "-1024px -640px",
+      "color": "#8a8459"
     },
     {
       "id": "JvK4hAcOl",
-      "position": "-960px -640px",
-      "color": "#b49192"
+      "position": "0px -704px",
+      "color": "#b79191"
     },
     {
       "id": "SKXdzSG5F",
-      "position": "-1024px -640px",
-      "color": "#aa8485"
+      "position": "-64px -704px",
+      "color": "#a98684"
     },
     {
       "id": "BdMxTKvQP",
-      "position": "0px -704px",
-      "color": "#a7957d"
+      "position": "-128px -704px",
+      "color": "#a6947e"
     },
     {
       "id": "7HEZZXQXi",
-      "position": "-64px -704px",
-      "color": "#c99a90"
+      "position": "-192px -704px",
+      "color": "#ca9891"
     },
     {
       "id": "1x5_iFxrl",
-      "position": "-128px -704px",
-      "color": "#be908a"
+      "position": "-256px -704px",
+      "color": "#be9189"
     },
     {
       "id": "grKjDDYLU",
-      "position": "-192px -704px",
-      "color": "#ca9885"
+      "position": "-320px -704px",
+      "color": "#c99a87"
     },
     {
       "id": "TIRc8l-Ov",
-      "position": "-256px -704px",
-      "color": "#8e6159"
+      "position": "-384px -704px",
+      "color": "#8e615a"
     },
     {
       "id": "pSkp8UtzR",
-      "position": "-320px -704px",
-      "color": "#a18283"
+      "position": "-448px -704px",
+      "color": "#a18081"
     },
     {
       "id": "-PLwC7rav",
-      "position": "-384px -704px",
+      "position": "-512px -704px",
       "color": "#9a6136"
     },
     {
       "id": "-IDibphrv",
-      "position": "-448px -704px",
-      "color": "#9d6439"
+      "position": "-576px -704px",
+      "color": "#9d663a"
     },
     {
       "id": "b06HlUyW9",
-      "position": "-512px -704px",
-      "color": "#7a552e"
+      "position": "-640px -704px",
+      "color": "#79552e"
     },
     {
       "id": "j2R9Yyfk7",
-      "position": "-576px -704px",
-      "color": "#654222"
+      "position": "-704px -704px",
+      "color": "#654121"
     },
     {
       "id": "tVuwQqAnt",
-      "position": "-640px -704px",
-      "color": "#8d6d3e"
+      "position": "-768px -704px",
+      "color": "#8e6f3c"
     },
     {
       "id": "OIsG_0_gQ",
-      "position": "-704px -704px",
-      "color": "#8d6d41"
+      "position": "-832px -704px",
+      "color": "#8d6e41"
     },
     {
       "id": "BTDiP1-WN",
-      "position": "-768px -704px",
-      "color": "#c6bba0"
+      "position": "-896px -704px",
+      "color": "#c4b8a2"
     },
     {
       "id": "--fy8JitE",
-      "position": "-832px -704px",
-      "color": "#c1b6bd"
+      "position": "-960px -704px",
+      "color": "#c3b5bd"
     },
     {
       "id": "XvL38FqFc",
-      "position": "-896px -704px",
-      "color": "#b8b0b6"
+      "position": "-1024px -704px",
+      "color": "#bab0b7"
     },
     {
       "id": "FVD_V1gkz",
-      "position": "-960px -704px",
-      "color": "#c3b19d"
+      "position": "0px -768px",
+      "color": "#c1b29c"
     },
     {
       "id": "LESvbc0cp",
-      "position": "-1024px -704px",
-      "color": "#babccb"
+      "position": "-64px -768px",
+      "color": "#b9bdca"
     },
     {
       "id": "3nEkFN4v3",
-      "position": "0px -768px",
-      "color": "#c1b6b0"
+      "position": "-128px -768px",
+      "color": "#c3b4b1"
     },
     {
       "id": "F26jLFsSM",
-      "position": "-64px -768px",
-      "color": "#bdadaa"
+      "position": "-192px -768px",
+      "color": "#beacab"
     },
     {
       "id": "ynGeJZzIH",
-      "position": "-128px -768px",
-      "color": "#dfa479"
+      "position": "-256px -768px",
+      "color": "#dca67b"
     },
     {
       "id": "ugzGGeljq",
-      "position": "-192px -768px",
-      "color": "#be9c8f"
+      "position": "-320px -768px",
+      "color": "#bf9d8e"
     },
     {
       "id": "6cFT0YI85",
-      "position": "-256px -768px",
-      "color": "#bca29b"
+      "position": "-384px -768px",
+      "color": "#bda299"
     },
     {
       "id": "MzFhhwu9q",
-      "position": "-320px -768px",
-      "color": "#b79992"
+      "position": "-448px -768px",
+      "color": "#b69891"
     },
     {
       "id": "ngnifkfVC",
-      "position": "-384px -768px",
-      "color": "#adb2b1"
+      "position": "-512px -768px",
+      "color": "#adb2b0"
     },
     {
       "id": "3yH_sUEon",
-      "position": "-448px -768px",
-      "color": "#8eaca5"
+      "position": "-576px -768px",
+      "color": "#8fada7"
     },
     {
       "id": "4N6PISlNQ",
-      "position": "-512px -768px",
-      "color": "#a1c6ac"
+      "position": "-640px -768px",
+      "color": "#a1c4ad"
     },
     {
       "id": "08QnmafUO",
-      "position": "-576px -768px",
-      "color": "#b3b997"
+      "position": "-704px -768px",
+      "color": "#b2bb97"
     },
     {
       "id": "4uTTruYze",
-      "position": "-640px -768px",
-      "color": "#a9b48d"
+      "position": "-768px -768px",
+      "color": "#a9b78c"
     },
     {
       "id": "VM4dhho2c",
-      "position": "-704px -768px",
-      "color": "#a6b7a3"
+      "position": "-832px -768px",
+      "color": "#a6b5a2"
     },
     {
       "id": "eAPSNjYPO",
-      "position": "-768px -768px",
-      "color": "#9daf98"
+      "position": "-896px -768px",
+      "color": "#9ead99"
     },
     {
       "id": "7aWLncdum",
-      "position": "-832px -768px",
-      "color": "#7a919a"
+      "position": "-960px -768px",
+      "color": "#7a939b"
     },
     {
       "id": "zSG48A1GN",
-      "position": "-896px -768px",
-      "color": "#6e8d79"
+      "position": "-1024px -768px",
+      "color": "#6d8e7b"
     },
     {
       "id": "YP_fqgPjK",
-      "position": "-960px -768px",
-      "color": "#66839b"
+      "position": "0px -832px",
+      "color": "#64819a"
     },
     {
       "id": "rCPd1tfS9",
-      "position": "-1024px -768px",
-      "color": "#5d7e93"
+      "position": "-64px -832px",
+      "color": "#5c7d91"
     },
     {
       "id": "TqWZWVpY3",
-      "position": "0px -832px",
-      "color": "#889d9e"
+      "position": "-128px -832px",
+      "color": "#8a9c9e"
     },
     {
       "id": "qA-EMB1fs",
-      "position": "-64px -832px",
-      "color": "#889d99"
+      "position": "-192px -832px",
+      "color": "#889e9a"
     },
     {
       "id": "Sjdqh9m2X",
-      "position": "-128px -832px",
-      "color": "#96a09e"
+      "position": "-256px -832px",
+      "color": "#95a09c"
     },
     {
       "id": "VqJ8q3DQp",
-      "position": "-192px -832px",
-      "color": "#949e9e"
+      "position": "-320px -832px",
+      "color": "#949d9d"
     },
     {
       "id": "fftXa_L3O",
-      "position": "-256px -832px",
-      "color": "#919494"
+      "position": "-384px -832px",
+      "color": "#909597"
     },
     {
       "id": "nL57eW-eu",
-      "position": "-320px -832px",
-      "color": "#a09d99"
+      "position": "-448px -832px",
+      "color": "#a19e9a"
     },
     {
       "id": "lpxYv1B-a",
-      "position": "-384px -832px",
-      "color": "#a09997"
+      "position": "-512px -832px",
+      "color": "#a19997"
     },
     {
       "id": "zbLLpntwq",
-      "position": "-448px -832px",
-      "color": "#8d9a9a"
+      "position": "-576px -832px",
+      "color": "#8d9899"
     },
     {
       "id": "vI10u14eE",
-      "position": "-512px -832px",
-      "color": "#8d9d9f"
+      "position": "-640px -832px",
+      "color": "#8e9e9c"
     },
     {
       "id": "e13iR_HPS",
-      "position": "-576px -832px",
-      "color": "#899899"
+      "position": "-704px -832px",
+      "color": "#899b99"
     },
     {
       "id": "TQnSxeYps",
-      "position": "-640px -832px",
-      "color": "#869a90"
+      "position": "-768px -832px",
+      "color": "#859992"
     },
     {
       "id": "MN3RgE0QK",
-      "position": "-704px -832px",
-      "color": "#859b95"
+      "position": "-832px -832px",
+      "color": "#849a94"
     },
     {
       "id": "n1F3_H0xn",
-      "position": "-768px -832px",
-      "color": "#9d9182"
+      "position": "-896px -832px",
+      "color": "#9e9280"
     },
     {
       "id": "3H826tx7z",
-      "position": "-832px -832px",
-      "color": "#948a7c"
+      "position": "-960px -832px",
+      "color": "#958a7d"
     },
     {
       "id": "gMs3wV6Mc",
-      "position": "-896px -832px",
-      "color": "#7a7a7c"
+      "position": "-1024px -832px",
+      "color": "#79797e"
     },
     {
       "id": "LIU8uRWtP",
-      "position": "-960px -832px",
-      "color": "#757a79"
+      "position": "0px -896px",
+      "color": "#777a79"
     },
     {
       "id": "MZA0Aj7xM",
-      "position": "-1024px -832px",
-      "color": "#757d7a"
+      "position": "-64px -896px",
+      "color": "#767d78"
     },
     {
       "id": "21JXqNHcO",
-      "position": "0px -896px",
-      "color": "#b39e95"
+      "position": "-128px -896px",
+      "color": "#b19e95"
     },
     {
       "id": "eNbizvaDC",
-      "position": "-64px -896px",
-      "color": "#a27d78"
+      "position": "-192px -896px",
+      "color": "#a27d7a"
     },
     {
       "id": "RSg0ZawgK",
-      "position": "-128px -896px",
-      "color": "#757675"
+      "position": "-256px -896px",
+      "color": "#767575"
     },
     {
       "id": "tnHAWZomJ",
-      "position": "-192px -896px",
-      "color": "#7eb1ba"
+      "position": "-320px -896px",
+      "color": "#7eb1b9"
     },
     {
       "id": "eVII5GgNz",
-      "position": "-256px -896px",
-      "color": "#768575"
+      "position": "-384px -896px",
+      "color": "#758677"
     },
     {
       "id": "CZoh2vwOX",
-      "position": "-320px -896px",
-      "color": "#6a7969"
+      "position": "-448px -896px",
+      "color": "#68796a"
     },
     {
       "id": "qUq983O5F",
-      "position": "-384px -896px",
-      "color": "#717e77"
+      "position": "-512px -896px",
+      "color": "#717c74"
     },
     {
       "id": "KsAbKo-kL",
-      "position": "-448px -896px",
-      "color": "#788982"
+      "position": "-576px -896px",
+      "color": "#7a8b81"
     },
     {
       "id": "vzHASkcwW",
-      "position": "-512px -896px",
-      "color": "#919494"
+      "position": "-640px -896px",
+      "color": "#919694"
     },
     {
       "id": "DCZK3_Hum",
-      "position": "-576px -896px",
-      "color": "#9aa3a5"
-    },
-    {
-      "id": "PZWgDQOzb",
-      "position": "-640px -896px",
-      "color": "#99a2a4"
-    },
-    {
-      "id": "YvRkgjni9",
       "position": "-704px -896px",
       "color": "#9ba1a6"
     },
     {
-      "id": "u_hgkzqGZ",
+      "id": "PZWgDQOzb",
       "position": "-768px -896px",
-      "color": "#909d9d"
+      "color": "#98a1a5"
+    },
+    {
+      "id": "YvRkgjni9",
+      "position": "-832px -896px",
+      "color": "#9aa3a4"
+    },
+    {
+      "id": "u_hgkzqGZ",
+      "position": "-896px -896px",
+      "color": "#919e9c"
     },
     {
       "id": "uE4Xzd-Nt",
-      "position": "-832px -896px",
-      "color": "#8e9b98"
+      "position": "-960px -896px",
+      "color": "#8f989a"
     },
     {
       "id": "4FB5yychN",
-      "position": "-896px -896px",
-      "color": "#899698"
+      "position": "-1024px -896px",
+      "color": "#8b9799"
     },
     {
       "id": "5ReMJ-axh",
-      "position": "-960px -896px",
-      "color": "#6f588a"
+      "position": "0px -960px",
+      "color": "#6e598a"
     },
     {
       "id": "rNYknIToK",
-      "position": "-1024px -896px",
-      "color": "#6b5785"
+      "position": "-64px -960px",
+      "color": "#695684"
     },
     {
       "id": "D87_y4QHp",
-      "position": "0px -960px",
-      "color": "#bebdae"
+      "position": "-128px -960px",
+      "color": "#bdbdae"
     },
     {
       "id": "LChCprdXR",
-      "position": "-64px -960px",
-      "color": "#bdbea4"
+      "position": "-192px -960px",
+      "color": "#bcbfa5"
     },
     {
       "id": "lG5pYr6_F",
-      "position": "-128px -960px",
-      "color": "#b5b9aa"
+      "position": "-256px -960px",
+      "color": "#b7b9a8"
     },
     {
       "id": "NXpQnBpZJ",
-      "position": "-192px -960px",
-      "color": "#c4c3b1"
+      "position": "-320px -960px",
+      "color": "#c5c2b3"
     },
     {
       "id": "B33Y1xtAN",
-      "position": "-256px -960px",
-      "color": "#cbc1b4"
+      "position": "-384px -960px",
+      "color": "#cbc1b7"
     },
     {
       "id": "Wy_OqDd79",
-      "position": "-320px -960px",
-      "color": "#c1baaf"
+      "position": "-448px -960px",
+      "color": "#c0baad"
     },
     {
       "id": "FRZxbTuQP",
-      "position": "-384px -960px",
-      "color": "#bfb9a3"
+      "position": "-512px -960px",
+      "color": "#bebaa1"
     },
     {
       "id": "fpxipfxQ_",
-      "position": "-448px -960px",
-      "color": "#b4baa9"
+      "position": "-576px -960px",
+      "color": "#b5baab"
     },
     {
       "id": "WqhucJQl5",
-      "position": "-512px -960px",
-      "color": "#bec2b5"
+      "position": "-640px -960px",
+      "color": "#bfc1b6"
     },
     {
       "id": "0pLWUXtXS",
-      "position": "-576px -960px",
-      "color": "#b9beb7"
+      "position": "-704px -960px",
+      "color": "#bbbcb5"
     },
     {
       "id": "PaI2yXcVi",
-      "position": "-640px -960px",
-      "color": "#b7b9b2"
+      "position": "-768px -960px",
+      "color": "#b6b8b1"
     },
     {
       "id": "be5cdHAfy",
-      "position": "-704px -960px",
-      "color": "#bfc0ad"
-    },
-    {
-      "id": "HsYpeEhwA",
-      "position": "-768px -960px",
-      "color": "#bec0b1"
-    },
-    {
-      "id": "tcIJgshsc",
       "position": "-832px -960px",
       "color": "#bdc2ac"
     },
     {
-      "id": "3XnGkDb8n",
+      "id": "HsYpeEhwA",
       "position": "-896px -960px",
-      "color": "#628476"
+      "color": "#bec0b2"
+    },
+    {
+      "id": "tcIJgshsc",
+      "position": "-960px -960px",
+      "color": "#bec1ac"
+    },
+    {
+      "id": "3XnGkDb8n",
+      "position": "-1024px -960px",
+      "color": "#608475"
     },
     {
       "id": "UhyW4h2jl",
-      "position": "-960px -960px",
-      "color": "#627564"
+      "position": "0px -1024px",
+      "color": "#617465"
     },
     {
       "id": "o7qlvjIpX",
-      "position": "-1024px -960px",
-      "color": "#586c59"
+      "position": "-64px -1024px",
+      "color": "#5b6d5a"
     },
     {
       "id": "5FnJGJYHD",
-      "position": "0px -1024px",
-      "color": "#395049"
+      "position": "-128px -1024px",
+      "color": "#3a5149"
     },
     {
       "id": "tk28kQJ4M",
-      "position": "-64px -1024px",
-      "color": "#377992"
+      "position": "-192px -1024px",
+      "color": "#377990"
     },
     {
       "id": "D9uBSezBN",
-      "position": "-128px -1024px",
-      "color": "#5e6961"
-    },
-    {
-      "id": "formation_magic_heng_1",
-      "position": "-192px -1024px",
-      "color": "#0cb789"
-    },
-    {
-      "id": "formation_magic_hui_1",
       "position": "-256px -1024px",
-      "color": "#8a8889"
-    },
-    {
-      "id": "formation_magic_ming_1",
-      "position": "-320px -1024px",
-      "color": "#cdcecf"
+      "color": "#5d6a62"
     }
   ],
   "categories": [
@@ -5722,6 +5717,9 @@
       "producers": [
         "formation_magic_ming_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5742,6 +5740,9 @@
       },
       "producers": [
         "formation_magic_ming_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5764,6 +5765,9 @@
       "producers": [
         "formation_magic_ming_3"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5783,6 +5787,9 @@
       },
       "producers": [
         "formation_magic_ming_4"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5805,6 +5812,9 @@
       "producers": [
         "formation_magic_hui_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5825,6 +5835,9 @@
       },
       "producers": [
         "formation_magic_hui_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5847,6 +5860,9 @@
       "producers": [
         "formation_magic_hui_3"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5866,6 +5882,9 @@
       },
       "producers": [
         "formation_magic_hui_4"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5888,6 +5907,9 @@
       "producers": [
         "formation_magic_heng_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5908,6 +5930,9 @@
       },
       "producers": [
         "formation_magic_heng_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5930,6 +5955,9 @@
       "producers": [
         "formation_magic_ming_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5950,6 +5978,9 @@
       },
       "producers": [
         "formation_magic_ming_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -5972,6 +6003,9 @@
       "producers": [
         "formation_magic_ming_3"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -5991,6 +6025,9 @@
       },
       "producers": [
         "formation_magic_ming_4"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -6013,6 +6050,9 @@
       "producers": [
         "formation_magic_hui_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -6033,6 +6073,9 @@
       },
       "producers": [
         "formation_magic_hui_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -6055,6 +6098,9 @@
       "producers": [
         "formation_magic_hui_3"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -6074,6 +6120,9 @@
       },
       "producers": [
         "formation_magic_hui_4"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"
@@ -6096,6 +6145,9 @@
       "producers": [
         "formation_magic_heng_1"
       ],
+      "flags": [
+        "formation"
+      ],
       "locations": [
         "jinlong"
       ],
@@ -6116,6 +6168,9 @@
       },
       "producers": [
         "formation_magic_heng_2"
+      ],
+      "flags": [
+        "formation"
       ],
       "locations": [
         "jinlong"

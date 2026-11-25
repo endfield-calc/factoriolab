@@ -10,6 +10,7 @@ export type RecipeFlag =
   | 'technology'
   | 'burn'
   | 'grow'
+  | 'formation'
   | 'recycling'
   | 'locked'
   | 'hideProducer'

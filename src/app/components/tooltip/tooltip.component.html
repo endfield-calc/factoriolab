@@ -376,7 +376,7 @@
         >
       }
     </div>
-    @if (recipe.producers.includes('__formation_position')) {
+    @if (recipe.flags.has('formation')) {
       <div class="mt-1">
         {{ 'data.formationExpectation' | translate }}
       </div>

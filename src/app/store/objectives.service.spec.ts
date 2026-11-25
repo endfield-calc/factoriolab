@@ -44,6 +44,40 @@ describe('ObjectivesService', () => {
       service.objectives();
       expect(service.recipeSvc.adjustObjective).toHaveBeenCalledTimes(1);
     });
+
+    it('restores formation objectives with stale or incompatible machines', () => {
+      const recipe = Mocks.adjustedDataset.recipeEntities[RecipeId.IronPlate];
+      const data = spread(Mocks.adjustedDataset, {
+        recipeEntities: spread(Mocks.adjustedDataset.recipeEntities, {
+          [recipe.id]: spread(recipe, {
+            flags: new Set([...recipe.flags, 'formation' as const]),
+            producers: [ItemId.ElectricFurnace, ItemId.SteelFurnace],
+          }),
+        }),
+      });
+      spyOn(service.settingsSvc, 'dataset').and.returnValue(data);
+      spyOn(service.recipesSvc, 'adjustedDataset').and.returnValue(data);
+      const objective: ObjectiveState = {
+        id: '1',
+        targetId: recipe.id,
+        value: rational.one,
+        unit: ObjectiveUnit.Machines,
+        type: ObjectiveType.Output,
+      };
+      const adjust = (machineId: string) => {
+        service.load({ '1': spread(objective, { machineId }) });
+        return service.objectives()[0];
+      };
+
+      for (const machineId of ['__formation_position', ItemId.Lab]) {
+        const result = adjust(machineId);
+        expect(result.machineId).toEqual(ItemId.ElectricFurnace);
+        expect(result.recipe?.flags.has('formation')).toBeTrue();
+      }
+      expect(adjust(ItemId.SteelFurnace).machineId).toEqual(
+        ItemId.SteelFurnace,
+      );
+    });
   });
 
   describe('normalizedObjectives', () => {
@@ -190,35 +224,40 @@ describe('ObjectivesService', () => {
       });
     });
 
-    it('keeps formation positions on steps but excludes them from machine totals', () => {
+    it('keeps formation producers on steps but excludes them from machine totals', () => {
+      const recipe = Mocks.adjustedDataset.adjustedRecipe[RecipeId.Coal];
+      const formation = spread(recipe, {
+        flags: new Set([...recipe.flags, 'formation' as const]),
+      });
       const steps: Step[] = [
         {
-          id: 'formation',
+          id: 'formation-1',
           recipeId: RecipeId.Coal,
-          recipe: Mocks.adjustedDataset.adjustedRecipe[RecipeId.Coal],
+          recipe: formation,
           machines: rational(20),
-          recipeSettings: { machineId: '__formation_position' },
+          recipeSettings: { machineId: ItemId.ElectricMiningDrill },
+        },
+        {
+          id: 'formation-2',
+          recipeId: RecipeId.Coal,
+          recipe: formation,
+          machines: rational(10),
+          recipeSettings: { machineId: ItemId.BurnerMiningDrill },
         },
         {
           id: 'real-machine',
           recipeId: RecipeId.Coal,
-          recipe: Mocks.adjustedDataset.adjustedRecipe[RecipeId.Coal],
+          recipe,
           machines: rational(2),
           recipeSettings: { machineId: ItemId.ElectricMiningDrill },
         },
       ];
       spyOn(service, 'steps').and.returnValue(steps);
-      spyOn(service.recipesSvc, 'adjustedDataset').and.returnValue(
-        spread(Mocks.adjustedDataset, {
-          machineEntities: spread(Mocks.adjustedDataset.machineEntities, {
-            __formation_position: {},
-          }),
-        }),
-      );
       expect(service.totals().machines).toEqual({
         [ItemId.ElectricMiningDrill]: rational(2),
       });
       expect(steps[0].machines).toEqual(rational(20));
+      expect(steps[1].machines).toEqual(rational(10));
     });
   });
 

@@ -234,7 +234,7 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
 
             if (machine != null) {
               const value = step.machines.ceil();
-              if (settings.machineId !== '__formation_position') {
+              if (!recipe.flags.has('formation')) {
                 if (!machines[machine]) machines[machine] = rational.zero;
                 machines[machine] = machines[machine].add(value);
               }

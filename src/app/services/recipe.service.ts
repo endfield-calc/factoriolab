@@ -905,6 +905,14 @@ export class RecipeService {
       s.machineOptions,
       settings.machineRankIds,
     );
+    // Formation producers replaced an older virtual machine in saved settings.
+    if (
+      recipe.flags.has('formation') &&
+      s.machineId != null &&
+      !recipe.producers.includes(s.machineId)
+    ) {
+      s.machineId = undefined;
+    }
     s.machineId = coalesce(s.machineId, s.defaultMachineId);
 
     const machine = data.machineEntities[s.machineId];

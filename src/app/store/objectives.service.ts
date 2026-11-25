@@ -233,10 +233,11 @@ export class ObjectivesService extends EntityStore<ObjectiveState> {
             }
 
             if (machine != null) {
-              if (!machines[machine]) machines[machine] = rational.zero;
-
               const value = step.machines.ceil();
-              machines[machine] = machines[machine].add(value);
+              if (settings.machineId !== '__formation_position') {
+                if (!machines[machine]) machines[machine] = rational.zero;
+                machines[machine] = machines[machine].add(value);
+              }
 
               // Check for modules to add
               if (settings.modules != null) {

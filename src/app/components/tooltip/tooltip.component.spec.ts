@@ -1,6 +1,7 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ItemId, setInputs, TestModule } from '~/tests';
+import { ItemId, Mocks, RecipeId, setInputs, TestModule } from '~/tests';
 
 import { TooltipComponent } from './tooltip.component';
 
@@ -30,6 +31,39 @@ describe('TooltipComponent', () => {
     it('should not return a recipe if multiple are available', () => {
       setInputs(fixture, { id: 'petroleum-gas' });
       expect(component.recipe()).toBeUndefined();
+    });
+
+    it('explains formation expectations and unmodeled shared gas only for formation recipes', () => {
+      const recipe = Mocks.adjustedDataset.recipeEntities[RecipeId.CopperOre];
+      const formation = {
+        ...recipe,
+        id: 'formation-example',
+        producers: ['__formation_position'],
+      };
+      component.data = signal({
+        ...Mocks.adjustedDataset,
+        recipeEntities: {
+          ...Mocks.adjustedDataset.recipeEntities,
+          [formation.id]: formation,
+        },
+        itemEntities: {
+          ...Mocks.adjustedDataset.itemEntities,
+          __formation_position: {
+            id: '__formation_position',
+            name: '',
+            category: '',
+            row: 0,
+          },
+        },
+      });
+      setInputs(fixture, { id: recipe.id, type: 'recipe' });
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'data.formationExpectation',
+      );
+      setInputs(fixture, { id: formation.id, type: 'recipe' });
+      expect(fixture.nativeElement.textContent).toContain(
+        'data.formationExpectation',
+      );
     });
   });
 });

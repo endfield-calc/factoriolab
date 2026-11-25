@@ -13,6 +13,7 @@ import { StatusSimplex } from 'node_modules/glpk-ts/dist/status';
 import { environment } from 'src/environments';
 
 import { contains, spread } from '~/helpers';
+import { getDomainTransferSources } from '~/helpers/domain-transfer';
 import { AdjustedRecipe, Recipe } from '~/models/data/recipe';
 import { AdjustedDataset } from '~/models/dataset';
 import { MaximizeType } from '~/models/enum/maximize-type';
@@ -156,12 +157,19 @@ export class SimplexService {
     if (settings.modId === 'aef') {
       // 跨地区传输
       const transferNum = new Rational(1n, 3600n);
-      const disableTransfer = ['domain_key_tundra'];
-      const useTransfer: string[] = [];
+      const disableTransfer = new Set(
+        getDomainTransferSources(data).map((id) => `domain_key_${id}`),
+      );
+      const availableTransfer = new Set(
+        getDomainTransferSources(data, settings.locationIds).map(
+          (id) => `domain_key_${id}`,
+        ),
+      );
+      const useTransfer = new Set<string>();
       objectives = objectives.filter((it) => {
         if (it.type !== ObjectiveType.DomainTransfer) return true;
-        disableTransfer.splice(disableTransfer.indexOf(it.targetId), 1);
-        useTransfer.push(it.targetId);
+        if (availableTransfer.has(it.targetId) && disableTransfer.delete(it.targetId))
+          useTransfer.add(it.targetId);
         return false;
       });
       useTransfer.forEach((it) => {
@@ -502,6 +510,7 @@ export class SimplexService {
     // Track number of machines for recipe maximization constraints
     const recipeObjectiveConstrEntities: Entities<Constraint> = {};
     // Variable for maximization ratio
+    let hasIntegerConstraints = false;
     const config: VariableProperties = {
       obj: state.costs.maximize.toNumber(),
       lb: 0,
@@ -528,6 +537,7 @@ export class SimplexService {
       // 跨地区传输只能是整数
       if (recipeId.startsWith('transfer_')) {
         config.type = 'integer';
+        hasIntegerConstraints = true;
       }
 
       recipeVarEntities[recipeId] = m.addVar(config);
@@ -539,6 +549,11 @@ export class SimplexService {
         lb: 0,
         name: obj.id,
       };
+
+      if (obj.recipe.id.startsWith('transfer_')) {
+        config.type = 'integer';
+        hasIntegerConstraints = true;
+      }
 
       // Set ub/lb if type is output, maximize will be set up later
       if (obj.type === ObjectiveType.Output) {
@@ -588,8 +603,6 @@ export class SimplexService {
     }
 
     // ===== 硬编码机器数量上限与整数约束 =====
-    // TODO 这个变量目前的逻辑实际上跟固定true没区别，之后要根据资源配置卡片是否启用来判断
-    let hasMachineIntegerConstraints = false;
     if (state.data.modId === 'aef') {
       // TODO 目前的循环和硬编码都挺抽象的，之后要调整
       const machineLimits = state.objectives
@@ -609,7 +622,7 @@ export class SimplexService {
               recipeVarEntities[recipeId].type = 'integer';
             }
             coeffs.push([recipeVarEntities[recipeId], 1]);
-            hasMachineIntegerConstraints = true;
+            hasIntegerConstraints = true;
           }
         }
 
@@ -620,7 +633,7 @@ export class SimplexService {
               recipeObjectiveVarEntities[obj.id].type = 'integer';
             }
             coeffs.push([recipeObjectiveVarEntities[obj.id], 1]);
-            hasMachineIntegerConstraints = true;
+            hasIntegerConstraints = true;
           }
         }
 
@@ -810,14 +823,18 @@ export class SimplexService {
     const start = Date.now();
     const [returnCode, status] = this.glpkSimplex(
       m,
-      hasMachineIntegerConstraints,
+      hasIntegerConstraints,
     );
     const time = Date.now() - start;
     const surplus: Entities<Rational> = {};
     const unproduceable: Entities<Rational> = {};
     const excluded: Entities<Rational> = {};
     const recipes: Entities<Rational> = {};
-    const cost = rational(m.value);
+    const cost = rational(
+      hasIntegerConstraints && returnCode === 'ok' && status === 'optimal'
+        ? m.valueMIP
+        : m.value,
+    );
 
     if (returnCode !== 'ok' || status !== 'optimal') {
       let ray: Constraint | Variable | undefined;
@@ -847,7 +864,7 @@ export class SimplexService {
     }
 
     const getValue = (variable: Variable): number => {
-      return hasMachineIntegerConstraints ? variable.valueMIP : variable.value;
+      return hasIntegerConstraints ? variable.valueMIP : variable.value;
     };
 
     // Parse solution

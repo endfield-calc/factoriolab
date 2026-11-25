@@ -23,9 +23,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { InputNumberComponent } from '~/components/input-number/input-number.component';
 import { NoDragDirective } from '~/directives/no-drag.directive';
+import { getDomainTransferSources } from '~/helpers/domain-transfer';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
-import { ObjectiveBase, ObjectiveSettings } from '~/models/objective';
+import { ObjectiveBase } from '~/models/objective';
 import { fromNumber, Rational, rational } from '~/models/rational';
 import { IconSmClassPipe } from '~/pipes/icon-class.pipe';
 import { TranslatePipe } from '~/pipes/translate.pipe';
@@ -93,18 +94,10 @@ export class ResourceInputComponent {
   enableLimitMachines = signal(false);
   limitMachinesNum = signal<Record<string, Rational>>({});
 
-  readonly allowTransferSource = ['tundra'];
   enableDomainTransfer = signal(false);
   disableWaterNode = signal(false);
   transferSourceOptions = computed(() => {
-    const setLoc = this.settings().locationIds;
-    if (setLoc.size === 1) {
-      return this.allowTransferSource.filter(
-        (it) => !this.settings().locationIds.has(it),
-      );
-    } else {
-      return this.allowTransferSource;
-    }
+    return getDomainTransferSources(this.data(), this.settings().locationIds);
   });
   transferSource = signal<string>('');
 
@@ -138,17 +131,17 @@ export class ResourceInputComponent {
     {
       id: 'jinlong1.5',
       icon: 'jinlong',
-      name: '武陵 1.5版本',
+      name: '武陵',
       location: 'jinlong',
       limitItems: [
-        { id: 'originium_ore', num: fromNumber(540) },
+        { id: 'originium_ore', num: fromNumber(600) },
         { id: 'quartz_sand', num: rational.zero },
         { id: 'iron_ore', num: fromNumber(120) },
-        { id: 'copper_ore', num: fromNumber(510) },
-        { id: 'gas_xiranite', num: fromNumber(150) },
-        { id: 'gas_inert', num: fromNumber(460) },
+        { id: 'copper_ore', num: fromNumber(600) },
+        { id: 'gas_xiranite', num: fromNumber(340) },
+        { id: 'gas_inert', num: fromNumber(540) },
       ],
-      limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(12) }],
+      limitMachines: [{ id: 'xiranite_oven_1', num: fromNumber(16) }],
       transferSource: 'tundra',
       disableWaterNode: false,
     },
@@ -365,7 +358,7 @@ export class ResourceInputComponent {
         });
         if (this.enableDomainTransfer()) {
           const transferSource = this.transferSource();
-          if (transferSource && transferSource.length > 0) {
+          if (this.transferSourceOptions().includes(transferSource)) {
             const obj: ObjectiveBase = {
               targetId: `domain_key_${transferSource}`,
               unit: ObjectiveUnit.Items,

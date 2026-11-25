@@ -494,6 +494,7 @@
     "catalysts": "Catalysts",
     "products": "Products",
     "producers": "Producers",
+    "formationExpectation": "Each formation effect position attempts a probabilistic conversion every 10 seconds; failed attempts retain the input. Values are expected averages; item input limits apply to the full amount processed. Positions are not buildings. Completely overlapping Light and Dark formations form an Equilibrium formation. Layout and shared generator gas consumption are not included.",
     "unlockedBy": "Unlocked by",
     "mining": "Mining",
     "rocketPart": "Rocket part",

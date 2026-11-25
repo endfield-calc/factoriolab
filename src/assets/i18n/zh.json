@@ -497,6 +497,7 @@
     "catalysts": "催化剂",
     "products": "产物",
     "producers": "制造于",
+    "formationExpectation": "阵列作用位每 10 秒按概率转换，失败保留原料；显示的是期望值，物品输入上限按处理量计算，作用位不是建筑。明阵与晦阵完全重叠时形成衡阵，计算未包含场地布局和发生器共享气耗。",
     "unlockedBy": "解锁自",
     "mining": "采集",
     "rocketPart": "火箭组件",

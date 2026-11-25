@@ -1,13 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 
+import {
+  AdjustedRecipe,
+  finalizeRecipe,
+  parseRecipe,
+  RecipeJson,
+} from '~/models/data/recipe';
 import { MaximizeType } from '~/models/enum/maximize-type';
 import { ObjectiveType } from '~/models/enum/objective-type';
 import { ObjectiveUnit } from '~/models/enum/objective-unit';
 import { SimplexResultType } from '~/models/enum/simplex-result-type';
+import { ObjectiveState } from '~/models/objective';
 import { rational } from '~/models/rational';
 import { Entities } from '~/models/utils';
 import { ItemId, Mocks, RecipeId, TestModule } from '~/tests';
 
+import aefData from '../../data/aef/data.json';
 import {
   ItemValues,
   MatrixSolution,
@@ -144,6 +152,305 @@ describe('SimplexService', () => {
         false,
       );
       expect(result.unboundedRecipeId).toBeDefined();
+    });
+
+    it('enables only valid transfer keys and disables every other source', () => {
+      const data = {
+        ...Mocks.adjustedDataset,
+        locationIds: ['tundra', 'jinlong', 'missing'],
+        itemEntities: {
+          ...Mocks.adjustedDataset.itemEntities,
+          domain_key_tundra: {
+            id: 'domain_key_tundra',
+            name: '',
+            category: '__domain_transfer',
+            row: 0,
+          },
+          domain_key_jinlong: {
+            id: 'domain_key_jinlong',
+            name: '',
+            category: '__domain_transfer',
+            row: 0,
+          },
+        },
+      };
+      const settings = {
+        ...Mocks.settingsStateInitial,
+        modId: 'aef',
+        locationIds: new Set(['tundra', 'jinlong']),
+      };
+      const getMatrix = spyOn(service, 'getState').and.returnValue(getState());
+      spyOn(service, 'getSolution').and.returnValue(getResult());
+      spyOn(service, 'updateSteps');
+      const transfer = (targetId: string): ObjectiveState => ({
+        id: targetId,
+        targetId,
+        type: ObjectiveType.DomainTransfer,
+        unit: ObjectiveUnit.Items,
+        value: rational.one,
+      });
+      const output = Mocks.objectives[0];
+      const generated = (): ObjectiveState[] =>
+        getMatrix.calls.mostRecent().args[0].slice(1);
+
+      service.solve([output], settings, data, false);
+      expect(generated().map((o) => [o.targetId, o.type, o.value])).toEqual([
+        ['domain_key_tundra', ObjectiveType.Limit, rational.zero],
+        ['domain_key_jinlong', ObjectiveType.Limit, rational.zero],
+      ]);
+
+      service.solve(
+        [
+          output,
+          transfer('domain_key_unknown'),
+          transfer('domain_key_jinlong'),
+          transfer('domain_key_jinlong'),
+        ],
+        settings,
+        data,
+        false,
+      );
+      expect(generated().map((o) => [o.targetId, o.type, o.value])).toEqual([
+        ['domain_key_jinlong', ObjectiveType.Limit, rational(1, 3600)],
+        ['domain_key_jinlong', ObjectiveType.Input, rational(1, 3600)],
+        ['domain_key_tundra', ObjectiveType.Limit, rational.zero],
+      ]);
+
+      service.solve(
+        [output, transfer('domain_key_tundra'), transfer('domain_key_jinlong')],
+        settings,
+        data,
+        false,
+      );
+      expect(generated().map((o) => [o.targetId, o.type])).toEqual([
+        ['domain_key_tundra', ObjectiveType.Limit],
+        ['domain_key_tundra', ObjectiveType.Input],
+        ['domain_key_jinlong', ObjectiveType.Limit],
+        ['domain_key_jinlong', ObjectiveType.Input],
+      ]);
+
+      for (const locationIds of [
+        new Set<string>(),
+        new Set(['tundra']),
+        new Set(['unknown']),
+      ]) {
+        service.solve(
+          [output, transfer('domain_key_tundra')],
+          { ...settings, locationIds },
+          data,
+          false,
+        );
+        expect(generated().map((o) => [o.targetId, o.type, o.value])).toEqual([
+          ['domain_key_tundra', ObjectiveType.Limit, rational.zero],
+          ['domain_key_jinlong', ObjectiveType.Limit, rational.zero],
+        ]);
+      }
+
+      const { domain_key_jinlong: _removed, ...oldItems } = data.itemEntities;
+      service.solve(
+        [output, transfer('domain_key_tundra')],
+        settings,
+        {
+          ...data,
+          itemEntities: oldItems,
+        },
+        false,
+      );
+      expect(generated().map((o) => [o.targetId, o.type, o.value])).toEqual([
+        ['domain_key_tundra', ObjectiveType.Limit, rational(1, 3600)],
+        ['domain_key_tundra', ObjectiveType.Input, rational(1, 3600)],
+      ]);
+    });
+  });
+
+  describe('transfer integer constraints', () => {
+    function transferState(): MatrixState {
+      const state = getState();
+      const keys = ['domain_key_tundra', 'domain_key_jinlong'];
+      const products = ['product_a', 'product_b'];
+      const recipes: Entities<AdjustedRecipe> = {};
+      for (const source of ['tundra', 'jinlong']) {
+        for (const product of products) {
+          const id = `transfer_${source}_${product}`;
+          const key = `domain_key_${source}`;
+          recipes[id] = {
+            ...Mocks.adjustedDataset.adjustedRecipe[RecipeId.CopperOre],
+            id,
+            time: rational(3600),
+            producers: ['__domain_transfer'],
+            in: { [key]: rational.one },
+            out: { [product]: rational(150) },
+            output: {
+              [key]: rational(-1, 3600),
+              [product]: rational(150, 3600),
+            },
+            produces: new Set([product]),
+            cost: rational.one,
+          };
+        }
+      }
+      state.recipes = recipes;
+      state.data = {
+        ...Mocks.adjustedDataset,
+        modId: 'aef',
+        itemAvailableIoRecipeIds: Object.fromEntries(
+          [...keys, ...products].map((item) => [
+            item,
+            Object.values(recipes)
+              .filter((recipe) => recipe.output[item])
+              .map((r) => r.id),
+          ]),
+        ),
+      };
+      state.itemValues = {
+        product_a: { out: rational(75, 3600) },
+        product_b: { out: rational(75, 3600) },
+        domain_key_tundra: {
+          out: rational.zero,
+          in: rational(1, 3600),
+          lim: rational(1, 3600),
+        },
+        domain_key_jinlong: {
+          out: rational.zero,
+          in: rational(1, 3600),
+          lim: rational(1, 3600),
+        },
+      };
+      return state;
+    }
+
+    it('uses separate per-source capacities and integer shipments in GLPK', () => {
+      const state = transferState();
+      const result = service.glpk(state);
+      expect(result.error).toBeFalse();
+      expect(result.status).toBe('optimal');
+      expect(result.cost).toEqual(rational(2));
+      const transfers = Object.entries(result.recipes);
+      expect(transfers.length).toBe(2);
+      expect(transfers.every(([, value]) => value.isInteger())).toBeTrue();
+      for (const source of ['tundra', 'jinlong']) {
+        expect(
+          transfers
+            .filter(([id]) => id.startsWith(`transfer_${source}_`))
+            .reduce((sum, [, value]) => sum.add(value), rational.zero),
+        ).toEqual(rational.one);
+      }
+
+      const tundraOnly = transferState();
+      tundraOnly.itemValues['domain_key_jinlong'] = {
+        out: rational.zero,
+        lim: rational.zero,
+      };
+      expect(service.glpk(tundraOnly).error).toBeTrue();
+      const disabled = transferState();
+      for (const key of ['domain_key_tundra', 'domain_key_jinlong'])
+        disabled.itemValues[key] = { out: rational.zero, lim: rational.zero };
+      expect(service.glpk(disabled).error).toBeTrue();
+    });
+
+    it('also enforces integer shipments for direct recipe objectives', () => {
+      const state = transferState();
+      const recipe = state.recipes['transfer_tundra_product_a'];
+      state.recipes = {};
+      state.recipeObjectives = [
+        {
+          id: 'direct-transfer',
+          targetId: recipe.id,
+          recipe,
+          unit: ObjectiveUnit.Machines,
+          type: ObjectiveType.Output,
+          value: rational(1, 2),
+        },
+      ];
+      state.itemValues['product_a'].out = rational.zero;
+      state.itemValues['product_b'].out = rational.zero;
+      expect(service.glpk(state).error).toBeTrue();
+    });
+
+    it('solves shipments using actual recipes from both game-data sources', () => {
+      const state = getState();
+      const recipeIds = [
+        'transfer_tundra_equip_script_1',
+        'transfer_tundra_equip_script_2',
+        'transfer_jinlong_copper_ore',
+      ];
+      const recipes: Entities<AdjustedRecipe> = {};
+      for (const id of recipeIds) {
+        const raw = aefData.recipes.find((recipe) => recipe.id === id);
+        expect(raw).toBeDefined();
+        const recipe: AdjustedRecipe = {
+          ...Mocks.adjustedDataset.adjustedRecipe[RecipeId.CopperOre],
+          ...parseRecipe(raw as unknown as RecipeJson),
+          produces: new Set(),
+          output: {},
+          cost: rational.one,
+        };
+        finalizeRecipe(recipe);
+        recipes[id] = recipe;
+      }
+      const itemIds = [
+        'domain_key_tundra',
+        'domain_key_jinlong',
+        'equip_script_1',
+        'equip_script_2',
+        'copper_ore',
+      ];
+      state.recipes = recipes;
+      state.data = {
+        ...Mocks.adjustedDataset,
+        modId: 'aef',
+        itemAvailableIoRecipeIds: Object.fromEntries(
+          itemIds.map((id) => [
+            id,
+            Object.values(recipes)
+              .filter((recipe) => recipe.output[id])
+              .map((recipe) => recipe.id),
+          ]),
+        ),
+      };
+      state.itemValues = {
+        domain_key_tundra: {
+          out: rational.zero,
+          in: rational(1, 3600),
+          lim: rational(1, 3600),
+        },
+        domain_key_jinlong: {
+          out: rational.zero,
+          in: rational(1, 3600),
+          lim: rational(1, 3600),
+        },
+        equip_script_1: { out: rational(75, 3600) },
+        equip_script_2: { out: rational.zero },
+        copper_ore: { out: rational(750, 3600) },
+      };
+      expect(recipes['transfer_jinlong_copper_ore'].time).toEqual(
+        rational(3600),
+      );
+      expect(
+        recipes['transfer_jinlong_copper_ore'].in['domain_key_jinlong'],
+      ).toEqual(rational.one);
+      expect(recipes['transfer_jinlong_copper_ore'].out['copper_ore']).toEqual(
+        rational(1500),
+      );
+      const result = service.glpk(state);
+      expect(result.status).toBe('optimal');
+      expect(result.error).toBeFalse();
+      expect(result.recipes).toEqual({
+        transfer_tundra_equip_script_1: rational.one,
+        transfer_jinlong_copper_ore: rational.one,
+      });
+      expect(result.cost).toEqual(rational(2));
+
+      // A second half-stack from Tundra needs another whole shipment, but the
+      // two Tundra recipes share the same one-shipment capacity.
+      state.itemValues['equip_script_2'].out = rational(75, 7200);
+      expect(service.glpk(state).error).toBeTrue();
+      state.itemValues['equip_script_2'].out = rational.zero;
+      state.itemValues['domain_key_jinlong'] = {
+        out: rational.zero,
+        lim: rational.zero,
+      };
+      expect(service.glpk(state).error).toBeTrue();
     });
   });
 

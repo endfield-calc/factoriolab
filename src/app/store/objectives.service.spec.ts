@@ -189,6 +189,37 @@ describe('ObjectivesService', () => {
         pollution: rational.zero,
       });
     });
+
+    it('keeps formation positions on steps but excludes them from machine totals', () => {
+      const steps: Step[] = [
+        {
+          id: 'formation',
+          recipeId: RecipeId.Coal,
+          recipe: Mocks.adjustedDataset.adjustedRecipe[RecipeId.Coal],
+          machines: rational(20),
+          recipeSettings: { machineId: '__formation_position' },
+        },
+        {
+          id: 'real-machine',
+          recipeId: RecipeId.Coal,
+          recipe: Mocks.adjustedDataset.adjustedRecipe[RecipeId.Coal],
+          machines: rational(2),
+          recipeSettings: { machineId: ItemId.ElectricMiningDrill },
+        },
+      ];
+      spyOn(service, 'steps').and.returnValue(steps);
+      spyOn(service.recipesSvc, 'adjustedDataset').and.returnValue(
+        spread(Mocks.adjustedDataset, {
+          machineEntities: spread(Mocks.adjustedDataset.machineEntities, {
+            __formation_position: {},
+          }),
+        }),
+      );
+      expect(service.totals().machines).toEqual({
+        [ItemId.ElectricMiningDrill]: rational(2),
+      });
+      expect(steps[0].machines).toEqual(rational(20));
+    });
   });
 
   describe('stepDetails', () => {

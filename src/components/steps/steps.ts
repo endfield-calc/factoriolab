@@ -134,8 +134,6 @@ export class Steps {
   protected readonly resourceFromObjectiveId = resourceFromObjectiveId;
   protected readonly isEndfieldTransferRecipe = (id: string): boolean =>
     this.recipesStore.transferRecipeIds().has(id);
-  protected readonly isFormationRecipe = (id: string): boolean =>
-    this.data().modId === 'aef' && id.startsWith('formation_magic_');
   protected readonly settings = this.settingsStore.settings;
   protected readonly totals = this.objectivesStore.totals;
 
@@ -146,9 +144,7 @@ export class Steps {
     return steps.filter((s) => s.id === this.selectedId());
   });
   protected readonly hasFormationSteps = computed(() =>
-    this.steps().some((step) =>
-      step.recipeId ? this.isFormationRecipe(step.recipeId) : false,
-    ),
+    this.steps().some((step) => step.recipe?.flags.has('formation')),
   );
 
   protected readonly sortedSteps = computed(() => {

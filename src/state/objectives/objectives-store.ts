@@ -316,8 +316,12 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
         // Total Machines & Modules
         if (step.machines?.nonzero()) {
           const recipe = step.recipe;
-          // Don't include silos from launch recipes
-          if (!recipe.part && recipe.producers?.length) {
+          // Launches share their silo. Array producers count affected belt positions.
+          if (
+            !recipe.part &&
+            recipe.producers?.length &&
+            !recipe.flags.has('formation')
+          ) {
             const settings = step.recipeSettings;
             let machine = settings.machineId;
             let iconType: IconType = 'item';

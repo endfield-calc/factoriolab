@@ -488,8 +488,10 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
           : sum;
       }, 0);
       close(sourceRate * 60, 6);
-      expect(formation.recipe!.producers).toBeUndefined();
-      expect(formation.recipe!.flags.has('showCount')).toBeTrue();
+      const producer = formation.recipe!.producers![0];
+      const row = objectives.steps().find((step) => step.recipeId === id)!;
+      expect(row.recipeSettings!.machineId).toBe(producer);
+      expect(objectives.totals().machines[producer]).toBeUndefined();
 
       objectives.set({
         1: objective('1', 'copper_ming', 6, ObjectiveUnit.Items),
@@ -544,6 +546,24 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
           'copper_ming'
         ],
       ).not.toContain(id);
+    });
+
+    it(`keeps fractional affected positions for the combined array with ${algorithm}`, () => {
+      preferences.apply({ glpkAlgorithm: algorithm });
+      const id = 'formation_magic_heng_item_copper_enr_heng_2';
+      const product = 'copper_enr_heng';
+      settings.apply({
+        locationIds: new Set(['jinlong']),
+        excludedRecipeIds: new Set(
+          data.recipes
+            .filter((recipe) => recipe.id !== id && recipe.out?.[product])
+            .map((recipe) => recipe.id),
+        ),
+      });
+      objectives.set({ 1: objective('1', product, 6, ObjectiveUnit.Items) });
+      const solved = result();
+      expect(solved.resultType).toBe('solved');
+      close(count(solved.steps, id), 1.25);
     });
 
     it(`uses the actual reactor outputs together with ${algorithm}`, () => {

@@ -291,8 +291,12 @@ test('current array and reactor data retain the actual expected production', asy
       assert.deepEqual(recipe.in, { [input]: 1 });
       assert.equal(recipe.out[output], chance);
       assert.equal(recipe.out[input] ?? 0, Number((1 - chance).toFixed(2)));
-      assert.equal(recipe.producers, undefined);
-      assert.deepEqual(recipe.flags, ['showCount']);
+      assert.equal(recipe.producers.length, 1);
+      const machine = data.items.find(
+        (item) => item.id === recipe.producers[0],
+      );
+      assert.ok(machine?.machine, id);
+      assert.deepEqual(recipe.flags, ['formation']);
       assert.deepEqual(recipe.locations, ['jinlong']);
     });
   }

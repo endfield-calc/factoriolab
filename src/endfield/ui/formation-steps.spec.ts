@@ -1,10 +1,12 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { loadModule } from 'glpk-ts';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
 import rawTransfer from '/public/data/aef/transfer.json';
+import { Icon } from '~/components/icon/icon';
 import { Steps } from '~/components/steps/steps';
 import { ModData } from '~/data/schema/mod-data';
 import { endfieldAdjustmentProvider } from '~/endfield/adapters/calculation-extension';
@@ -70,6 +72,17 @@ describe('formation result display', () => {
     expect(text()).toContain('ARRAY LIMITATION');
     expect(text()).toContain('AFFECTED POSITION');
     expect(text()).toContain('L-Cuprium (20%)');
+    expect(text()).toContain('L-Array T1');
+    const producer = data.recipes.find((recipe) => recipe.id === id)!
+      .producers![0];
+    const machineIcon = fixture.debugElement
+      .queryAll(By.directive(Icon))
+      .find(
+        (element) => (element.componentInstance as Icon).value() === producer,
+      );
+    expect(
+      machineIcon?.nativeElement.querySelector('[style*="background-image"]'),
+    ).toBeTruthy();
 
     objectives.set({
       1: {

@@ -475,6 +475,11 @@
                   {{ step.machines | rate: cols().machines?.precision }}
                 }
               </span>
+              @if (step.recipe && step.recipe.flags.has('formation')) {
+                <span class="text-sm flex justify-end">{{
+                  'endfield.formation.position' | translate
+                }}</span>
+              }
             }
           </td>
           <td>
@@ -605,11 +610,6 @@
                     {{ step.machines | rate: cols().machines?.precision }}
                   }
                 </span>
-                @if (isFormationRecipe(recipe.id)) {
-                  <span class="text-sm flex justify-end">{{
-                    'endfield.formation.position' | translate
-                  }}</span>
-                }
               }
             }
           </td>

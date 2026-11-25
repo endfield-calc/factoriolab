@@ -3,6 +3,7 @@
 | mining           | 挖矿                                         |
 | activity         | 工业活动限定配方，包含据点换券配方           |
 | activity-{key}   | 关联活动目录中的 key，按该活动的开放阶段筛选 |
+| formation        | 阵列转化，设备栏显示阵列等级，数量按作用位计 |
 | technology       | 科技/研究                                    |
 | plant            | 种植                                         |
 | burn             | 燃烧（例如满燃料棒烧完变成空燃料棒）         |

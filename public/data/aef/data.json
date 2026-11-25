@@ -958,838 +958,856 @@
       "color": "#818182"
     },
     {
-      "id": "furnance_1",
+      "id": "formation_magic_heng_1",
       "x": 896,
       "y": 512,
-      "color": "#a89f99"
+      "color": "#0cb789"
+    },
+    {
+      "id": "formation_magic_hui_1",
+      "x": 960,
+      "y": 512,
+      "color": "#8a8889"
+    },
+    {
+      "id": "formation_magic_ming_1",
+      "x": 1024,
+      "y": 512,
+      "color": "#cdcecf"
+    },
+    {
+      "id": "furnance_1",
+      "x": 1088,
+      "y": 512,
+      "color": "#a89d9a"
     },
     {
       "id": "gas_pump_1",
-      "x": 960,
-      "y": 512,
-      "color": "#a6a4a1"
+      "x": 0,
+      "y": 576,
+      "color": "#a4a7a0"
     },
     {
       "id": "gas_reactor_1",
-      "x": 1024,
-      "y": 512,
-      "color": "#91968b"
+      "x": 64,
+      "y": 576,
+      "color": "#92978b"
     },
     {
       "id": "grinder_1",
-      "x": 1088,
-      "y": 512,
-      "color": "#90959a"
+      "x": 128,
+      "y": 576,
+      "color": "#919699"
     },
     {
       "id": "liquid_clean_gate",
-      "x": 0,
-      "y": 576,
-      "color": "#989b98"
-    },
-    {
-      "id": "liquid_cleaner_1",
-      "x": 64,
-      "y": 576,
-      "color": "#7a7f7f"
-    },
-    {
-      "id": "liquid_purifier_1",
-      "x": 128,
-      "y": 576,
-      "color": "#8d9291"
-    },
-    {
-      "id": "magic_balancer_1",
       "x": 192,
       "y": 576,
       "color": "#9a999a"
     },
     {
-      "id": "miner_2",
+      "id": "liquid_cleaner_1",
       "x": 256,
       "y": 576,
-      "color": "#848585"
+      "color": "#787d7d"
+    },
+    {
+      "id": "liquid_purifier_1",
+      "x": 320,
+      "y": 576,
+      "color": "#8e9093"
+    },
+    {
+      "id": "magic_balancer_1",
+      "x": 384,
+      "y": 576,
+      "color": "#999b99"
+    },
+    {
+      "id": "miner_2",
+      "x": 448,
+      "y": 576,
+      "color": "#848586"
     },
     {
       "id": "miner_3",
-      "x": 320,
+      "x": 512,
       "y": 576,
-      "color": "#92888b"
+      "color": "#938b89"
     },
     {
       "id": "miner_4",
-      "x": 384,
+      "x": 576,
       "y": 576,
-      "color": "#8d8f89"
+      "color": "#8f8c8a"
     },
     {
       "id": "mix_pool_1",
-      "x": 448,
+      "x": 640,
       "y": 576,
-      "color": "#88898e"
+      "color": "#898a8e"
     },
     {
       "id": "mix_pool_2",
-      "x": 512,
+      "x": 704,
       "y": 576,
-      "color": "#878779"
+      "color": "#85857a"
     },
     {
       "id": "phase_trans_1",
-      "x": 576,
+      "x": 768,
       "y": 576,
-      "color": "#939492"
+      "color": "#939791"
     },
     {
       "id": "phase_trans_2",
-      "x": 640,
+      "x": 832,
       "y": 576,
-      "color": "#7d7e7e"
+      "color": "#7e7f7c"
     },
     {
       "id": "planter_1",
-      "x": 704,
+      "x": 896,
       "y": 576,
-      "color": "#7d817e"
+      "color": "#7d827c"
     },
     {
       "id": "power_sta_1",
-      "x": 768,
+      "x": 960,
       "y": 576,
-      "color": "#939fa1"
+      "color": "#919da2"
     },
     {
       "id": "pump_1",
-      "x": 832,
+      "x": 1024,
       "y": 576,
-      "color": "#8e8f84"
+      "color": "#8c8e84"
     },
     {
       "id": "pump_2",
-      "x": 896,
+      "x": 1088,
       "y": 576,
-      "color": "#898278"
+      "color": "#8a8279"
     },
     {
       "id": "seedcol_1",
-      "x": 960,
-      "y": 576,
-      "color": "#757d76"
+      "x": 0,
+      "y": 640,
+      "color": "#747c74"
     },
     {
       "id": "shaper_1",
-      "x": 1024,
-      "y": 576,
-      "color": "#909290"
+      "x": 64,
+      "y": 640,
+      "color": "#919190"
     },
     {
       "id": "thickener_1",
-      "x": 1088,
-      "y": 576,
-      "color": "#8a8a89"
+      "x": 128,
+      "y": 640,
+      "color": "#898b89"
     },
     {
       "id": "tools_asm_mc_1",
-      "x": 0,
+      "x": 192,
       "y": 640,
-      "color": "#848888"
+      "color": "#868a89"
     },
     {
       "id": "winder_1",
-      "x": 64,
+      "x": 256,
       "y": 640,
-      "color": "#959590"
+      "color": "#959791"
     },
     {
       "id": "xiranite_oven_1",
-      "x": 128,
+      "x": 320,
       "y": 640,
-      "color": "#a1a799"
+      "color": "#a0a59a"
     },
     {
       "id": "InN_zV0Bo",
-      "x": 192,
+      "x": 384,
       "y": 640,
-      "color": "#a2aaa5"
+      "color": "#a2a8a5"
     },
     {
       "id": "mokYxBo_D",
-      "x": 256,
+      "x": 448,
       "y": 640,
-      "color": "#a99b71"
+      "color": "#ab9971"
     },
     {
       "id": "hOwR0Jem2",
-      "x": 320,
+      "x": 512,
       "y": 640,
-      "color": "#8c957e"
+      "color": "#8d967c"
     },
     {
       "id": "8qrUMcvDg",
-      "x": 384,
+      "x": 576,
       "y": 640,
-      "color": "#9abc69"
+      "color": "#9abc6a"
     },
     {
       "id": "aNhoXNVVI",
-      "x": 448,
+      "x": 640,
       "y": 640,
-      "color": "#4b4949"
+      "color": "#4a4849"
     },
     {
       "id": "Z2IEDQBer",
-      "x": 512,
+      "x": 704,
       "y": 640,
-      "color": "#615250"
+      "color": "#625151"
     },
     {
       "id": "xFsOz8GXn",
-      "x": 576,
+      "x": 768,
       "y": 640,
-      "color": "#625c52"
+      "color": "#615e53"
     },
     {
       "id": "xFMoNt_0-",
-      "x": 640,
+      "x": 832,
       "y": 640,
-      "color": "#4e504d"
+      "color": "#4e514e"
     },
     {
       "id": "tF0KCVMNv",
-      "x": 704,
+      "x": 896,
       "y": 640,
-      "color": "#464549"
+      "color": "#454449"
     },
     {
       "id": "lIwML7hJA",
-      "x": 768,
+      "x": 960,
       "y": 640,
-      "color": "#494643"
+      "color": "#4a4542"
     },
     {
       "id": "wSTIJRUt2",
-      "x": 832,
+      "x": 1024,
       "y": 640,
-      "color": "#4a4d42"
+      "color": "#494e42"
     },
     {
       "id": "8f-XntBAi",
-      "x": 896,
+      "x": 1088,
       "y": 640,
-      "color": "#595045"
+      "color": "#595146"
     },
     {
       "id": "bfVwkel-1",
-      "x": 960,
-      "y": 640,
-      "color": "#4a4d4e"
+      "x": 0,
+      "y": 704,
+      "color": "#494d4d"
     },
     {
       "id": "UK3cw32jH",
-      "x": 1024,
-      "y": 640,
-      "color": "#797a6e"
+      "x": 64,
+      "y": 704,
+      "color": "#7a7b6c"
     },
     {
       "id": "EyVhscDqY",
-      "x": 1088,
-      "y": 640,
-      "color": "#75655e"
+      "x": 128,
+      "y": 704,
+      "color": "#75665d"
     },
     {
       "id": "sJ497s081",
-      "x": 0,
+      "x": 192,
       "y": 704,
-      "color": "#715955"
+      "color": "#705856"
     },
     {
       "id": "EkYDieNFa",
-      "x": 64,
+      "x": 256,
       "y": 704,
-      "color": "#867f58"
+      "color": "#877d59"
     },
     {
       "id": "-5xQnlo_H",
-      "x": 128,
+      "x": 320,
       "y": 704,
-      "color": "#655645"
+      "color": "#665447"
     },
     {
       "id": "g6eZC2ckR",
-      "x": 192,
+      "x": 384,
       "y": 704,
-      "color": "#948882"
+      "color": "#958a80"
     },
     {
       "id": "QU3-0LfcJ",
-      "x": 256,
+      "x": 448,
       "y": 704,
-      "color": "#8b8559"
+      "color": "#89855a"
     },
     {
       "id": "JvK4hAcOl",
-      "x": 320,
+      "x": 512,
       "y": 704,
-      "color": "#b69093"
+      "color": "#b79091"
     },
     {
       "id": "SKXdzSG5F",
-      "x": 384,
+      "x": 576,
       "y": 704,
-      "color": "#a98684"
+      "color": "#aa8487"
     },
     {
       "id": "BdMxTKvQP",
-      "x": 448,
+      "x": 640,
       "y": 704,
-      "color": "#a5957e"
+      "color": "#a4967f"
     },
     {
       "id": "7HEZZXQXi",
-      "x": 512,
+      "x": 704,
       "y": 704,
-      "color": "#cb9891"
+      "color": "#cb9992"
     },
     {
       "id": "1x5_iFxrl",
-      "x": 576,
+      "x": 768,
       "y": 704,
-      "color": "#be908b"
+      "color": "#bd9289"
     },
     {
       "id": "grKjDDYLU",
-      "x": 640,
+      "x": 832,
       "y": 704,
-      "color": "#c89a87"
+      "color": "#ca9885"
     },
     {
       "id": "TIRc8l-Ov",
-      "x": 704,
+      "x": 896,
       "y": 704,
-      "color": "#8f615a"
+      "color": "#8d6258"
     },
     {
       "id": "pSkp8UtzR",
-      "x": 768,
+      "x": 960,
       "y": 704,
-      "color": "#a18281"
+      "color": "#a38183"
     },
     {
       "id": "-PLwC7rav",
-      "x": 832,
+      "x": 1024,
       "y": 704,
-      "color": "#9a6035"
+      "color": "#996035"
     },
     {
       "id": "-IDibphrv",
-      "x": 896,
+      "x": 1088,
       "y": 704,
-      "color": "#9d6638"
+      "color": "#9e673b"
     },
     {
       "id": "b06HlUyW9",
-      "x": 960,
-      "y": 704,
-      "color": "#7b552f"
+      "x": 0,
+      "y": 768,
+      "color": "#79572c"
     },
     {
       "id": "j2R9Yyfk7",
-      "x": 1024,
-      "y": 704,
-      "color": "#654021"
+      "x": 64,
+      "y": 768,
+      "color": "#664122"
     },
     {
       "id": "tVuwQqAnt",
-      "x": 1088,
-      "y": 704,
-      "color": "#8e6f3f"
+      "x": 128,
+      "y": 768,
+      "color": "#8e6d3d"
     },
     {
       "id": "OIsG_0_gQ",
-      "x": 0,
+      "x": 192,
       "y": 768,
-      "color": "#8d6f40"
+      "color": "#8e6f43"
     },
     {
       "id": "BTDiP1-WN",
-      "x": 64,
+      "x": 256,
       "y": 768,
-      "color": "#c6b9a2"
+      "color": "#c5baa3"
     },
     {
       "id": "--fy8JitE",
-      "x": 128,
+      "x": 320,
       "y": 768,
-      "color": "#c2b5bd"
+      "color": "#c0b5be"
     },
     {
       "id": "XvL38FqFc",
-      "x": 192,
+      "x": 384,
       "y": 768,
-      "color": "#bab3b7"
+      "color": "#b8b1b5"
     },
     {
       "id": "FVD_V1gkz",
-      "x": 256,
+      "x": 448,
       "y": 768,
-      "color": "#c1b29f"
+      "color": "#c2b09e"
     },
     {
       "id": "LESvbc0cp",
-      "x": 320,
+      "x": 512,
       "y": 768,
-      "color": "#b8bdca"
+      "color": "#b8beca"
     },
     {
       "id": "3nEkFN4v3",
-      "x": 384,
+      "x": 576,
       "y": 768,
-      "color": "#c0b5b1"
+      "color": "#c1b4b0"
     },
     {
       "id": "F26jLFsSM",
-      "x": 448,
+      "x": 640,
       "y": 768,
-      "color": "#beacaa"
+      "color": "#bcada9"
     },
     {
       "id": "ynGeJZzIH",
-      "x": 512,
+      "x": 704,
       "y": 768,
-      "color": "#dca67a"
+      "color": "#dca57b"
     },
     {
       "id": "ugzGGeljq",
-      "x": 576,
+      "x": 768,
       "y": 768,
-      "color": "#bd9c8c"
+      "color": "#bd9e8e"
     },
     {
       "id": "6cFT0YI85",
-      "x": 640,
+      "x": 832,
       "y": 768,
-      "color": "#bca199"
+      "color": "#bda19b"
     },
     {
       "id": "MzFhhwu9q",
-      "x": 704,
+      "x": 896,
       "y": 768,
-      "color": "#b49993"
+      "color": "#b59891"
     },
     {
       "id": "ngnifkfVC",
-      "x": 768,
+      "x": 960,
       "y": 768,
-      "color": "#adb2b2"
+      "color": "#aeb2b0"
     },
     {
       "id": "3yH_sUEon",
-      "x": 832,
+      "x": 1024,
       "y": 768,
-      "color": "#8dada7"
+      "color": "#8dafa5"
     },
     {
       "id": "4N6PISlNQ",
-      "x": 896,
+      "x": 1088,
       "y": 768,
-      "color": "#a1c4ad"
+      "color": "#a1c5ae"
     },
     {
       "id": "08QnmafUO",
-      "x": 960,
-      "y": 768,
-      "color": "#b2ba94"
+      "x": 0,
+      "y": 832,
+      "color": "#b0ba94"
     },
     {
       "id": "4uTTruYze",
-      "x": 1024,
-      "y": 768,
-      "color": "#a9b78d"
+      "x": 64,
+      "y": 832,
+      "color": "#aab68c"
     },
     {
       "id": "VM4dhho2c",
-      "x": 1088,
-      "y": 768,
-      "color": "#a5b5a2"
+      "x": 128,
+      "y": 832,
+      "color": "#a5b6a1"
     },
     {
       "id": "eAPSNjYPO",
-      "x": 0,
+      "x": 192,
       "y": 832,
-      "color": "#9cae98"
+      "color": "#9dad9a"
     },
     {
       "id": "7aWLncdum",
-      "x": 64,
+      "x": 256,
       "y": 832,
-      "color": "#7a9298"
+      "color": "#7b9299"
     },
     {
       "id": "zSG48A1GN",
-      "x": 128,
+      "x": 320,
       "y": 832,
-      "color": "#6d8e79"
+      "color": "#6e8d78"
     },
     {
       "id": "YP_fqgPjK",
-      "x": 192,
+      "x": 384,
       "y": 832,
-      "color": "#65819a"
+      "color": "#658299"
     },
     {
       "id": "rCPd1tfS9",
-      "x": 256,
+      "x": 448,
       "y": 832,
-      "color": "#5f7e91"
+      "color": "#5e7d92"
     },
     {
       "id": "_8TyVapB6",
-      "x": 320,
+      "x": 512,
       "y": 832,
-      "color": "#8a9d98"
+      "color": "#8a9d99"
     },
     {
       "id": "nvQgypPJO",
-      "x": 384,
+      "x": 576,
       "y": 832,
-      "color": "#91a69d"
+      "color": "#92a59d"
     },
     {
       "id": "9j2ca8fbD",
-      "x": 448,
+      "x": 640,
       "y": 832,
-      "color": "#869996"
+      "color": "#859a97"
     },
     {
       "id": "DxQbkoaDm",
-      "x": 512,
+      "x": 704,
       "y": 832,
-      "color": "#92a5a1"
+      "color": "#90a5a2"
     },
     {
       "id": "TqWZWVpY3",
-      "x": 576,
+      "x": 768,
       "y": 832,
-      "color": "#8a9d9d"
+      "color": "#899c9c"
     },
     {
       "id": "qA-EMB1fs",
-      "x": 640,
+      "x": 832,
       "y": 832,
-      "color": "#899e9b"
+      "color": "#8a9f99"
     },
     {
       "id": "Sjdqh9m2X",
-      "x": 704,
+      "x": 896,
       "y": 832,
-      "color": "#94a19e"
+      "color": "#95a29c"
     },
     {
       "id": "VqJ8q3DQp",
-      "x": 768,
+      "x": 960,
       "y": 832,
-      "color": "#959c9c"
+      "color": "#979d9e"
     },
     {
       "id": "fftXa_L3O",
-      "x": 832,
+      "x": 1024,
       "y": 832,
-      "color": "#929795"
+      "color": "#909595"
     },
     {
       "id": "nL57eW-eu",
-      "x": 896,
+      "x": 1088,
       "y": 832,
-      "color": "#a19e98"
+      "color": "#a29f98"
     },
     {
       "id": "lpxYv1B-a",
-      "x": 960,
-      "y": 832,
-      "color": "#a39996"
+      "x": 0,
+      "y": 896,
+      "color": "#a19a94"
     },
     {
       "id": "zbLLpntwq",
-      "x": 1024,
-      "y": 832,
-      "color": "#8c9999"
+      "x": 64,
+      "y": 896,
+      "color": "#8f989a"
     },
     {
       "id": "vI10u14eE",
-      "x": 1088,
-      "y": 832,
-      "color": "#8e9f9c"
+      "x": 128,
+      "y": 896,
+      "color": "#8f9f9d"
     },
     {
       "id": "e13iR_HPS",
-      "x": 0,
+      "x": 192,
       "y": 896,
-      "color": "#899a98"
+      "color": "#8a999a"
     },
     {
       "id": "TQnSxeYps",
-      "x": 64,
+      "x": 256,
       "y": 896,
-      "color": "#879892"
+      "color": "#859a90"
     },
     {
       "id": "MN3RgE0QK",
-      "x": 128,
+      "x": 320,
       "y": 896,
-      "color": "#879b95"
+      "color": "#859996"
     },
     {
       "id": "n1F3_H0xn",
-      "x": 192,
+      "x": 384,
       "y": 896,
-      "color": "#9e9182"
+      "color": "#9c9381"
     },
     {
       "id": "3H826tx7z",
-      "x": 256,
+      "x": 448,
       "y": 896,
-      "color": "#958a7c"
+      "color": "#97897c"
     },
     {
       "id": "gMs3wV6Mc",
-      "x": 320,
+      "x": 512,
       "y": 896,
-      "color": "#79797e"
+      "color": "#797a7f"
     },
     {
       "id": "LIU8uRWtP",
-      "x": 384,
+      "x": 576,
       "y": 896,
-      "color": "#747b79"
+      "color": "#77797b"
     },
     {
       "id": "MZA0Aj7xM",
-      "x": 448,
+      "x": 640,
       "y": 896,
-      "color": "#777d78"
+      "color": "#747e79"
     },
     {
       "id": "21JXqNHcO",
-      "x": 512,
+      "x": 704,
       "y": 896,
-      "color": "#b19e97"
+      "color": "#b29e95"
     },
     {
       "id": "eNbizvaDC",
-      "x": 576,
+      "x": 768,
       "y": 896,
-      "color": "#a37d7b"
+      "color": "#a17e7b"
     },
     {
       "id": "RSg0ZawgK",
-      "x": 640,
+      "x": 832,
       "y": 896,
-      "color": "#747675"
+      "color": "#777576"
     },
     {
       "id": "tnHAWZomJ",
-      "x": 704,
+      "x": 896,
       "y": 896,
-      "color": "#7eb2b9"
+      "color": "#7fb0b9"
     },
     {
       "id": "eVII5GgNz",
-      "x": 768,
+      "x": 960,
       "y": 896,
-      "color": "#758677"
+      "color": "#768475"
     },
     {
       "id": "CZoh2vwOX",
-      "x": 832,
+      "x": 1024,
       "y": 896,
-      "color": "#6b796a"
+      "color": "#697a68"
     },
     {
       "id": "qUq983O5F",
-      "x": 896,
+      "x": 1088,
       "y": 896,
-      "color": "#737c75"
+      "color": "#727c76"
     },
     {
       "id": "KsAbKo-kL",
-      "x": 960,
-      "y": 896,
-      "color": "#7a8881"
+      "x": 0,
+      "y": 960,
+      "color": "#7a8980"
     },
     {
       "id": "vzHASkcwW",
-      "x": 1024,
-      "y": 896,
-      "color": "#919694"
+      "x": 64,
+      "y": 960,
+      "color": "#909495"
     },
     {
       "id": "DCZK3_Hum",
-      "x": 1088,
-      "y": 896,
-      "color": "#9aa0a6"
+      "x": 128,
+      "y": 960,
+      "color": "#99a0a5"
     },
     {
       "id": "PZWgDQOzb",
-      "x": 0,
+      "x": 192,
       "y": 960,
-      "color": "#9aa1a4"
+      "color": "#9ba1a6"
     },
     {
       "id": "YvRkgjni9",
-      "x": 64,
+      "x": 256,
       "y": 960,
-      "color": "#98a0a5"
+      "color": "#9aa1a5"
     },
     {
       "id": "u_hgkzqGZ",
-      "x": 128,
+      "x": 320,
       "y": 960,
-      "color": "#919c9d"
+      "color": "#939d9c"
     },
     {
       "id": "uE4Xzd-Nt",
-      "x": 192,
+      "x": 384,
       "y": 960,
-      "color": "#8f999a"
+      "color": "#8d9a9a"
     },
     {
       "id": "4FB5yychN",
-      "x": 256,
+      "x": 448,
       "y": 960,
-      "color": "#8a9599"
+      "color": "#88959b"
     },
     {
       "id": "5ReMJ-axh",
-      "x": 320,
+      "x": 512,
       "y": 960,
-      "color": "#6f5988"
+      "color": "#6d5989"
     },
     {
       "id": "rNYknIToK",
-      "x": 384,
+      "x": 576,
       "y": 960,
-      "color": "#695686"
+      "color": "#6a5486"
     },
     {
       "id": "D87_y4QHp",
-      "x": 448,
+      "x": 640,
       "y": 960,
-      "color": "#bcbdaf"
+      "color": "#bcbeae"
     },
     {
       "id": "LChCprdXR",
-      "x": 512,
+      "x": 704,
       "y": 960,
-      "color": "#bdbda5"
+      "color": "#bcbda6"
     },
     {
       "id": "lG5pYr6_F",
-      "x": 576,
+      "x": 768,
       "y": 960,
-      "color": "#b6b8aa"
+      "color": "#b5b9a9"
     },
     {
       "id": "NXpQnBpZJ",
-      "x": 640,
+      "x": 832,
       "y": 960,
-      "color": "#c4c2b2"
+      "color": "#c6c3b2"
     },
     {
       "id": "B33Y1xtAN",
-      "x": 704,
+      "x": 896,
       "y": 960,
-      "color": "#c8c1b6"
+      "color": "#c9c2b5"
     },
     {
       "id": "Wy_OqDd79",
-      "x": 768,
+      "x": 960,
       "y": 960,
-      "color": "#c1b9ad"
+      "color": "#c0b9ae"
     },
     {
       "id": "FRZxbTuQP",
-      "x": 832,
+      "x": 1024,
       "y": 960,
-      "color": "#bebba2"
+      "color": "#bdbaa1"
     },
     {
       "id": "fpxipfxQ_",
-      "x": 896,
+      "x": 1088,
       "y": 960,
-      "color": "#b5baa9"
+      "color": "#b6baa9"
     },
     {
       "id": "WqhucJQl5",
-      "x": 960,
-      "y": 960,
-      "color": "#bcc1b6"
+      "x": 0,
+      "y": 1024,
+      "color": "#bdc2b5"
     },
     {
       "id": "0pLWUXtXS",
-      "x": 1024,
-      "y": 960,
-      "color": "#b9beb5"
+      "x": 64,
+      "y": 1024,
+      "color": "#b9bdb6"
     },
     {
       "id": "PaI2yXcVi",
-      "x": 1088,
-      "y": 960,
-      "color": "#b6bab1"
+      "x": 128,
+      "y": 1024,
+      "color": "#b7b8b1"
     },
     {
       "id": "be5cdHAfy",
-      "x": 0,
+      "x": 192,
       "y": 1024,
-      "color": "#bdc2ad"
+      "color": "#bec1ac"
     },
     {
       "id": "HsYpeEhwA",
-      "x": 64,
+      "x": 256,
       "y": 1024,
-      "color": "#bdc1b2"
+      "color": "#bcc2b3"
     },
     {
       "id": "tcIJgshsc",
-      "x": 128,
+      "x": 320,
       "y": 1024,
-      "color": "#bfc0ad"
+      "color": "#bdc1ae"
     },
     {
       "id": "3XnGkDb8n",
-      "x": 192,
+      "x": 384,
       "y": 1024,
-      "color": "#628574"
+      "color": "#608775"
     },
     {
       "id": "UhyW4h2jl",
-      "x": 256,
+      "x": 448,
       "y": 1024,
-      "color": "#607667"
+      "color": "#627465"
     },
     {
       "id": "o7qlvjIpX",
-      "x": 320,
+      "x": 512,
       "y": 1024,
-      "color": "#596d5a"
+      "color": "#596e5b"
     },
     {
       "id": "5FnJGJYHD",
-      "x": 384,
+      "x": 576,
       "y": 1024,
-      "color": "#385349"
+      "color": "#38514a"
     },
     {
       "id": "tk28kQJ4M",
-      "x": 448,
+      "x": 640,
       "y": 1024,
-      "color": "#367891"
+      "color": "#347b90"
     },
     {
       "id": "D9uBSezBN",
-      "x": 512,
+      "x": 704,
       "y": 1024,
-      "color": "#5d6a63"
+      "color": "#5e6b63"
     }
   ],
   "categories": [
@@ -3559,6 +3577,196 @@
         ]
       },
       "icon": "filling_pd_mc_1"
+    },
+    {
+      "id": "formation_magic_heng_1",
+      "name": "E-Array T1",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_heng_1"
+    },
+    {
+      "id": "formation_magic_heng_2",
+      "name": "E-Array T2",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_heng_1"
+    },
+    {
+      "id": "formation_magic_hui_1",
+      "name": "T-Array T1",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_hui_1"
+    },
+    {
+      "id": "formation_magic_hui_2",
+      "name": "T-Array T2",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_hui_1"
+    },
+    {
+      "id": "formation_magic_hui_3",
+      "name": "T-Array T3",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_hui_1"
+    },
+    {
+      "id": "formation_magic_hui_4",
+      "name": "T-Array T4",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_hui_1"
+    },
+    {
+      "id": "formation_magic_ming_1",
+      "name": "L-Array T1",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_ming_1"
+    },
+    {
+      "id": "formation_magic_ming_2",
+      "name": "L-Array T2",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_ming_1"
+    },
+    {
+      "id": "formation_magic_ming_3",
+      "name": "L-Array T3",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_ming_1"
+    },
+    {
+      "id": "formation_magic_ming_4",
+      "name": "L-Array T4",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 1,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 0,
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "formation_magic_ming_1"
     },
     {
       "id": "furnance_1",
@@ -6638,7 +6846,10 @@
         "copper_nugget": 0.8
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_1"
       ],
       "locations": [
         "jinlong"
@@ -6659,7 +6870,10 @@
         "copper_nugget": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_2"
       ],
       "locations": [
         "jinlong"
@@ -6680,7 +6894,10 @@
         "copper_nugget": 0.4
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_3"
       ],
       "locations": [
         "jinlong"
@@ -6700,7 +6917,10 @@
         "copper_ming": 1
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_4"
       ],
       "locations": [
         "jinlong"
@@ -6721,7 +6941,10 @@
         "copper_nugget": 0.8
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_1"
       ],
       "locations": [
         "jinlong"
@@ -6742,7 +6965,10 @@
         "copper_nugget": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_2"
       ],
       "locations": [
         "jinlong"
@@ -6763,7 +6989,10 @@
         "copper_nugget": 0.4
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_3"
       ],
       "locations": [
         "jinlong"
@@ -6783,7 +7012,10 @@
         "copper_hui": 1
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_4"
       ],
       "locations": [
         "jinlong"
@@ -6804,7 +7036,10 @@
         "copper_nugget": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_heng_1"
       ],
       "locations": [
         "jinlong"
@@ -6825,7 +7060,10 @@
         "copper_nugget": 0.2
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_heng_2"
       ],
       "locations": [
         "jinlong"
@@ -6846,7 +7084,10 @@
         "xiranite_powder": 0.8
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_1"
       ],
       "locations": [
         "jinlong"
@@ -6867,7 +7108,10 @@
         "xiranite_powder": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_2"
       ],
       "locations": [
         "jinlong"
@@ -6888,7 +7132,10 @@
         "xiranite_powder": 0.4
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_3"
       ],
       "locations": [
         "jinlong"
@@ -6908,7 +7155,10 @@
         "xiranite_ming": 1
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_ming_4"
       ],
       "locations": [
         "jinlong"
@@ -6929,7 +7179,10 @@
         "xiranite_powder": 0.8
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_1"
       ],
       "locations": [
         "jinlong"
@@ -6950,7 +7203,10 @@
         "xiranite_powder": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_2"
       ],
       "locations": [
         "jinlong"
@@ -6971,7 +7227,10 @@
         "xiranite_powder": 0.4
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_3"
       ],
       "locations": [
         "jinlong"
@@ -6991,7 +7250,10 @@
         "xiranite_hui": 1
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_hui_4"
       ],
       "locations": [
         "jinlong"
@@ -7012,7 +7274,10 @@
         "xiranite_powder": 0.6
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_heng_1"
       ],
       "locations": [
         "jinlong"
@@ -7033,7 +7298,10 @@
         "xiranite_powder": 0.2
       },
       "flags": [
-        "showCount"
+        "formation"
+      ],
+      "producers": [
+        "formation_magic_heng_2"
       ],
       "locations": [
         "jinlong"

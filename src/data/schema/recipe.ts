@@ -10,6 +10,8 @@ import { Quality } from './quality';
 export type RecipeFlag =
   | 'activity'
   | `activity-${string}`
+  /** Endfield array levels count affected positions in place of buildings. */
+  | 'formation'
   | 'mining'
   | 'technology'
   /** Factorio: quality seed grows a normal tree */

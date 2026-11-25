@@ -25,7 +25,7 @@
   "endfield": {
     "formation": {
       "position": "affected positions",
-      "note": "Array output is the expected result per affected position and cycle; unconverted items remain. Item input limits count all processed items, including returns. Coverage, generator count, and shared Xiragen consumption are not included."
+      "note": "Array output uses the conversion chance at each affected position. Unconverted items remain and count toward item input limits. Fully overlapping arrays of the same type raise the tier. Fully overlapping L- and T-Arrays form an E-Array. The belt and projection layout determines the number of generators and Xiragen use."
     },
     "activities": {
       "title": "Event recipes",

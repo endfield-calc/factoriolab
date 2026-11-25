@@ -6,8 +6,7 @@ import {
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { CUSTOM_MOD, Game, gameOptions } from '~/data/game';
-import { gameInfo } from '~/data/game-info';
+import { datasets } from '~/data/datasets';
 import { EnergyType } from '~/data/schema/energy-type';
 import { emptyModData } from '~/data/schema/mod-data';
 import { QualityJson } from '~/data/schema/quality';
@@ -15,7 +14,6 @@ import { rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { ItemId } from '~/tests/item-id';
 import {
-  mockDefaults11,
   mockModData,
   mockModData11,
   mockModHash,
@@ -50,24 +48,6 @@ describe('SettingsStore', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('customIconsUrl', () => {
-    it('should return an object url', () => {
-      spyOn(service.customIcons, 'value').and.returnValue({} as any);
-      spyOn(URL, 'createObjectURL').and.returnValue('url');
-      expect(service.customIconsUrl()).toEqual('url');
-    });
-
-    it('should return empty string when invalid', () => {
-      spyOn(service.customIcons, 'value').and.returnValue({} as any);
-      spyOn(URL, 'createObjectURL').and.throwError('');
-      expect(service.customIconsUrl()).toEqual('');
-    });
-
-    it('should return empty string when not configured', () => {
-      expect(service.customIconsUrl()).toEqual('');
-    });
-  });
-
   describe('modData', () => {
     it('should handle nullish values', () => {
       spyOn(service, 'modId').and.returnValue(undefined);
@@ -84,11 +64,6 @@ describe('SettingsStore', () => {
       TestBed.tick();
       expect(service.modData()).toBeUndefined();
     });
-
-    it('should handle custom data', () => {
-      service.apply({ modId: CUSTOM_MOD });
-      expect(service.modData()).toBeUndefined();
-    });
   });
 
   describe('modHash', () => {
@@ -101,19 +76,6 @@ describe('SettingsStore', () => {
       expect(service.modHash()).toEqual(mockModHash);
     });
 
-    it('should get the custom mod hash', () => {
-      spyOn(service.customHash, 'value').and.returnValue({} as any);
-      service.apply({ modId: CUSTOM_MOD });
-      TestBed.tick();
-      expect(service.modHash()).toEqual({} as any);
-    });
-
-    it('should get handle missing custom mod hash', () => {
-      service.apply({ modId: CUSTOM_MOD });
-      TestBed.tick();
-      expect(service.modHash()).toBeUndefined();
-    });
-
     it('should handle error in resource', () => {
       spyOn(service['modHashResource'], 'error').and.returnValue(new Error());
       service.apply({ modId: '1.1' });
@@ -123,11 +85,6 @@ describe('SettingsStore', () => {
   });
 
   describe('modI18n', () => {
-    it('should handle nullish values', () => {
-      spyOn(service, 'modId').and.returnValue(undefined);
-      expect(service.modI18n()).toBeUndefined();
-    });
-
     it('should get the i18n data', () => {
       spyOn(service['preferencesStore'], 'language').and.returnValue('zh');
       expect(service.modI18n()).toBeUndefined();
@@ -147,13 +104,13 @@ describe('SettingsStore', () => {
     it('handles an unknown dataset without inventing registry metadata', () => {
       service.apply({ modId: 'missing-dataset' });
       expect(service.modInfo()).toBeUndefined();
-      expect(service.game()).toBe('factorio');
+      expect(service.game()).toBe('endfield');
     });
   });
 
   describe('game', () => {
-    it('should return the game or Factorio', () => {
-      expect(service.game()).toEqual('factorio');
+    it('should return the game from the dataset metadata', () => {
+      expect(service.game()).toEqual('endfield');
     });
   });
 
@@ -186,7 +143,18 @@ describe('SettingsStore', () => {
 
   describe('gameInfo', () => {
     it('should return the game info', () => {
-      expect(service.gameInfo()).toEqual(gameInfo.factorio);
+      expect(service.gameInfo()).toEqual({
+        label: 'options.game.endfield',
+        modId: 'aef',
+      });
+    });
+
+    it('should fall back to Endfield for an unknown dataset', () => {
+      service.apply({ modId: 'missing-dataset' });
+      expect(service.gameInfo()).toEqual({
+        label: 'options.game.endfield',
+        modId: 'aef',
+      });
     });
   });
 
@@ -198,21 +166,10 @@ describe('SettingsStore', () => {
     });
   });
 
-  describe('modOptions', () => {
-    it('offers only the Endfield dataset', () => {
-      expect(service.modOptions()).toEqual([]);
-      service.apply({ modId: 'aef' });
-      expect(service.modOptions()).toEqual([
-        { value: 'aef', label: 'options.game.endfield' },
-      ]);
-    });
-  });
-
   describe('iconPath', () => {
-    it('should get a custom mod path', () => {
-      service.apply({ modId: CUSTOM_MOD });
-      spyOn(service, 'customIconsUrl').and.returnValue('test');
-      expect(service.iconPath()).toEqual('test');
+    it('should get the dataset icon path', () => {
+      service.apply({ modId: 'aef' });
+      expect(service.iconPath()).toEqual('data/aef/icons.webp');
     });
   });
 
@@ -297,137 +254,14 @@ describe('SettingsStore', () => {
 
   describe('computeDefaults', () => {
     it('should handle null base data', () => {
-      expect(
-        service['computeDefaults'](undefined, mockModData, 0),
-      ).toBeUndefined();
-    });
-
-    it('should use minimum values', () => {
-      const result = service['computeDefaults'](
-        mockModInfo,
-        mockModData11,
-        Preset.Minimum,
-      );
-      assert(result != null);
-      expect(result.beltRankIds).toEqual(mockDefaults11.minBeltRank);
-      expect(result.machineRankIds).toEqual(mockDefaults11.minMachineRank!);
-      expect(result.moduleRankIds).toEqual([]);
-      expect(result.beacons).toEqual([
-        {
-          count: rational.zero,
-          id: ItemId.Beacon,
-          modules: [{ count: rational(2n), id: ItemId.SpeedModule3 }],
-        },
-      ]);
-    });
-
-    it('should use 8 beacons', () => {
-      const result = service['computeDefaults'](
-        mockModInfo,
-        mockModData11,
-        Preset.Beacon8,
-      );
-      assert(result != null);
-      expect(result.beacons).toEqual([
-        {
-          count: rational(8n),
-          id: ItemId.Beacon,
-          modules: [{ count: rational(2n), id: ItemId.SpeedModule3 }],
-        },
-      ]);
-    });
-
-    it('should use 12 beacons', () => {
-      const result = service['computeDefaults'](
-        mockModInfo,
-        mockModData11,
-        Preset.Beacon12,
-      );
-      assert(result != null);
-      expect(result.beacons).toEqual([
-        {
-          count: rational(12n),
-          id: ItemId.Beacon,
-          modules: [{ count: rational(2n), id: ItemId.SpeedModule3 }],
-        },
-      ]);
-    });
-
-    it('should handle DSP minimum module rank', () => {
-      const modInfo = { ...mockModInfo, game: 'dyson-sphere-program' as Game };
-      const result = service['computeDefaults'](
-        modInfo,
-        mockModData11,
-        Preset.Minimum,
-      );
-      assert(result != null);
-      expect(result.moduleRankIds).toEqual([]);
-    });
-
-    it('should handle DSP maximum module rank', () => {
-      const modInfo = { ...mockModInfo, game: 'dyson-sphere-program' as Game };
-      const result = service['computeDefaults'](
-        modInfo,
-        mockModData11,
-        Preset.Beacon8,
-      );
-      assert(result != null);
-      expect(result.moduleRankIds).toEqual(mockDefaults11.moduleRank!);
-    });
-
-    it('should handle Satisfactory module rank', () => {
-      const modInfo = { ...mockModInfo, game: 'satisfactory' as Game };
-      const result = service['computeDefaults'](
-        modInfo,
-        mockModData11,
-        Preset.Beacon8,
-      );
-      assert(result != null);
-      expect(result.moduleRankIds).toEqual(mockDefaults11.moduleRank!);
-      expect(result.overclock).toEqual(rational(100n));
-    });
-
-    it('should handle Final Factory module rank', () => {
-      const modInfo = { ...mockModInfo, game: 'final-factory' as Game };
-      const result = service['computeDefaults'](
-        modInfo,
-        mockModData11,
-        Preset.Beacon8,
-      );
-      assert(result != null);
-      expect(result.moduleRankIds).toEqual(mockDefaults11.moduleRank!);
+      expect(service['computeDefaults'](undefined, 0)).toBeUndefined();
+      expect(service['computeDefaults'](mockModData11, 0)).toBeUndefined();
     });
 
     it('should handle custom presets', () => {
-      const result = service['computeDefaults'](
-        mockModInfo,
-        mockModData,
-        Preset.Beacon8,
-      );
+      const result = service['computeDefaults'](mockModData, Preset.Beacon8);
       assert(result != null);
       expect(result.fuelRankIds).toEqual([ItemId.Coal]);
-    });
-
-    it('should include researched technologies if specified by hard coded presets', () => {
-      const modData = {
-        ...mockModData11,
-        ...{
-          defaults: {
-            ...mockModData11.defaults,
-            researchedTechnologies: [ItemId.ArtilleryShellRange],
-          },
-        },
-      };
-      const result = service['computeDefaults'](
-        mockModInfo,
-        modData,
-        Preset.Beacon8,
-      );
-      assert(result != null);
-      expect(result.fuelRankIds).toEqual([ItemId.Coal]);
-      expect(result.researchedTechnologyIds).toEqual(
-        new Set([ItemId.ArtilleryShellRange]),
-      );
     });
 
     it('should include researched technologies if specified by custom presets', () => {
@@ -446,11 +280,7 @@ describe('SettingsStore', () => {
           },
         },
       };
-      const result = service['computeDefaults'](
-        mockModInfo,
-        modData,
-        Preset.Beacon8,
-      );
+      const result = service['computeDefaults'](modData, Preset.Beacon8);
       assert(result != null);
       expect(result.fuelRankIds).toEqual([ItemId.Coal]);
       expect(result.researchedTechnologyIds).toEqual(
@@ -490,7 +320,7 @@ describe('SettingsStore', () => {
         modData,
         mockModHash,
         modI18n,
-        'factorio',
+        'endfield',
       );
       expect(result.categoryIds.length).toBeGreaterThan(0);
       expect(Object.keys(result.categoryRecord).length).toEqual(
@@ -544,7 +374,7 @@ describe('SettingsStore', () => {
         modData,
         mockModHash,
         mockModI18n,
-        'factorio',
+        'endfield',
       );
       expect(result.beaconIds).toEqual(['id', 'beacon']);
       expect(result.beltIds).toEqual([
@@ -580,7 +410,7 @@ describe('SettingsStore', () => {
         modData,
         mockModHash,
         mockModI18n,
-        'factorio',
+        'endfield',
       );
       expect(result.recipeRecord[RecipeId.AdvancedOilProcessing].icon).toEqual(
         ItemId.HeavyOil,
@@ -653,7 +483,7 @@ describe('SettingsStore', () => {
         modData,
         mockModHash,
         mockModI18n,
-        'factorio',
+        'endfield',
       );
       expect(result).toBeTruthy();
       expect(result.beaconRecord['id(1)']).toBeDefined();
@@ -662,19 +492,6 @@ describe('SettingsStore', () => {
       expect(result.machineRecord['id(1)']).toBeDefined();
       expect(result.moduleRecord['id(1)']).toBeDefined();
       expect(result.beltRecord['id(1)']).toBeDefined();
-    });
-
-    it('should use the correct file for custom data', () => {
-      spyOn(service, 'customIconsUrl').and.returnValue('test');
-      const modInfo = { ...mockModInfo, id: CUSTOM_MOD };
-      const result = service['computeDataset'](
-        modInfo,
-        mockModData,
-        mockModHash,
-        undefined,
-        'factorio',
-      );
-      expect(result.iconRecord.item[ItemId.Coal].file).toEqual('test');
     });
   });
 
@@ -820,7 +637,39 @@ describe('SettingsStore dataset HTTP boundary', () => {
     localStorage.clear();
   });
 
-  it('loads aef and clears its resources without requesting foreign data', async () => {
+  it('keeps the historical Endfield indices without other selectable datasets', () => {
+    expect(datasets.mods.map((mod) => mod.id)).toEqual(['aef']);
+    expect(datasets.modHashV0).toEqual(['1.1', '1.0', 'aef']);
+    expect(datasets.modHash).toEqual([
+      '1.1',
+      '1.0',
+      ...Array<null>(14).fill(null),
+      'aef',
+    ]);
+  });
+
+  it('reports a failed transfer file while leaving the ordinary dataset usable', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const settings = TestBed.inject(SettingsStore);
+    const http = TestBed.inject(HttpTestingController);
+    TestBed.inject(PreferencesStore).apply({ language: 'en' });
+    settings.apply({ modId: 'aef' });
+    TestBed.tick();
+    http.expectOne('data/aef/data.json').flush(emptyModData());
+    http.expectOne('data/aef/hash.json').flush(mockModHash);
+    http
+      .expectOne('data/aef/transfer.json')
+      .flush('missing', { status: 404, statusText: 'Not Found' });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.transferData()).toBeUndefined();
+    expect(settings.transferError()).toBeTruthy();
+    expect(settings.modData()).toEqual(emptyModData());
+    http.verify();
+  });
+
+  it('loads supported entity languages and uses base names for others', async () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -828,32 +677,60 @@ describe('SettingsStore dataset HTTP boundary', () => {
     const settings = TestBed.inject(SettingsStore);
     const preferences = TestBed.inject(PreferencesStore);
     const http = TestBed.inject(HttpTestingController);
-    expect(gameOptions.map((option) => option.value)).toEqual(['endfield']);
-    preferences.apply({ language: 'zh' });
+    preferences.apply({ language: 'en' });
     settings.apply({ modId: 'aef' });
     TestBed.tick();
     const data = emptyModData();
+    data.categories = [{ id: 'category', name: 'English' }];
+    data.icons = [{ id: 'category', x: 0, y: 0, color: '#fff' }];
     data.version = { game: 'aef' };
     http.expectOne('data/aef/data.json').flush(data);
     http.expectOne('data/aef/hash.json').flush(mockModHash);
-    http.expectOne('data/aef/i18n/zh.json').flush(mockModI18n);
+    http
+      .expectOne('data/aef/transfer.json')
+      .flush({ schemaVersion: 1, sources: [], items: [] });
+    http.expectNone((request) => request.url.startsWith('data/aef/i18n/'));
     await TestBed.inject(ApplicationRef).whenStable();
     expect(settings.modData()?.version).toEqual({ game: 'aef' });
     expect(settings.modHash()).toEqual(mockModHash);
-    expect(settings.modI18n()).toEqual(mockModI18n);
+    expect(settings.dataset().categoryRecord['category'].name).toBe('English');
 
-    settings.apply({ modId: '2x1' });
-    expect(settings.modData()).toBeUndefined();
-    expect(settings.modHash()).toBeUndefined();
-    expect(settings.modI18n()).toBeUndefined();
-    expect(settings.modInfo()?.id).toBe('2x1');
-    expect(settings.modOptions()).toEqual([]);
-    TestBed.tick();
-    http.expectNone((request) => request.url.startsWith('data/2x1/'));
+    for (const language of ['zh', 'ja', 'ru'] as const) {
+      preferences.apply({ language });
+      TestBed.tick();
+      const request = http.expectOne(`data/aef/i18n/${language}.json`);
+      expect(settings.loading()).toBeTrue();
+      request.flush({
+        categories: { category: language },
+        items: {},
+        recipes: {},
+      });
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(settings.dataset().categoryRecord['category'].name).toBe(language);
+    }
 
-    settings.apply({ modId: CUSTOM_MOD });
+    preferences.apply({ language: 'de' });
     TestBed.tick();
-    http.expectNone((request) => request.url.startsWith(`data/${CUSTOM_MOD}/`));
+    http.expectNone((request) => request.url.startsWith('data/aef/i18n/'));
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.loading()).toBeFalse();
+    expect(settings.dataset().categoryRecord['category'].name).toBe('English');
+
+    preferences.apply({ language: 'ja' });
+    TestBed.tick();
+    http.expectOne('data/aef/i18n/ja.json').flush('missing', {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(settings.dataset().categoryRecord['category'].name).toBe('English');
+
+    settings.apply({ modId: 'example' });
+    TestBed.tick();
+    http.expectOne('data/example/data.json').flush(data);
+    http.expectOne('data/example/hash.json').flush(mockModHash);
+    http.expectOne('data/example/i18n/ja.json').flush(mockModI18n);
+    await TestBed.inject(ApplicationRef).whenStable();
     http.verify({ ignoreCancelled: true });
   });
 });

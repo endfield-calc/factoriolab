@@ -32,6 +32,7 @@ export function calculateEndfieldRecipeCost({
     cost = rational.zero;
     if (usage != null)
       cost = cost.add(weights.machine.mul(electric).mul(usage));
+    // Footprint enables the area term; the machine weight prices each tile.
     if (weights.footprint.nonzero() && area != null)
       cost = cost.add(weights.machine.mul(area));
     if (cost.isZero()) cost = weights.machine;

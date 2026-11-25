@@ -1,58 +1,3 @@
-@if (preferences.restoreError()) {
-  <section role="status" class="my-2 rounded p-3 border border-complement-400">
-    <p>
-      {{ 'endfield.recovery.preferences' | translate }}
-    </p>
-    @if (preferences.stored() !== undefined) {
-      <button
-        type="button"
-        labButton
-        [text]="'endfield.recovery.downloadPreferences'"
-        (click)="download('preferences.json', preferences.stored()!)"
-      ></button>
-    }
-  </section>
-}
-@if (!lifecycle.ready()) {
-  <section role="alert" class="my-2 rounded p-3 border border-complement-400">
-    <p>
-      {{
-        (lifecycle.errors().length
-          ? 'endfield.recovery.failed'
-          : 'endfield.recovery.loading'
-        ) | translate
-      }}
-    </p>
-    @for (error of lifecycle.errors(); track $index) {
-      <p>{{ error }}</p>
-    }
-    @if (lifecycle.originalInput(); as original) {
-      <label class="block" for="endfield-original-url">{{
-        'endfield.recovery.original' | translate
-      }}</label>
-      <textarea
-        id="endfield-original-url"
-        class="input w-full"
-        rows="2"
-        readonly
-        [value]="original"
-      ></textarea>
-      <div class="gap-2 flex flex-wrap">
-        <button
-          type="button"
-          labButton
-          text="endfield.recovery.downloadUrl"
-          (click)="download('endfield-original-url.txt', original)"
-        ></button>
-        <a
-          labButton
-          text="endfield.recovery.newPlan"
-          [routerLink]="['/aef/list']"
-        ></a>
-      </div>
-    }
-  </section>
-}
 <lab-accordion id="endfield-resources" [multi]="true">
   <lab-accordion-item text="endfield.resources.title" [expanded]="true">
     <ng-template>
@@ -61,30 +6,29 @@
           type="button"
           labButton
           text="endfield.resources.presetTundra"
-          [disabled]="!lifecycle.ready()"
+          [disabled]="!presetRegion('tundra')"
           (click)="applyPreset('tundra')"
         ></button>
         <button
           type="button"
           labButton
           text="endfield.resources.presetJinlong"
-          [disabled]="!lifecycle.ready()"
+          [disabled]="!presetRegion('jinlong')"
           (click)="applyPreset('jinlong')"
         ></button>
         <button
           type="button"
           labButton
           text="endfield.resources.clear"
-          [disabled]="!lifecycle.ready()"
           (click)="clear()"
         ></button>
       </div>
       <lab-checkbox
         label="endfield.resources.enableResources"
-        [disabled]="!lifecycle.ready()"
         [value]="store.state().resourceLimits.enabled"
         (valueChange)="setResourceEnabled($event === true)"
       ></lab-checkbox>
+      <p>{{ 'endfield.resources.resourceNote' | translate }}</p>
       <div class="gap-2 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
         @for (id of resources; track id) {
           <lab-form-field
@@ -97,18 +41,15 @@
           >
             <lab-input-number
               [buttons]="true"
-              [disabled]="
-                !lifecycle.ready() || !store.state().resourceLimits.enabled
-              "
+              [disabled]="!store.state().resourceLimits.enabled"
               [value]="ratesPerMinute()[id]"
-              (valueChange)="updateRate(id, $event)"
+              (valueChange)="updateRate(id, $event!)"
             ></lab-input-number>
           </lab-form-field>
         }
       </div>
       <lab-checkbox
         label="endfield.resources.enableMachines"
-        [disabled]="!lifecycle.ready()"
         [value]="store.state().machineLimits.enabled"
         (valueChange)="setMachineEnabled($event === true)"
       ></lab-checkbox>
@@ -123,37 +64,153 @@
       >
         <lab-input-number
           [buttons]="true"
-          [disabled]="
-            !lifecycle.ready() || !store.state().machineLimits.enabled
-          "
+          [disabled]="!store.state().machineLimits.enabled"
           [value]="store.state().machineLimits.limits[ovenId]"
-          (valueChange)="updateMachineLimit($event)"
+          (valueChange)="updateMachineLimit($event!)"
         ></lab-input-number>
       </lab-form-field>
       <lab-checkbox
         label="endfield.resources.enableTransfer"
         [disabled]="
-          !lifecycle.ready() ||
-          (onlyTundra() && !store.state().transfer.enabled)
+          !transferSourceAvailable() && !store.state().transferEnabled
         "
-        [value]="store.state().transfer.enabled"
+        [value]="store.state().transferEnabled"
         (valueChange)="setTransferEnabled($event === true)"
       ></lab-checkbox>
-      @if (onlyTundra() && !store.state().transfer.enabled) {
+      @if (!transferSourceAvailable()) {
         <p>{{ 'endfield.resources.transferSelf' | translate }}</p>
       }
-      <div class="inline-flex flex-col">
-        <span class="mx-1 text-sm text-gray-300">{{
-          'endfield.resources.transferSource' | translate
-        }}</span>
-        <span>{{ 'endfield.resources.tundra' | translate }}</span>
-      </div>
+      <lab-form-field
+        class="max-w-80"
+        label="endfield.resources.transferSource"
+      >
+        <lab-select
+          [options]="transferSources()"
+          [value]="store.state().transferSource"
+          (valueChange)="setTransferSource($event)"
+        ></lab-select>
+      </lab-form-field>
       <lab-checkbox
         label="endfield.resources.disableWater"
-        [disabled]="!lifecycle.ready()"
         [value]="waterDisabled()"
         (valueChange)="setWaterDisabled($event === true)"
       ></lab-checkbox>
+    </ng-template>
+  </lab-accordion-item>
+  <lab-accordion-item text="endfield.resources.regions">
+    <ng-template>
+      @if (regions().length === 0) {
+        <p>{{ 'endfield.resources.regionsUnavailable' | translate }}</p>
+      } @else {
+        <lab-accordion [multi]="true">
+          @for (region of regions(); track region.domainId) {
+            <lab-accordion-item [text]="localized(region.domainName)">
+              <ng-template>
+                <h3 class="font-semibold">
+                  {{ 'endfield.resources.mineSummary' | translate }}
+                  ({{ 'endfield.resources.regionLevel' | translate }}
+                  {{ region.maxLevel }})
+                </h3>
+                <ul class="ms-4 list-disc">
+                  @for (mine of region.mineSummary; track mine.itemId) {
+                    <li>
+                      {{ resourceName(mine.itemId) }}:
+                      {{ mine.outputPerMinute }}
+                      {{ 'endfield.resources.perMinute' | translate }}
+                    </li>
+                  }
+                </ul>
+                <dl>
+                  <div class="gap-2 flex flex-wrap">
+                    <dt>
+                      {{ resourceName(region.couponItemId) }}
+                      {{ 'endfield.resources.couponSpeed' | translate }}:
+                    </dt>
+                    <dd>
+                      {{ regionCouponRate(region) }}
+                      {{ 'endfield.resources.perMinute' | translate }}
+                    </dd>
+                  </div>
+                </dl>
+                @for (
+                  settlement of region.settlements;
+                  track settlement.settlementId
+                ) {
+                  @if (settlement.levels.at(-1); as level) {
+                    <section
+                      class="gap-1 p-2 flex flex-col border border-gray-700"
+                    >
+                      <h3 class="font-semibold">
+                        {{ localized(settlement.settlementName) }}
+                        ({{ 'endfield.resources.settlementLevel' | translate }}
+                        {{ level.level }})
+                      </h3>
+                      <p>{{ resourceName(region.couponItemId) }}</p>
+                      <dl>
+                        <div class="gap-2 flex flex-wrap">
+                          <dt>
+                            {{ 'endfield.resources.storage' | translate }}:
+                          </dt>
+                          <dd>{{ level.moneyMax }}</dd>
+                        </div>
+                        <div class="gap-2 flex flex-wrap">
+                          <dt>
+                            {{ 'endfield.resources.baseSpeed' | translate }}:
+                          </dt>
+                          <dd>
+                            {{ level.baseMoneySpeed }}
+                            {{ 'endfield.resources.perMinute' | translate }}
+                          </dd>
+                        </div>
+                        <div class="gap-2 flex flex-wrap">
+                          <dt>
+                            {{ 'endfield.resources.couponSpeed' | translate }}:
+                          </dt>
+                          <dd>
+                            {{ settlementCouponRate(settlement) }}
+                            {{ 'endfield.resources.perMinute' | translate }}
+                          </dd>
+                        </div>
+                        <div class="gap-2 flex flex-wrap">
+                          <dt>
+                            {{
+                              'endfield.resources.towerDefenseBonus'
+                                | translate
+                            }}:
+                          </dt>
+                          <dd>+{{ level.towerDefenseRate }}%</dd>
+                        </div>
+                        <div class="gap-2 flex flex-wrap">
+                          <dt>
+                            {{
+                              'endfield.resources.operatorBonus' | translate
+                            }}:
+                          </dt>
+                          <dd>+{{ settlement.operatorBonusRate }}%</dd>
+                        </div>
+                        @for (
+                          bonus of activeBonuses(settlement);
+                          track $index
+                        ) {
+                          <div class="gap-2 flex flex-wrap">
+                            <dt>
+                              {{
+                                'endfield.resources.activityBonus' | translate
+                              }}
+                              ({{ bonus.name }}):
+                            </dt>
+                            <dd>+{{ bonus.rate }}%</dd>
+                          </div>
+                        }
+                      </dl>
+                    </section>
+                  }
+                }
+              </ng-template>
+            </lab-accordion-item>
+          }
+        </lab-accordion>
+      }
     </ng-template>
   </lab-accordion-item>
 </lab-accordion>

@@ -1,44 +1,24 @@
-import { computed, Service, signal } from '@angular/core';
+import { computed, Service } from '@angular/core';
 
 import {
   createEndfieldState,
   EndfieldState,
   ResourceId,
-  resourceIds,
-  resourceOwner,
   SourceRecipeSettings,
 } from '~/endfield/domain/model';
-import { Rational } from '~/rational/rational';
-
-function assertResource(id: string): asserts id is ResourceId {
-  if (!resourceIds.some((resource) => resource === id))
-    throw new Error(`Unknown resource ID: ${id}`);
-}
-
-function assertOwner(owner: string): void {
-  if (!resourceIds.some((id) => resourceOwner(id) === owner))
-    throw new Error(`Unknown derived owner: ${owner}`);
-}
+import { Store } from '~/state/store';
 
 /** Independent resource state; ordinary objectives and settings remain upstream. */
 @Service()
-export class EndfieldStore {
-  private readonly _state = signal<EndfieldState>(createEndfieldState());
-  readonly state = this._state.asReadonly();
-  readonly electric = computed(() => this.state().electric);
-
-  snapshot(): EndfieldState {
-    return this.state();
+export class EndfieldStore extends Store<EndfieldState> {
+  readonly activityModes = this.select('activityModes');
+  constructor() {
+    super(createEndfieldState());
   }
 
-  set(state: EndfieldState): void {
-    for (const owner of state.checkedDerived) assertOwner(owner);
-    this._state.set(state);
-  }
-
-  reset(): void {
-    this.set(createEndfieldState());
-  }
+  readonly electric = computed(() => this.state().electric, {
+    equal: (a, b) => a.eq(b),
+  });
 
   updateResourceRecipeField<K extends keyof SourceRecipeSettings>(
     id: ResourceId,
@@ -46,45 +26,36 @@ export class EndfieldStore {
     value: SourceRecipeSettings[K],
     def?: SourceRecipeSettings[K],
   ): void {
-    assertResource(id);
-    if (field !== 'machineId' && field !== 'overclock')
-      throw new Error(`Unknown source recipe setting: ${String(field)}`);
-    const settings: { machineId?: string; overclock?: Rational } = {
+    const settings = {
       ...this.state().resourceRecipeSettings[id],
     };
-    const matches =
-      def != null && value instanceof Rational && def instanceof Rational
-        ? value.eq(def)
-        : def != null && value === def;
-    if (value == null || matches) delete settings[field];
-    else settings[field] = value;
+    const override = this._resetValue(value, def);
+    if (override == null) delete settings[field];
+    else settings[field] = override;
     const next = { ...this.state().resourceRecipeSettings };
     if (Object.keys(settings).length) next[id] = settings;
     else delete next[id];
-    this.set({ ...this.state(), resourceRecipeSettings: next });
+    this.apply({ resourceRecipeSettings: next });
   }
 
   resetResourceRecipe(id: ResourceId): void {
-    assertResource(id);
     const next = { ...this.state().resourceRecipeSettings };
     delete next[id];
-    this.set({ ...this.state(), resourceRecipeSettings: next });
+    this.apply({ resourceRecipeSettings: next });
   }
 
   resetResourceRecipes(): void {
-    this.set({ ...this.state(), resourceRecipeSettings: {} });
+    this.apply({ resourceRecipeSettings: {} });
   }
 
   setResourceChecked(id: ResourceId, checked: boolean): void {
-    assertResource(id);
-    const owner = resourceOwner(id);
     const next = new Set(this.state().checkedDerived);
-    if (checked) next.add(owner);
-    else next.delete(owner);
-    this.set({ ...this.state(), checkedDerived: next });
+    if (checked) next.add(id);
+    else next.delete(id);
+    this.apply({ checkedDerived: next });
   }
 
   clearResourceChecked(): void {
-    this.set({ ...this.state(), checkedDerived: new Set() });
+    this.apply({ checkedDerived: new Set() });
   }
 }

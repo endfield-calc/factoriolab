@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Params } from '@angular/router';
-import { defer, of, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { Confirm } from '~/components/confirm/confirm';
 import { DEFAULT_MOD } from '~/data/datasets';
@@ -266,25 +266,39 @@ describe('RouterSync', () => {
   });
 
   it('should update state from route', async () => {
-    spyOn(service['settingsStore'], 'apply').and.callThrough();
+    spyOn(service['settingsStore'], 'apply');
     spyOn(service, 'updateState');
-    spyOn(service['appRef'], 'tick');
-    (service as any).resources = defer(() =>
-      of({
-        modId: service['settingsStore'].modId(),
-        data: mockModData,
-        hash: mockModHash,
-        loading: false,
-        error: undefined,
-      }),
-    );
+    TestBed.tick();
+    service['settingsStore']['modDataResource'].set(mockModData);
+    service['settingsStore']['modHashResource'].set(mockModHash);
+    TestBed.tick();
     mockRoute.next({}, {});
     for (let i = 0; i < 8; i++) await Promise.resolve();
+    TestBed.tick();
     expect(service['settingsStore'].apply).toHaveBeenCalledWith({
       modId: DEFAULT_MOD,
     });
     expect(service.updateState).toHaveBeenCalled();
   });
+
+  for (const missing of ['data', 'hash'] as const) {
+    it(`waits when mod ${missing} is unavailable`, async () => {
+      spyOn(service['settingsStore'], 'apply');
+      spyOn(service, 'updateState');
+      TestBed.tick();
+      service['settingsStore']['modDataResource'].set(
+        missing === 'data' ? undefined : mockModData,
+      );
+      service['settingsStore']['modHashResource'].set(
+        missing === 'hash' ? undefined : mockModHash,
+      );
+      TestBed.tick();
+      mockRoute.next({}, {});
+      for (let i = 0; i < 8; i++) await Promise.resolve();
+      TestBed.tick();
+      expect(service.updateState).not.toHaveBeenCalled();
+    });
+  }
 
   describe('zipState', () => {
     it('should be triggered via effect', () => {
@@ -348,24 +362,6 @@ describe('RouterSync', () => {
       });
       expect(result?.objectives).toEqual(mockZip);
       expect(result?.config).toEqual(mockZipPartial);
-    });
-  });
-
-  describe('setGame', () => {
-    it('should call setMod with the modId', async () => {
-      spyOn(service, 'setMod').and.returnValue(Promise.resolve(true));
-      await service.setGame('factorio');
-      expect(service.setMod).toHaveBeenCalledWith('spa', undefined);
-    });
-  });
-
-  describe('setMod', () => {
-    it('should call the router to navigate', async () => {
-      spyOn(service['router'], 'navigate').and.returnValue(
-        Promise.resolve(true),
-      );
-      await service.setMod('spa');
-      expect(service['router'].navigate).toHaveBeenCalled();
     });
   });
 
@@ -562,7 +558,7 @@ describe('RouterSync', () => {
 
     it('should unzip empty v0', async () => {
       await restoreNative({}, { z: 'eJwrsAUAAR8Arg==' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v0', async () => {
@@ -572,12 +568,12 @@ describe('RouterSync', () => {
           z: 'eJxtUMsKwjAQ.BpzWIgkLYiX4MX.KHlsaiBNah5KL367SCu0WvayO8wOMzOKXBA91TfMBThwct8iRAlO3A-rJBnyGFOhCn0BLVMf6VP2MZC0ocqccVDehZ4OUt9cQNoAWuu0w6AnOkRTPb7-EOCQR0TzJawPUCh1DNAwBpwxOBMrOIwpmqqLe7gy7X5tFReRbs9gNyewNQWpkWTBjwwO7XUneJQe-MdIe1rczLNqBKyvziz75Q02PYE.',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV0, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV0);
     });
 
     it('should unzip empty v1', async () => {
       await restoreNative({}, { p: '', v: '1' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v1', async () => {
@@ -598,12 +594,12 @@ describe('RouterSync', () => {
           v: '1',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV1, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV1);
     });
 
     it('should unzip empty v2', async () => {
       await restoreNative({}, { z: 'eJwrUCszAgADVAE.' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v2', async () => {
@@ -613,12 +609,12 @@ describe('RouterSync', () => {
           z: 'eJwdjDEKgDAQBH9zxVR3qWxELgmIYOcDAhaC2IiCdnm7xG52FuZMGCZrlL2R43IlZnLNRLw6TlDFVOlkM8bq7cDLXCa5A0ZPU8tLPHAU.UORgYD9swUY5QkfxkgZkw__',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV1, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV1);
     });
 
     it('should unzip empty v3', async () => {
       await restoreNative({}, { z: 'eJwrUCszBgADVQFA' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v3', async () => {
@@ -628,12 +624,12 @@ describe('RouterSync', () => {
           z: 'eJwlzD0KAjEQQOHbTPGqmdjYyDKTQBDSeYAFiwWx8QfcLmdfEssPHu-VMUzeGZN7yGPQcflkGqWXwe44SRVT5SybUbv.u7WtV.kmjAtOcNuJJ46iMwgWEjY5BlT5nQ5Gmhqn',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3);
     });
 
     it('should unzip empty v4', async () => {
       await restoreNative({}, { p: '', v: '4' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v4', async () => {
@@ -653,12 +649,12 @@ describe('RouterSync', () => {
           v: '4',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3);
     });
 
     it('should unzip empty v5', async () => {
       await restoreNative({}, { z: 'eJwrUCszBQADVwFC', v: '5' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v5', async () => {
@@ -669,12 +665,12 @@ describe('RouterSync', () => {
           v: '5',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV3, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV3);
     });
 
     it('should unzip empty v6', async () => {
       await restoreNative({}, { p: '', v: '6' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v6', async () => {
@@ -697,12 +693,12 @@ describe('RouterSync', () => {
           v: '6',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV6, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV6);
     });
 
     it('should unzip empty v7', async () => {
       await restoreNative({}, { z: 'eJwrUCszBwADWQFE', v: '7' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v7', async () => {
@@ -713,12 +709,12 @@ describe('RouterSync', () => {
           v: '7',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV6, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV6);
     });
 
     it('should unzip empty v8', async () => {
       await restoreNative({}, { z: 'eJwrUCuzAAADWgFF', v: '8' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v8', async () => {
@@ -729,12 +725,12 @@ describe('RouterSync', () => {
           v: '8',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV8, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV8);
     });
 
     it('should unzip empty v9', async () => {
       await restoreNative({}, { z: 'eJwrUCuzBAADWwFG', v: '9' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v9', async () => {
@@ -745,12 +741,12 @@ describe('RouterSync', () => {
           v: '9',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV8, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV8);
     });
 
     it('should unzip empty v10', async () => {
       await restoreNative({}, { z: 'eJyrsjU0AAADNQEZ', v: '10' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmptyV10);
     });
 
     it('should unzip v10', async () => {
@@ -769,12 +765,12 @@ describe('RouterSync', () => {
           v: '10',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV10);
     });
 
     it('should unzip empty v11', async () => {
       await restoreNative({ id: '1.0' }, { z: 'eJyrsjU0BAADNgEa', v: '11' });
-      expect(dispatch).toHaveBeenCalledWith(mockEmpty, true);
+      expect(dispatch).toHaveBeenCalledWith(mockEmpty);
     });
 
     it('should unzip v11', async () => {
@@ -799,7 +795,7 @@ describe('RouterSync', () => {
           v: '11',
         },
       );
-      expect(dispatch).toHaveBeenCalledWith(mockStateV10, true);
+      expect(dispatch).toHaveBeenCalledWith(mockStateV10);
     });
   });
 
@@ -969,6 +965,12 @@ describe('RouterSync', () => {
         },
       });
     });
+
+    it('uses empty settings for missing module and beacon indices', () => {
+      expect(service.unzipRecipes({ r: ['iron-plate**1*1'] }, [], [])).toEqual({
+        [ItemId.IronPlate]: { modules: [{}], beacons: [{}] },
+      });
+    });
   });
 
   describe('unzipItems', () => {
@@ -1053,6 +1055,14 @@ describe('RouterSync', () => {
           modules: [{}],
           beacons: [{}],
         },
+      });
+    });
+
+    it('uses empty settings for missing module and beacon indices', () => {
+      expect(
+        service.unzipMachines({ m: ['assembling-machine-2*1*1'] }, [], []),
+      ).toEqual({
+        ['assembling-machine-2']: { modules: [{}], beacons: [{}] },
       });
     });
   });

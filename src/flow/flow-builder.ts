@@ -41,12 +41,9 @@ export class FlowBuilder {
     return this.buildGraph(steps, suffix, settings, preferences, data);
   });
 
-  private recipeStepNodeType(step: Pick<Step, 'recipeObjectiveId'>): string {
-    return step.recipeObjectiveId ? 'm' : 'r';
-  }
-
   private recipeNodeId(recipeId: string, recipeObjectiveId?: string): string {
-    return `${this.recipeStepNodeType({ recipeObjectiveId })}|${recipeObjectiveId || recipeId}`;
+    if (!recipeObjectiveId) return `r|${recipeId}`;
+    return `m|${resourceFromObjectiveId(recipeObjectiveId) ? recipeObjectiveId : recipeId}`;
   }
 
   private buildGraph(
@@ -217,11 +214,9 @@ export class FlowBuilder {
           ? data.iconRecord.quality[recipeIcon.quality.id]
           : undefined;
         const id = this.recipeNodeId(step.recipeId, step.recipeObjectiveId);
-        const objectiveLabel = resourceFromObjectiveId(step.recipeObjectiveId)
+        const sourceLabel = resourceFromObjectiveId(step.recipeObjectiveId)
           ? this.translate.get('endfield.resources.source')
-          : step.recipeObjectiveId
-            ? `#${step.recipeObjectiveId}`
-            : undefined;
+          : undefined;
         flow.nodes.push({
           id,
           name: recipe.name,
@@ -234,7 +229,7 @@ export class FlowBuilder {
           recipeIcon,
           recipeQualityIcon,
           recipeObjectiveId: step.recipeObjectiveId,
-          objectiveLabel,
+          sourceLabel,
         });
 
         if (step.outputs) {

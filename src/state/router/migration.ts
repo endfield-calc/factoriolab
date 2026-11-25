@@ -148,7 +148,8 @@ export class Migration {
       const s = zip.split(ZFIELDSEP);
       // Convert modId to V1
       let modId: string | null | undefined = this.zip.parseString(s[0]);
-      modId = modId && datasets.modHash[datasets.modHashV0.indexOf(modId)];
+      modId =
+        modId && (datasets.modHash[datasets.modHashV0.indexOf(modId)] ?? modId);
       modId = modId ?? '';
       // Convert displayRate to V1
       const displayRateV0 = this.zip.parseNumber(s[6]) ?? 60;
@@ -981,7 +982,8 @@ export class Migration {
     let newMod = oldMod;
     if (newMod && !state.isBare)
       newMod = datasets.modHash[this.compression.idToN(newMod)];
-    if (newMod) state.modId = newMod;
+    // An explicit removed hash slot is distinct from an absent mod section.
+    if (oldMod) state.modId = newMod ?? '';
 
     params['e'] = newModules;
     params['b'] = newBeacons;

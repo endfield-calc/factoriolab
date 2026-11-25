@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import product from '/public/endfield/product.json';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { ItemId } from '~/tests/item-id';
@@ -649,16 +650,20 @@ describe('ObjectivesStore', () => {
 
   describe('effects', () => {
     it('should set the page title', () => {
+      service['translate'].data.update((data) => ({
+        ...data,
+        'app.name': product.name,
+      }));
       const spy = spyOn(service['title'], 'setTitle');
       service.add(mockObjectiveBase);
       TestBed.tick();
       expect(service['title'].setTitle).toHaveBeenCalledWith(
-        'Coal | EndfieldLab',
+        `Coal | ${product.name}`,
       );
       spy.calls.reset();
       service.remove('1');
       TestBed.tick();
-      expect(service['title'].setTitle).toHaveBeenCalledWith('EndfieldLab');
+      expect(service['title'].setTitle).toHaveBeenCalledWith(product.name);
       spy.calls.reset();
       service.add({
         targetId: RecipeId.ElectronicCircuit,
@@ -668,7 +673,7 @@ describe('ObjectivesStore', () => {
       });
       TestBed.tick();
       expect(service['title'].setTitle).toHaveBeenCalledWith(
-        'Electronic circuit | EndfieldLab',
+        `Electronic circuit | ${product.name}`,
       );
     });
   });
@@ -734,11 +739,26 @@ describe('ObjectivesStore', () => {
   });
 
   describe('setOrder', () => {
-    it('should map objectives to an ids array', () => {
-      service.setOrder(mocks.objectives());
-      expect(Object.keys(service.state())).toEqual(
-        mocks.objectives().map((o) => o.id),
-      );
+    it('reorders stored objectives in the visible slots and preserves a hidden activity objective', () => {
+      const first = { ...mockObjectiveBase, id: '1' };
+      const hidden = {
+        ...mockObjectiveBase,
+        id: '2',
+        targetId: 'activity_xiranite_lung',
+      };
+      const last = { ...mockObjectiveBase, id: '3', value: rational(7) };
+      service.set({ 1: first, 2: hidden, 3: last });
+      // Rows from the view also carry calculated settings.
+      const rows = [last, first].map((o) => ({
+        ...o,
+        machineId: 'view-default',
+      }));
+      service.setOrder(rows);
+      expect(service.state()).toEqual({
+        1: { ...last, id: '1' },
+        2: hidden,
+        3: { ...first, id: '3' },
+      });
     });
   });
 

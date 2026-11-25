@@ -4,69 +4,45 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { saveAs } from 'file-saver';
 
 import { AccordionModule } from '~/components/accordion/accordion-module';
 import { Button } from '~/components/button/button';
 import { Checkbox } from '~/components/checkbox/checkbox';
 import { FormField } from '~/components/form-field/form-field';
 import { InputNumber } from '~/components/input-number/input-number';
+import { Select } from '~/components/select/select';
 import { Rational, rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
+import { updateSetIds } from '~/utils/set';
 
+import {
+  EndfieldDomain,
+  EndfieldName,
+  EndfieldSettlement,
+  settlementActivityBonus,
+} from '../domain/game-data';
 import {
   createEndfieldState,
   ovenId,
   ResourceId,
   resourceIds,
 } from '../domain/model';
+import { transferSourceOptions } from '../domain/transfer';
 import { EndfieldStore } from '../state/endfield-store';
 
-const waterRecipeIds = ['sewage-treat', 'sewage-treat-export'] as const;
-const presetRates: Record<'tundra' | 'jinlong', Record<ResourceId, number>> = {
-  tundra: {
-    originium_ore: 560,
-    quartz_sand: 240,
-    iron_ore: 1080,
-    copper_ore: 0,
-    gas_xiranite: 0,
-    gas_inert: 0,
-  },
-  jinlong: {
-    originium_ore: 540,
-    quartz_sand: 0,
-    iron_ore: 120,
-    copper_ore: 510,
-    gas_xiranite: 150,
-    gas_inert: 460,
-  },
-};
-
-function waterExclusions(
-  original: ReadonlySet<string>,
-  disabled: boolean,
-): Set<string> {
-  const excluded = new Set(original);
-  for (const id of waterRecipeIds) {
-    if (disabled) excluded.add(id);
-    else excluded.delete(id);
-  }
-  return excluded;
-}
+const waterRecipeIds = ['sewage-treat', 'sewage-treat-export'];
 
 @Component({
   selector: 'lab-endfield-resources',
   imports: [
-    RouterLink,
     AccordionModule,
     Button,
     Checkbox,
     FormField,
     InputNumber,
+    Select,
     TranslatePipe,
   ],
   templateUrl: './resources.html',
@@ -76,10 +52,12 @@ function waterExclusions(
 export class EndfieldResources {
   protected readonly store = inject(EndfieldStore);
   protected readonly settingsStore = inject(SettingsStore);
-  protected readonly lifecycle = inject(WorkspaceLifecycle);
   protected readonly preferences = inject(PreferencesStore);
   protected readonly resources = resourceIds;
   protected readonly ovenId = ovenId;
+  protected readonly regions = computed(
+    () => this.settingsStore.endfieldData()?.domains ?? [],
+  );
   /** The resource model stores physical rates per second; the editor uses per minute. */
   protected readonly ratesPerMinute = computed(() => {
     const rates = this.store.state().resourceLimits.rates;
@@ -92,38 +70,108 @@ export class EndfieldResources {
       this.settingsStore.settings().excludedRecipeIds.has(id),
     ),
   );
-  protected readonly onlyTundra = computed(() => {
-    const locations = this.settingsStore.settings().locationIds;
-    return locations.size === 1 && locations.has('tundra');
-  });
+  protected readonly transferSources = computed(() =>
+    transferSourceOptions(
+      this.settingsStore.transferData(),
+      this.settingsStore.settings().locationIds,
+    ).map((source) => ({
+      value: source.locationId,
+      label:
+        this.settingsStore.dataset().locationRecord[source.locationId]?.name ??
+        source.locationId,
+    })),
+  );
+  protected readonly transferSourceAvailable = computed(() =>
+    this.transferSources().some(
+      (source) => source.value === this.store.state().transferSource,
+    ),
+  );
 
   protected resourceName(id: string): string {
     return this.settingsStore.dataset().itemRecord[id]?.name ?? id;
   }
 
+  protected localized(names: EndfieldName): string {
+    const language = this.preferences.language();
+    return language === 'zh' || language === 'ja' || language === 'ru'
+      ? names[language]
+      : names.en;
+  }
+
+  protected activeBonuses(
+    settlement: EndfieldSettlement,
+  ): { name: string; rate: number }[] {
+    const times = this.settingsStore.activityTimes();
+    return settlement.activities.flatMap((activity) => {
+      const rate = settlementActivityBonus(activity, times);
+      return rate === 0
+        ? []
+        : [{ name: this.localized(activity.activityName), rate }];
+    });
+  }
+
+  protected settlementCouponRate(settlement: EndfieldSettlement): Rational {
+    const level = settlement.levels.at(-1);
+    if (level == null) return rational.zero;
+    const bonus = this.activeBonuses(settlement).reduce(
+      (sum, activity) => sum.add(rational(activity.rate)),
+      rational(level.towerDefenseRate).add(
+        rational(settlement.operatorBonusRate),
+      ),
+    );
+    return rational(level.baseMoneySpeed)
+      .mul(rational(100).add(bonus))
+      .div(rational(100));
+  }
+
+  protected regionCouponRate(region: EndfieldDomain): Rational {
+    return region.settlements.reduce(
+      (sum, settlement) => sum.add(this.settlementCouponRate(settlement)),
+      rational.zero,
+    );
+  }
+
+  protected presetRegion(
+    preset: 'tundra' | 'jinlong',
+  ): EndfieldDomain | undefined {
+    return this.regions().find(
+      (region) =>
+        region.locationId === preset &&
+        region.mineSummary.some((mine) =>
+          resourceIds.some((id) => id === mine.itemId),
+        ),
+    );
+  }
+
   protected applyPreset(preset: 'tundra' | 'jinlong'): void {
-    if (!this.lifecycle.ready()) return;
+    const region = this.presetRegion(preset);
+    if (!region) return;
     const state = this.store.state();
     const settings = this.settingsStore.settings();
     const defaults = createEndfieldState();
     const rates = { ...defaults.resourceLimits.rates };
-    for (const id of resourceIds)
-      rates[id] = rational(presetRates[preset][id], 60);
+    for (const mine of region.mineSummary) {
+      const id = resourceIds.find((value) => value === mine.itemId);
+      if (id != null)
+        rates[id] = rational(mine.outputPerMinute).div(rational(60));
+    }
     const jinlong = preset === 'jinlong';
     const next = {
       ...defaults,
       electric: state.electric,
+      activityModes: state.activityModes,
       resourceLimits: { enabled: true, rates },
       machineLimits: { enabled: jinlong, limits: { [ovenId]: rational(12) } },
-      transfer: { enabled: jinlong, source: 'tundra' as const },
+      transferEnabled: jinlong,
     };
     const patch = {
       locationIds: new Set([preset]),
       ...(jinlong
         ? {
-            excludedRecipeIds: waterExclusions(
-              settings.excludedRecipeIds,
+            excludedRecipeIds: updateSetIds(
+              waterRecipeIds,
               false,
+              settings.excludedRecipeIds,
             ),
           }
         : {}),
@@ -133,33 +181,35 @@ export class EndfieldResources {
   }
 
   protected clear(): void {
-    if (!this.lifecycle.ready()) return;
     const state = this.store.state();
     const settings = this.settingsStore.settings();
-    const next = { ...createEndfieldState(), electric: state.electric };
+    const next = {
+      ...createEndfieldState(),
+      electric: state.electric,
+      activityModes: state.activityModes,
+    };
     const patch = {
       locationIds: new Set(settings.defaultLocationIds),
-      excludedRecipeIds: waterExclusions(settings.excludedRecipeIds, false),
+      excludedRecipeIds: updateSetIds(
+        waterRecipeIds,
+        false,
+        settings.excludedRecipeIds,
+      ),
     };
     this.store.set(next);
     this.settingsStore.apply(patch);
   }
 
   protected setResourceEnabled(enabled: boolean): void {
-    if (!this.lifecycle.ready()) return;
     const state = this.store.state();
-    this.store.set({
-      ...state,
+    this.store.apply({
       resourceLimits: { ...state.resourceLimits, enabled },
     });
   }
 
-  protected updateRate(id: ResourceId, value: Rational | undefined): void {
-    if (!this.lifecycle.ready() || value == null || value.lt(rational.zero))
-      return;
+  protected updateRate(id: ResourceId, value: Rational): void {
     const state = this.store.state();
-    this.store.set({
-      ...state,
+    this.store.apply({
       resourceLimits: {
         ...state.resourceLimits,
         rates: { ...state.resourceLimits.rates, [id]: value.div(rational(60)) },
@@ -168,20 +218,15 @@ export class EndfieldResources {
   }
 
   protected setMachineEnabled(enabled: boolean): void {
-    if (!this.lifecycle.ready()) return;
     const state = this.store.state();
-    this.store.set({
-      ...state,
+    this.store.apply({
       machineLimits: { ...state.machineLimits, enabled },
     });
   }
 
-  protected updateMachineLimit(value: Rational | undefined): void {
-    if (!this.lifecycle.ready() || value == null || value.lt(rational.zero))
-      return;
+  protected updateMachineLimit(value: Rational): void {
     const state = this.store.state();
-    this.store.set({
-      ...state,
+    this.store.apply({
       machineLimits: {
         ...state.machineLimits,
         limits: { ...state.machineLimits.limits, [ovenId]: value },
@@ -190,21 +235,24 @@ export class EndfieldResources {
   }
 
   protected setTransferEnabled(enabled: boolean): void {
-    if (!this.lifecycle.ready()) return;
     const state = this.store.state();
-    this.store.set({ ...state, transfer: { enabled, source: 'tundra' } });
+    this.store.set({ ...state, transferEnabled: enabled });
+  }
+
+  protected setTransferSource(source: string | undefined): void {
+    if (
+      source != null &&
+      this.transferSources().some((option) => option.value === source)
+    )
+      this.store.apply({ transferSource: source });
   }
 
   protected setWaterDisabled(disabled: boolean): void {
-    if (!this.lifecycle.ready()) return;
-    const excludedRecipeIds = waterExclusions(
-      this.settingsStore.settings().excludedRecipeIds,
+    const excludedRecipeIds = updateSetIds(
+      waterRecipeIds,
       disabled,
+      this.settingsStore.settings().excludedRecipeIds,
     );
     this.settingsStore.apply({ excludedRecipeIds });
-  }
-
-  protected download(name: string, value: string): void {
-    saveAs(new Blob([value], { type: 'text/plain;charset=utf-8' }), name);
   }
 }

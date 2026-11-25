@@ -9,14 +9,7 @@ import { RouterSync } from '~/state/router/router-sync';
   template: '<router-outlet></router-outlet>',
 })
 export class Id {
-  private readonly route = inject(ActivatedRoute);
-  private readonly routerSvc = inject(RouterSync);
-
   constructor() {
-    this.setup();
-  }
-
-  private setup(): void {
-    this.routerSvc.route$.next(this.route);
+    inject(RouterSync).route$.next(inject(ActivatedRoute));
   }
 }

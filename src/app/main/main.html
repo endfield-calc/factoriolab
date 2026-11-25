@@ -1,8 +1,4 @@
-<aside
-  #settings="labSettings"
-  labSettings
-  [attr.inert]="lifecycle.ready() ? null : ''"
-></aside>
+<aside #settings="labSettings" labSettings></aside>
 <div
   role="none"
   class="xl:hidden fixed z-5 hidden h-dvh w-dvw bg-ground-950/75"
@@ -32,9 +28,7 @@
       <lab-endfield-resources></lab-endfield-resources>
       <lab-endfield-guide></lab-endfield-guide>
     </div>
-    <lab-objectives
-      [attr.inert]="lifecycle.ready() ? null : ''"
-    ></lab-objectives>
+    <lab-objectives></lab-objectives>
 
     <div class="px-1 sm:px-3 lg:px-6 lg:pt-3 flex grow flex-col">
       <h2 class="mb-1 text-2xl font-light xl:block hidden">
@@ -43,10 +37,7 @@
       <div class="mb-1 sm:mb-2 relative">
         <lab-tabs [tabs]="tabs"></lab-tabs>
       </div>
-      <div
-        class="pb-1 grow overflow-x-auto"
-        [attr.inert]="lifecycle.ready() ? null : ''"
-      >
+      <div class="pb-1 grow overflow-x-auto">
         <router-outlet #ro="outlet"></router-outlet>
         @if (!ro.isActivated) {
           <div class="flex h-full items-center justify-center">

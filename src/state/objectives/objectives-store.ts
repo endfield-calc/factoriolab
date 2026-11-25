@@ -5,18 +5,11 @@ import {
   faPauseCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-import manifest from '/public/endfield/product.json';
 import { TooltipType } from '~/components/tooltip/tooltip-type';
 import { IconType } from '~/data/icon-type';
 import { baseId } from '~/data/schema/quality';
-import {
-  prepareEndfieldObjectives,
-  tundraTransferRecipeIds,
-} from '~/endfield/adapters/calculation-extension';
-import {
-  resourceFromObjectiveId,
-  resourceOwner,
-} from '~/endfield/domain/model';
+import { prepareEndfieldObjectives } from '~/endfield/adapters/calculation-extension';
+import { resourceFromObjectiveId } from '~/endfield/domain/model';
 import { compileEndfieldRules } from '~/endfield/domain/rules';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { Option } from '~/option/option';
@@ -41,7 +34,6 @@ import { RecipesStore } from '../recipes/recipes-store';
 import { DisplayRate, displayRateInfo } from '../settings/display-rate';
 import { SettingsStore } from '../settings/settings-store';
 import { RecordStore } from '../store';
-import { WorkspaceLifecycle } from '../workspace-lifecycle';
 import { ItemSource } from './item-source';
 import { MessageData } from './message-data';
 import { isRecipeObjective, ObjectiveBase, ObjectiveState } from './objective';
@@ -63,7 +55,6 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   private readonly recipesStore = inject(RecipesStore);
   private readonly settingsStore = inject(SettingsStore);
   private readonly solver = inject(Solver);
-  private readonly lifecycle = inject(WorkspaceLifecycle);
   private readonly endfieldStore = inject(EndfieldStore);
   private readonly translate = inject(Translate);
 
@@ -106,42 +97,30 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     ),
   );
 
-  /** Snapshot only independent Endfield state and the small rule inputs. */
+  /** Add fixed supplies and transfer objectives to the calculation only. */
   readonly calculationContext = computed(() => {
     const ordinary = this.objectives();
     const data = this.recipesStore.adjustedDataset();
     const settings = this.settingsStore.settings();
     const recipeSettings = this.recipesStore.settings();
-    const isEndfield = data.modId === 'aef';
-    const state = isEndfield ? this.endfieldStore.snapshot() : undefined;
-    const ids = new Set(ordinary.map((objective) => objective.id));
+    const state = data.modId === 'aef' ? this.endfieldStore.state() : undefined;
     const derived =
-      this.lifecycle.ready() &&
       state != null &&
       (ordinary.length > 0 ||
         state.resourceLimits.enabled ||
         state.machineLimits.enabled ||
-        state.transfer.enabled)
+        state.transferEnabled)
         ? prepareEndfieldObjectives(
             state,
-            (base) => {
-              const exists = isRecipeObjective(base)
-                ? data.recipeRecord[base.targetId] != null
-                : data.itemRecord[base.targetId] != null;
-              if (!exists)
-                throw new Error(`Unknown derived target: ${base.targetId}`);
-              if (ids.has(base.id))
-                throw new Error('Duplicate derived objective ID');
-              ids.add(base.id);
-              return this.adjustment.adjustObjective(
+            (base) =>
+              this.adjustment.adjustObjective(
                 base,
                 this.itemsStore.settings(),
                 recipeSettings,
                 this.machinesStore.settings(),
                 settings,
                 data,
-              );
-            },
+              ),
             this.settingsStore.displayRateInfo().value,
           )
         : [];
@@ -154,7 +133,6 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
   });
 
   readonly matrixResult = computed((): SimplexResult => {
-    if (!this.lifecycle.ready()) return { steps: [], resultType: 'paused' };
     const context = this.calculationContext();
     const objectives = this.normalizedObjectives();
     const settings = this.settingsStore.settings();
@@ -165,9 +143,17 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     if (context.state != null) {
       const state = context.state;
       const raw = this.settingsStore.dataset();
-      const transferRecipeIds = tundraTransferRecipeIds(raw.recipeRecord);
+      if (state.transferEnabled && !this.settingsStore.transferData()) {
+        return this.settingsStore.transferError()
+          ? { steps: [], resultType: 'failed' }
+          : { steps: [], resultType: 'paused' };
+      }
+      const transferRecipeIds = this.recipesStore.transferRecipeIds();
       const availability = {
-        recipeIds: settings.availableRecipeIds,
+        recipeIds: new Set([
+          ...settings.availableRecipeIds,
+          ...transferRecipeIds,
+        ]),
         machineIds: new Set(
           Object.entries(raw.machineRecord)
             .filter(
@@ -214,7 +200,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     return normalized.map((step) => {
       const resource = resourceFromObjectiveId(step.recipeObjectiveId);
       return step.itemId == null && resource != null
-        ? { ...step, checked: checked.has(resourceOwner(resource)) }
+        ? { ...step, checked: checked.has(resource) }
         : step;
     });
   });
@@ -629,7 +615,10 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
       if (s.itemId != null) {
         ids = data.itemRecipeIds[s.itemId];
         enabledIds = ids.filter((r) => !settings.excludedRecipeIds.has(r));
-      } else if (s.recipeId != null) {
+      } else if (
+        s.recipeId != null &&
+        !this.recipesStore.transferRecipeIds().has(s.recipeId)
+      ) {
         ids = [s.recipeId];
         enabledIds = [s.recipeId];
       }
@@ -823,8 +812,7 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
             : data.itemRecord[o.targetId]?.name,
         )
         .find((n) => n != null);
-      const localized = this.translate.get('app.name');
-      const appName = localized === 'app.name' ? manifest.name : localized;
+      const appName = this.translate.get('app.name');
       if (name == null) this.title.setTitle(appName);
       else this.title.setTitle(`${name} | ${appName}`);
     });
@@ -856,8 +844,15 @@ export class ObjectivesStore extends RecordStore<ObjectiveState> {
     });
   }
 
-  setOrder(objectives: ObjectiveState[]): void {
-    this.set(this.reduceObjectives(objectives));
+  setOrder(objectives: Pick<ObjectiveState, 'id'>[]): void {
+    const state = this.state();
+    const visible = new Set(objectives.map((o) => o.id));
+    let next = 0;
+    // A closed event can hide objectives between two visible rows.
+    const ordered = Object.values(state).map((o) =>
+      visible.has(o.id) ? state[objectives[next++].id] : o,
+    );
+    this.set(this.reduceObjectives(ordered));
   }
 
   updateRecipeField<K extends keyof RecipeState>(

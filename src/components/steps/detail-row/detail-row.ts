@@ -51,12 +51,6 @@ export class DetailRow {
   readonly leftSpan = input.required<number>();
   readonly factor = input<Rational>(rational.one);
 
-  protected sourceLabel(recipeObjectiveId?: string): string | undefined {
-    return resourceFromObjectiveId(recipeObjectiveId) == null
-      ? undefined
-      : 'endfield.resources.source';
-  }
-
   /**
    * Ceil and check nonzero in a computed, to avoid calling ceil function from
    * the template, which would cause computations to re-run on each change
@@ -114,6 +108,7 @@ export class DetailRow {
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faInfoCircle = faInfoCircle;
   protected readonly rational = rational;
+  protected readonly resourceFromObjectiveId = resourceFromObjectiveId;
 
   protected readonly machineIdSpan = computed(() => {
     const cols = this.cols();

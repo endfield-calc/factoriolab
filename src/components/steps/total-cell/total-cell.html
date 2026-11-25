@@ -10,7 +10,7 @@
           [labTooltipType]="tot.value.tooltipType"
         ></lab-icon>
         @if (tot.value.tooltipType === 'machine') {
-          <span>{{ itemName(tot.key) }}</span>
+          <span>{{ data().itemRecord[tot.key].name }}</span>
         }
       </div>
     }

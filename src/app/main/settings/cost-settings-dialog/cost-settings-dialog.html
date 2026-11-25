@@ -10,7 +10,6 @@
             [labTooltip]="'costs.' + key + 'Tooltip'"
             labTooltipPosition="adjacent"
             [buttons]="true"
-            [disabled]="!ready()"
             [step]="rational(10)"
             stepType="multiply"
             [minimum]="undefined"
@@ -25,7 +24,6 @@
 <lab-form-field label="endfield.electric.title">
   <lab-input-number
     [buttons]="true"
-    [disabled]="!ready()"
     [minimum]="rational.zero"
     [value]="editElectric()"
     (valueChange)="applyElectric($event)"
@@ -40,7 +38,6 @@
       labButton
       text="reset"
       [faIcon]="faRotateLeft"
-      [disabled]="!ready()"
       (click)="reset()"
     ></button>
   }
@@ -50,7 +47,6 @@
     color="brand"
     text="ok"
     [faIcon]="faCheck"
-    [disabled]="!ready()"
     (click)="save()"
   ></button>
   <button

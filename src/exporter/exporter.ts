@@ -87,7 +87,8 @@ export class Exporter {
       exp.Recipe = step.recipeId;
 
       const recipe = data.adjustedRecipe[step.recipeId];
-      const recipeSettings = step.recipeSettings ?? recipesState[step.recipeId];
+      const recipeSettings =
+        step.recipeSettings ?? recipesState[step.recipeId] ?? {};
       const inputs = Object.keys(recipe.in)
         .map((i) => {
           const inStep = steps.find((s) => s.itemId === i);

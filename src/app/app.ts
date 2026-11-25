@@ -1,4 +1,3 @@
-import { Dialog } from '@angular/cdk/dialog';
 import { Component, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterOutlet } from '@angular/router';
@@ -8,8 +7,6 @@ import { filter, merge, switchMap } from 'rxjs';
 
 import product from '/public/endfield/product.json';
 import { Confirm } from '~/components/confirm/confirm';
-import { CustomDataDialog } from '~/components/custom-data-dialog/custom-data-dialog';
-import { CUSTOM_MOD } from '~/data/game';
 import { Release } from '~/data/release';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { log } from '~/utils/log';
@@ -25,7 +22,6 @@ export class App {
   private readonly swUpdate = inject(SwUpdate);
   protected readonly router = inject(Router);
   protected readonly product = product;
-  private readonly dialog = inject(Dialog);
   private readonly release = inject(Release);
   private readonly confirm = inject(Confirm);
   private readonly windowClient = inject(WindowClient);
@@ -38,14 +34,6 @@ export class App {
     effect(() => {
       const config = this.release.config.value();
       if (config?.version) this.log('version', config.version);
-    });
-
-    effect(() => {
-      if (
-        this.settingsStore.modId() === CUSTOM_MOD &&
-        this.settingsStore.customData.value() == null
-      )
-        this.dialog.open(CustomDataDialog);
     });
 
     merge(

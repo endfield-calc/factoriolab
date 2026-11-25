@@ -3,7 +3,7 @@ import modJson from '/public/data/2.0/data.json';
 import hashJson from '/public/data/2.0/hash.json';
 import i18nJson from '/public/data/2.0/i18n/zh.json';
 import langJson from '/public/i18n/en.json';
-import { datasets } from '~/data/datasets';
+import { ModInfo } from '~/data/mod';
 import { HardCodedPresetsJson } from '~/data/schema/defaults';
 import { ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
@@ -13,7 +13,11 @@ import { LangData } from '~/translate/translate';
 import { RecipeId } from '../recipe-id';
 
 export const mockModId = '2.0';
-export const mockModInfo = datasets.mods.find((m) => m.id === mockModId)!;
+export const mockModInfo: ModInfo = {
+  id: mockModId,
+  name: '2.0',
+  game: 'endfield',
+};
 export const mockModData = modJson as unknown as ModData;
 mockModData.defaults!.excludedRecipes = [RecipeId.NuclearFuelReprocessing];
 export const mockModData11 = modJson11 as unknown as ModData;

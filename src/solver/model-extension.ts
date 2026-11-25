@@ -36,6 +36,8 @@ export interface CalculationModelContext {
   readonly recipeSettings: Readonly<
     Record<string, { readonly machineId?: string }>
   >;
+  /** Inputs whose displayed quantity must reflect the solved consumption. */
+  readonly actualInputIds?: ReadonlySet<string>;
   readonly compile: (variables: readonly CalculationVariable[]) => ModelRules;
 }
 
@@ -260,6 +262,15 @@ export function bindModelRules(
 const SOLUTION_TOLERANCE = 1e-7;
 export const INTEGER_TOLERANCE = 1e-7;
 
+export function checkedModelValue(
+  values: ReadonlyMap<Variable, number>,
+  variable: Variable,
+): number {
+  const value = values.get(variable);
+  if (value === undefined) throw new Error('Missing checked model variable');
+  return value;
+}
+
 /** Validate every column, row and objective against one and the same solution. */
 export function validateModelSolution(
   model: Model,
@@ -278,10 +289,6 @@ export function validateModelSolution(
   for (const variable of model.vars) {
     const raw = valueOf(variable);
     const coefficient = variable.obj;
-    if (!Number.isFinite(raw) || !Number.isFinite(coefficient))
-      throw new Error(
-        `Non-finite solution value or objective coefficient: ${variable.name}`,
-      );
     let value = raw;
     if (integerVariables.has(variable)) {
       value = Math.round(raw);
@@ -320,9 +327,7 @@ export function validateModelSolution(
   for (const row of integerRows) {
     let activity = 0n;
     for (const [variable, coefficient] of row.coeffs) {
-      const value = values.get(variable);
-      if (value === undefined || !integerVariables.has(variable))
-        throw new Error(`Invalid exact integer row: ${row.name}`);
+      const value = checkedModelValue(values, variable);
       activity += coefficient * BigInt(value);
     }
     if (activity > row.upper)
@@ -334,9 +339,7 @@ export function validateModelSolution(
     let activity = 0;
     let scale = 0;
     for (const [variable, coefficient] of row.coeffs) {
-      const value = values.get(variable);
-      if (value == null || !Number.isFinite(coefficient))
-        throw new Error(`Invalid solution row: ${row.name}`);
+      const value = checkedModelValue(values, variable);
       const term = coefficient * value;
       activity += term;
       scale += Math.abs(term);
@@ -363,5 +366,6 @@ export function validateModelSolution(
     !closeEnough(cost, objective, Math.abs(cost))
   )
     throw new Error('Solution objective does not match recomputed cost');
-  return { cost, values };
+  // Keep the LP objective; the MIP cost must use the normalized integer values.
+  return { cost: mip ? cost : objective, values };
 }

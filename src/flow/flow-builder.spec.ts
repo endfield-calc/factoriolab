@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 
-import { resourceObjectiveId } from '~/endfield/domain/model';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { initialColumnsState } from '~/state/preferences/columns-state';
@@ -51,12 +50,13 @@ describe('FlowService', () => {
     });
   });
 
-  describe('recipeStepNodeType', () => {
-    it('should return different prefix for recipe objective steps', () => {
-      expect(service['recipeStepNodeType']({} as any)).toEqual('r');
-      expect(
-        service['recipeStepNodeType']({ recipeObjectiveId: 'obj' } as any),
-      ).toEqual('m');
+  describe('recipeNodeId', () => {
+    it('uses native recipe keys for ordinary steps and a separate key for a resource source', () => {
+      expect(service['recipeNodeId']('recipe')).toEqual('r|recipe');
+      expect(service['recipeNodeId']('recipe', 'obj')).toEqual('m|recipe');
+      expect(service['recipeNodeId']('recipe', 'ef:resource:iron_ore')).toBe(
+        'm|ef:resource:iron_ore',
+      );
     });
   });
 
@@ -316,77 +316,5 @@ describe('FlowService', () => {
         service['linkPrecision'](LinkValue.Machines, initialColumnsState),
       ).toEqual(1);
     });
-  });
-
-  it('keeps same-recipe objective nodes, their labels and links distinct', () => {
-    spyOn(service['translate'], 'get').and.returnValue('Resource supply');
-    const recipeId = RecipeId.AdvancedOilProcessing;
-    const derivedId = resourceObjectiveId('iron_ore');
-    const parents = ['ordinary', 'target-1', 'target-2', 'derived'];
-    const steps: Step[] = [
-      {
-        id: 'input',
-        itemId: ItemId.Water,
-        items: rational(4n),
-        parents: Object.fromEntries(
-          parents.map((id) => [id, rational(1n, 4n)]),
-        ),
-      },
-      {
-        id: 'output',
-        itemId: ItemId.LightOil,
-        items: rational(4n),
-        output: rational(4n),
-      },
-      ...parents.map(
-        (id, index): Step => ({
-          id,
-          recipeId,
-          recipeObjectiveId:
-            index === 0 ? undefined : index === 3 ? derivedId : `${index}`,
-          outputs: { [ItemId.LightOil]: rational(1n, 4n) },
-        }),
-      ),
-    ];
-    const result = service['buildGraph'](
-      steps,
-      '/m',
-      mocks.settingsStore.settings(),
-      mocks.preferencesStore.state(),
-      mocks.recipesStore.adjustedDataset(),
-    );
-    const recipeIds = [`r|${recipeId}`, 'm|1', 'm|2', `m|${derivedId}`];
-    const nodeIds = result.nodes.map((node) => node.id);
-    expect(new Set(nodeIds).size).toBe(nodeIds.length);
-    expect(
-      result.nodes.filter((node) => recipeIds.includes(node.id)).length,
-    ).toBe(4);
-    const edgeIds = result.links.map(
-      ({ source, target }) => `${source}>${target}`,
-    );
-    expect(new Set(edgeIds).size).toBe(edgeIds.length);
-    for (const id of recipeIds) {
-      expect(edgeIds).toContain(`i|${ItemId.Water}>${id}`);
-      expect(edgeIds).toContain(`${id}>o|${ItemId.LightOil}`);
-    }
-    expect(result.nodes.find((node) => node.id === 'm|1')).toEqual(
-      jasmine.objectContaining({ stepId: 'target-1', objectiveLabel: '#1' }),
-    );
-    expect(result.nodes.find((node) => node.id === 'm|2')).toEqual(
-      jasmine.objectContaining({ stepId: 'target-2', objectiveLabel: '#2' }),
-    );
-    expect(result.nodes.find((node) => node.id === `m|${derivedId}`)).toEqual(
-      jasmine.objectContaining({
-        stepId: 'derived',
-        recipeObjectiveId: derivedId,
-        objectiveLabel: 'Resource supply',
-      }),
-    );
-    expect(result.nodes.find((node) => node.id === `r|${recipeId}`)).toEqual(
-      jasmine.objectContaining({
-        stepId: 'ordinary',
-        objectiveLabel: undefined,
-      }),
-    );
   });
 });

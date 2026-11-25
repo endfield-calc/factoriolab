@@ -1,7 +1,7 @@
 import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { resourceObjectiveId, resourceOwner } from '~/endfield/domain/model';
+import { resourceObjectiveId } from '~/endfield/domain/model';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
@@ -224,9 +224,7 @@ describe('Steps', () => {
     expect(component['settingsStore'].apply).toHaveBeenCalled();
     (component['settingsStore'].apply as jasmine.Spy).calls.reset();
     component.changeStepChecked({ ...step, itemId: undefined }, true);
-    expect(
-      store.state().checkedDerived.has(resourceOwner('iron_ore')),
-    ).toBeTrue();
+    expect(store.state().checkedDerived.has('iron_ore')).toBeTrue();
     expect(component['settingsStore'].apply).not.toHaveBeenCalled();
   });
 
@@ -317,9 +315,7 @@ describe('Steps', () => {
     });
     component.resetMachines();
     expect(store.state().resourceRecipeSettings.iron_ore).toBeUndefined();
-    expect(
-      store.state().checkedDerived.has(resourceOwner('iron_ore')),
-    ).toBeTrue();
+    expect(store.state().checkedDerived.has('iron_ore')).toBeTrue();
   });
 
   describe('resetBeacons', () => {

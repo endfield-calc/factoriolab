@@ -204,8 +204,8 @@ export class Normalization {
       !beaconReceivers?.nonzero() ||
       step.recipeId == null ||
       !step.machines?.nonzero() ||
-      data.recipeRecord[step.recipeId].part ||
-      step.recipeSettings == null
+      step.recipeSettings == null ||
+      data.recipeRecord[step.recipeId]?.part
     )
       return;
 

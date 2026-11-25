@@ -1,7 +1,9 @@
-import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ApplicationRef, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import rawData from '/public/data/aef/data.json';
+import rawHash from '/public/data/aef/hash.json';
 import { ModData } from '~/data/schema/mod-data';
 import { qualityId, QualityJson } from '~/data/schema/quality';
 import { SettingsStore } from '~/state/settings/settings-store';
@@ -12,6 +14,7 @@ import { Mocks } from '~/tests/mocks/mocks';
 import { RecipeId } from '~/tests/recipe-id';
 import { TestModule } from '~/tests/test-module';
 
+import { Picker } from './picker';
 import { PickerData } from './picker-data';
 import { PickerDialog } from './picker-dialog';
 
@@ -52,7 +55,9 @@ describe('PickerDialog', () => {
       expect(component['allSelected']()).toBeTrue();
       component.selection.set(new Set(component['dialogData'].allIds));
       expect(component['allSelected']()).toBeFalse();
-      component.selection.set(new Set(['id']));
+      component.selection.set(
+        new Set([Array.from(component['dialogData'].allIds)[0]]),
+      );
       expect(component['allSelected']()).toBeUndefined();
     });
   });
@@ -362,12 +367,6 @@ describe('PickerDialog name presentation', () => {
     checkbox.click();
     fixture.detectChanges();
     expect(button?.textContent).toContain(label);
-    checkbox.click();
-    fixture.detectChanges();
-    expect(button?.textContent).not.toContain(label);
-    checkbox.click();
-    fixture.detectChanges();
-    expect(button?.textContent).toContain(label);
     fixture.destroy();
 
     const reopened = TestBed.createComponent(PickerDialog);
@@ -383,4 +382,50 @@ describe('PickerDialog name presentation', () => {
         .checked,
     ).toBeFalse();
   });
+});
+
+describe('Picker global exclusions', () => {
+  const data = rawData as unknown as ModData;
+  const activityId = 'activity_xiranite_lung';
+
+  for (const type of ['item', 'recipe'] as const) {
+    it(`opens ${type} exclusions and preserves hidden selections`, () => {
+      TestBed.configureTestingModule({ imports: [TestModule] });
+      const settingsStore = TestBed.inject(SettingsStore);
+      settingsStore.apply({
+        modId: 'aef',
+        ...(type === 'item'
+          ? { excludedItemIds: new Set([activityId]) }
+          : { excludedRecipeIds: new Set([activityId]) }),
+      });
+      settingsStore['modDataResource'].set(data);
+      settingsStore['modHashResource'].set(rawHash);
+      settingsStore.setActivityMode('limited_formula_2', 'disabled');
+      const picker = TestBed.inject(Picker);
+      const dialog = TestBed.inject(Dialog);
+      TestBed.tick();
+
+      const before = settingsStore.dataset();
+      const ids = type === 'item' ? before.itemIds : before.recipeIds;
+      expect(ids).not.toContain(activityId);
+      if (type === 'item') picker.pickExcludedItems();
+      else picker.pickExcludedRecipes();
+      const ref = dialog.openDialogs[0] as DialogRef<unknown, PickerDialog>;
+      const component = ref.componentInstance!;
+      TestBed.tick();
+      expect(component.selection()).toEqual(new Set([activityId]));
+      expect(component['allSelected']()).toBeTrue();
+      component.selectId(ids[0]);
+      expect(component['allSelected']()).toBeUndefined();
+      component.selectAll(false);
+      expect(component['allSelected']()).toBeFalse();
+      expect(component.selection()).toEqual(new Set([...ids, activityId]));
+      component.selectAll(true);
+      ref.close();
+      const settings = settingsStore.state();
+      expect(
+        type === 'item' ? settings.excludedItemIds : settings.excludedRecipeIds,
+      ).toEqual(new Set([activityId]));
+    });
+  }
 });

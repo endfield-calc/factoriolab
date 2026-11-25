@@ -20,7 +20,7 @@ describe('landingGuard', () => {
       providers: [
         provideRouter([
           {
-            path: ':id',
+            path: 'aef',
             children: [
               {
                 path: 'list',
@@ -65,10 +65,21 @@ describe('landingGuard', () => {
 
   it('gives explicit root queries priority over cache and does not restore cache for a bare dataset route', async () => {
     spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
-    spyOn(routerSync, 'stored').and.returnValue('/aef/list?old=1');
+    const stored = spyOn(routerSync, 'stored').and.returnValue(
+      '/aef/list?old=1',
+    );
     const harness = await RouterTestingHarness.create('/?v=11&o=a&o=b');
     expect(router.url).toEqual('/aef/list?v=11&o=a&o=b');
+    expect(stored).not.toHaveBeenCalled();
     await harness.navigateByUrl('/aef');
+    expect(router.url).toEqual('/aef/list');
+    expect(stored).not.toHaveBeenCalled();
+  });
+
+  it('uses the default list if root has no cached state', async () => {
+    spyOn(preferencesStore, 'bypassLanding').and.returnValue(true);
+    spyOn(routerSync, 'stored').and.returnValue(undefined);
+    await RouterTestingHarness.create('/');
     expect(router.url).toEqual('/aef/list');
   });
 

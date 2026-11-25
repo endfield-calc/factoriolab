@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { loadModule } from 'glpk-ts';
 
-import rawData from '/public/data/aef/data.json';
-import rawHash from '/public/data/aef/hash.json';
-import { ModData } from '~/data/schema/mod-data';
+import { emptyModData, ModData } from '~/data/schema/mod-data';
 import { ModHash } from '~/data/schema/mod-hash';
 import { rational } from '~/rational/rational';
 import { ItemsStore } from '~/state/items/items-store';
@@ -19,26 +18,78 @@ import { Params } from '~/state/router/params';
 import { RouterSync, ZipState } from '~/state/router/router-sync';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TableStore } from '~/state/table/table-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 
+import { endfieldAdjustmentProvider } from '../adapters/calculation-extension';
 import {
   createEndfieldState,
   resourceObjectiveId,
-  resourceOwner,
+  resourceRecipes,
 } from '../domain/model';
-import { provideEndfield } from '../providers';
 import { EndfieldStore } from '../state/endfield-store';
+import { decodeEndfield, encodeEndfield } from './codec';
 
-const data = rawData as unknown as ModData;
-const hash = rawHash as unknown as ModHash;
+const machine = 'fixture-machine';
+const data: ModData = {
+  ...emptyModData(),
+  icons: [
+    ...Object.keys(resourceRecipes),
+    'domain_key_tundra',
+    machine,
+    'zone-one',
+    'zone-two',
+  ].map((id) => ({ id, x: 0, y: 0, color: '#fff' })),
+  locations: [
+    { id: 'zone-one', name: 'Zone one' },
+    { id: 'zone-two', name: 'Zone two' },
+  ],
+  items: [
+    ...Object.keys(resourceRecipes).map((id) => ({ id, name: id })),
+    { id: 'domain_key_tundra', name: 'Transfer key' },
+    { id: machine, name: 'Machine', machine: { speed: 1 } },
+  ],
+  recipes: [
+    ...Object.entries(resourceRecipes).map(([item, id]) => ({
+      id,
+      name: id,
+      time: 1,
+      in: {},
+      out: { [item]: 1 },
+      producers: [machine],
+    })),
+    ...['unused-one', 'unused-two'].map((id) => ({
+      id,
+      name: id,
+      time: 1,
+      in: {},
+      out: { originium_ore: 1 },
+      producers: [machine],
+    })),
+  ],
+  defaults: {
+    presets: [{ id: 0, label: 'Default' }],
+    locations: ['zone-one', 'zone-two'],
+    machineRank: [machine],
+  },
+};
+const hash: ModHash = {
+  items: data.items.map((item) => item.id),
+  recipes: data.recipes.map((recipe) => recipe.id),
+  machines: [machine],
+  locations: ['zone-one', 'zone-two'],
+  beacons: [],
+  belts: [],
+  fuels: [],
+  wagons: [],
+  modules: [],
+  technologies: [],
+};
 
 describe('Endfield derived round trips', () => {
   let router: RouterSync;
   let settings: SettingsStore;
   let objectives: ObjectivesStore;
   let endfield: EndfieldStore;
-  let lifecycle: WorkspaceLifecycle;
   let preferences: PreferencesStore;
 
   beforeAll(async () => {
@@ -50,7 +101,7 @@ describe('Endfield derived round trips', () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        ...provideEndfield(),
+        endfieldAdjustmentProvider,
         { provide: SettingsStore, useClass: SettingsStore },
       ],
     });
@@ -61,7 +112,6 @@ describe('Endfield derived round trips', () => {
     router = TestBed.inject(RouterSync);
     objectives = TestBed.inject(ObjectivesStore);
     endfield = TestBed.inject(EndfieldStore);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
     preferences = TestBed.inject(PreferencesStore);
     preferences.apply({ paused: false, glpkAlgorithm: 'simplex' });
   });
@@ -74,7 +124,6 @@ describe('Endfield derived round trips', () => {
     query: string,
     dataset: ModData = data,
   ): Promise<void> {
-    const ticket = lifecycle.begin(query);
     const params = await router.unzipQueryParams(
       query ? router.toParams(query) : {},
     );
@@ -85,11 +134,7 @@ describe('Endfield derived round trips', () => {
       migrated.isBare,
       dataset,
       hash,
-      ticket,
     );
-    expect(lifecycle.ready())
-      .withContext(JSON.stringify(lifecycle.errors()))
-      .toBeTrue();
   }
 
   function zip(): ZipState {
@@ -102,14 +147,14 @@ describe('Endfield derived round trips', () => {
       table: TestBed.inject(TableStore).state(),
       data: settings.dataset(),
       hash,
-      endfield: endfield.snapshot(),
+      endfield: endfield.state(),
     });
   }
 
-  it('A30 preserves one real derived supply and its independent settings/check through every link and save', async () => {
+  it('preserves a derived supply and its independent settings/check through every link and save', async () => {
     settings.apply({
-      locationIds: new Set(['tundra', 'jinlong']),
-      excludedRecipeIds: new Set(['sewage-treat', 'sewage-treat-export']),
+      locationIds: new Set(['zone-one', 'zone-two']),
+      excludedRecipeIds: new Set(['unused-one', 'unused-two']),
       checkedObjectiveIds: new Set(['1']),
       costs: {
         ...settings.state().costs,
@@ -130,6 +175,10 @@ describe('Endfield derived round trips', () => {
     const base = createEndfieldState();
     endfield.set({
       ...base,
+      activityModes: {
+        limited_formula_1: 1789521600000,
+        limited_formula_2: 'disabled',
+      },
       resourceLimits: {
         enabled: true,
         rates: {
@@ -150,10 +199,10 @@ describe('Endfield derived round trips', () => {
       )!;
     expect(initialDerived).toBeDefined();
     expect(initialDerived.itemId).toBeUndefined();
-    objectives.updateRecipeField(initialDerived, 'machineId', 'miner_3');
+    objectives.updateRecipeField(initialDerived, 'machineId', machine);
     objectives.updateRecipeField(initialDerived, 'overclock', rational(125));
     endfield.setResourceChecked('originium_ore', true);
-    endfield.set({ ...endfield.snapshot(), electric: rational(2) });
+    endfield.set({ ...endfield.state(), electric: rational(2) });
     expect(Object.values(objectives.state())).toEqual(ordinaryBefore);
     expect(objectives.matrixResult().resultType).toBe('solved');
     const derived = objectives
@@ -165,7 +214,7 @@ describe('Endfield derived round trips', () => {
     expect(derived).toBeDefined();
     expect(derived.itemId).toBeUndefined();
     expect(derived.checked).toBeTrue();
-    expect(derived.recipeSettings?.machineId).toBe('miner_3');
+    expect(derived.recipeSettings?.machineId).toBe(machine);
     expect(
       objectives
         .calculationContext()
@@ -173,20 +222,18 @@ describe('Endfield derived round trips', () => {
         .length,
     ).toBe(1);
     const expectedObjectives = objectives.state();
-    const expectedEndfield = endfield.snapshot();
-    expect(expectedEndfield.checkedDerived).toEqual(
-      new Set([resourceOwner('originium_ore')]),
-    );
+    const expectedEndfield = endfield.state();
+    expect(expectedEndfield.checkedDerived).toEqual(new Set(['originium_ore']));
     expect(expectedEndfield.resourceRecipeSettings.originium_ore).toEqual({
-      machineId: 'miner_3',
+      machineId: machine,
       overclock: rational(125),
     });
     const zipped = zip();
     expect(zipped.config.bare.och).toBe('A');
     expect(zipped.config.bare.rex).toBeDefined();
     const ef = zipped.config.bare.ef!;
-    const payload = JSON.parse(atob(ef.replace(/-/g, '+').replace(/_/g, '/')));
-    expect(JSON.stringify(payload)).not.toContain('sewage-treat');
+    expect(decodeEndfield(ef, data)).toEqual(expectedEndfield);
+    expect(ef).not.toContain('unused-one');
     const bare: LabParams = {
       ...zipped.objectives.bare,
       ...zipped.config.bare,
@@ -209,7 +256,7 @@ describe('Endfield derived round trips', () => {
       ['saved', saved.slice(saved.indexOf('?') + 1)],
       ['stepHref', router.toString(href as Params)],
     ] as const) {
-      endfield.reset();
+      endfield.load(undefined);
       objectives.set({});
       settings.apply({
         checkedObjectiveIds: new Set(),
@@ -217,7 +264,7 @@ describe('Endfield derived round trips', () => {
       });
       await restore(query);
       expect(objectives.state()).withContext(mode).toEqual(expectedObjectives);
-      expect(endfield.snapshot()).withContext(mode).toEqual(expectedEndfield);
+      expect(endfield.state()).withContext(mode).toEqual(expectedEndfield);
       expect(zip()).withContext(mode).toEqual(zipped);
       expect(
         objectives
@@ -244,10 +291,52 @@ describe('Endfield derived round trips', () => {
       expect(restoredDerived.checked).withContext(mode).toBeTrue();
       expect(restoredDerived.recipeSettings?.machineId)
         .withContext(mode)
-        .toBe('miner_3');
+        .toBe(machine);
       expect(restoredDerived.recipeSettings?.overclock)
         .withContext(mode)
         .toEqual(rational(125));
     }
+  });
+
+  it('keeps delimiters and Unicode machine IDs intact in bare and compressed parameters', async () => {
+    const machine = 'machine!*~&=/%+中文';
+    const fixture: ModData = {
+      ...emptyModData(),
+      items: [{ id: machine, name: 'Machine', machine: {} }],
+      recipes: [
+        {
+          id: 'originium_ore',
+          name: 'Source',
+          time: 1,
+          in: {},
+          out: {},
+          producers: [machine],
+        },
+      ],
+    };
+    const defaults = createEndfieldState();
+    const state = {
+      ...defaults,
+      electric: rational(-7, 9),
+      resourceRecipeSettings: {
+        originium_ore: { machineId: machine, overclock: rational(7, 3) },
+      },
+    };
+    const bare = { ef: encodeEndfield(state), v: '12' };
+    const compressed = await router.getHashParams(bare);
+    const bareString = router.toString(bare);
+    const angularRouter = TestBed.inject(Router);
+    const link = angularRouter.serializeUrl(
+      angularRouter.createUrlTree(['/aef/list'], { queryParams: bare }),
+    );
+    const browserParams = new URL(`https://example.test/?${bareString}`)
+      .searchParams;
+    for (const params of [
+      router.toParams(bareString),
+      Object.fromEntries(browserParams),
+      angularRouter.parseUrl(link).queryParams,
+      await router.unzipQueryParams(compressed as Params),
+    ])
+      expect(decodeEndfield(params['ef'], fixture)).toEqual(state);
   });
 });

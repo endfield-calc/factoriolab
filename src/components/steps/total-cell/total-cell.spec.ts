@@ -45,7 +45,7 @@ describe('TotalCell', () => {
 });
 
 describe('TotalCell machine names', () => {
-  it('displays known machine names and falls back to unknown IDs', async () => {
+  it('displays the localized name beside a machine total', async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, TotalCell],
     }).compileComponents();
@@ -54,11 +54,6 @@ describe('TotalCell machine names', () => {
       value: {
         [ItemId.ElectricMiningDrill]: {
           total: rational(2),
-          iconType: 'item',
-          tooltipType: 'machine',
-        },
-        'unlisted-machine': {
-          total: rational.one,
           iconType: 'item',
           tooltipType: 'machine',
         },
@@ -77,6 +72,5 @@ describe('TotalCell machine names', () => {
       (element) => element.textContent,
     );
     expect(machineNames).toContain(expectedName);
-    expect(machineNames).toContain('unlisted-machine');
   });
 });

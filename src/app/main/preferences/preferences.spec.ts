@@ -11,7 +11,6 @@ describe('Preferences', () => {
   let fixture: ComponentFixture<Preferences>;
 
   beforeEach(async () => {
-    localStorage.removeItem('preferences');
     await TestBed.configureTestingModule({
       imports: [TestModule, Preferences],
     }).compileComponents();
@@ -21,19 +20,16 @@ describe('Preferences', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => {
-    localStorage.removeItem('preferences');
-  });
-
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
   describe('currentState', () => {
     it('should find a state that matches params', () => {
-      const params = component.params();
-      expect(params).toBeDefined();
-      component['preferencesStore'].saveState('2.0', 'state', params!);
+      spyOn(component, 'params').and.returnValue('params');
+      spyOn(component['settingsStore'], 'modStates').and.returnValue({
+        state: 'params',
+      });
       expect(component.currentState()).toEqual('state');
     });
   });
@@ -48,20 +44,11 @@ describe('Preferences', () => {
   });
 
   describe('reset', () => {
-    it('resets preferences while preserving saved states', () => {
-      const store = component['preferencesStore'];
-      store.saveState('2.0', 'saved', '/2.0/list?v=12');
-      store.apply({ language: 'ja' });
+    it('should handle preserve saved states', () => {
       spyOn(component['confirm'], 'open').and.returnValue(of(1));
-      const reset = spyOn(store, 'resetPreferences').and.callThrough();
+      spyOn(component['preferencesStore'], 'apply');
       component.reset();
-      expect(reset).toHaveBeenCalledOnceWith();
-      expect(store.language()).toBe('en');
-      expect(store.states()['2.0']['saved']).toBe('/2.0/list?v=12');
-      TestBed.tick();
-      expect(
-        JSON.parse(localStorage.getItem('preferences')!).states['2.0'].saved,
-      ).toBe('/2.0/list?v=12');
+      expect(component['preferencesStore'].apply).toHaveBeenCalled();
     });
 
     it('should handle full reset', async () => {

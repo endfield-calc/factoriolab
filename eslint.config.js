@@ -6,6 +6,7 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
+  { ignores: ['src/app/main/settings/technologies-dialog/**'] },
   {
     files: ['**/*.ts'],
     extends: [

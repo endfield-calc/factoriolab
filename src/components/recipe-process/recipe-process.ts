@@ -14,7 +14,6 @@ import {
 
 import { RoundPipe } from '~/rational/round-pipe';
 import { RecipesStore } from '~/state/recipes/recipes-store';
-import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
 import { Icon } from '../icon/icon';
@@ -29,12 +28,11 @@ import { Icon } from '../icon/icon';
   },
 })
 export class RecipeProcess {
-  private readonly settingsStore = inject(SettingsStore);
   private readonly recipesStore = inject(RecipesStore);
 
   readonly value = input.required<string>();
 
-  protected readonly data = this.settingsStore.dataset;
+  protected readonly data = this.recipesStore.adjustedDataset;
   protected readonly faArrowRightLong = faArrowRightLong;
   protected readonly faStopwatch = faStopwatch;
 
@@ -42,6 +40,6 @@ export class RecipeProcess {
     () => this.data().recipeRecord[this.value()],
   );
   protected readonly machineId = computed(
-    () => this.recipesStore.settings()[this.value()].machineId,
+    () => this.recipesStore.settings()[this.value()]?.machineId,
   );
 }

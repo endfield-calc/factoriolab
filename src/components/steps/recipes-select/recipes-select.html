@@ -4,6 +4,7 @@
     class="group"
     [iconOnly]="true"
     [options]="recipes.options"
+    [disabled]="recipes.options.length === 0"
     [labTooltip]="step().recipeId"
     labTooltipType="recipe"
     labTooltipPosition="adjacent"

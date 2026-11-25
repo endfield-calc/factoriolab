@@ -1,3 +1,4 @@
+import type { EndfieldData } from '~/endfield/domain/game-data';
 import { Flag } from '~/state/flags';
 
 import { CategoryJson } from './category';
@@ -8,6 +9,7 @@ import { QualityJson } from './quality';
 import { RecipeJson } from './recipe';
 
 export interface ModData {
+  endfield?: EndfieldData;
   version: Record<string, string>;
   flags: Flag[];
   categories: CategoryJson[];

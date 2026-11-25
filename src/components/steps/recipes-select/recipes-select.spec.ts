@@ -49,7 +49,6 @@ describe('RecipesSelect', () => {
     };
     expect(update(resourceObjectiveId('iron_ore'))).toBe('');
     expect(update('42')).toBe('#42');
-    expect(update('ef:resource:unknown')).toBe('#ef:resource:unknown');
   });
 
   describe('changeREcipesIncluded', () => {

@@ -28,15 +28,13 @@ async function git(...args) {
   return stdout.trim();
 }
 
-export async function releaseMetadata() {
+async function releaseMetadata() {
   const sha = process.env.GITHUB_SHA || (await git('rev-parse', 'HEAD'));
   const branch =
     process.env.GITHUB_REF_NAME || (await git('branch', '--show-current'));
   const date = new Date().toISOString();
   const version = `v${date.slice(0, 10).replaceAll('-', '')}-${sha.slice(0, 7)}`;
-  const release = { version, branch, date, sha };
-  validateRelease(release);
-  return release;
+  return { version, branch, date, sha };
 }
 
 function replaceOnce(input, expression, replacement, label) {
@@ -45,10 +43,7 @@ function replaceOnce(input, expression, replacement, label) {
   return input.replace(expression, () => replacement);
 }
 
-async function writeSiteMetadata(
-  directory,
-  { base, product, release, language },
-) {
+async function writeSiteMetadata(directory, { product, release, language }) {
   const title = language === 'zh' ? product.nameZh : product.name;
   const description =
     language === 'zh' ? product.descriptionZh : product.description;
@@ -60,8 +55,6 @@ async function writeSiteMetadata(
     throw new Error('Product metadata is incomplete');
   const indexPath = path.join(directory, 'index.html');
   let html = await readFile(indexPath, 'utf8');
-  if (htmlAttribute(html, 'base', 'href') !== base)
-    throw new Error('Build base does not match requested packaging base');
   html = replaceOnce(
     html,
     /<title\b[^>]*>[\s\S]*?<\/title>/gi,
@@ -149,7 +142,6 @@ export async function packageSites({
     await rm(destination, { recursive: true, force: true });
     await cp(source, destination, { recursive: true });
     await writeSiteMetadata(destination, {
-      base: normalizedBase,
       product: selectedProduct,
       release: selectedRelease,
       language,

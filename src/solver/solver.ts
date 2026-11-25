@@ -35,6 +35,7 @@ import {
   addModelRow,
   bindModelRules,
   CalculationModelContext,
+  checkedModelValue,
   finiteNumber,
   INTEGER_TOLERANCE,
   ModelBinding,
@@ -66,18 +67,22 @@ export class Solver {
 
     if (objectives.length === 0) return { steps: [], resultType: 'skipped' };
 
-    for (const objective of objectives)
-      if (
-        isRecipeObjective(objective) &&
-        [
-          ObjectiveType.Output,
-          ObjectiveType.Input,
-          ObjectiveType.Maximize,
-          ObjectiveType.Limit,
-        ].includes(objective.type) &&
-        objective.value.lt(rational.zero)
-      )
-        throw new Error(`Negative machine count for objective ${objective.id}`);
+    if (modelContext) {
+      for (const objective of objectives)
+        if (
+          isRecipeObjective(objective) &&
+          [
+            ObjectiveType.Output,
+            ObjectiveType.Input,
+            ObjectiveType.Maximize,
+            ObjectiveType.Limit,
+          ].includes(objective.type) &&
+          objective.value.lt(rational.zero)
+        )
+          throw new Error(
+            `Negative machine count for objective ${objective.id}`,
+          );
+    }
 
     // Get matrix state
     const state = this.getState(
@@ -377,7 +382,7 @@ export class Solver {
   private itemCost(
     itemId: string,
     costKey: CostKey,
-    state: SimplexState,
+    state: ModelSimplexState,
   ): number {
     const base =
       state.data.itemRecord[itemId]?.stack == null &&
@@ -385,7 +390,9 @@ export class Solver {
         ? FACTORIO_FLUID_COST_RATIO
         : rational.one;
     const cost = state.costs[costKey];
-    return finiteNumber(base.mul(cost), `${costKey} cost of ${itemId}`);
+    return state.modelContext
+      ? finiteNumber(base.mul(cost), `${costKey} cost of ${itemId}`)
+      : base.mul(cost).toNumber();
   }
 
   private glpk(state: ModelSimplexState): ModelGlpkResult {
@@ -395,6 +402,12 @@ export class Solver {
     const m = new Model({ sense: 'min' });
     const bindings: ModelBinding[] = [];
     const rows: ModelRow[] = [];
+    const modelNumber = (value: Rational, label: string): number =>
+      state.modelContext ? finiteNumber(value, label) : value.toNumber();
+    const addRow = (properties: ModelRowProperties): Constraint =>
+      state.modelContext
+        ? addModelRow(m, properties, rows)
+        : m.addConstr(properties);
     // Variables for recipes
     const recipeVarRecord: Record<string, Variable> = {};
     // Variables for recipe output objectives, where lb and ub represent
@@ -420,7 +433,7 @@ export class Solver {
     const recipeObjectiveConstrRecord: Record<string, Constraint> = {};
     // Variable for maximization ratio
     const config: VariableProperties = {
-      obj: finiteNumber(state.costs.maximize, 'maximize objective coefficient'),
+      obj: modelNumber(state.costs.maximize, 'maximize objective coefficient'),
       lb: 0,
       name: 'maximize',
     };
@@ -432,7 +445,7 @@ export class Solver {
     // Add recipe vars to model
     for (const recipeId of recipeIds) {
       const config: VariableProperties = {
-        obj: finiteNumber(
+        obj: modelNumber(
           state.recipes[recipeId].cost ?? rational.zero,
           `objective coefficient of ${recipeId}`,
         ),
@@ -442,7 +455,7 @@ export class Solver {
 
       // Add limit, if any
       if (state.recipeLimits[recipeId]) {
-        config.ub = finiteNumber(
+        config.ub = modelNumber(
           state.recipeLimits[recipeId],
           `upper bound of ${recipeId}`,
         );
@@ -471,7 +484,7 @@ export class Solver {
 
       // Set ub/lb if type is output, maximize will be set up later
       if (obj.type === ObjectiveType.Output) {
-        const bound = finiteNumber(obj.value, `bound of objective ${obj.id}`);
+        const bound = modelNumber(obj.value, `bound of objective ${obj.id}`);
         config.ub = bound;
         config.lb = bound;
       }
@@ -493,7 +506,7 @@ export class Solver {
         switch (state.maximizeType) {
           case MaximizeType.Weight: {
             const varConfig: VariableProperties = {
-              obj: finiteNumber(
+              obj: modelNumber(
                 obj.value.mul(state.costs.maximize),
                 `maximize objective coefficient of ${obj.id}`,
               ),
@@ -510,11 +523,7 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            recipeObjectiveConstrRecord[obj.id] = addModelRow(
-              m,
-              constrConfig,
-              rows,
-            );
+            recipeObjectiveConstrRecord[obj.id] = addRow(constrConfig);
             break;
           }
           case MaximizeType.Ratio: {
@@ -523,7 +532,7 @@ export class Solver {
               [recipeObjectiveVarRecord[obj.id], 1],
               [
                 maximizeVar,
-                finiteNumber(
+                modelNumber(
                   obj.value.inverse(),
                   `maximize coefficient of objective ${obj.id}`,
                 ),
@@ -534,7 +543,7 @@ export class Solver {
               lb: 0,
               name: obj.id,
             };
-            recipeObjectiveConstrRecord[obj.id] = addModelRow(m, config, rows);
+            recipeObjectiveConstrRecord[obj.id] = addRow(config);
             break;
           }
         }
@@ -577,7 +586,7 @@ export class Solver {
       if (values.in) {
         const inputConfig: VariableProperties = {
           lb: 0,
-          ub: finiteNumber(values.in, `input upper bound of ${itemId}`),
+          ub: modelNumber(values.in, `input upper bound of ${itemId}`),
           name: itemId,
         };
         inputVarRecord[itemId] = m.addVar(inputConfig);
@@ -598,17 +607,14 @@ export class Solver {
         if (val?.nonzero()) {
           netCoeffs.push([
             recipeVarRecord[recipeId],
-            finiteNumber(
-              val,
-              `output coefficient of ${recipeId} for ${itemId}`,
-            ),
+            modelNumber(val, `output coefficient of ${recipeId} for ${itemId}`),
           ]);
         }
 
-        if (values.lim && recipe.in[itemId]) {
+        if ((!state.modelContext || values.lim) && recipe.in[itemId]) {
           inputCoeffs.push([
             recipeVarRecord[recipeId],
-            finiteNumber(
+            modelNumber(
               recipe.in[itemId].div(recipe.time),
               `input coefficient of ${recipeId} for ${itemId}`,
             ),
@@ -626,7 +632,7 @@ export class Solver {
           } else {
             netCoeffs.push([
               recipeObjectiveVarRecord[obj.id],
-              finiteNumber(
+              modelNumber(
                 val,
                 `output coefficient of objective ${obj.id} for ${itemId}`,
               ),
@@ -634,10 +640,10 @@ export class Solver {
           }
         }
 
-        if (values.lim && recipe.in[itemId]) {
+        if ((!state.modelContext || values.lim) && recipe.in[itemId]) {
           inputCoeffs.push([
             recipeObjectiveVarRecord[obj.id],
-            finiteNumber(
+            modelNumber(
               recipe.in[itemId].div(recipe.time),
               `input coefficient of objective ${obj.id} for ${itemId}`,
             ),
@@ -668,7 +674,7 @@ export class Solver {
         switch (state.maximizeType) {
           case MaximizeType.Weight: {
             const config: VariableProperties = {
-              obj: finiteNumber(
+              obj: modelNumber(
                 values.max.mul(state.costs.maximize),
                 `maximize objective coefficient of ${itemId}`,
               ),
@@ -683,7 +689,7 @@ export class Solver {
             maximizeFactor = maximizeFactor.add(values.max);
             netCoeffs.push([
               maximizeVar,
-              finiteNumber(
+              modelNumber(
                 values.max.inverse(),
                 `maximize coefficient of ${itemId}`,
               ),
@@ -693,22 +699,22 @@ export class Solver {
         }
       }
 
-      const outputBound = finiteNumber(values.out, `output bound of ${itemId}`);
+      const outputBound = modelNumber(values.out, `output bound of ${itemId}`);
       const netConfig: ModelRowProperties = {
         coeffs: netCoeffs,
         lb: outputBound,
         ub: outputBound,
         name: itemId,
       };
-      itemConstrRecord[itemId] = addModelRow(m, netConfig, rows);
+      itemConstrRecord[itemId] = addRow(netConfig);
 
       if (values.lim) {
         const inputConfig: ModelRowProperties = {
           coeffs: inputCoeffs,
-          ub: finiteNumber(values.lim, `input limit of ${itemId}`),
+          ub: modelNumber(values.lim, `input limit of ${itemId}`),
           name: itemId,
         };
-        inputLimitConstrRecord[itemId] = addModelRow(m, inputConfig, rows);
+        inputLimitConstrRecord[itemId] = addRow(inputConfig);
       }
     }
 
@@ -717,14 +723,15 @@ export class Solver {
      * helps prevent increases in values of maximize objectives from overtaking
      * the maximize cost and resulting in no production as the optimal solution.
      */
-    const numericMaximizeFactor = finiteNumber(
+    const numericMaximizeFactor = modelNumber(
       maximizeFactor,
       'maximize factor',
     );
     const maximizeCost = maximizeVar.obj * numericMaximizeFactor;
-    if (!Number.isFinite(maximizeCost))
+    if (state.modelContext && !Number.isFinite(maximizeCost))
       throw new Error('Non-finite maximize objective coefficient');
     if (
+      state.modelContext &&
       maximizeCost === 0 &&
       maximizeVar.obj !== 0 &&
       numericMaximizeFactor !== 0
@@ -767,9 +774,7 @@ export class Solver {
     const unproduceable: Record<string, Rational> = {};
     const excluded: Record<string, Rational> = {};
     const recipes: Record<string, Rational> = {};
-    const modelObjective = mip ? m.valueMIP : m.value;
-    let cost = mip ? rational.zero : rational(modelObjective);
-
+    const lpCost = mip ? rational.zero : rational(m.value);
     if (returnCode !== 'ok' || status !== 'optimal') {
       let ray: Constraint | Variable | undefined;
       if (!mip) {
@@ -794,24 +799,24 @@ export class Solver {
         unproduceable,
         excluded,
         recipes,
-        cost,
+        cost: lpCost,
         error: true,
       };
     }
 
-    const checked = validateModelSolution(
-      m,
-      rows,
-      extension.integerVariables,
-      extension.integerRows,
-      mip,
-    );
-    cost = rational(mip ? checked.cost : modelObjective);
+    const checked = state.modelContext
+      ? validateModelSolution(
+          m,
+          rows,
+          extension.integerVariables,
+          extension.integerRows,
+          mip,
+        )
+      : undefined;
+    const cost = mip && checked ? rational(checked.cost) : lpCost;
     const valueOf = (variable: Variable): number => {
-      const value = checked.values.get(variable);
-      if (value === undefined)
-        throw new Error('Missing checked model variable');
-      return value;
+      if (!checked) return variable.value;
+      return checkedModelValue(checked.values, variable);
     };
 
     // Parse solution
@@ -819,7 +824,8 @@ export class Solver {
       const values = state.itemValues[itemId];
       const val = rational(valueOf(surplusVarRecord[itemId]));
       if (val.nonzero()) surplus[itemId] = val;
-      if (values.in) values.in = rational(valueOf(inputVarRecord[itemId]));
+      if (values.in && state.modelContext?.actualInputIds?.has(itemId))
+        values.in = rational(valueOf(inputVarRecord[itemId]));
 
       if (recipeObjectiveOutput[itemId]) {
         for (const objId of Object.keys(recipeObjectiveOutput[itemId])) {

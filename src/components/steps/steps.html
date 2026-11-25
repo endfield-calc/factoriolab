@@ -165,6 +165,7 @@
   <tbody>
     @for (step of sortedSteps(); track step.id) {
       @let expanded = expandedSteps().has(step.id);
+      @let source = resourceFromObjectiveId(step.recipeObjectiveId);
       <tr>
         <!-- Row Actions -->
         <td>
@@ -189,6 +190,11 @@
               <lab-checkbox
                 ariaLabel="checked"
                 [ngModel]="step.checked"
+                [disabled]="
+                  !step.itemId &&
+                  !!step.recipeId &&
+                  isEndfieldTransferRecipe(step.recipeId)
+                "
                 (ngModelChange)="changeStepChecked(step, $event)"
               ></lab-checkbox>
             </div>
@@ -229,7 +235,7 @@
                     [value]="step.recipeId"
                     type="recipe"
                     [text]="
-                      sourceLabel(step)
+                      source
                         ? ''
                         : step.recipeObjectiveId
                           ? '#' + step.recipeObjectiveId
@@ -279,12 +285,7 @@
         </td>
         <td>
           @if (step.itemId) {
-            <div class="relative flex">
-              <span
-                class="top-1 absolute -z-1 text-transparent select-none"
-                aria-hidden="true"
-                >{{ data().itemRecord[step.itemId].name }}</span
-              >
+            <div class="flex">
               <lab-exclude-button [itemId]="step.itemId"></lab-exclude-button>
               <span>{{ data().itemRecord[step.itemId].name }}</span>
             </div>
@@ -472,15 +473,10 @@
           </td>
           <td>
             @if (step.recipeId && step.recipe && step.recipeSettings) {
-              <div class="gap-1 relative flex items-center">
-                <span
-                  class="top-1 absolute -z-1 text-transparent select-none"
-                  aria-hidden="true"
-                  >{{ data().recipeRecord[step.recipeId].name }}</span
-                >
+              <div class="gap-1 flex items-center">
                 <lab-recipes-select [step]="step"></lab-recipes-select>
-                @if (sourceLabel(step); as source) {
-                  <span>{{ source | translate }}</span>
+                @if (source) {
+                  <span>{{ 'endfield.resources.source' | translate }}</span>
                 }
                 <span>{{ data().recipeRecord[step.recipeId].name }}</span>
                 @if (step.recipe.producers?.length) {
@@ -609,10 +605,17 @@
           <td>
             <div class="gap-1 flex items-center">
               <lab-recipes-select [step]="step"></lab-recipes-select>
-              @if (sourceLabel(step); as source) {
-                <span>{{ source | translate }}</span>
+              @if (source) {
+                <span>{{ 'endfield.resources.source' | translate }}</span>
               }
               @if (step.recipeId) {
+                @if (isEndfieldTransferRecipe(step.recipeId)) {
+                  <span
+                    >{{
+                      'endfield.resources.enableTransfer' | translate
+                    }}:</span
+                  >
+                }
                 <span>{{ data().recipeRecord[step.recipeId].name }}</span>
               }
             </div>
@@ -663,9 +666,7 @@
                 target="_blank"
                 routerLink="."
                 [queryParams]="step | stepHref: routerSync.zipConfig() | async"
-                [fragment]="
-                  sourceLabel(step) ? 'endfield-resources' : undefined
-                "
+                [fragment]="source ? 'endfield-resources' : undefined"
                 labButton
                 [faIcon]="faArrowUpRightFromSquare"
                 [border]="false"
@@ -675,9 +676,7 @@
               </a>
               @let mod = objectivesStore.stepsModified();
               @if (
-                (step.recipeId &&
-                  !sourceLabel(step) &&
-                  mod.recipes[step.recipeId]) ||
+                (step.recipeId && !source && mod.recipes[step.recipeId]) ||
                 (step.itemId && mod.items[step.itemId]) ||
                 (step.recipeObjectiveId &&
                   mod.objectives[step.recipeObjectiveId])

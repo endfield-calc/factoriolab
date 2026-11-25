@@ -6,6 +6,8 @@ import {
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import product from '/public/endfield/product.json';
+
 import { Release } from './release';
 
 describe('Release', () => {
@@ -33,14 +35,14 @@ describe('Release', () => {
       TestBed.tick();
       http.expectOne('release.json').flush({ version: '0.0.0' });
       await TestBed.inject(ApplicationRef).whenStable();
-      expect(service.version()).toEqual('EndfieldLab 0.0.0');
+      expect(service.version()).toEqual(`${product.name} 0.0.0`);
     });
 
     it('should handle no version specified', async () => {
       TestBed.tick();
       http.expectOne('release.json').flush({ version: '' });
       await TestBed.inject(ApplicationRef).whenStable();
-      expect(service.version()).toEqual('EndfieldLab (dev)');
+      expect(service.version()).toEqual(`${product.name} (dev)`);
     });
   });
 });

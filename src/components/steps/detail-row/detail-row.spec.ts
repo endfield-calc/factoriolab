@@ -1,8 +1,10 @@
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
+import { Icon } from '~/components/icon/icon';
 import { rational } from '~/rational/rational';
-import { Dataset } from '~/state/settings/dataset';
+import { RecipesStore } from '~/state/recipes/recipes-store';
 import { ItemId } from '~/tests/item-id';
 import { Mocks } from '~/tests/mocks/mocks';
 import { RecipeId } from '~/tests/recipe-id';
@@ -33,63 +35,6 @@ describe('DetailRow', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('shows a detail count only for a visible machine or a producerless showCount recipe', () => {
-    const initial = mocks.getDataset();
-    const recipeId = initial.recipeIds[0];
-    const machineId = initial.machineIds[0];
-    const data = signal<Dataset>({
-      ...initial,
-      recipeRecord: {
-        ...initial.recipeRecord,
-        [recipeId]: {
-          ...initial.recipeRecord[recipeId],
-          producers: undefined,
-          flags: new Set(),
-        },
-      },
-      machineRecord: {
-        ...initial.machineRecord,
-        [machineId]: { ...initial.machineRecord[machineId], hideRate: false },
-      },
-    });
-    spyOn<any>(component, 'data').and.callFake(data);
-    const countCell = (): string => {
-      const cells = (fixture.nativeElement as HTMLElement).querySelectorAll(
-        'td',
-      );
-      return cells[cells.length - 2].textContent.trim();
-    };
-    setInputs(fixture, { value: { recipeId, machines: rational(777) } });
-    expect(countCell()).toBe('');
-    setInputs(fixture, {
-      value: { recipeId, machineId, machines: rational(777) },
-    });
-    expect(countCell()).toContain('777');
-    data.update((value) => ({
-      ...value,
-      machineRecord: {
-        ...value.machineRecord,
-        [machineId]: { ...value.machineRecord[machineId], hideRate: true },
-      },
-    }));
-    fixture.detectChanges();
-    expect(countCell()).toBe('');
-    data.update((value) => ({
-      ...value,
-      recipeRecord: {
-        ...value.recipeRecord,
-        [recipeId]: {
-          ...value.recipeRecord[recipeId],
-          flags: new Set(['showCount']),
-        },
-      },
-    }));
-    fixture.detectChanges();
-    expect(countCell()).toBe('');
-    setInputs(fixture, { value: { recipeId, machines: rational(777) } });
-    expect(countCell()).toContain('777');
   });
 
   describe('safeFactor', () => {
@@ -132,24 +77,7 @@ describe('DetailRow', () => {
       expect(component['inserterId']()).toEqual(ItemId.BulkInserter);
     });
   });
-});
 
-describe('DetailRow source labels', () => {
-  let fixture: ComponentFixture<DetailRow>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, DetailRow],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(DetailRow);
-
-    setInputs(fixture, {
-      value: { itemId: ItemId.ElectronicCircuit, items: rational(360n) },
-      leftSpan: 0,
-    });
-    fixture.detectChanges();
-  });
   it('labels derived sources on both icons while retaining ordinary numbering', () => {
     const row = {
       recipeId: RecipeId.ElectronicCircuit,
@@ -178,5 +106,34 @@ describe('DetailRow source labels', () => {
     setInputs(fixture, { value: { recipeId: RecipeId.ElectronicCircuit } });
     fixture.detectChanges();
     expect(html.textContent).not.toContain('#');
+  });
+
+  it('renders a derived recipe icon for both source and destination rows', () => {
+    const recipes = TestBed.inject(RecipesStore);
+    const adjusted = recipes.adjustedDataset();
+    const icon = adjusted.iconRecord.item[ItemId.ElectronicCircuit];
+    const id = '__transfer_for_detail_test';
+    spyOn(recipes, 'adjustedDataset').and.returnValue({
+      ...adjusted,
+      iconRecord: {
+        ...adjusted.iconRecord,
+        recipe: { ...adjusted.iconRecord.recipe, [id]: icon },
+      },
+    });
+    setInputs(fixture, {
+      value: {
+        recipeId: id,
+        percent: rational.one,
+        destId: id,
+        destType: 'recipe',
+      },
+    });
+    fixture.detectChanges();
+    const matches = fixture.debugElement
+      .queryAll(By.directive(Icon))
+      .map((entry) => entry.componentInstance as Icon)
+      .filter((entry) => entry.value() === id);
+    expect(matches.length).toBe(2);
+    for (const entry of matches) expect(entry['icon']()).toEqual(icon);
   });
 });

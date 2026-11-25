@@ -1,82 +1,39 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
-import { Migration } from '~/state/router/migration';
+import { RouterSync } from '~/state/router/router-sync';
+import { SettingsStore } from '~/state/settings/settings-store';
 import { MockComponent } from '~/tests/mocks/component';
 import { TestModule } from '~/tests/test-module';
 
 import { Id } from './id';
-import { idGuard } from './id-guard';
 
-describe('Id', () => {
-  let component: Id;
-  let fixture: ComponentFixture<Id>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, Id],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(Id);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  describe('setup', () => {
-    it('should pass the route to the restore coordinator', () => {
-      spyOn(component['routerSvc'].route$, 'next');
-      component['setup']();
-      expect(component['routerSvc'].route$.next).toHaveBeenCalledWith(
-        component['route'],
-      );
-    });
-  });
-});
-
-describe('Shortcut forwarding to the Endfield codec', () => {
-  afterEach(() => {
-    localStorage.clear();
-  });
-
-  it('passes the activated Id query to native migration', async () => {
-    localStorage.clear();
-    const migrate = jasmine.createSpy('migrate').and.callFake(() => {
-      throw new Error('Stop after observing migration');
-    });
+describe('Endfield workspace route', () => {
+  it('forwards the route without applying a matrix mod before migration', async () => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
-        { provide: Migration, useValue: { migrate } },
         provideRouter([
           {
-            path: ':id',
+            path: 'aef',
             component: Id,
-            canActivate: [idGuard],
             children: [{ path: 'list', component: MockComponent }],
           },
         ]),
       ],
     });
-    const router = TestBed.inject(Router);
-    const http = TestBed.inject(HttpTestingController);
-    await RouterTestingHarness.create('/list?v=11&o=a&o=b&cet=x');
-    for (let i = 0; i < 6; i++) {
-      await Promise.resolve();
-      TestBed.tick();
-    }
-
-    expect(router.url).toBe('/aef/list?v=11&o=a&o=b&cet=x');
-    expect(migrate).toHaveBeenCalledOnceWith('aef', {
-      v: '11',
-      o: ['a', 'b'],
-      cet: 'x',
-    });
-    http.expectNone((request) => /^data\/(?!aef\/)/.test(request.url));
+    const service = TestBed.inject(RouterSync);
+    const next = spyOn(service.route$, 'next');
+    const apply = spyOn(TestBed.inject(SettingsStore), 'apply');
+    await RouterTestingHarness.create('/aef;id=1.1/list?v=11');
+    expect(next).toHaveBeenCalled();
+    const route = next.calls.mostRecent().args[0];
+    expect(route.snapshot.paramMap.get('id')).toBe('1.1');
+    expect(apply).not.toHaveBeenCalled();
+    TestBed.inject(HttpTestingController).expectNone((request) =>
+      /^data\/(?!aef\/)/.test(request.url),
+    );
   });
 });

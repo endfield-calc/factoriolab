@@ -20,20 +20,10 @@ import { InputNumber } from '~/components/input-number/input-number';
 import { Tooltip } from '~/components/tooltip/tooltip';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { Rational, rational } from '~/rational/rational';
-import {
-  CostKey,
-  costKeys,
-  CostSettings,
-} from '~/state/settings/cost-settings';
+import { CostKey, costKeys } from '~/state/settings/cost-settings';
 import { initialSettingsState } from '~/state/settings/settings-state';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
-
-interface CostDraft {
-  costs: CostSettings;
-  electric: Rational;
-}
 
 @Component({
   selector: 'lab-cost-settings-dialog',
@@ -54,37 +44,23 @@ interface CostDraft {
 })
 export class CostSettingsDialog implements DialogData {
   protected readonly dialogRef = inject(DialogRef);
-  protected readonly ready = inject(WorkspaceLifecycle).ready;
   private readonly endfieldStore = inject(EndfieldStore);
   private readonly settingsStore = inject(SettingsStore);
 
   private readonly committedCosts = computed(
     () => this.settingsStore.state().costs,
   );
-  private readonly committedElectric = computed(
-    () => this.endfieldStore.state().electric,
-    { equal: (a, b) => a.eq(b) },
-  );
-  private readonly draft = linkedSignal<
-    CostDraft & { ready: boolean },
-    CostDraft
-  >({
-    source: () => ({
-      costs: this.committedCosts(),
-      electric: this.committedElectric(),
-      ready: this.ready(),
-    }),
-    computation: ({ costs, electric, ready }, previous) =>
-      !ready && previous ? previous.value : { costs, electric },
-  });
+  private readonly draft = linkedSignal(() => ({
+    costs: this.committedCosts(),
+    electric: this.endfieldStore.electric(),
+  }));
   protected readonly editValue = computed(() => this.draft().costs);
   protected readonly editElectric = computed(() => this.draft().electric);
   protected readonly modified = computed(() => {
     const edit = this.editValue();
     const init = initialSettingsState.costs;
-    const keys = Object.keys(init) as CostKey[];
     return (
-      keys.some((k) => !init[k].eq(edit[k])) ||
+      costKeys.some((k) => !init[k].eq(edit[k])) ||
       !rational.one.eq(this.editElectric())
     );
   });
@@ -110,7 +86,6 @@ export class CostSettingsDialog implements DialogData {
   }
 
   reset(): void {
-    if (!this.ready()) return;
     this.draft.set({
       costs: initialSettingsState.costs,
       electric: rational.one,
@@ -118,7 +93,6 @@ export class CostSettingsDialog implements DialogData {
   }
 
   save(): void {
-    if (!this.ready()) return;
     const { costs, electric } = this.draft();
     this.settingsStore.apply({ costs });
     this.endfieldStore.set({ ...this.endfieldStore.state(), electric });

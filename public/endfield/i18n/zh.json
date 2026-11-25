@@ -23,21 +23,45 @@
     }
   },
   "endfield": {
+    "activities": {
+      "title": "活动配方日程",
+      "upcoming": "尚未开放",
+      "open": "开放中",
+      "ended": "已结束",
+      "schedule": "加载时的状态",
+      "period": "活动时段",
+      "mode": "计算方式",
+      "auto": "自动（加载时判断）",
+      "disabled": "禁用",
+      "stage": "阶段"
+    },
     "resources": {
       "title": "资源配置",
       "presetTundra": "谷地预设",
-      "presetJinlong": "武陵 1.5 预设",
+      "presetJinlong": "武陵预设",
       "clear": "清空资源配置",
       "enableResources": "启用原料限制",
+      "resourceNote": "正值表示按设定量持续采集，未消耗的部分计入盈余。",
       "enableMachines": "启用机器数量限制",
       "enableTransfer": "启用跨地区传输",
       "transferSource": "传输来源",
       "tundra": "谷地",
-      "transferSelf": "请选择其他地区后再启用来自谷地的传输。",
+      "transferSelf": "请选择适用于当前地区的传输来源。",
       "disableWater": "禁用净水节点",
       "source": "资源供给",
       "perMinute": "个/分钟",
-      "machines": "台"
+      "machines": "台",
+      "regions": "地区与据点",
+      "regionsUnavailable": "地区数据暂不可用。",
+      "mineSummary": "满级矿物采集",
+      "regionLevel": "地区等级",
+      "settlementLevel": "据点等级",
+      "storage": "调度券储量上限",
+      "baseSpeed": "基础生成速度",
+      "couponSpeed": "当前生成速率",
+      "towerDefenseBonus": "塔防生成速度加成",
+      "operatorBonus": "干员生成速度加成",
+      "activityBonus": "活动生成速度加成"
     },
     "electric": {
       "title": "电力成本权重",
@@ -45,16 +69,6 @@
     },
     "picker": {
       "showNames": "显示名称"
-    },
-    "recovery": {
-      "preferences": "无法恢复偏好，已使用默认值；原始数据已保留，自动保存已暂停。请先导出原文，再重置偏好。",
-      "resetPreferences": "无法加载原始偏好，请先导出原文。选择“是”将重置偏好并替换原文，仅保留当前内存中可用的方案，无法保留未能加载的存档。选择“否”将清除此浏览器的全部保存数据并重新加载。",
-      "downloadPreferences": "导出原始偏好",
-      "loading": "正在恢复方案，完成前无法编辑。",
-      "failed": "方案未能完整恢复，原始网址已保留；可重置或打开新方案。",
-      "original": "原始网址（可选中复制）",
-      "downloadUrl": "导出原始网址",
-      "newPlan": "打开新方案"
     },
     "guide": {
       "title": "温馨提示与操作指南",

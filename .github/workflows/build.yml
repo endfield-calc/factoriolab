@@ -41,6 +41,14 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
+      - name: Use the package manager cache if available
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
@@ -56,11 +64,8 @@ jobs:
       - name: Run delivery tests
         run: npm run test:delivery
 
-      - name: Run build
-        run: npm run build
-
-      - name: Prepare and verify both sites
-        run: npm run package:sites
+      - name: Build and verify both sites
+        run: npm run build:sites
 
       - id: pages
         uses: actions/upload-artifact@v4
@@ -81,6 +86,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.should_deploy_to_gh_pages == true
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - uses: actions/download-artifact@v4
         with:
           name: endfield-pages

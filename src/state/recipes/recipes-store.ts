@@ -1,5 +1,7 @@
 import { computed, inject, Service } from '@angular/core';
 
+import { addEndfieldTransferRecipes } from '~/endfield/domain/transfer';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { Rational, rational } from '~/rational/rational';
 import { spread } from '~/utils/object';
 
@@ -20,6 +22,7 @@ export class RecipesStore extends RecordStore<RecipeState> {
   private readonly itemsStore = inject(ItemsStore);
   private readonly machinesStore = inject(MachinesStore);
   private readonly settingsStore = inject(SettingsStore);
+  private readonly endfieldStore = inject(EndfieldStore);
 
   readonly settings = computed(() =>
     this.computeRecipesSettings(
@@ -30,19 +33,30 @@ export class RecipesStore extends RecordStore<RecipeState> {
     ),
   );
 
-  readonly adjustedDataset = computed(() => {
+  private readonly adjusted = computed(() => {
     const recipesState = this.settings();
     const itemsState = this.itemsStore.settings();
     const settings = this.settingsStore.settings();
     const data = this.settingsStore.dataset();
 
-    return this.adjustment.adjustDataset(
+    const adjusted = this.adjustment.adjustDataset(
       recipesState,
       itemsState,
       settings,
       data,
     );
+    return data.modId === 'aef'
+      ? addEndfieldTransferRecipes(
+          adjusted,
+          settings,
+          this.endfieldStore.state(),
+          this.settingsStore.transferData(),
+        )
+      : { data: adjusted, recipeIds: new Set<string>() };
   });
+
+  readonly adjustedDataset = computed(() => this.adjusted().data);
+  readonly transferRecipeIds = computed(() => this.adjusted().recipeIds);
 
   readonly inserterSpeed = computed(() => {
     const data = this.adjustedDataset();

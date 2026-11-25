@@ -73,9 +73,9 @@ export function compileEndfieldRules(
   );
   for (const variable of transfer) addInteger(variable.ref);
   constraints.push({
-    id: 'ef:transfer:tundra',
+    id: `ef:transfer:${state.transferSource}`,
     terms: terms(transfer),
-    upper: state.transfer.enabled ? rational.one : rational.zero,
+    upper: state.transferEnabled ? rational.one : rational.zero,
   });
 
   const water = variables.filter(

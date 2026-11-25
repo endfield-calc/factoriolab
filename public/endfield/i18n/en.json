@@ -23,21 +23,45 @@
     }
   },
   "endfield": {
+    "activities": {
+      "title": "Event recipes",
+      "upcoming": "Upcoming",
+      "open": "Open",
+      "ended": "Ended",
+      "schedule": "Status when loaded",
+      "period": "Event period",
+      "mode": "Calculation mode",
+      "auto": "Automatic (on load)",
+      "disabled": "Disabled",
+      "stage": "Stage"
+    },
     "resources": {
       "title": "Resource configuration",
       "presetTundra": "Valley preset",
-      "presetJinlong": "Wuling 1.5 preset",
+      "presetJinlong": "Wuling preset",
       "clear": "Clear resources",
       "enableResources": "Enable resource limits",
+      "resourceNote": "Positive values set continuous full extraction; unused output becomes surplus.",
       "enableMachines": "Enable machine limit",
       "enableTransfer": "Enable cross-region transfer",
       "transferSource": "Transfer source",
       "tundra": "Valley",
-      "transferSelf": "Select another region before enabling transfer from the Valley.",
+      "transferSelf": "Choose an available transfer source for the selected regions.",
       "disableWater": "Disable water purification nodes",
       "source": "Resource supply",
       "perMinute": "items/min",
-      "machines": "machines"
+      "machines": "machines",
+      "regions": "Regions and settlements",
+      "regionsUnavailable": "Region data is currently unavailable.",
+      "mineSummary": "Maximum-level mineral extraction",
+      "regionLevel": "Region level",
+      "settlementLevel": "Settlement level",
+      "storage": "Maximum stored coupons",
+      "baseSpeed": "Base generation speed",
+      "couponSpeed": "Current generation rate",
+      "towerDefenseBonus": "Defense generation speed bonus",
+      "operatorBonus": "Operator generation speed bonus",
+      "activityBonus": "Event generation speed bonus"
     },
     "electric": {
       "title": "Power cost weight",
@@ -45,16 +69,6 @@
     },
     "picker": {
       "showNames": "Show names"
-    },
-    "recovery": {
-      "preferences": "Preferences could not be restored; defaults are in use. The original data is kept and automatic saving is paused. Export it before resetting preferences.",
-      "resetPreferences": "The original preferences could not be loaded. Export them before continuing. Yes replaces the original with reset preferences and keeps only plans currently available in memory; unloaded archives cannot be kept. No removes all saved data in this browser and reloads the page.",
-      "downloadPreferences": "Export original preferences",
-      "loading": "Restoring the workspace. Editing is unavailable until restoration finishes.",
-      "failed": "The workspace could not be fully restored. The original URL was kept; reset it or open a new plan.",
-      "original": "Original URL (select and copy)",
-      "downloadUrl": "Export original URL",
-      "newPlan": "Open a new plan"
     },
     "guide": {
       "title": "Tips and guide",

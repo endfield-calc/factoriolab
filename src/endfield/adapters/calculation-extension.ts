@@ -61,29 +61,21 @@ export class EndfieldAdjustment extends Adjustment {
   }
 }
 
-const transferKey = 'domain_key_tundra';
-const hourlyTransfer = rational(1, 3600);
-
-/** Identify transfers from their original input, before recipe adjustment. */
-export function tundraTransferRecipeIds(
-  recipes: Readonly<Record<string, Pick<Recipe, 'id' | 'in'>>>,
-): ReadonlySet<string> {
-  return new Set(
-    Object.values(recipes)
-      .filter((recipe) => recipe.in[transferKey]?.gt(rational.zero))
-      .map((recipe) => recipe.id),
-  );
-}
+export const endfieldAdjustmentProvider = {
+  provide: Adjustment,
+  useClass: EndfieldAdjustment,
+};
 
 /** Prepare native objectives while preserving source rates in physical units. */
 export function prepareEndfieldObjectives(
   state: EndfieldState,
   adjust: (objective: ObjectiveState) => ObjectiveSettings,
-  displayFactor: Rational,
+  _displayFactor: Rational,
 ): ObjectiveSettings[] {
   const result: ObjectiveSettings[] = [];
   if (state.resourceLimits.enabled) {
     for (const id of resourceIds) {
+      // The fixed output owns extraction; the zero limit closes the automatic recipe.
       const targetId = resourceRecipes[id];
       result.push(
         adjust({
@@ -113,26 +105,5 @@ export function prepareEndfieldObjectives(
     }
   }
 
-  if (state.transfer.enabled) {
-    result.push(
-      adjust({
-        id: 'ef:transfer:tundra:input',
-        targetId: transferKey,
-        value: hourlyTransfer.mul(displayFactor),
-        unit: ObjectiveUnit.Items,
-        type: ObjectiveType.Input,
-      }),
-    );
-  }
-  const transferLimit = state.transfer.enabled ? hourlyTransfer : rational.zero;
-  result.push(
-    adjust({
-      id: 'ef:transfer:tundra:limit',
-      targetId: transferKey,
-      value: transferLimit.mul(displayFactor),
-      unit: ObjectiveUnit.Items,
-      type: ObjectiveType.Limit,
-    }),
-  );
   return result;
 }

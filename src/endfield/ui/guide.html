@@ -56,4 +56,52 @@
       </div>
     </ng-template>
   </lab-accordion-item>
+  @if (activities().length) {
+    <lab-accordion-item text="endfield.activities.title">
+      <ng-template>
+        @for (event of activities(); track event.id) {
+          <section class="mb-3">
+            <h3 class="font-semibold">{{ event.name }}</h3>
+            <p>
+              {{ 'endfield.activities.schedule' | translate }}:
+              {{ 'endfield.activities.' + event.status | translate }}
+            </p>
+            <p>
+              {{ 'endfield.activities.period' | translate }}
+              {{ event.open }} – {{ event.close }}
+            </p>
+            <label class="mt-2 max-w-80 flex flex-col">
+              <span class="mx-1 text-sm text-gray-300">{{
+                'endfield.activities.mode' | translate
+              }}</span>
+              <select
+                #mode
+                class="input"
+                [attr.aria-label]="
+                  event.name + ' · ' + ('endfield.activities.mode' | translate)
+                "
+                (change)="setActivityMode(event.id, mode.value)"
+              >
+                <option value="auto" [selected]="event.mode === 'auto'">
+                  {{ 'endfield.activities.auto' | translate }}
+                </option>
+                @for (stage of event.stages; track stage.start) {
+                  <option
+                    [value]="stage.start"
+                    [selected]="event.mode === stage.start"
+                  >
+                    {{ 'endfield.activities.stage' | translate }}
+                    {{ stage.number }} · {{ stage.date }}
+                  </option>
+                }
+                <option value="disabled" [selected]="event.mode === 'disabled'">
+                  {{ 'endfield.activities.disabled' | translate }}
+                </option>
+              </select>
+            </label>
+          </section>
+        }
+      </ng-template>
+    </lab-accordion-item>
+  }
 </lab-accordion>

@@ -43,16 +43,4 @@ describe('Error', () => {
       });
     });
   });
-
-  describe('deleteCustom', () => {
-    it('should wait for navigation and reload', async () => {
-      spyOn(component['router'], 'navigate').and.returnValue(
-        Promise.resolve(true),
-      );
-      spyOn(component['windowClient'], 'reload');
-      await component.deleteCustom();
-      expect(component['router'].navigate).toHaveBeenCalled();
-      expect(component['windowClient'].reload).toHaveBeenCalled();
-    });
-  });
 });

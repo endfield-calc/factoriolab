@@ -22,33 +22,21 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
-                "glob": "**/*",
-                "input": "public",
-                "ignore": [
-                  "**/defaults.json",
-                  "data/**",
-                  "endfield/i18n/**",
-                  "endfield/icons/**",
-                  "endfield/favicon.ico",
-                  "endfield/manifest.webmanifest",
-                  "i18n/**",
-                  "icons/*.png",
-                  "favicon.ico",
-                  "manifest.webmanifest"
-                ]
+                "glob": "logo.webp",
+                "input": "public/endfield",
+                "output": "endfield"
               },
               {
-                "glob": "*.png",
-                "input": "public/endfield/icons",
+                "glob": "{release.json,*.png,safari-pinned-tab.svg}",
+                "input": "public"
+              },
+              {
+                "glob": "icons.webp",
+                "input": "public/icons",
                 "output": "icons"
               },
               {
-                "glob": "favicon.ico",
-                "input": "public/endfield",
-                "output": "/"
-              },
-              {
-                "glob": "manifest.webmanifest",
+                "glob": "{favicon.ico,manifest.webmanifest}",
                 "input": "public/endfield",
                 "output": "/"
               },
@@ -61,12 +49,7 @@
                 "glob": "**/*",
                 "input": "public/data/aef",
                 "output": "data/aef",
-                "ignore": ["defaults.json", "i18n/**"]
-              },
-              {
-                "glob": "*.json",
-                "input": ".tmp/endfield-assets/data/aef/i18n",
-                "output": "data/aef/i18n"
+                "ignore": ["defaults.json"]
               },
               {
                 "glob": "glpk.all.wasm",
@@ -78,8 +61,7 @@
               "@sideway/formula",
               "elkjs",
               "file-saver",
-              "glpk-ts",
-              "localforage"
+              "glpk-ts"
             ]
           },
           "configurations": {
@@ -132,6 +114,12 @@
           "builder": "@angular/build:karma",
           "options": {
             "tsConfig": "tsconfig.spec.json",
+            "exclude": [
+              "src/app/editor/**",
+              "src/app/main/settings/technologies-dialog/**",
+              "src/app/main/settings/versions-dialog/**",
+              "src/utils/local-forage-resource.spec.ts"
+            ],
             "karmaConfig": "karma.conf.js",
             "codeCoverage": true,
             "codeCoverageExclude": ["src/tests/**/*"],
@@ -139,22 +127,12 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": [
-                  "**/defaults.json",
-                  "data/aef/i18n/**",
-                  "endfield/i18n/**",
-                  "i18n/**"
-                ]
+                "ignore": ["**/defaults.json", "endfield/i18n/**", "i18n/**"]
               },
               {
                 "glob": "*.json",
                 "input": ".tmp/endfield-assets/i18n",
                 "output": "i18n"
-              },
-              {
-                "glob": "*.json",
-                "input": ".tmp/endfield-assets/data/aef/i18n",
-                "output": "data/aef/i18n"
               },
               {
                 "glob": "glpk.all.wasm",

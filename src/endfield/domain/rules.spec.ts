@@ -1,7 +1,3 @@
-import rawData from '/public/data/aef/data.json';
-import { ModData } from '~/data/schema/mod-data';
-import { parseRecipe } from '~/data/schema/recipe';
-import { tundraTransferRecipeIds } from '~/endfield/adapters/calculation-extension';
 import { Rational, rational } from '~/rational/rational';
 import type {
   CalculationVariable,
@@ -12,14 +8,7 @@ import type {
 import { createEndfieldState, EndfieldState, ovenId } from './model';
 import { compileEndfieldRules as compileRules } from './rules';
 
-const transferIds = tundraTransferRecipeIds(
-  Object.fromEntries(
-    (rawData as unknown as ModData).recipes.map((raw) => [
-      raw.id,
-      parseRecipe(raw),
-    ]),
-  ),
-);
+const transferIds = new Set(['transfer-a', 'transfer-b']);
 
 function compileEndfieldRules(
   state: EndfieldState,
@@ -116,15 +105,14 @@ describe('Endfield model rules', () => {
     ).toEqual(['real']);
   });
 
-  it('enforces every fixed transfer recipe as an integer with a shared enabled or disabled budget', () => {
-    expect(transferIds.has('transfer_tundra_carbon_enr')).toBeTrue();
+  it('enforces identified transfer recipes as integers with a shared enabled or disabled budget', () => {
     const variables = [...transferIds].map((id, index) =>
       variable(index % 2 ? 'objective' : 'recipe', `v${index}`, id),
     );
     variables.push(variable('recipe', 'unlisted', 'transfer_tundra_unlisted'));
     const initial = createEndfieldState();
     const enabled = compileEndfieldRules(
-      { ...initial, transfer: { enabled: true, source: 'tundra' } },
+      { ...initial, transferEnabled: true },
       variables,
     );
     const budget = rule(enabled, 'ef:transfer:tundra');

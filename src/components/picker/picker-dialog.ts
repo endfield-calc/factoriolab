@@ -86,8 +86,9 @@ export class PickerDialog implements AfterViewInit {
 
   protected readonly allSelected = computed(() => {
     const selection = this.selection();
-    if (selection.size === 0) return true;
-    if (selection.size === this.allIds.size) return false;
+    const excluded = Array.from(this.allIds).filter((id) => selection.has(id));
+    if (excluded.length === 0) return true;
+    if (excluded.length === this.allIds.size) return false;
     return undefined;
   });
 
@@ -232,8 +233,8 @@ export class PickerDialog implements AfterViewInit {
 
     if (selectedId != null) {
       const obj = data[this.recordKey][selectedId];
-      if (obj.category) this.selectedCategory.set(obj.category);
-      if (obj.quality) this.selectedQuality.set(obj.quality.id);
+      if (obj?.category) this.selectedCategory.set(obj.category);
+      if (obj?.quality) this.selectedQuality.set(obj.quality.id);
     }
 
     effect(() => (PickerDialog.lastCategory = this.selectedCategory()));
@@ -245,8 +246,14 @@ export class PickerDialog implements AfterViewInit {
   }
 
   selectAll(value: boolean): void {
-    if (value) this.selection.set(new Set());
-    else this.selection.set(new Set(this.allIds));
+    this.selection.update((selection) => {
+      const result = new Set(selection);
+      for (const id of this.allIds) {
+        if (value) result.delete(id);
+        else result.add(id);
+      }
+      return result;
+    });
   }
 
   selectAllRecycling(value: boolean): void {

@@ -3,14 +3,10 @@ import { By } from '@angular/platform-browser';
 
 import { CostSettingsDialog } from '~/app/main/settings/cost-settings-dialog/cost-settings-dialog';
 import { Button } from '~/components/button/button';
-import { provideEndfield } from '~/endfield/providers';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
-import { ItemId } from '~/tests/item-id';
-import { mockModI18n } from '~/tests/mocks/data';
 import { TestModule } from '~/tests/test-module';
 import { assert } from '~/tests/utils';
 
@@ -64,7 +60,6 @@ describe('CostSettingsDialog with Endfield defaults', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TestModule, CostSettingsDialog],
-      providers: provideEndfield(),
     }).compileComponents();
     settings = TestBed.inject(SettingsStore);
     endfield = TestBed.inject(EndfieldStore);
@@ -162,8 +157,11 @@ describe('CostSettingsDialog with Endfield defaults', () => {
     edit(surplus, '5');
     edit(electric, '3');
 
+    const equivalentElectric = rational(4, 2);
+    expect(equivalentElectric).not.toBe(endfield.state().electric);
     endfield.set({
       ...endfield.state(),
+      electric: equivalentElectric,
       resourceLimits: { ...endfield.state().resourceLimits, enabled: true },
     });
     fixture.detectChanges();
@@ -185,10 +183,6 @@ describe('CostSettingsDialog with Endfield defaults', () => {
     const preferences = TestBed.inject(PreferencesStore);
     preferences.apply({ language: 'zh' });
     expect(preferences.language()).toBe('zh');
-    settings['modI18nResource'].set(mockModI18n);
-    expect(settings.dataset().itemRecord[ItemId.IronOre].name).toBe(
-      mockModI18n.items[ItemId.IronOre],
-    );
     fixture.detectChanges();
     expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
     expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
@@ -221,101 +215,4 @@ describe('CostSettingsDialog with Endfield defaults', () => {
       ).toBeTrue();
     });
   }
-
-  it('preserves both drafts during recovery and refreshes both when it completes', () => {
-    const component = fixture.componentInstance;
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    component.apply('surplus', rational(5));
-    component.applyElectric(rational(3));
-    const ticket = lifecycle.begin('?restoring');
-    fixture.detectChanges();
-    settings.apply({
-      costs: { ...settings.state().costs, surplus: rational(8) },
-    });
-    endfield.set({ ...endfield.state(), electric: rational(2) });
-    fixture.detectChanges();
-    expect(component['editValue']().surplus.eq(rational(5))).toBeTrue();
-    expect(component['editElectric']()?.eq(rational(3))).toBeTrue();
-
-    lifecycle.complete(ticket);
-    fixture.detectChanges();
-    expect(component['editValue']().surplus.eq(rational(8))).toBeTrue();
-    expect(component['editElectric']()?.eq(rational(2))).toBeTrue();
-    click('cancel');
-    expect(settings.state().costs.surplus.eq(rational(8))).toBeTrue();
-    expect(endfield.state().electric.eq(rational(2))).toBeTrue();
-  });
-
-  it('refreshes both drafts when a recovery completes without changing either committed cost', () => {
-    const component = fixture.componentInstance;
-    component.apply('surplus', rational(5));
-    component.applyElectric(rational(3));
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    lifecycle.complete(lifecycle.begin('?restoring'));
-    expect(component['editValue']().surplus.eq(rational(4))).toBeTrue();
-    expect(component['editElectric']()?.eq(rational(2))).toBeTrue();
-  });
-
-  it('initializes from committed costs if opened while recovery is active', () => {
-    TestBed.inject(WorkspaceLifecycle).begin('?restoring');
-    const duringRecovery = TestBed.createComponent(CostSettingsDialog);
-    duringRecovery.detectChanges();
-    expect(
-      duringRecovery.componentInstance['editValue']().surplus.eq(rational(4)),
-    ).toBeTrue();
-    expect(
-      duringRecovery.componentInstance['editElectric']()?.eq(rational(2)),
-    ).toBeTrue();
-  });
-
-  it('blocks both Reset and OK while workspace recovery is active', async () => {
-    const component = fixture.componentInstance;
-    const close = spyOn(component['dialogRef'], 'close');
-    component.apply('surplus', rational(6));
-    component.applyElectric(rational(3));
-    TestBed.inject(WorkspaceLifecycle).begin('?recovering');
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    component.reset();
-    component.save();
-    expect(component['editValue']().surplus.eq(rational(6)))
-      .withContext('ordinary cost draft remains unchanged')
-      .toBeTrue();
-    expect(component['editElectric']()?.eq(rational(3)))
-      .withContext('power cost draft remains unchanged')
-      .toBeTrue();
-    expect(settings.settings().costs.surplus.eq(rational(4)))
-      .withContext('ordinary cost store remains unchanged')
-      .toBeTrue();
-    expect(endfield.state().electric.eq(rational(2)))
-      .withContext('power cost store remains unchanged')
-      .toBeTrue();
-    expect(close).not.toHaveBeenCalled();
-    expect(
-      (fixture.nativeElement as HTMLElement)
-        .querySelector('lab-form-field input')
-        ?.hasAttribute('disabled'),
-    )
-      .withContext('power cost input is disabled')
-      .toBeTrue();
-  });
-});
-
-describe('CostSettingsDialog native defaults', () => {
-  isolatePreferences();
-  it('compares native costs by rational value', async () => {
-    await TestBed.configureTestingModule({
-      imports: [TestModule, CostSettingsDialog],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(CostSettingsDialog);
-    fixture.detectChanges();
-    const component = fixture.componentInstance;
-    component.apply('unproduceable', rational(100000000));
-    expect(component['modified']()).toBeFalse();
-    component.apply('recycling', rational(1000));
-    expect(component['modified']()).toBeTrue();
-    component.apply('recycling', rational.one);
-    expect(component['modified']()).toBeFalse();
-  });
 });

@@ -39,7 +39,7 @@ export class Mocks {
   readonly flow = computed<FlowData>(() => {
     const data = this.settingsStore.dataset();
     const icon = data.iconRecord.item[data.itemIds[0]];
-    const qualityIcon = data.iconRecord.system['custom'];
+    const qualityIcon = data.iconRecord.system['q-any'];
     const recipeIcon = data.iconRecord.recipe[data.recipeIds[0]];
     const recipeQualityIcon = qualityIcon;
 
@@ -215,7 +215,7 @@ export class Mocks {
       mockModData,
       mockModHash,
       undefined,
-      'factorio',
+      'endfield',
     );
   }
 

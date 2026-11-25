@@ -25,6 +25,7 @@
     "package:sites": "node scripts/endfield/package-sites.mjs",
     "verify:sites": "node scripts/endfield/verify-sites.mjs",
     "test:delivery": "node --test scripts/endfield/data.spec.mjs scripts/endfield/prepare-i18n.spec.mjs scripts/endfield/build-sites.spec.mjs",
+    "import:endfield": "bun scripts/endfield/import-data.ts",
     "pretest": "node scripts/endfield/prepare-i18n.mjs --out .tmp/endfield-assets",
     "test": "ng test",
     "pretest:ci": "node scripts/endfield/prepare-i18n.mjs --out .tmp/endfield-assets",

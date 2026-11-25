@@ -20,11 +20,7 @@ import { SettingsStore } from '~/state/settings/settings-store';
 })
 export class TotalCell {
   readonly value = input.required<Record<string, TotalValue>>();
-  protected readonly settingsStore = inject(SettingsStore);
-
-  protected itemName(id: string): string {
-    return this.settingsStore.dataset().itemRecord[id]?.name ?? id;
-  }
+  protected readonly data = inject(SettingsStore).dataset;
 
   sortByValue(
     a: KeyValue<string, TotalValue>,

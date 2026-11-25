@@ -10,7 +10,6 @@ import {
   input,
   linkedSignal,
   model,
-  output,
   signal,
   viewChild,
   viewChildren,
@@ -120,8 +119,6 @@ export class Select<T = unknown> extends Control<T> {
 
   readonly controlId = input(`lab-select-${this.uniqueId}`);
   readonly value = model<T>();
-  /** A deliberate option choice, including reselecting the current value. */
-  readonly optionSelected = output<T>();
   readonly disabled = model(false);
   readonly labelledBy = input<string>();
   readonly options = input.required<Option<T>[]>();
@@ -220,7 +217,6 @@ export class Select<T = unknown> extends Control<T> {
     } else {
       this.toggle();
       this.setValue(value);
-      this.optionSelected.emit(value);
     }
   }
 

@@ -64,77 +64,19 @@
 }
 
 <lab-accordion [multi]="true">
-  <lab-accordion-item text="game" [note]="modId()">
+  <lab-accordion-item text="game">
     <ng-template>
-      <lab-form-field label="game">
-        <lab-select
-          [options]="gameOptions"
-          labTooltip="settings.gameTooltip"
-          labTooltipPosition="adjacent"
-          [ngModel]="data().game"
-          (ngModelChange)="routerSync.setGame($event, ['list'])"
-        ></lab-select>
-      </lab-form-field>
-
-      @if (data().flags.has('mods') && modId(); as modId) {
-        <lab-form-field label="modSet">
-          <a
-            action
-            class="link text-sm"
-            href="https://github.com/factoriolab/factoriolab/issues/new?assignees=&labels=mod+support&template=mod-request.md&title="
-            target="_blank"
-            >{{ 'settings.requestMod' | translate }}</a
-          >
-          <div class="flex">
-            <lab-select
-              [options]="settingsStore.modOptions()"
-              rounded="start"
-              labTooltip="modSetTooltip"
-              [ngModel]="modId"
-              (ngModelChange)="routerSync.setMod($event, ['list'])"
-            ></lab-select>
-            <button
-              type="button"
-              class="-ms-px"
-              labButton
-              rounded="end"
-              [faIcon]="faInfo"
-              labTooltip="settings.modVersions"
-              [attr.aria-label]="'settings.modVersions' | translate"
-              (click)="dialog.open(VersionsDialog)"
-            ></button>
-          </div>
-        </lab-form-field>
-      }
-
-      @if (modId() === CUSTOM_MOD) {
-        <button
-          type="button"
-          labButton
-          [faIcon]="faUpload"
-          text="customData.header"
-          (click)="dialog.open(CustomDataDialog)"
-        ></button>
-      }
-
-      @if (data().technologyIds.length) {
-        <button
-          type="button"
-          labButton
-          color="brand"
-          [faIcon]="faMicrochip"
-          [text]="
-            settings().researchedTechnologyIds.size ===
-            data().technologyIds.length
-              ? 'settings.allTechsResearched'
-              : 'settings.techsResearched'
-          "
-          [textParams]="{ count: settings().researchedTechnologyIds.size }"
-          labTooltip="settings.techsTooltip"
-          labTooltipPosition="adjacent"
-          (click)="openTechnologies()"
-        ></button>
-      }
+      <div class="gap-1 flex items-center">
+        <lab-icon
+          [value]="data().game"
+          type="system"
+          aria-hidden="true"
+        ></lab-icon>
+        <span class="text-lg grow">{{ data().info.label | translate }}</span>
+        @for (mod of data().version | keyvalue; track mod.key) {
+          <small class="text-sm text-gray-300">{{ mod.value }}</small>
+        }
+      </div>
 
       <button
         type="button"

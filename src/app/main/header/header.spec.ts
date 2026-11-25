@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import manifest from '/public/endfield/product.json';
-import { SettingsStore } from '~/state/settings/settings-store';
 import { TestModule } from '~/tests/test-module';
 import { setInputs } from '~/tests/utils';
 
@@ -46,25 +44,5 @@ describe('Header', () => {
       component.toggleSettings();
       expect(component.settingsOpen()).toBeFalse();
     });
-  });
-
-  describe('setGame', () => {
-    it('should map a game to its default mod id', () => {
-      spyOn(component['router'], 'navigate');
-      component.setGame('factorio');
-      expect(component['router'].navigate).toHaveBeenCalledWith(['spa']);
-    });
-  });
-  it('links to the product source and hides unavailable game and editor links', () => {
-    TestBed.inject(SettingsStore).apply({ modId: 'aef' });
-    fixture.detectChanges();
-    const html = fixture.nativeElement as HTMLElement;
-    expect(
-      html.querySelector(`a[href="${manifest.sourceUrl}"]`),
-    ).not.toBeNull();
-    expect(html.querySelector('a[href*="discord.gg"]')).toBeNull();
-    expect(html.querySelector('a[href*="ko-fi.com"]')).toBeNull();
-    expect(html.querySelector('a[href="/editor"]')).toBeNull();
-    expect(html.querySelector('lab-select')).toBeNull();
   });
 });

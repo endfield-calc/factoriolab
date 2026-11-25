@@ -6,6 +6,7 @@ import {
   CdkDropList,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import { KeyValuePipe } from '@angular/common';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -30,19 +31,15 @@ import {
   faFlaskVial,
   faGrip,
   faIndustry,
-  faInfo,
-  faMicrochip,
-  faUpload,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { cva } from 'class-variance-authority';
-import { filter, map } from 'rxjs';
+import { map } from 'rxjs';
 
 import { AccordionModule } from '~/components/accordion/accordion-module';
 import { BeaconsSelect } from '~/components/beacons-select/beacons-select';
 import { Button } from '~/components/button/button';
 import { Checkbox } from '~/components/checkbox/checkbox';
-import { CustomDataDialog } from '~/components/custom-data-dialog/custom-data-dialog';
 import { FormField } from '~/components/form-field/form-field';
 import { Icon } from '~/components/icon/icon';
 import { InputNumber } from '~/components/input-number/input-number';
@@ -51,7 +48,6 @@ import { Picker } from '~/components/picker/picker';
 import { RankSelect } from '~/components/rank-select/rank-select';
 import { Select } from '~/components/select/select';
 import { Tooltip } from '~/components/tooltip/tooltip';
-import { CUSTOM_MOD, gameOptions } from '~/data/game';
 import { FilterOptionsPipe } from '~/option/filter-options-pipe';
 import { OptionPipe } from '~/option/option-pipe';
 import { rational } from '~/rational/rational';
@@ -60,7 +56,6 @@ import { Hydration } from '~/state/hydration';
 import { MachinesStore } from '~/state/machines/machines-store';
 import { ModuleSettings } from '~/state/module-settings';
 import { PreferencesStore } from '~/state/preferences/preferences-store';
-import { RouterSync } from '~/state/router/router-sync';
 import { maximizeTypeOptions } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
 import { TranslatePipe } from '~/translate/translate-pipe';
@@ -69,8 +64,6 @@ import { WindowClient } from '~/utils/window-client';
 
 import { CostSettingsDialog } from './cost-settings-dialog/cost-settings-dialog';
 import { RecipeProductivityDialog } from './recipe-productivity-dialog/recipe-productivity-dialog';
-import { TechnologiesDialog } from './technologies-dialog/technologies-dialog';
-import { VersionsDialog } from './versions-dialog/versions-dialog';
 
 const host = cva(
   'top-0 left-0 w-xs fixed z-6 flex h-full scrollbar-thin flex-col overflow-y-auto border-r border-gray-600 bg-ground-950 transition-transform',
@@ -90,6 +83,7 @@ const host = cva(
     CdkDrag,
     CdkDragHandle,
     CdkDropList,
+    KeyValuePipe,
     FaIconComponent,
     AccordionModule,
     BeaconsSelect,
@@ -119,7 +113,6 @@ export class Settings {
   protected readonly machinesStore = inject(MachinesStore);
   protected readonly picker = inject(Picker);
   protected readonly preferencesStore = inject(PreferencesStore);
-  protected readonly routerSync = inject(RouterSync);
   protected readonly settingsStore = inject(SettingsStore);
   protected readonly windowClient = inject(WindowClient);
 
@@ -137,8 +130,6 @@ export class Settings {
   protected readonly addMachineValue = signal<string | null>(null);
 
   protected readonly CostSettingsDialog = CostSettingsDialog;
-  protected readonly CUSTOM_MOD = CUSTOM_MOD;
-  protected readonly CustomDataDialog = CustomDataDialog;
   protected readonly data = this.settingsStore.dataset;
   protected readonly faArrowTrendUp = faArrowTrendUp;
   protected readonly faArrowUpRightFromSquare = faArrowUpRightFromSquare;
@@ -150,37 +141,17 @@ export class Settings {
   protected readonly faFlaskVial = faFlaskVial;
   protected readonly faGrip = faGrip;
   protected readonly faIndustry = faIndustry;
-  protected readonly faInfo = faInfo;
-  protected readonly faMicrochip = faMicrochip;
-  protected readonly faUpload = faUpload;
   protected readonly faXmark = faXmark;
-  protected readonly gameOptions = gameOptions;
   protected readonly maximizeTypeOptions = maximizeTypeOptions;
-  protected readonly modId = this.settingsStore.modId;
   protected readonly options = this.settingsStore.options;
   protected readonly rational = rational;
   protected readonly settings = this.settingsStore.settings;
-  protected readonly VersionsDialog = VersionsDialog;
 
   setParams(params: string): void {
     const tree = this.router.parseUrl(this.router.url);
     const urlParams = new URLSearchParams(params);
     urlParams.forEach((value, key) => (tree.queryParams[key] = value));
     void this.router.navigateByUrl(tree);
-  }
-
-  openTechnologies(): void {
-    const ref = this.dialog.open<boolean, undefined, TechnologiesDialog>(
-      TechnologiesDialog,
-    );
-    ref.closed
-      .pipe(
-        filter((result) => result !== false),
-        map(() => ref.componentInstance?.selection()),
-      )
-      .subscribe((researchedTechnologyIds) => {
-        this.settingsStore.apply({ researchedTechnologyIds });
-      });
   }
 
   addMachine(machineId: string): void {

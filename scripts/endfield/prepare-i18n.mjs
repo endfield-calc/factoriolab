@@ -6,22 +6,6 @@ const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..',
 );
-// These are intentional product/feature overrides of upstream keys; every other
-// local translation must live under the endfield namespace.
-export const overridePaths = [
-  'app.name',
-  'app.updateAvailableMessage',
-  'app.updateRequiredMessage',
-  'landing.welcome',
-  'options.game.endfield',
-  'options.displayRate.perDay',
-  'options.displayRate.perDaySuffix',
-  'options.objectiveUnit.itemsPerDay',
-  'options.objectiveUnit.wagonsPerDay',
-  'options.objectiveUnit.rocketsPerDay',
-  'options.objectiveUnit.pollutionPerDay',
-];
-
 function merge(base, overlay) {
   const result = { ...base };
   for (const [key, value] of Object.entries(overlay)) {
@@ -58,65 +42,51 @@ async function removeStaleJson(directory, files) {
   }
 }
 
-/** Prepare UI dictionaries and all non-English game overlays for Angular. */
+/** Prepare the app's UI dictionaries for Angular. */
 export async function prepareAssets(output) {
   const upstream = path.join(root, 'public/i18n');
   const local = path.join(root, 'public/endfield/i18n');
-  const game = path.join(root, 'public/data/aef/i18n');
   const destination = path.resolve(output);
   if (
-    [upstream, local, game].some(
+    [upstream, local, path.join(root, 'public/data/aef/i18n')].some(
       (source) =>
         contains(source, destination) || contains(destination, source),
     )
   )
     throw new Error('Output must be separate from source dictionaries');
-  const english = await json(path.join(upstream, 'en.json'));
   const localEnglish = await json(path.join(local, 'en.json'));
-  const localChinese = await json(path.join(local, 'zh.json'));
-  const gameChinese = await json(path.join(game, 'zh.json'));
   const localLanguages = new Set(await readdir(local));
-  const gameLanguages = new Set(await readdir(game));
   const files = (await readdir(upstream))
     .filter((file) => file.endsWith('.json'))
     .sort();
   const uiDestination = path.join(destination, 'i18n');
-  const gameDestination = path.join(destination, 'data/aef/i18n');
-  const gameFiles = files.filter((file) => file !== 'en.json');
   await mkdir(uiDestination, { recursive: true });
-  await mkdir(gameDestination, { recursive: true });
   await removeStaleJson(uiDestination, files);
-  await removeStaleJson(gameDestination, gameFiles);
   for (const file of files) {
     const source = await json(path.join(upstream, file));
     const translation = localLanguages.has(file)
       ? await json(path.join(local, file))
       : {};
-    const fallback =
-      file !== 'en.json' && !gameLanguages.has(file)
-        ? {
-            options: { game: { endfield: localChinese.options.game.endfield } },
-          }
-        : {};
-    const result = merge(
-      merge(merge(merge(english, source), localEnglish), fallback),
-      translation,
-    );
+    // English supplies product terms until an overlay translates them.
+    const result = merge(merge(source, localEnglish), translation);
+    result.options.game = { endfield: result.options.game.endfield };
+    delete result.editor;
+    delete result.customData;
+    delete result.error.deleteCustom;
+    delete result.settings.modVersions;
+    delete result.settings.requestMod;
+    delete result.modSet;
+    delete result.modSetTooltip;
+    delete result.technologies.exportFromFactorio;
+    delete result.technologies.exportCopyScript;
+    delete result.technologies.exportScriptCopied;
+    delete result.technologies.exportUseMod;
     await writeFile(
       path.join(uiDestination, file),
       `${JSON.stringify(result, null, 2)}\n`,
     );
-    if (file !== 'en.json') {
-      const overlay = gameLanguages.has(file)
-        ? await json(path.join(game, file))
-        : gameChinese;
-      await writeFile(
-        path.join(gameDestination, file),
-        `${JSON.stringify(overlay, null, 2)}\n`,
-      );
-    }
   }
-  return { ui: files, game: gameFiles };
+  return files;
 }
 
 if (
@@ -132,7 +102,7 @@ if (
   } else {
     const files = await prepareAssets(path.resolve(process.argv[index + 1]));
     console.log(
-      `Prepared ${files.ui.length} UI dictionaries and ${files.game.length} game overlays in ${path.resolve(process.argv[index + 1])}`,
+      `Prepared ${files.length} UI dictionaries in ${path.resolve(process.argv[index + 1])}`,
     );
   }
 }

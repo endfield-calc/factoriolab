@@ -7,8 +7,6 @@ import {
 } from '@angular/service-worker';
 import { EMPTY, of, Subject } from 'rxjs';
 
-import { CustomDataDialog } from '~/components/custom-data-dialog/custom-data-dialog';
-import { CUSTOM_MOD } from '~/data/game';
 import { TestModule } from '~/tests/test-module';
 
 import { App } from './app';
@@ -58,13 +56,6 @@ describe('App', () => {
       swUpdate.versionUpdates.next({ type: 'VERSION_READY' } as any);
       expect(component['confirm'].open).toHaveBeenCalled();
       expect(component['windowClient'].reload).toHaveBeenCalled();
-    });
-
-    it('should open the custom data dialog if selected', () => {
-      spyOn(component['dialog'], 'open');
-      component['settingsStore'].apply({ modId: CUSTOM_MOD });
-      TestBed.tick();
-      expect(component['dialog'].open).toHaveBeenCalledWith(CustomDataDialog);
     });
   });
 });

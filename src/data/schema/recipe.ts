@@ -8,6 +8,8 @@ import { ModuleEffect } from './module';
 import { Quality } from './quality';
 
 export type RecipeFlag =
+  | 'activity'
+  | `activity-${string}`
   | 'mining'
   | 'technology'
   /** Factorio: quality seed grows a normal tree */

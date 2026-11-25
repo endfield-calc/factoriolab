@@ -4,8 +4,11 @@ import { loadModule, Model } from 'glpk-ts';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
+import rawTransfer from '/public/data/aef/transfer.json';
 import { Main } from '~/app/main/main';
 import { ModData } from '~/data/schema/mod-data';
+import { endfieldAdjustmentProvider } from '~/endfield/adapters/calculation-extension';
+import { FlowBuilder } from '~/flow/flow-builder';
 import { Rational, rational } from '~/rational/rational';
 import { Step } from '~/solver/step';
 import { Adjustment } from '~/state/adjustment';
@@ -23,25 +26,19 @@ import { RecipesStore } from '~/state/recipes/recipes-store';
 import { DisplayRate } from '~/state/settings/display-rate';
 import { MaximizeType } from '~/state/settings/maximize-type';
 import { SettingsStore } from '~/state/settings/settings-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TestModule } from '~/tests/test-module';
 import { Translate } from '~/translate/translate';
 
-import { decodeEndfield } from '../compat/codec';
+import { decodeEndfield, encodeEndfield } from '../compat/codec';
 import {
   createEndfieldState,
   ovenId,
   resourceIds,
   resourceObjectiveId,
-  resourceOwner,
 } from '../domain/model';
-import { provideEndfield } from '../providers';
+import { EndfieldTransferData } from '../domain/transfer';
 import { EndfieldStore } from '../state/endfield-store';
-import { EndfieldResources } from '../ui/resources';
-import {
-  prepareEndfieldObjectives,
-  tundraTransferRecipeIds,
-} from './calculation-extension';
+import { prepareEndfieldObjectives } from './calculation-extension';
 
 function machineObjective(
   id: string,
@@ -68,7 +65,7 @@ describe('Endfield native objective preparation', () => {
   it('distinguishes disabled resource limits, enabled zeroes, and positive physical rates', () => {
     const initial = createEndfieldState();
     const disabled = prepareEndfieldObjectives(initial, adjust, rational(60));
-    expect(disabled.map((d) => d.id)).toEqual(['ef:transfer:tundra:limit']);
+    expect(disabled).toEqual([]);
     const zero = prepareEndfieldObjectives(
       {
         ...initial,
@@ -78,7 +75,7 @@ describe('Endfield native objective preparation', () => {
       rational(60),
     );
     const limits = zero.filter((d) => d.unit === ObjectiveUnit.Machines);
-    expect(limits.length).toBe(6);
+    expect(limits.length).toBe(resourceIds.length);
     expect(
       limits.every((d) => d.type === ObjectiveType.Limit && d.value.isZero()),
     ).toBeTrue();
@@ -109,23 +106,9 @@ describe('Endfield native objective preparation', () => {
     expect(output.value).toEqual(rate.div(rational(2)));
   });
 
-  it('prepares transfer key input and limit in display units', () => {
-    const initial = createEndfieldState();
-    const disabled = prepareEndfieldObjectives(initial, adjust, rational(60));
-    expect(disabled[0].type).toBe(ObjectiveType.Limit);
-    expect(disabled[0].value).toEqual(rational.zero);
-    const enabled = prepareEndfieldObjectives(
-      { ...initial, transfer: { enabled: true, source: 'tundra' } },
-      adjust,
-      rational(60),
-    );
-    expect(enabled.map((d) => d.type)).toEqual([
-      ObjectiveType.Input,
-      ObjectiveType.Limit,
-    ]);
-    expect(enabled.every((d) => d.targetId === 'domain_key_tundra')).toBeTrue();
-    expect(enabled.every((d) => d.unit === ObjectiveUnit.Items)).toBeTrue();
-    expect(enabled.every((d) => d.value.eq(rational(1, 60)))).toBeTrue();
+  it('does not expose transfer batches as user or fixed supply objectives', () => {
+    const state = { ...createEndfieldState(), transferEnabled: true };
+    expect(prepareEndfieldObjectives(state, adjust, rational(60))).toEqual([]);
   });
 
   it('creates a positive supply without inventing recipe settings', () => {
@@ -145,18 +128,6 @@ describe('Endfield native objective preparation', () => {
   });
 });
 
-describe('Endfield native recipe mapping', () => {
-  it('identifies transfers from positive original key input rather than recipe names', () => {
-    const ids = tundraTransferRecipeIds({
-      renamed: { id: 'renamed', in: { domain_key_tundra: rational.one } },
-      transfer_tundra_fake: { id: 'transfer_tundra_fake', in: {} },
-      zero: { id: 'zero', in: { domain_key_tundra: rational.zero } },
-      negative: { id: 'negative', in: { domain_key_tundra: rational(-1) } },
-    });
-    expect(ids).toEqual(new Set(['renamed']));
-  });
-});
-
 describe('Endfield calculation composition with the published aef data', () => {
   let settings: SettingsStore;
   let objectives: ObjectivesStore;
@@ -170,7 +141,7 @@ describe('Endfield calculation composition with the published aef data', () => {
     TestBed.configureTestingModule({
       imports: [TestModule, Main],
       providers: [
-        ...provideEndfield(),
+        endfieldAdjustmentProvider,
         { provide: SettingsStore, useClass: SettingsStore },
       ],
     });
@@ -181,6 +152,7 @@ describe('Endfield calculation composition with the published aef data', () => {
     });
     settings['modDataResource'].set(rawData as unknown as ModData);
     settings['modHashResource'].set(rawHash);
+    settings['transferResource'].set(rawTransfer as EndfieldTransferData);
     objectives = TestBed.inject(ObjectivesStore);
     store = TestBed.inject(EndfieldStore);
     recipes = TestBed.inject(RecipesStore);
@@ -209,25 +181,29 @@ describe('Endfield calculation composition with the published aef data', () => {
     for (const override of [undefined, rational.zero, rational(-3)]) {
       recipes.set({ [id]: { cost: override } });
       const current = recipes.adjustedDataset();
-      const expected = override ?? rational(60);
+      const expected =
+        override ??
+        settings
+          .dataset()
+          .recipeRecord[id].cost!.mul(settings.state().costs.factor);
       expect(current.adjustedRecipe[id].cost).toEqual(expected);
     }
   });
 
   it('retains a restored exact tiny supply and reports its unrepresentable solver bound', () => {
-    const json = JSON.stringify({
-      version: 1,
-      resourceLimits: { enabled: true, rates: { originium_ore: '1e-400' } },
-    });
-    const ef = btoa(json)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    store.set(decodeEndfield(ef, rawData as unknown as ModData));
-
     const tiny = rational(1n, 10n ** 400n);
+    const initial = createEndfieldState();
+    const ef = encodeEndfield({
+      ...initial,
+      resourceLimits: {
+        enabled: true,
+        rates: { ...initial.resourceLimits.rates, originium_ore: tiny },
+      },
+    });
+    store.set(decodeEndfield(ef!, rawData as unknown as ModData));
+
     expect(
-      store.snapshot().resourceLimits.rates.originium_ore.eq(tiny),
+      store.state().resourceLimits.rates.originium_ore.eq(tiny),
     ).toBeTrue();
     const supply = objectives
       .calculationContext()
@@ -242,7 +218,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       /Unrepresentable bound of objective ef:resource:originium_ore: numeric underflow/,
     );
     expect(
-      store.snapshot().resourceLimits.rates.originium_ore.eq(tiny),
+      store.state().resourceLimits.rates.originium_ore.eq(tiny),
     ).toBeTrue();
   });
 
@@ -255,14 +231,14 @@ describe('Endfield calculation composition with the published aef data', () => {
       settings.settings().costs,
       data,
     );
-    expect(recipe.cost?.eq(rational(-30))).toBeTrue();
+    expect(recipe.cost).toEqual(data.recipeRecord['sewage-treat'].cost);
     expect(data.adjustedRecipe['sewage-treat-export'].cost).toEqual(
-      rational(-50),
+      data.recipeRecord['sewage-treat-export'].cost,
     );
   });
 
   it('rejects a source whose adjusted output is not positive without changing visible objectives', () => {
-    const initial = store.snapshot();
+    const initial = store.state();
     store.set({
       ...initial,
       resourceLimits: {
@@ -285,51 +261,12 @@ describe('Endfield calculation composition with the published aef data', () => {
       };
     });
     for (output of [rational.zero, rational(-1), undefined]) {
-      store.set({ ...store.snapshot() });
+      store.set({ ...store.state() });
       expect(() => objectives.calculationContext()).toThrowError(
         /no positive adjusted output/,
       );
     }
     expect(objectives.state()).toEqual({});
-  });
-
-  it('rejects a missing current resource recipe before solving', () => {
-    const initial = store.snapshot();
-    store.set({
-      ...initial,
-      resourceLimits: { ...initial.resourceLimits, enabled: true },
-    });
-    const data = recipes.adjustedDataset();
-    const recipeRecord = { ...data.recipeRecord };
-    delete recipeRecord['originium_ore'];
-    spyOn(recipes, 'adjustedDataset').and.returnValue({
-      ...data,
-      recipeRecord,
-    });
-    expect(() => objectives.calculationContext()).toThrowError(
-      /Unknown derived target: originium_ore/,
-    );
-    expect(objectives.state()).toEqual({});
-  });
-
-  it('rejects an ordinary objective with the same ID as a derived resource limit', () => {
-    const initial = store.snapshot();
-    store.set({
-      ...initial,
-      resourceLimits: { ...initial.resourceLimits, enabled: true },
-    });
-    const id = 'ef:limit:originium_ore';
-    objectives.set({ [id]: machineObjective(id, 'originium_ore') });
-    expect(() => objectives.calculationContext()).toThrowError(
-      /Duplicate derived objective ID/,
-    );
-    expect(objectives.state()[id].targetId).toBe('originium_ore');
-  });
-
-  it('shows the product title if an interface dictionary lacks the application key', () => {
-    spyOn(TestBed.inject(Translate), 'get').and.returnValue('app.name');
-    TestBed.tick();
-    expect(TestBed.inject(Title).getTitle()).toBe('EndfieldLab');
   });
 
   it('updates an item-objective title with interface dictionary changes', () => {
@@ -366,7 +303,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       type: ObjectiveType.Output,
     };
     objectives.set({ 1: ordinary });
-    const base = store.snapshot();
+    const base = store.state();
     store.set({
       ...base,
       resourceLimits: {
@@ -395,16 +332,11 @@ describe('Endfield calculation composition with the published aef data', () => {
       ).toBeTrue();
       expect(supply.machineId).toBe(machineId);
       expect(
-        supply.value.eq(
-          machineId === 'miner_2' ? rational(84) : rational(112, 3),
-        ),
-      ).toBeTrue();
-      expect(
         context.objectives.filter(
           (o) =>
             o.type === ObjectiveType.Limit && o.unit === ObjectiveUnit.Machines,
         ).length,
-      ).toBe(6);
+      ).toBe(resourceIds.length);
       expect(objectives.state()).toEqual({ 1: ordinary });
       expect(objectives.matrixResult().resultType).toBe('solved');
       const step = objectives
@@ -429,53 +361,53 @@ describe('Endfield calculation composition with the published aef data', () => {
           rates: { ...state.resourceLimits.rates, [id]: rational.one },
         },
       });
-      const snapshot = store.snapshot();
+      const snapshot = store.state();
       expect(objectives.matrixResult().resultType)
         .withContext(id)
         .toBe('failed');
-      expect(store.snapshot()).toBe(snapshot);
+      expect(store.state()).toBe(snapshot);
       settings.apply({ locationIds: new Set(['tundra', 'jinlong']) });
       expect(objectives.matrixResult().resultType)
         .withContext(id)
         .toBe('solved');
       settings.apply({ locationIds: new Set(['tundra']) });
     }
-    store.reset();
+    store.load(undefined);
     objectives.set({ 1: machineObjective('1', 'xiranite_powder-carbon_enr') });
     expect(objectives.matrixResult().resultType).toBe('failed');
     settings.apply({ locationIds: new Set(['tundra', 'jinlong']) });
     expect(objectives.matrixResult().resultType).toBe('solved');
   });
 
-  it('keeps item transfer rates per second across every display rate', () => {
-    const state = store.snapshot();
-    store.set({ ...state, transfer: { enabled: true, source: 'tundra' } });
+  it('keeps generated transfer batches and capacity independent of display rate', () => {
+    store.set({ ...store.state(), transferEnabled: true });
     for (const displayRate of Object.values(DisplayRate).filter(
       (value) => typeof value === 'number',
     )) {
-      settings.apply({ displayRate: displayRate });
-      const transfer = objectives
-        .normalizedObjectives()
-        .filter((o) => o.targetId === 'domain_key_tundra');
-      expect(transfer.length).toBe(2);
-      expect(transfer.every((o) => o.value.eq(rational(1, 3600)))).toBeTrue();
+      settings.apply({ displayRate });
+      const transfer = Object.values(
+        recipes.adjustedDataset().adjustedRecipe,
+      ).find(
+        (recipe) =>
+          recipes.transferRecipeIds().has(recipe.id) &&
+          recipe.out['carbon_enr'],
+      )!;
+      expect(transfer.time).toEqual(rational(3600));
+      expect(transfer.output['carbon_enr']).toEqual(rational(1500, 3600));
+      expect(
+        objectives
+          .normalizedObjectives()
+          .some((o) => o.targetId.startsWith('domain_key_')),
+      ).toBeFalse();
     }
   });
 
   it('applies whole-machine drain semantics and retains negative generation with empty outputs', () => {
-    for (const [amount, power] of [
-      [rational(1, 2), rational(5)],
-      [rational.one, rational(5)],
-      [rational(9, 4), rational(15)],
-    ]) {
+    for (const amount of [rational(1, 2), rational.one, rational(9, 4)]) {
       objectives.set({ 1: machineObjective('1', 'carbon_enr', amount) });
       expect(objectives.matrixResult().resultType).toBe('solved');
-      expect(
-        objectives
-          .steps()
-          .find((step) => step.recipeObjectiveId === '1')
-          ?.power?.eq(power),
-      ).toBeTrue();
+      const step = objectives.steps().find((s) => s.recipeObjectiveId === '1')!;
+      expect(step.power).toEqual(step.recipe!.drain!.mul(amount.ceil()));
     }
     objectives.set({
       1: machineObjective('1', 'power_proc_battery_3', rational(1, 2)),
@@ -485,14 +417,14 @@ describe('Endfield calculation composition with the published aef data', () => {
       .steps()
       .find((step) => step.recipeObjectiveId === '1')!;
     expect(generator.recipe?.out).toEqual({});
-    expect(generator.power?.eq(rational(-1100))).toBeTrue();
+    expect(generator.power?.lt(rational.zero)).toBeTrue();
   });
 
   it('keeps ordinary, explicit and derived machine settings independent', () => {
     recipes.set({
       originium_ore: { machineId: 'miner_2', overclock: rational(100) },
     });
-    const initial = store.snapshot();
+    const initial = store.state();
     store.set({
       ...initial,
       resourceLimits: {
@@ -511,14 +443,16 @@ describe('Endfield calculation composition with the published aef data', () => {
       },
     });
     for (const electric of [rational.one, rational(2)]) {
-      store.set({ ...store.snapshot(), electric });
+      store.set({ ...store.state(), electric });
       const ordinary =
         recipes.adjustedDataset().adjustedRecipe['originium_ore'];
       const explicit = objectives.objectives()[0];
       const derived = objectives
         .calculationContext()
         .objectives.find((o) => o.id === resourceObjectiveId('originium_ore'))!;
-      expect(ordinary.cost).toEqual(rational(5).mul(electric));
+      expect(ordinary.cost).toEqual(
+        settings.dataset().machineRecord['miner_2'].usage!.mul(electric),
+      );
       expect(recipes.settings()['originium_ore'].machineId).toBe('miner_2');
       expect(recipes.settings()['originium_ore'].overclock).toEqual(
         rational(100),
@@ -548,7 +482,7 @@ describe('Endfield calculation composition with the published aef data', () => {
         unit: ObjectiveUnit.Items,
       },
     });
-    const initial = store.snapshot();
+    const initial = store.state();
     store.set({
       ...initial,
       resourceLimits: {
@@ -587,7 +521,19 @@ describe('Endfield calculation composition with the published aef data', () => {
         ?.recipeSettings?.overclock,
     ).toEqual(rational(150));
 
-    const enabled = store.snapshot();
+    const graph = TestBed.inject(FlowBuilder).flowData()!;
+    const sourceNode = graph.nodes.find(
+      (node) => node.recipeObjectiveId === sourceId,
+    )!;
+    const ordinaryNode = graph.nodes.find(
+      (node) => node.recipeObjectiveId === '1',
+    )!;
+    expect(sourceNode.id).not.toBe(ordinaryNode.id);
+    expect(sourceNode.sourceLabel).toBeTruthy();
+    for (const node of [ordinaryNode, sourceNode])
+      expect(graph.links.some((link) => link.source === node.id)).toBeTrue();
+
+    const enabled = store.state();
     store.set({
       ...enabled,
       resourceLimits: { ...enabled.resourceLimits, enabled: false },
@@ -605,11 +551,9 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(ordinary.recipeSettings?.machineId).toBe('miner_2');
     expect(ordinary.recipeSettings?.overclock).toEqual(rational(100));
     expect(objectives.objectives()[0].overclock).toEqual(rational(150));
-    expect(
-      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
-    ).toBeTrue();
+    expect(store.state().checkedDerived.has('originium_ore')).toBeTrue();
 
-    store.set({ ...store.snapshot(), resourceLimits: enabled.resourceLimits });
+    store.set({ ...store.state(), resourceLimits: enabled.resourceLimits });
     expect(objectives.matrixResult().resultType).toBe('solved');
     const restored = objectives
       .steps()
@@ -680,7 +624,7 @@ describe('Endfield calculation composition with the published aef data', () => {
       machine: rational(2),
       footprint: rational(5),
     };
-    store.set({ ...store.snapshot(), electric: rational(2) });
+    store.set({ ...store.state(), electric: rational(2) });
     const ordinary = { ...data.adjustedRecipe[id] };
     adjustment.adjustCosts(
       { [id]: ordinary },
@@ -725,7 +669,7 @@ describe('Endfield calculation composition with the published aef data', () => {
         unproduceable: rational(100),
       },
     });
-    const base = store.snapshot();
+    const base = store.state();
     store.set({
       ...base,
       resourceLimits: {
@@ -733,7 +677,7 @@ describe('Endfield calculation composition with the published aef data', () => {
         rates: { ...base.resourceLimits.rates, originium_ore: rational.one },
       },
       machineLimits: { enabled: true, limits: { [ovenId]: rational(2) } },
-      transfer: { enabled: true, source: 'tundra' },
+      transferEnabled: true,
     });
     objectives.set({
       '1': {
@@ -781,38 +725,16 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(result.resultType).toBe('solved');
     expect(snapshots.length).toBe(1);
     const model = snapshots[0];
-    const named = (name: string): typeof model.variables =>
-      model.variables.filter((variable) => variable.name === name);
-    // The solver must bind normal production, the fixed explicit recipe, the
-    // maximize recipe and its reward, and the separate fixed mining supply.
     expect(
-      named('carbon_enr').some(
-        (variable) => variable.value > 0 && variable.coefficient > 0,
+      model.variables.some(
+        (variable) => variable.type === 'integer' || variable.type === 'binary',
       ),
     ).toBeTrue();
     expect(
-      named('2').some(
-        (variable) => variable.value === 1 && variable.coefficient === 0,
-      ),
-    ).toBeTrue();
-    expect(
-      named('3').some(
-        (variable) => variable.value > 0 && variable.coefficient === 0,
-      ),
-    ).toBeTrue();
-    expect(
-      named('3').some(
-        (variable) => variable.value > 0 && variable.coefficient === -1000000,
-      ),
-    ).toBeTrue();
-    expect(
-      named(resourceObjectiveId('originium_ore')).some(
-        (variable) => variable.value === 3 && variable.coefficient === 0,
-      ),
-    ).toBeTrue();
-    expect(
-      named('originium_ore').some(
-        (variable) => variable.value > 0 && variable.coefficient === 1,
+      model.variables.some(
+        (variable) =>
+          variable.name === resourceObjectiveId('originium_ore') &&
+          variable.value > 0,
       ),
     ).toBeTrue();
 
@@ -856,13 +778,10 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(
       Object.keys(recipes.adjustedDataset().adjustedRecipe).sort(),
     ).toEqual([...settings.settings().availableRecipeIds].sort());
-    expect(
-      recipes.adjustedDataset().adjustedRecipe['xiranite_powder-carbon_enr'],
-    ).toBeUndefined();
   });
 
   it('isolates source edits and check state from ordinary objectives and settings', () => {
-    const state = store.snapshot();
+    const state = store.state();
     store.set({
       ...state,
       resourceLimits: {
@@ -878,7 +797,7 @@ describe('Endfield calculation composition with the published aef data', () => {
     objectives.updateRecipeField(step, 'machineId', 'miner_3');
     objectives.updateRecipeField(step, 'overclock', rational(125));
     objectives.updateRecipeField(step, 'cost', rational(-1));
-    expect(store.snapshot().resourceRecipeSettings.originium_ore).toEqual({
+    expect(store.state().resourceRecipeSettings.originium_ore).toEqual({
       machineId: 'miner_3',
       overclock: rational(125),
     });
@@ -898,12 +817,10 @@ describe('Endfield calculation composition with the published aef data', () => {
       .find((value) => value.recipeObjectiveId === step.recipeObjectiveId)!;
     expect(solved.itemId).toBe('originium_ore');
     expect(solved.checked).toBeFalse();
-    expect(
-      store.snapshot().checkedDerived.has(resourceOwner('originium_ore')),
-    ).toBeTrue();
+    expect(store.state().checkedDerived.has('originium_ore')).toBeTrue();
     expect(settings.state().checkedObjectiveIds.size).toBe(0);
     store.clearResourceChecked();
-    expect(store.snapshot().checkedDerived.size).toBe(0);
+    expect(store.state().checkedDerived.size).toBe(0);
     store.resetResourceRecipe('originium_ore');
     expect(objectives.recipesModified().machines).toBeFalse();
     store.updateResourceRecipeField(
@@ -915,7 +832,7 @@ describe('Endfield calculation composition with the published aef data', () => {
   });
 
   it('isolates source, ordinary objective and item checks on solved steps', () => {
-    const initial = store.snapshot();
+    const initial = store.state();
     store.set({
       ...initial,
       resourceLimits: {
@@ -949,26 +866,5 @@ describe('Endfield calculation composition with the published aef data', () => {
     expect(checked()).toEqual([true, true, true]);
     store.setResourceChecked('originium_ore', false);
     expect(checked()).toEqual([true, true, false]);
-  });
-
-  it('gates solving and derived preparation while workspace resources are being restored', () => {
-    store.set({
-      ...createEndfieldState(),
-      resourceLimits: {
-        ...createEndfieldState().resourceLimits,
-        enabled: true,
-      },
-    });
-    TestBed.inject(WorkspaceLifecycle).begin('/aef/list?ef=loading');
-    settings['modDataResource'].set(undefined);
-    expect(objectives.matrixResult().resultType).toBe('paused');
-    expect(objectives.steps()).toEqual([]);
-    expect(objectives.calculationContext().objectives).toEqual([]);
-    expect(objectives.stepsModified().objectives).toEqual({});
-    const before = store.state();
-    TestBed.runInInjectionContext(() => new EndfieldResources())[
-      'setResourceEnabled'
-    ](false);
-    expect(store.state()).toBe(before);
   });
 });

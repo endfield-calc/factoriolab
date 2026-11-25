@@ -12,6 +12,7 @@ import {
 import { cva } from 'class-variance-authority';
 
 import { IconType } from '~/data/icon-type';
+import { RecipesStore } from '~/state/recipes/recipes-store';
 import { SettingsStore } from '~/state/settings/settings-store';
 
 import { IsLightPipe } from './is-light-pipe';
@@ -39,6 +40,7 @@ const zoom = (fontSizePx / 16) * 100;
 })
 export class Icon {
   protected readonly settingsStore = inject(SettingsStore);
+  private readonly recipesStore = inject(RecipesStore);
 
   readonly value = input.required<string | IconDefinition>();
   readonly type = input<IconType>();
@@ -56,6 +58,11 @@ export class Icon {
     const type = this.type();
     if (typeof value !== 'string' || type === 'img') return undefined;
     const record = this.settingsStore.dataset().iconRecord;
+    if (type === 'recipe')
+      return (
+        record.recipe[value] ??
+        this.recipesStore.adjustedDataset().iconRecord.recipe[value]
+      );
     if (type) return record[type][value];
     return record.game[value] ?? record.system[value];
   });

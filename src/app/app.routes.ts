@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 
+import { DEFAULT_MOD } from '~/data/datasets';
+
 import { errorGuard } from './error/error';
-import { editorGuard, idGuard } from './id/id-guard';
+import { shortcutRoutes } from './id/id-guard';
 import { landingGuard } from './landing/landing-guard';
 
 export const routes: Routes = [
@@ -10,15 +12,15 @@ export const routes: Routes = [
     canActivate: [errorGuard],
     loadComponent: () => import('./error/error').then((c) => c.Error),
   },
+  ...shortcutRoutes,
   {
-    path: 'editor',
-    canActivate: [editorGuard],
-    loadComponent: () => import('./editor/editor').then((c) => c.Editor),
-    loadChildren: () => import('./editor/editor.routes').then((c) => c.routes),
+    path: '',
+    pathMatch: 'full',
+    canActivate: [landingGuard],
+    children: [],
   },
   {
-    path: ':id',
-    canActivate: [idGuard],
+    path: DEFAULT_MOD,
     loadComponent: () => import('./id/id').then((c) => c.Id),
     children: [
       {
@@ -36,7 +38,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    canActivate: [landingGuard],
-    children: [],
+    redirectTo: `/${DEFAULT_MOD}`,
   },
 ];

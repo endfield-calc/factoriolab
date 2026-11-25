@@ -1,7 +1,7 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { NgModule } from '@angular/core';
+import { computed, NgModule } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { Release } from '~/data/release';
@@ -10,7 +10,13 @@ import { SettingsStore } from '~/state/settings/settings-store';
 import { Translate } from '~/translate/translate';
 import { WindowClient } from '~/utils/window-client';
 
-import { mockLangData, mockModData, mockModHash } from './mocks/data';
+import {
+  mockLangData,
+  mockModData,
+  mockModHash,
+  mockModId,
+  mockModInfo,
+} from './mocks/data';
 
 @NgModule({
   providers: [
@@ -30,7 +36,13 @@ import { mockLangData, mockModData, mockModHash } from './mocks/data';
       provide: SettingsStore,
       useFactory: (): SettingsStore => {
         const settingsStore = new SettingsStore();
-        settingsStore.apply({ modId: '2.0', preset: 8 });
+        const modInfo = settingsStore.modInfo;
+        Object.defineProperty(settingsStore, 'modInfo', {
+          value: computed(() =>
+            settingsStore.modId() === mockModId ? mockModInfo : modInfo(),
+          ),
+        });
+        settingsStore.apply({ modId: mockModId, preset: 8 });
         settingsStore['modDataResource'].set(mockModData);
         settingsStore['modHashResource'].set(mockModHash);
         return settingsStore;

@@ -1,0 +1,685 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "domainId": "domain_1",
+      "locationId": "tundra",
+      "capacity": 1500
+    }
+  ],
+  "items": [
+    {
+      "itemId": "bottled_food_1",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_food_2",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_food_3",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_food_4",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_food_5",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_rec_hp_1",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_rec_hp_2",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_rec_hp_3",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_rec_hp_4",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "bottled_rec_hp_5",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "carbon_enr",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "carbon_enr_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "carbon_mtl",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "carbon_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_bottle",
+      "value": 5,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_cmpt",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_enr",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_enr_bottle",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_enr_cmpt",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_enr2",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_enr2_cmpt",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_jar",
+      "value": 5,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_nugget",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_ore",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_powder",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "crystal_enr",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "crystal_enr_powder",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "crystal_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "crystal_shell",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2",
+        "domain_3"
+      ]
+    },
+    {
+      "itemId": "equip_script_1",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_2",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_3",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_4",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_4_1",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_4_2",
+      "value": 500,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "equip_script_4_3",
+      "value": 500,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "filter_core",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "glass_bottle",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "glass_cmpt",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "glass_enr_bottle",
+      "value": 5,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "glass_enr_cmpt",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_bottle",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_cmpt",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_enr",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_enr_bottle",
+      "value": 5,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_enr_cmpt",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_enr_powder",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_nugget",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_ore",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "iron_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "originium_enr_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "originium_ore",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2",
+        "domain_3"
+      ]
+    },
+    {
+      "itemId": "originium_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_bbflower_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_bbflower_powder_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_bbflower_seed_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_powder_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_powder_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_seed_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_grass_seed_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_3",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_enr_powder_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_enr_powder_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_powder_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_powder_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_powder_3",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_seed_1",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_seed_2",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "plant_moss_seed_3",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_battery_1",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_battery_2",
+      "value": 20,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_battery_3",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_battery_4",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_battery_5",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "proc_bomb_1",
+      "value": 5,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "quartz_enr",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "quartz_enr_powder",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "quartz_glass",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "quartz_powder",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "quartz_sand",
+      "value": 1,
+      "sourceDomainIds": [
+        "domain_1",
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "xiranite_enr_powder",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "xiranite_poly",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "xiranite_powder",
+      "value": 2,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    }
+  ]
+}

@@ -131,16 +131,13 @@ export class Steps {
   protected readonly faTableColumns = faTableColumns;
   protected readonly items = this.itemsStore.settings;
   protected readonly rational = rational;
+  protected readonly resourceFromObjectiveId = resourceFromObjectiveId;
+  protected readonly isEndfieldTransferRecipe = (id: string): boolean =>
+    this.recipesStore.transferRecipeIds().has(id);
   protected readonly settings = this.settingsStore.settings;
   protected readonly totals = this.objectivesStore.totals;
 
   protected readonly expandedSteps = signal<Set<string>>(new Set());
-  protected sourceLabel(step: Step): string | undefined {
-    return resourceFromObjectiveId(step.recipeObjectiveId) == null
-      ? undefined
-      : 'endfield.resources.source';
-  }
-
   protected readonly steps = computed(() => {
     const steps = this.objectivesStore.steps();
     if (!this.focus()) return steps;
@@ -272,7 +269,10 @@ export class Steps {
         settings.checkedObjectiveIds,
       );
       this.settingsStore.apply({ checkedObjectiveIds });
-    } else if (step.recipeId != null) {
+    } else if (
+      step.recipeId != null &&
+      !this.isEndfieldTransferRecipe(step.recipeId)
+    ) {
       const checkedRecipeIds = updateSetIds(
         step.recipeId,
         value,

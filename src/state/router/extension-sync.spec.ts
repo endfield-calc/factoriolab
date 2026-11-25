@@ -1,644 +1,252 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import {
-  ActivatedRoute,
-  ActivatedRouteSnapshot,
-  provideRouter,
-  Router,
-  UrlTree,
-} from '@angular/router';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { NavigationEnd, provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 
 import rawData from '/public/data/aef/data.json';
 import rawHash from '/public/data/aef/hash.json';
+import rawTransfer from '/public/data/aef/transfer.json';
+import { Id } from '~/app/id/id';
+import { shortcutRoutes } from '~/app/id/id-guard';
 import { ModData } from '~/data/schema/mod-data';
 import { encodeEndfield } from '~/endfield/compat/codec';
 import {
   createEndfieldState,
   resourceObjectiveId,
 } from '~/endfield/domain/model';
+import { EndfieldTransferData } from '~/endfield/domain/transfer';
 import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { rational } from '~/rational/rational';
-import { PreferencesStore } from '~/state/preferences/preferences-store';
-import { SettingsStore } from '~/state/settings/settings-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
-import { mockModData, mockModHash } from '~/tests/mocks/data';
+import { MockComponent } from '~/tests/mocks/component';
 import { TestModule } from '~/tests/test-module';
 
 import { ObjectiveType } from '../objectives/objective-type';
 import { ObjectiveUnit } from '../objectives/objective-unit';
 import { initialSettingsState } from '../settings/settings-state';
 import { initialTableState } from '../table/table-state';
-import { LabParams } from './lab-params';
 import { Params } from './params';
-import { RouterSync, ZipState } from './router-sync';
+import { RouterSync } from './router-sync';
 
-describe('RouterSync current Endfield restoration and writes', () => {
+const data = rawData as unknown as ModData;
+
+async function flush(): Promise<void> {
+  for (let i = 0; i < 15; i++) await Promise.resolve();
+}
+
+describe('RouterSync Endfield links', () => {
   let service: RouterSync;
-  let lifecycle: WorkspaceLifecycle;
   let endfield: EndfieldStore;
-  let route: { params: Subject<Params>; queryParams: Subject<Params> };
-  let navigate: jasmine.Spy;
-  let resources: BehaviorSubject<{
-    modId: string | undefined;
-    data: ModData | undefined;
-    hash: typeof rawHash | undefined;
-    loading: boolean;
-    error: unknown;
-  }>;
-  const data = rawData as unknown as ModData;
-  const encoded = (electric: number): string =>
-    encodeEndfield({ ...createEndfieldState(), electric: rational(electric) });
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [TestModule] });
-    const settings = TestBed.inject(SettingsStore);
-    settings.apply({ modId: 'aef' });
-    settings['modDataResource'].set(data);
-    settings['modHashResource'].set(rawHash);
-    endfield = TestBed.inject(EndfieldStore);
     service = TestBed.inject(RouterSync);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
-    resources = new BehaviorSubject<(typeof resources)['value']>({
-      modId: 'aef',
-      data,
-      hash: rawHash,
-      loading: false,
-      error: undefined,
-    });
-    (service as any).resources = resources;
-    const router = TestBed.inject(Router);
-    navigate = spyOn(router, 'navigate').and.resolveTo(true);
-    spyOnProperty(router, 'url').and.returnValue('/aef/list');
-    route = { params: new Subject(), queryParams: new Subject() };
-    service.route$.next(route as unknown as ActivatedRoute);
+    endfield = TestBed.inject(EndfieldStore);
+    service['settingsStore'].apply({ modId: 'aef' });
+    service['settingsStore']['modDataResource'].set(data);
+    service['settingsStore']['modHashResource'].set(rawHash);
+    service['settingsStore']['transferResource'].set(
+      rawTransfer as EndfieldTransferData,
+    );
   });
 
-  function open(query: Params): void {
-    route.params.next({ id: 'aef' });
-    route.queryParams.next(query);
-  }
-  function emptyZip(): ZipState {
-    return {
-      objectives: service.empty,
-      config: service.empty,
-      objectiveSettings: service.emptyMachineSettings,
-      recipeSettings: service.emptyMachineSettings,
-      machineSettings: service.emptyMachineSettings,
-    };
-  }
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 15; i++) await Promise.resolve();
+  async function restore(query: Params): Promise<void> {
+    const unpacked = await service.unzipQueryParams(query);
+    const migrated = service['migration'].migrate('aef', unpacked);
+    service.updateState(
+      migrated.modId,
+      migrated.params,
+      migrated.isBare,
+      data,
+      rawHash,
+    );
   }
 
-  it('encodes changes from the real EndfieldStore and caches the resulting URL', async () => {
+  it('round trips ordinary and compressed ef and resets it when absent', async () => {
+    const extension = {
+      ...createEndfieldState(),
+      electric: rational(3),
+      checkedDerived: new Set(['originium_ore' as const]),
+    };
+    const zipped = service.zipState({
+      objectives: {},
+      items: {},
+      recipes: {},
+      machines: {},
+      settings: { ...initialSettingsState, modId: 'aef' },
+      table: initialTableState,
+      data: service['settingsStore'].dataset(),
+      hash: rawHash,
+      endfield: extension,
+    });
+    expect(zipped.config.bare.ef).toBe(encodeEndfield(extension));
+    expect(zipped.config.hash.ef).toBe(zipped.config.bare.ef);
+    const compressed = await service.getHashParams({
+      ...zipped.config.hash,
+      v: '12',
+    });
+    for (const query of [{ ...zipped.config.bare, v: '12' }, compressed]) {
+      endfield.load(undefined);
+      await restore(query as Params);
+      expect(endfield.state()).toEqual(extension);
+    }
+    await restore({ v: '12' });
+    expect(endfield.state()).toEqual(createEndfieldState());
+    const defaults = service.zipState({
+      objectives: {},
+      items: {},
+      recipes: {},
+      machines: {},
+      settings: { ...initialSettingsState, modId: 'aef' },
+      table: initialTableState,
+      data: service['settingsStore'].dataset(),
+      hash: rawHash,
+      endfield: createEndfieldState(),
+    });
+    expect(defaults.config.bare.ef).toBeUndefined();
+    expect(defaults.config.hash.ef).toBeUndefined();
+  });
+
+  for (const swapped of [false, true]) {
+    it(`preserves both link formats when hidden IDs are ${swapped ? 'checked' : 'excluded'}`, async () => {
+      const settingsStore = service['settingsStore'];
+      const activities = data.endfield!.activities;
+      settingsStore.setActivityMode(
+        'limited_formula_1',
+        activities['limited_formula_1'].openTime,
+      );
+      settingsStore.setActivityMode(
+        'limited_formula_2',
+        activities['limited_formula_2'].openTime,
+      );
+      const hiddenItems = new Set([
+        'pipe',
+        'iron_bottle-liquid_plant_grass_1',
+        'activity_xiranite_lung',
+      ]);
+      const acrossItems = new Set([
+        'settlement-tundra',
+        'activity_xiranite_cmpt',
+      ]);
+      const hiddenRecipes = new Set([
+        'carbon_enr',
+        'carbon_mtl-plant_moss_1',
+        'activity_xiranite_lung',
+      ]);
+      const acrossRecipes = new Set([
+        'jinlong_coupon-filter_core',
+        'jinlong_coupon-activity_xiranite_hulu',
+      ]);
+      const selections = {
+        excludedItemIds: swapped ? acrossItems : hiddenItems,
+        checkedItemIds: swapped ? hiddenItems : acrossItems,
+        excludedRecipeIds: swapped ? acrossRecipes : hiddenRecipes,
+        checkedRecipeIds: swapped ? hiddenRecipes : acrossRecipes,
+      };
+      settingsStore.apply(selections);
+      expect(settingsStore.dataset().itemIds).toContain(
+        'activity_xiranite_lung',
+      );
+      expect(settingsStore.dataset().recipeIds).toContain(
+        'activity_xiranite_lung',
+      );
+
+      settingsStore.setActivityMode('limited_formula_2', 'disabled');
+      const filtered = settingsStore.dataset();
+      expect(filtered.itemIds).not.toContain('activity_xiranite_lung');
+      expect(filtered.recipeIds).not.toContain('activity_xiranite_lung');
+      expect(filtered.itemIds).toContain('settlement-tundra');
+      expect(filtered.itemIds).toContain('activity_xiranite_cmpt');
+      expect(filtered.recipeIds).toContain('jinlong_coupon-filter_core');
+      expect(filtered.recipeIds).toContain(
+        'jinlong_coupon-activity_xiranite_hulu',
+      );
+
+      const zipped = service.zipState({
+        objectives: {},
+        items: {},
+        recipes: {},
+        machines: {},
+        settings: settingsStore.state(),
+        table: initialTableState,
+        data: filtered,
+        hash: rawHash,
+        endfield: endfield.state(),
+      });
+      const compressed = await service.getHashParams({
+        ...zipped.config.hash,
+        v: '12',
+      });
+
+      for (const query of [{ ...zipped.config.bare, v: '12' }, compressed]) {
+        settingsStore.apply({
+          excludedItemIds: new Set(),
+          checkedItemIds: new Set(),
+          excludedRecipeIds: undefined,
+          checkedRecipeIds: new Set(),
+        });
+        endfield.load(undefined);
+        await restore(query as Params);
+        for (const key of Object.keys(
+          selections,
+        ) as (keyof typeof selections)[])
+          expect(settingsStore.state()[key])
+            .withContext(key)
+            .toEqual(selections[key]);
+        expect(settingsStore.activityModes()['limited_formula_2']).toBe(
+          'disabled',
+        );
+        expect(settingsStore.dataset().itemIds).not.toContain(
+          'activity_xiranite_lung',
+        );
+        expect(settingsStore.dataset().recipeIds).not.toContain(
+          'activity_xiranite_lung',
+        );
+
+        settingsStore.setActivityMode(
+          'limited_formula_2',
+          activities['limited_formula_2'].openTime,
+        );
+        expect(settingsStore.dataset().itemIds).toContain(
+          'activity_xiranite_lung',
+        );
+        expect(settingsStore.dataset().recipeIds).toContain(
+          'activity_xiranite_lung',
+        );
+        for (const key of Object.keys(
+          selections,
+        ) as (keyof typeof selections)[])
+          expect(settingsStore.state()[key])
+            .withContext(key)
+            .toEqual(selections[key]);
+      }
+    });
+  }
+
+  it('writes Endfield changes through the native URL sync and cache', async () => {
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url').and.returnValue('/aef/list');
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
     spyOn(service, 'getHash').and.callFake((value) =>
       Promise.resolve(value.config.bare),
     );
-    open({ v: '12', ef: encoded(2) });
-    await flush();
+    service['ready'].set(true);
     TestBed.tick();
     await flush();
     navigate.calls.reset();
-    endfield.set({ ...endfield.snapshot(), electric: rational(3) });
+    const state = { ...createEndfieldState(), electric: rational(3) };
+    endfield.set(state);
     TestBed.tick();
     await flush();
     expect(navigate).toHaveBeenCalledWith(
       [],
       jasmine.objectContaining({
-        queryParams: jasmine.objectContaining({ ef: encoded(3) }),
+        queryParams: jasmine.objectContaining({ ef: encodeEndfield(state) }),
       }),
     );
-    expect(service.stored()).toEqual('/aef/list');
+    expect(service.stored()).toBe('/aef/list');
   });
 
-  it('blocks URL writeback if a live objective is absent from the current hash', async () => {
-    spyOn(service, 'getHash').and.resolveTo({ v: '12' });
-    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
-    await flush();
-    TestBed.tick();
-    await flush();
-    service.stored.set('/aef/list?preserved=1');
-    navigate.calls.reset();
-    const objective = service['objectivesStore'].state()['1'];
-    service['objectivesStore'].set({
-      1: { ...objective, targetId: 'retired-item' },
-    });
-    TestBed.tick();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()[0]).toEqual(
-      'Invalid workspace index: retired-item',
-    );
-    expect(endfield.state().electric).toEqual(rational(2));
-    expect(service.stored()).toEqual('/aef/list?preserved=1');
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  for (const [failure, message] of [
-    ['compression unavailable', 'compression unavailable'],
-    [{}, 'Workspace restoration failed'],
-  ] as const) {
-    it(`preserves the URL when a resource stream fails: ${message}`, async () => {
-      open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
-      await flush();
-      TestBed.tick();
-      await flush();
-      service.stored.set('/aef/list?preserved=1');
-      navigate.calls.reset();
-      resources.next({
-        modId: 'aef',
-        data: undefined,
-        hash: undefined,
-        loading: true,
-        error: undefined,
-      });
-      route.queryParams.next({ v: '12', ef: encoded(3) });
-      await flush();
-      resources.error(failure);
-      await flush();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.errors()[0]).toEqual(message);
-      expect(service.stored()).toEqual('/aef/list?preserved=1');
-      expect(navigate).not.toHaveBeenCalled();
-    });
-  }
-
-  it('discards a candidate carrying an obsolete generation', () => {
-    const previous = service['objectivesStore'].state();
-    const stale = lifecycle.begin('/aef/list?old');
-    lifecycle.begin('/aef/list?new');
-    service.updateState(
-      'aef',
-      { v: '12', o: ['xiranite_powder*5'], ef: encoded(2) },
-      true,
-      data,
-      rawHash,
-      stale,
-    );
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(endfield.state().electric).toEqual(rational.one);
-  });
-
-  for (const [failure, message] of [
-    [new Error('rollback failed'), 'rollback failed'],
-    [{}, 'Failed to restore the previous workspace'],
-  ] as const) {
-    it(`reports a rollback failure: ${message}`, async () => {
-      open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
-      await flush();
-      const previous = service['objectivesStore'].state();
-      const set = spyOn(endfield, 'set').and.throwError(failure as Error);
-      route.queryParams.next({ v: '12', ef: 'bad' });
-      await flush();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.errors()[1]).toBe(message);
-      expect(service['objectivesStore'].state()).toBe(previous);
-      set.and.callThrough();
-      route.queryParams.next({ v: '12', ef: encoded(3) });
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(endfield.state().electric).toEqual(rational(3));
-    });
-  }
-
-  it('preserves the workspace on invalid ef, compression and indices, then recovers', async () => {
-    spyOn(service, 'getHash').and.resolveTo({ v: '12' });
-    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
-    await flush();
-    const previous = service['objectivesStore'].state();
-    const stored = service.stored();
-    navigate.calls.reset();
-    route.queryParams.next({ v: '12', ef: 'bad' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()[0]).toEqual('Invalid ef encoding');
-    expect(endfield.state().electric).toEqual(rational(2));
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(service.stored()).toEqual(stored);
-    expect(navigate).not.toHaveBeenCalled();
-    spyOn(service['compression'], 'inflate').and.rejectWith(new Error('bad z'));
-    spyOn(console, 'error');
-    route.queryParams.next({ v: '12', z: 'bad' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()[0]).toEqual('RouterService failed to parse url');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    route.queryParams.next({ v: '12', r: ['originium_ore**4'] });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(endfield.state().electric).toEqual(rational(2));
-    route.queryParams.next({ v: '12', ef: encoded(3) });
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(endfield.state().electric).toEqual(rational(3));
-  });
-
-  it('ignores a late inflate after a newer route restores real ef', async () => {
-    let finish!: (value: string) => void;
-    spyOn(service['compression'], 'inflate').and.returnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    open({ z: 'slow', v: '12' });
-    route.queryParams.next({ ef: encoded(3), v: '12' });
-    await flush();
-    expect(endfield.state().electric).toEqual(rational(3));
-    finish(`ef=${encoded(2)}&v=12`);
-    await flush();
-    expect(endfield.state().electric).toEqual(rational(3));
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('preserves the outer version while restoring from the current hash', async () => {
-    spyOn(service['compression'], 'inflate').and.resolveTo(
-      `v=11&o=A&ef=${encoded(2)}`,
-    );
-    const migrate = spyOn(service['migration'], 'migrate').and.callThrough();
-    open({ z: 'compressed', v: '12' });
-    await flush();
-    expect(migrate).toHaveBeenCalledWith(
-      'aef',
-      jasmine.objectContaining({ v: '12', z: 'compressed' }),
-    );
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].targetId).toEqual(
-      rawHash.items[0]!,
-    );
-    expect(endfield.state().electric).toEqual(rational(2));
-  });
-
-  it('ignores stale compression rejection while a later route is inflating', async () => {
-    service.stored.set('/aef/list?preserved=1');
-    open({ v: '12', ef: encoded(2), o: ['xiranite_powder*5'] });
-    await flush();
-    let rejectWrite!: (error: Error) => void;
-    spyOn(service, 'getHash').and.returnValue(
-      new Promise((_resolve, reject) => {
-        rejectWrite = reject;
-      }),
-    );
-    let finishInflate!: (value: string) => void;
-    spyOn(service['compression'], 'inflate').and.returnValue(
-      new Promise((resolve) => {
-        finishInflate = resolve;
-      }),
-    );
-    TestBed.tick();
-    await flush();
-    route.queryParams.next({ v: '12', z: 'slow' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    rejectWrite(new Error('obsolete write'));
-    await flush();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(service.stored()).toEqual('/aef/list?preserved=1');
-    expect(navigate).not.toHaveBeenCalled();
-    finishInflate(`v=12&ef=${encoded(3)}`);
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(endfield.state().electric).toEqual(rational(3));
-  });
-
-  it('publishes only the latest compression result', async () => {
-    open({ ef: encoded(2), v: '12' });
-    await flush();
-    let finishOld!: (value: LabParams) => void;
-    let finishNew!: (value: LabParams) => void;
-    spyOn(service, 'getHash').and.returnValues(
-      new Promise((resolve) => {
-        finishOld = resolve;
-      }),
-      new Promise((resolve) => {
-        finishNew = resolve;
-      }),
-    );
-    void service.updateUrl(emptyZip(), service['activeTicket']);
-    void service.updateUrl(emptyZip(), service['activeTicket']);
-    finishNew({ ef: encoded(3) });
-    await flush();
-    finishOld({ ef: encoded(2) });
-    await flush();
-    expect(navigate).toHaveBeenCalledTimes(1);
-    expect(navigate.calls.mostRecent().args[1].queryParams).toEqual({
-      ef: encoded(3),
-    });
-    expect(service.stored()).toEqual('/aef/list');
-  });
-
-  it('discards a pending write when a new external route fails', async () => {
-    open({ ef: encoded(2), v: '12' });
-    await flush();
-    const stored = service.stored();
-    let finish!: (value: LabParams) => void;
-    spyOn(service, 'getHash').and.returnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    void service.updateUrl(emptyZip(), service['activeTicket']);
-    route.queryParams.next({ ef: 'bad', v: '12' });
-    await flush();
-    finish({ v: '12' });
-    await flush();
-    expect(navigate).not.toHaveBeenCalled();
-    expect(endfield.state().electric).toEqual(rational(2));
-    expect(service.stored()).toEqual(stored);
-  });
-
-  it('ignores queued resource snapshots after a successful reload', async () => {
-    const settings = TestBed.inject(SettingsStore);
-    const http = TestBed.inject(HttpTestingController);
-    TestBed.inject(PreferencesStore).apply({ language: 'en' });
-    const dataResource = settings['modDataResource'];
-    expect(dataResource.reload()).toBeTrue();
-    TestBed.tick();
-    http.expectOne('data/aef/data.json').flush('unavailable', {
-      status: 503,
-      statusText: 'Service Unavailable',
-    });
-    await flush();
-    TestBed.tick();
-    await flush();
-    const error = settings.loadError();
-    expect(error).toBeDefined();
-    expect(dataResource.isLoading()).toBeFalse();
-    endfield.set({ ...endfield.snapshot(), electric: rational(2) });
-    const previous = service['objectivesStore'].state();
-    const stored = service.stored();
-
-    // Control the queued snapshots while retaining the real HTTP reload.
-    resources.next({
-      modId: 'aef',
-      data: settings.modData(),
-      hash: rawHash,
-      loading: settings.loading(),
-      error,
-    });
-    const retry = spyOn(settings, 'retryFailedResources').and.callThrough();
-    open({ v: '12', ef: encoded(3), o: ['xiranite_powder*5'] });
-    await flush();
-    expect(retry).toHaveBeenCalledTimes(1);
-    expect(retry.calls.mostRecent().returnValue).toBeTrue();
-    expect(settings.loading()).toBeTrue();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(endfield.state().electric).toEqual(rational(2));
-    expect(service.stored()).toBe(stored);
-    expect(navigate).not.toHaveBeenCalled();
-
-    http.expectOne('data/aef/data.json').flush(rawData);
-    await flush();
-    TestBed.tick();
-    await flush();
-    const latest = {
-      modId: 'aef',
-      data: settings.modData(),
-      hash: rawHash,
-      loading: settings.loading(),
-      error: settings.loadError(),
-    };
-    expect(latest.data).toBeDefined();
-    expect(settings.modHash()).toBe(rawHash);
-    expect(latest.loading).toBeFalse();
-    expect(latest.error).toBeUndefined();
-    resources.next({ ...latest, data: { ...data } });
-    resources.next({ ...latest, hash: { ...rawHash } });
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(endfield.state().electric).toEqual(rational(2));
-    resources.next(latest);
-    expect(lifecycle.ready()).toBeTrue();
-    expect(endfield.state().electric).toEqual(rational(3));
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5));
-  });
-
-  it('does not commit until the matching resources finish loading', async () => {
-    resources.next({
-      modId: 'aef',
-      data: undefined,
-      hash: undefined,
-      loading: true,
-      error: undefined,
-    });
-    open({ ef: encoded(2), v: '12' });
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    route.queryParams.next({ ef: encoded(3), v: '12' });
-    await flush();
-    resources.next({
-      modId: '1.0',
-      data,
-      hash: rawHash,
-      loading: false,
-      error: undefined,
-    });
-    expect(lifecycle.ready()).toBeFalse();
-    expect(endfield.state().electric).toEqual(rational.one);
-    resources.next({
-      modId: 'aef',
-      data,
-      hash: rawHash,
-      loading: false,
-      error: undefined,
-    });
-    expect(lifecycle.ready()).toBeTrue();
-    expect(endfield.state().electric).toEqual(rational(3));
-  });
-});
-
-describe('RouterSync real Endfield restoration', () => {
-  for (const [section, id, message] of [
-    ['i', 'retired-item', 'Unknown item ID: retired-item'],
-    ['r', 'retired-recipe', 'Unknown recipe ID: retired-recipe'],
-    [
-      'm',
-      'retired-machine',
-      'Unknown machine ID at machines.retired-machine: retired-machine',
-    ],
-  ] as const) {
-    it(`reports an unknown ${section} record even when it has no settings`, async () => {
-      TestBed.configureTestingModule({
-        imports: [TestModule],
-      });
-      const service = TestBed.inject(RouterSync);
-      const lifecycle = TestBed.inject(WorkspaceLifecycle);
-      const router = TestBed.inject(Router);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
-      let url = '/aef/list?v=12&o=xiranite_powder*5';
-      spyOnProperty(router, 'url').and.callFake(() => url);
-      service['settingsStore'].apply({ modId: 'aef' });
-      (service as any).resources = new BehaviorSubject({
-        modId: 'aef',
-        data: rawData as unknown as ModData,
-        hash: rawHash,
-        loading: false,
-        error: undefined,
-      });
-      const params = new Subject<Params>();
-      const queryParams = new Subject<Params>();
-      service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
-      params.next({ id: 'aef' });
-      queryParams.next({ v: '12', o: ['xiranite_powder*5'] });
-      for (let i = 0; i < 15; i++) await Promise.resolve();
-      const previous = service['objectivesStore'].state();
-      service.stored.set(url);
-      url = `/aef/list?v=12&${section}=${id}`;
-      queryParams.next({ v: '12', [section]: [id] });
-      for (let i = 0; i < 15; i++) await Promise.resolve();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.errors()[0]).toEqual(message);
-      expect(service['objectivesStore'].state()).toBe(previous);
-      expect(lifecycle.originalInput()).toEqual(url);
-      expect(service.stored()).toEqual('/aef/list?v=12&o=xiranite_powder*5');
-      expect(navigate).not.toHaveBeenCalled();
-      url = '/aef/list?v=12&o=xiranite_powder*2';
-      queryParams.next({ v: '12', o: ['xiranite_powder*2'] });
-      for (let i = 0; i < 15; i++) await Promise.resolve();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(service['objectivesStore'].state()['1'].value).toEqual(
-        rational(2n),
-      );
-    });
-  }
-
-  for (const target of ['resource', 'global'] as const) {
-    it(`preserves the existing workspace for invalid ${target} overclock`, async () => {
-      TestBed.configureTestingModule({
-        imports: [TestModule],
-      });
-      const service = TestBed.inject(RouterSync);
-      const lifecycle = TestBed.inject(WorkspaceLifecycle);
-      const endfield = TestBed.inject(EndfieldStore);
-      service['settingsStore'].apply({ modId: 'aef' });
-      service['objectivesStore'].set({
-        '1': {
-          id: '1',
-          targetId: 'xiranite_powder',
-          value: rational(7n),
-          unit: ObjectiveUnit.Items,
-          type: ObjectiveType.Output,
-        },
-      });
-      service['itemsStore'].set({ xiranite_powder: { stack: rational(5n) } });
-      service['recipesStore'].set({ originium_ore: { cost: rational(2n) } });
-      service['machinesStore'].set({ miner_4: { overclock: rational.one } });
-      service['tableStore'].apply({ filter: 'original' });
-      endfield.setResourceChecked('copper_ore', true);
-      const previous = {
-        settings: service['settingsStore'].state(),
-        objectives: service['objectivesStore'].state(),
-        items: service['itemsStore'].state(),
-        recipes: service['recipesStore'].state(),
-        machines: service['machinesStore'].state(),
-        table: service['tableStore'].state(),
-        extension: endfield.state(),
-      };
-      const initial = createEndfieldState();
-      const ef = encodeEndfield({
-        ...initial,
-        resourceLimits: {
-          enabled: true,
-          rates: {
-            ...initial.resourceLimits.rates,
-            originium_ore: rational.one,
-          },
-        },
-        resourceRecipeSettings: { originium_ore: { overclock: rational.zero } },
-      });
-      const query: Params =
-        target === 'resource'
-          ? { v: '12', ef, o: ['xiranite_powder*2'] }
-          : { v: '12', moc: '0', o: ['xiranite_powder*2'] };
-      const url = `/aef/list?v=12&${target === 'resource' ? `ef=${ef}` : 'moc=0'}`;
-      const router = TestBed.inject(Router);
-      spyOnProperty(router, 'url').and.returnValue(url);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
-      service.stored.set('/aef/list?v=12');
-      (service as any).resources = new BehaviorSubject({
-        modId: 'aef',
-        data: rawData as unknown as ModData,
-        hash: rawHash,
-        loading: false,
-        error: undefined,
-      });
-      const params = new Subject<Params>();
-      const queryParams = new Subject<Params>();
-      service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
-      params.next({ id: 'aef' });
-      queryParams.next(query);
-      for (let i = 0; i < 15; i++) await Promise.resolve();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(
-        lifecycle.errors().some((message) => message.includes('overclock')),
-      ).toBeTrue();
-      expect(service['settingsStore'].state()).toBe(previous.settings);
-      expect(service['objectivesStore'].state()).toBe(previous.objectives);
-      expect(service['itemsStore'].state()).toBe(previous.items);
-      expect(service['recipesStore'].state()).toBe(previous.recipes);
-      expect(service['machinesStore'].state()).toBe(previous.machines);
-      expect(service['tableStore'].state()).toBe(previous.table);
-      expect(endfield.state()).toEqual(previous.extension);
-      expect(lifecycle.originalInput()).toEqual(url);
-      expect(service.stored()).toEqual('/aef/list?v=12');
-      expect(navigate).not.toHaveBeenCalled();
-    });
-  }
-
-  for (const compressed of [false, true]) {
-    it(`rejects a migrated disallowed mod from a ${compressed ? 'compressed' : 'bare'} legacy link`, async () => {
-      TestBed.configureTestingModule({
-        imports: [TestModule],
-      });
-      const service = TestBed.inject(RouterSync);
-      const lifecycle = TestBed.inject(WorkspaceLifecycle);
-      const settings = service['settingsStore'];
-      settings.apply({ modId: 'aef' });
-      const apply = spyOn(settings, 'apply').and.callThrough();
-      const previousSettings = settings.state();
-      const previousObjectives = service['objectivesStore'].state();
-      const previousExtension = TestBed.inject(EndfieldStore).state();
-      service.stored.set('/aef/list?v=12');
-      const router = TestBed.inject(Router);
-      const url = compressed ? '/aef/list?v=10&z=old' : '/aef/list?v=10&b=1.1';
-      spyOnProperty(router, 'url').and.returnValue(url);
-      const navigate = spyOn(router, 'navigate').and.resolveTo(true);
-      if (compressed)
-        spyOn(service['compression'], 'inflate').and.resolveTo('v=10&b=A');
-      const params = new Subject<Params>();
-      const queryParams = new Subject<Params>();
-      service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
-      params.next({ id: 'aef' });
-      queryParams.next(
-        compressed ? { v: '10', z: 'old' } : { v: '10', b: '1.1' },
-      );
-      for (let i = 0; i < 15; i++) await Promise.resolve();
-      expect(lifecycle.ready()).toBeFalse();
-      expect(lifecycle.errors()[0]).toEqual(
-        'Workspace mod is not available: 1.1',
-      );
-      expect(lifecycle.originalInput()).toEqual(url);
-      expect(apply).not.toHaveBeenCalled();
-      expect(settings.state()).toBe(previousSettings);
-      expect(service['objectivesStore'].state()).toBe(previousObjectives);
-      expect(TestBed.inject(EndfieldStore).state()).toEqual(previousExtension);
-      expect(service.stored()).toEqual('/aef/list?v=12');
-      expect(navigate).not.toHaveBeenCalled();
-      expect(router.url).toEqual(url);
-    });
-  }
-
-  it('round trips ordinary and derived links with multiple checked objectives', async () => {
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-    });
-    const service = TestBed.inject(RouterSync);
-    const data = rawData as unknown as ModData;
+  it('keeps the workspace for source links and only the target for ordinary links', async () => {
     const settings = {
       ...initialSettingsState,
       modId: 'aef',
@@ -660,11 +268,14 @@ describe('RouterSync real Endfield restoration', () => {
         type: ObjectiveType.Output,
       },
     };
+    const extension = {
+      ...createEndfieldState(),
+      checkedDerived: new Set(['originium_ore' as const]),
+      transferEnabled: true,
+    };
     service['objectivesStore'].set(objectives);
     service['settingsStore'].set(settings);
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(rawHash);
-    service['settingsStore']['modDataResource'].set(data);
-    service['settingsStore']['modHashResource'].set(rawHash);
+    endfield.set(extension);
     const zipped = service.zipState({
       objectives,
       items: {},
@@ -674,114 +285,49 @@ describe('RouterSync real Endfield restoration', () => {
       table: initialTableState,
       data: service['settingsStore'].dataset(),
       hash: rawHash,
-      endfield: TestBed.inject(EndfieldStore).snapshot(),
+      endfield: extension,
     });
-    expect(zipped.config.bare.och).toEqual('B');
     const ordinary = await service.stepHref(
-      { id: 'ordinary', itemId: 'xiranite_powder', items: rational(5n) },
+      { id: 'ordinary', itemId: 'xiranite_powder', items: rational(5) },
       zipped.config,
     );
-    const derived = await service.stepHref(
-      {
-        id: 'derived',
-        recipeObjectiveId: resourceObjectiveId('originium_ore'),
-        itemId: 'carbon_enr',
-        items: rational(5n),
-      },
+    const source = await service.stepHref(
+      { id: 'source', recipeObjectiveId: resourceObjectiveId('originium_ore') },
+      zipped.config,
+    );
+    const transferId = [...service['recipesStore'].transferRecipeIds()][0];
+    expect(transferId).toBeDefined();
+    const transfer = await service.stepHref(
+      { id: 'transfer', recipeId: transferId, machines: rational.one },
       zipped.config,
     );
     expect(ordinary).not.toBeNull();
-    expect(derived).not.toBeNull();
-    async function restore(params: LabParams): Promise<void> {
-      const input = await service.unzipQueryParams(params as Params);
-      const migrated = service['migration'].migrate('aef', input);
-      service.updateState(
-        migrated.modId,
-        migrated.params,
-        migrated.isBare,
-        data,
-        rawHash,
-      );
-    }
-    await restore(ordinary!);
+    expect(source).not.toBeNull();
+    expect(transfer).not.toBeNull();
+    await restore(ordinary as Params);
     expect(Object.keys(service['objectivesStore'].state())).toEqual(['1']);
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5n));
-    expect(service['settingsStore'].state().checkedObjectiveIds.size).toEqual(
-      0,
-    );
-    await restore(derived!);
+    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5));
+    expect(service['settingsStore'].state().checkedObjectiveIds.size).toBe(0);
+    expect(endfield.state().checkedDerived).toEqual(extension.checkedDerived);
+    await restore(source as Params);
     expect(Object.keys(service['objectivesStore'].state())).toEqual(['1', '2']);
     expect(service['settingsStore'].state().checkedObjectiveIds).toEqual(
       new Set(['2']),
     );
-    expect(zipped.config.bare.och).toEqual('B');
-    expect(zipped.config.hash.och).toEqual('B');
+    expect(endfield.state().checkedDerived).toEqual(extension.checkedDerived);
+    expect(zipped.config.bare.och).toBe('B');
+    await restore(transfer as Params);
+    expect(Object.keys(service['objectivesStore'].state())).toEqual(['1', '2']);
+    expect(
+      Object.values(service['objectivesStore'].state()).some(
+        (obj) => obj.targetId === transferId,
+      ),
+    ).toBeFalse();
+    expect(endfield.state().transferEnabled).toBeTrue();
   });
 
-  it('round trips real multi-item and multi-recipe subsets around retired slots', () => {
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-    });
-    const service = TestBed.inject(RouterSync);
-    const data = rawData as unknown as ModData;
-    service['settingsStore'].apply({ modId: 'aef' });
-    service['settingsStore']['modDataResource'].set(data);
-    service['settingsStore']['modHashResource'].set(rawHash);
-    const zip: ZipState = {
-      objectives: service.empty,
-      config: service.empty,
-      objectiveSettings: service.emptyMachineSettings,
-      recipeSettings: service.emptyMachineSettings,
-      machineSettings: service.emptyMachineSettings,
-    };
-    const excludedRecipeIds = new Set([
-      'carbon_enr',
-      'carbon_mtl-plant_moss_1',
-    ]);
-    const checkedItemIds = new Set([
-      'pipe',
-      'iron_bottle-liquid_plant_grass_1',
-    ]);
-    service.zipSettings(
-      zip,
-      { ...initialSettingsState, excludedRecipeIds, checkedItemIds },
-      [],
-      service['settingsStore'].dataset(),
-      rawHash,
-    );
-    expect(zip.config.bare.rex).toEqual('A~C');
-    const restored = service.unzipSettings(
-      'aef',
-      zip.config.bare,
-      [],
-      [],
-      data,
-      rawHash,
-    );
-    expect(restored?.excludedRecipeIds).toEqual(excludedRecipeIds);
-    expect(restored?.checkedItemIds).toEqual(checkedItemIds);
-  });
-
-  it('keeps unsupported objective types and cet under native semantics', async () => {
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-    });
-    const service = TestBed.inject(RouterSync);
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const endfield = TestBed.inject(EndfieldStore);
-    service['settingsStore'].apply({ modId: 'aef' });
-    (service as any).resources = new BehaviorSubject({
-      modId: 'aef',
-      data: rawData as unknown as ModData,
-      hash: rawHash,
-      loading: false,
-      error: undefined,
-    });
-    const params = new Subject<Params>();
-    const queryParams = new Subject<Params>();
-    service.route$.next({ params, queryParams } as unknown as ActivatedRoute);
-    params.next({ id: 'aef' });
-    queryParams.next({
+  it('leaves ordinary 11-14 objectives and cet to upstream migration', async () => {
+    await restore({
       v: '12',
       o: [
         'xiranite_powder*2',
@@ -790,647 +336,135 @@ describe('RouterSync real Endfield restoration', () => {
         'xiranite_oven_1*4*0*13',
         'xiranite_powder*1*0*14',
       ],
-      och: 'B~D',
       cet: 'invalid',
     });
-    for (let i = 0; i < 15; i++) await Promise.resolve();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.errors()).toEqual([]);
     expect(
       Object.values(service['objectivesStore'].state()).map(
-        (objective): number => objective.type,
+        (o): number => o.type,
       ),
     ).toEqual([0, 11, 12, 13, 14]);
-    expect(service['settingsStore'].state().checkedObjectiveIds).toEqual(
-      new Set(['2', '3', '4']),
+    expect(encodeEndfield(endfield.state())).toBeUndefined();
+  });
+
+  it('imports a published v11 hashed Endfield objective', async () => {
+    await restore({ v: '11', z: 'eJwrszU0VMu3TdQyVUtOLbGtAAAl.gS.' });
+    expect(service['objectivesStore'].state()['1']).toEqual(
+      jasmine.objectContaining({
+        targetId: 'originium_ore',
+        value: rational(5),
+      }),
     );
-    expect(encodeEndfield(endfield.snapshot())).toEqual(
-      encodeEndfield(createEndfieldState()),
+  });
+
+  it('imports the v10 Endfield mod slot and its hashed objective', async () => {
+    await restore({ v: '10', z: 'eJwrMzRQSwpUK0jUMgUAEqUDBw__' });
+    expect(service['objectivesStore'].state()['1']).toEqual(
+      jasmine.objectContaining({
+        targetId: 'originium_ore',
+        value: rational(5),
+      }),
     );
   });
 });
 
-@Component({ template: '' })
-class NavigationFixture {}
-
-describe('RouterSync parent ActivatedRoute with child pages', () => {
+describe('RouterSync foreign migration redirects', () => {
   let service: RouterSync;
-  let lifecycle: WorkspaceLifecycle;
   let router: Router;
-  let resources: BehaviorSubject<{
-    modId: string;
-    data: ModData;
-    hash: typeof rawHash;
-    loading: boolean;
-    error: unknown;
-  }>;
-
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 15; i++) await Promise.resolve();
-  }
+  let applied: jasmine.Spy;
+  let navigations: string[];
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [TestModule],
       providers: [
         provideRouter([
+          ...shortcutRoutes,
           {
-            path: ':id',
-            component: NavigationFixture,
+            path: 'aef',
+            component: Id,
             children: [
-              { path: 'list', component: NavigationFixture },
-              { path: 'flow', component: NavigationFixture },
-              { path: 'data', component: NavigationFixture },
+              { path: '', pathMatch: 'full', component: MockComponent },
+              { path: 'list', component: MockComponent },
             ],
           },
         ]),
       ],
     });
     service = TestBed.inject(RouterSync);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
     router = TestBed.inject(Router);
-    resources = new BehaviorSubject<{
-      modId: string;
-      data: ModData;
-      hash: typeof rawHash;
-      loading: boolean;
-      error: unknown;
-    }>({
-      modId: 'aef',
-      data: rawData as unknown as ModData,
-      hash: rawHash,
-      loading: false,
-      error: undefined,
+    applied = spyOn(service['settingsStore'], 'apply').and.callThrough();
+    spyOn(service, 'updateUrl').and.resolveTo();
+    navigations = [];
+    router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd)
+        navigations.push(event.urlAfterRedirects);
     });
-    (service as any).resources = resources;
-    service['settingsStore'].apply({ modId: 'aef' });
-    spyOn(service['settingsStore'], 'modData').and.returnValue(
-      rawData as unknown as ModData,
-    );
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(rawHash);
-    spyOn(service['state'], 'next');
   });
 
-  async function attach(query: string): Promise<void> {
-    expect(await router.navigateByUrl(`/aef/list?${query}`)).toBeTrue();
-    const parent = router.routerState.root.firstChild;
-    if (parent == null) throw new Error('Missing parent ActivatedRoute');
-    service.route$.next(parent);
-    await flush();
+  function observeMigration(): {
+    complete: Promise<void>;
+    spy: jasmine.Spy;
+  } {
+    let finish!: () => void;
+    const complete = new Promise<void>((resolve) => (finish = resolve));
+    const migration = service['migration'];
+    const migrate = migration.migrate.bind(migration);
+    const spy = spyOn(migration, 'migrate').and.callFake((modId, params) => {
+      const result = migrate(modId, params);
+      finish();
+      return result;
+    });
+    return { complete, spy };
   }
 
-  it('keeps the existing workspace ready through list, flow and data child routes', async () => {
-    const ef = encodeEndfield({
-      ...createEndfieldState(),
-      electric: rational(2),
-    });
-    await attach(`v=12&o=xiranite_powder*5&ef=${ef}`);
-    expect(lifecycle.ready()).toBeTrue();
-    const previous = service['objectivesStore'].state();
-    const previousSettings = service['settingsStore'].state();
-    const previousExtension = TestBed.inject(EndfieldStore).state();
-    const next = service['state'].next as jasmine.Spy;
-    TestBed.tick();
-    next.calls.reset();
-    for (const page of ['flow', 'data', 'list']) {
+  for (const [label, input, inflated] of [
+    ['bare legacy mod', '/aef/list?v=10&b=1.1', undefined],
+    ['compressed legacy mod', '/aef/list?v=10&z=old', 'v=10&b=A'],
+    [
+      'removed legacy hash slot',
+      '/list?z=eJwrMzRQSwpQK0jUMgUAEp8DBg__&v=10',
+      undefined,
+    ],
+    ['removed v0 mod', '/aef/list?s=space-exploration', undefined],
+    ['matrix mod', '/aef;id=1.1/list?v=12&o=wood*2', undefined],
+  ] as const) {
+    it(`redirects ${label} to a clean aef route before applying any other mod`, async () => {
+      if (inflated)
+        spyOn(service['compression'], 'inflate').and.resolveTo(inflated);
+      const navigate = spyOn(router, 'navigateByUrl').and.callThrough();
+      const migration = observeMigration();
+      await RouterTestingHarness.create(input);
+      await migration.complete;
+      const redirect = navigate.calls
+        .all()
+        .find((call) => call.args[0] === '/aef');
+      expect(redirect).toBeDefined();
+      if (redirect) await redirect.returnValue;
+      expect(router.url).toBe('/aef');
+      expect(navigations.filter((url) => url === '/aef').length).toBe(1);
       expect(
-        await router.navigateByUrl(
-          `/aef/${page}?v=12&o=xiranite_powder*5&ef=${ef}`,
-        ),
+        applied.calls.allArgs().every(([value]) => value.modId === 'aef'),
       ).toBeTrue();
-      await flush();
-      expect(lifecycle.ready()).toBeTrue();
-      expect(service['ready']()).toBeTrue();
-      expect(service['objectivesStore'].state()).toBe(previous);
-      expect(service['settingsStore'].state()).toBe(previousSettings);
-      expect(TestBed.inject(EndfieldStore).state()).toEqual(previousExtension);
-      expect(lifecycle.originalInput()).toEqual(
-        `/aef/${page}?v=12&o=xiranite_powder*5&ef=${ef}`,
+      TestBed.inject(HttpTestingController).expectNone((request) =>
+        /^data\/(?!aef\/)/.test(request.url),
       );
-      TestBed.tick();
-      expect(next).toHaveBeenCalled();
-      next.calls.reset();
-    }
-  });
-
-  it('restarts an unfinished restore after a child page navigation', async () => {
-    const pending: ((value: string) => void)[] = [];
-    const inflate = spyOn(service['compression'], 'inflate').and.callFake(
-      (): Promise<string> =>
-        new Promise<string>((resolve) => {
-          pending.push(resolve);
-        }),
-    );
-    await attach('z=slow&v=12');
-    expect(lifecycle.ready()).toBeFalse();
-    const originalCalls = inflate.calls.count();
-    expect(await router.navigateByUrl('/aef/flow?z=slow&v=12')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(inflate.calls.count()).toBeGreaterThan(originalCalls);
-    const token = service['zip'].zipNString('xiranite_powder', rawHash.items);
-    const encoded = (electric: number): string =>
-      encodeEndfield({
-        ...createEndfieldState(),
-        electric: rational(electric),
-      });
-    for (const resolve of pending.slice(0, -1))
-      resolve(`v=12&o=${token}*2&ef=${encoded(2)}`);
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    pending[pending.length - 1](`v=12&o=${token}*5&ef=${encoded(3)}`);
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(5n));
-    expect(TestBed.inject(EndfieldStore).state().electric).toEqual(rational(3));
-    expect(lifecycle.originalInput()).toEqual('/aef/flow?z=slow&v=12');
-  });
-
-  it('preserves a failed restore and its diagnostic on a child page navigation', async () => {
-    const ef = encodeEndfield({
-      ...createEndfieldState(),
-      electric: rational(2),
     });
-    await attach(`v=12&o=xiranite_powder*5&ef=${ef}`);
-    const previous = service['objectivesStore'].state();
-    expect(await router.navigateByUrl('/aef/list?v=12&ef=bad')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    const diagnostics = lifecycle.errors();
-    expect(diagnostics.length).toBeGreaterThan(0);
-    expect(await router.navigateByUrl('/aef/flow?v=12&ef=bad')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(service['ready']()).toBeFalse();
-    expect(lifecycle.errors()).toEqual(diagnostics);
-    expect(lifecycle.originalInput()).toEqual('/aef/flow?v=12&ef=bad');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(TestBed.inject(EndfieldStore).state().electric).toEqual(rational(2));
-  });
-});
-
-describe('RouterSync real Router navigation timing', () => {
-  let service: RouterSync;
-  let lifecycle: WorkspaceLifecycle;
-  let router: Router;
-  let guard: (
-    route: ActivatedRouteSnapshot,
-  ) => boolean | UrlTree | Promise<boolean | UrlTree>;
-  let navigate: jasmine.Spy;
-  let resources: BehaviorSubject<{
-    modId: string;
-    data: typeof mockModData;
-    hash: typeof mockModHash;
-    loading: boolean;
-    error: unknown;
-  }>;
-
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 15; i++) await Promise.resolve();
   }
 
-  function emptyZip(): ZipState {
-    return {
-      objectives: service.empty,
-      config: service.empty,
-      objectiveSettings: service.emptyMachineSettings,
-      recipeSettings: service.emptyMachineSettings,
-      machineSettings: service.emptyMachineSettings,
-    };
-  }
-
-  beforeEach(async () => {
-    guard = (): boolean => true;
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        provideRouter([
-          {
-            path: ':id/:view',
-            component: NavigationFixture,
-            canActivate: [
-              (route): boolean | UrlTree | Promise<boolean | UrlTree> =>
-                guard(route),
-            ],
-            runGuardsAndResolvers: 'always',
-          },
-        ]),
-      ],
-    });
-    service = TestBed.inject(RouterSync);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
-    router = TestBed.inject(Router);
-    resources = new BehaviorSubject<{
-      modId: string;
-      data: typeof mockModData;
-      hash: typeof mockModHash;
-      loading: boolean;
-      error: unknown;
-    }>({
-      modId: 'aef',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    (service as any).resources = resources;
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    spyOn(service['state'], 'next');
-    navigate = spyOn(router, 'navigate').and.callThrough();
-    await router.navigateByUrl('/aef/start?v=12');
-    const route = router.routerState.root.firstChild;
-    if (route == null) throw new Error('Missing activated route');
-    service.route$.next(route);
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('blocks an old compression while a real guard holds the new navigation', async () => {
-    let finishHash!: (params: LabParams) => void;
-    spyOn(service, 'getHash').and.returnValue(
-      new Promise((resolve) => {
-        finishHash = resolve;
-      }),
-    );
-    const oldWrite = service.updateUrl(emptyZip(), service['activeTicket']);
-    let releaseGuard!: (value: boolean) => void;
-    guard = (): Promise<boolean> =>
-      new Promise<boolean>((resolve) => {
-        releaseGuard = resolve;
-      });
-    const external = router.navigateByUrl('/aef/guarded?v=12');
-    await flush();
-    expect(service['navigationPending']()).toBeTrue();
-    expect(lifecycle.ready()).toBeFalse();
-    finishHash({ v: '12' });
-    await oldWrite;
-    expect(navigate).not.toHaveBeenCalled();
-    expect(router.url).toEqual('/aef/start?v=12');
-    releaseGuard(true);
-    expect(await external).toBeTrue();
-    await flush();
-    expect(router.url).toEqual('/aef/guarded?v=12');
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('rolls back and becomes ready when the real guard cancels', async () => {
-    const previous = service['settingsStore'].state();
-    let releaseGuard!: (value: boolean) => void;
-    guard = (): Promise<boolean> =>
-      new Promise<boolean>((resolve) => {
-        releaseGuard = resolve;
-      });
-    const external = router.navigateByUrl('/aef/cancel?v=12');
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    releaseGuard(false);
-    expect(await external).toBeFalse();
-    expect(router.url).toEqual('/aef/start?v=12');
-    expect(service['settingsStore'].state()).toBe(previous);
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['ready']()).toBeTrue();
-  });
-
-  it('reports a failed store rollback when a real guard cancels', async () => {
-    const previous = service['objectivesStore'].state();
-    const set = spyOn(TestBed.inject(EndfieldStore), 'set').and.throwError(
-      'rollback failed',
-    );
-    guard = (): boolean => false;
-    expect(await router.navigateByUrl('/aef/cancel?v=12')).toBeFalse();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()[0]).toContain('rollback failed');
-    expect(service['objectivesStore'].state()).toBe(previous);
-    set.and.callThrough();
-    guard = (): boolean => true;
-    expect(await router.navigateByUrl('/aef/next?v=12&o=wood')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('keeps the gate through a redirect and restores on guard error', async () => {
-    guard = (route): boolean | UrlTree =>
-      route.params['view'] === 'redirect'
-        ? router.parseUrl('/aef/target?v=12')
-        : true;
-    expect(await router.navigateByUrl('/aef/redirect?v=12')).toBeTrue();
-    await flush();
-    expect(router.url).toEqual('/aef/target?v=12');
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-
-    guard = (): never => {
-      throw new Error('guard failed');
-    };
-    await expectAsync(
-      router.navigateByUrl('/aef/error?v=12'),
-    ).toBeRejectedWithError('guard failed');
-    expect(router.url).toEqual('/aef/target?v=12');
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('releases the gate when a redirect to the current URL is skipped', async () => {
-    guard = (route): boolean | UrlTree =>
-      route.params['view'] === 'redirect'
-        ? router.parseUrl('/aef/start?v=12')
-        : true;
-    await router.navigateByUrl('/aef/redirect?v=12');
-    await flush();
-    expect(router.url).toEqual('/aef/start?v=12');
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('does not block its own sync navigation', async () => {
-    const begin = spyOn(lifecycle, 'begin').and.callThrough();
-    spyOn(service, 'getHash').and.resolveTo({ v: '12', tpg: '2' });
-    await service.updateUrl(emptyZip(), service['activeTicket']);
-    expect(navigate).toHaveBeenCalled();
-    expect(begin).not.toHaveBeenCalled();
-    expect(service['navigationPending']()).toBeFalse();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(router.url).toContain('tpg=2');
-  });
-
-  it('does not migrate or apply a stale unzip after a new navigation starts', async () => {
-    let finish!: (value: string) => void;
-    const inflate = spyOn(service['compression'], 'inflate').and.callFake(
-      (): Promise<string> =>
-        new Promise<string>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    expect(await router.navigateByUrl('/aef/load?z=slow&v=12')).toBeTrue();
-    await flush();
-    const originalInflates = inflate.calls.count();
+  it('uses aef as the fixed route default and preserves a valid legacy query', async () => {
     const migrate = spyOn(service['migration'], 'migrate').and.callThrough();
-    const apply = spyOn(service['settingsStore'], 'apply').and.callThrough();
-    const update = spyOn(service, 'updateState').and.callThrough();
-    let releaseGuard!: (value: boolean) => void;
-    guard = (): Promise<boolean> =>
-      new Promise<boolean>((resolve) => {
-        releaseGuard = resolve;
-      });
-    const external = router.navigateByUrl('/aef/guarded?v=12');
+    await RouterTestingHarness.create('/aef/list?v=11&cet=x');
     await flush();
-    finish('v=12');
-    await flush();
-    expect(migrate).not.toHaveBeenCalled();
-    expect(apply).not.toHaveBeenCalled();
-    expect(update).not.toHaveBeenCalled();
-    spyOn(service['appRef'], 'tick');
-    releaseGuard(false);
-    expect(await external).toBeFalse();
-    await flush();
-    expect(inflate.calls.count()).toBeGreaterThan(originalInflates);
-    finish('v=12');
-    await flush();
-    expect(migrate).toHaveBeenCalledTimes(1);
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(apply).not.toHaveBeenCalled();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(router.url).toEqual('/aef/load?z=slow&v=12');
-  });
-});
-
-describe('Workspace recovery lifecycle', () => {
-  it('rejects obsolete navigation completions and errors', () => {
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const old = lifecycle.begin('?old');
-    const current = lifecycle.begin('?current');
-    expect(lifecycle.complete(old)).toBeFalse();
-    lifecycle.fail(old, ['obsolete']);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual([]);
-    expect(lifecycle.originalInput()).toBe('?current');
-    expect(lifecycle.complete(current)).toBeTrue();
-    expect(lifecycle.ready()).toBeTrue();
+    expect(migrate).toHaveBeenCalledWith('aef', { v: '11', cet: 'x' });
+    expect(router.url).toBe('/aef/list?v=11&cet=x');
   });
 
-  it('keeps failed input and errors until a new restoration succeeds', () => {
-    const lifecycle = TestBed.inject(WorkspaceLifecycle);
-    const ticket = lifecycle.begin('?invalid');
-    lifecycle.fail(ticket, ['Invalid input']);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.originalInput()).toBe('?invalid');
-    expect(lifecycle.errors()).toEqual(['Invalid input']);
-    expect(lifecycle.complete(ticket)).toBeFalse();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()).toEqual(['Invalid input']);
-    expect(lifecycle.complete(lifecycle.begin('?valid'))).toBeTrue();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(lifecycle.errors()).toEqual([]);
-  });
-});
-
-describe('RouterSync leaving the workspace route tree', () => {
-  let service: RouterSync;
-  let lifecycle: WorkspaceLifecycle;
-  let router: Router;
-  let navigate: jasmine.Spy;
-
-  async function flush(): Promise<void> {
-    for (let i = 0; i < 20; i++) await Promise.resolve();
-  }
-
-  async function attachWorkspace(): Promise<void> {
-    const parent = router.routerState.root.firstChild;
-    if (parent == null) throw new Error('Missing workspace parent');
-    service.route$.next(parent);
-    await flush();
-    TestBed.tick();
-    await flush();
-    const last = navigate.calls.mostRecent();
-    if (last != null) await (last.returnValue as Promise<boolean>);
-    await flush();
-  }
-
-  async function changeObjective(value: bigint): Promise<void> {
-    const objective = service['objectivesStore'].state()['1'];
-    service['objectivesStore'].set({
-      '1': { ...objective, value: rational(value) },
-    });
-    const previousCalls = navigate.calls.count();
-    TestBed.tick();
-    await flush();
-    expect(navigate.calls.count()).toBeGreaterThan(previousCalls);
-    await (navigate.calls.mostRecent().returnValue as Promise<boolean>);
-    await flush();
-  }
-
-  beforeEach(async () => {
-    localStorage.removeItem('router');
-    TestBed.configureTestingModule({
-      imports: [TestModule],
-      providers: [
-        provideRouter([
-          {
-            path: 'editor',
-            children: [{ path: 'items', component: NavigationFixture }],
-          },
-          { path: 'error', component: NavigationFixture },
-          {
-            path: ':id',
-            component: NavigationFixture,
-            children: [
-              { path: 'list', component: NavigationFixture },
-              { path: 'flow', component: NavigationFixture },
-            ],
-          },
-        ]),
-      ],
-    });
-    service = TestBed.inject(RouterSync);
-    lifecycle = TestBed.inject(WorkspaceLifecycle);
-    router = TestBed.inject(Router);
-    (service as any).resources = new BehaviorSubject({
-      modId: 'aef',
-      data: mockModData,
-      hash: mockModHash,
-      loading: false,
-      error: undefined,
-    });
-    spyOn(service['settingsStore'], 'modData').and.returnValue(mockModData);
-    spyOn(service['settingsStore'], 'modHash').and.returnValue(mockModHash);
-    spyOn(service, 'getHash').and.callFake((value) =>
-      Promise.resolve({
-        ...value.objectives.bare,
-        ...value.config.bare,
-        v: '12',
-      }),
-    );
-    navigate = spyOn(router, 'navigate').and.callThrough();
-    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*2')).toBeTrue();
-    await attachWorkspace();
-    expect(lifecycle.ready()).toBeTrue();
-    await changeObjective(6n);
-    expect(service.stored()).toEqual(router.url);
-    expect(navigate).toHaveBeenCalled();
-    navigate.calls.reset();
-  });
-
-  afterEach(() => {
-    localStorage.removeItem('router');
-  });
-
-  it('keeps editor and error URLs untouched and reactivates URL sync on return', async () => {
-    const saved = service.stored();
-    const previous = service['objectivesStore'].state();
-    const settings = service['settingsStore'].state();
-    expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
-    await flush();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/editor/items?tab=one');
-    expect(service.stored()).toEqual(saved);
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(service['settingsStore'].state()).toBe(settings);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(navigate).not.toHaveBeenCalled();
-
-    expect(await router.navigateByUrl('/editor/items?tab=two')).toBeTrue();
-    await flush();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/editor/items?tab=two');
-    expect(service.stored()).toEqual(saved);
-    expect(navigate).not.toHaveBeenCalled();
-
-    expect(await router.navigateByUrl('/error?reason=bad')).toBeTrue();
-    await flush();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/error?reason=bad');
-    expect(service.stored()).toEqual(saved);
-    expect(navigate).not.toHaveBeenCalled();
-
-    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*3')).toBeTrue();
-    await attachWorkspace();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(3n));
-    expect(router.url).toContain('/aef/list');
-    await changeObjective(8n);
-    expect(service.stored()).toEqual(router.url);
-    expect(navigate).toHaveBeenCalled();
-  });
-
-  it('discards an older compression after leaving the route tree', async () => {
-    const saved = service.stored();
-    let finish!: (params: LabParams) => void;
-    (service.getHash as jasmine.Spy).and.returnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const oldWrite = service.updateUrl(
-      {
-        objectives: service.empty,
-        config: service.empty,
-        objectiveSettings: service.emptyMachineSettings,
-        recipeSettings: service.emptyMachineSettings,
-        machineSettings: service.emptyMachineSettings,
-      },
-      service['activeTicket'],
-    );
-    expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
-    finish({ v: '12' });
-    await oldWrite;
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/editor/items?tab=one');
-    expect(service.stored()).toEqual(saved);
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  it('reports a failed store rollback when leaving the workspace', async () => {
-    const saved = service.stored();
-    const set = spyOn(TestBed.inject(EndfieldStore), 'set').and.throwError(
-      'exit rollback failed',
-    );
-    expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/editor/items?tab=one');
-    expect(lifecycle.ready()).toBeFalse();
-    expect(lifecycle.errors()[0]).toContain('exit rollback failed');
-    expect(service.stored()).toEqual(saved);
-    expect(navigate).not.toHaveBeenCalled();
-    set.and.callThrough();
-    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*3')).toBeTrue();
-    await attachWorkspace();
-    expect(lifecycle.ready()).toBeTrue();
-  });
-
-  it('discards an older inflate when leaving and restores a later workspace', async () => {
-    const saved = service.stored();
-    const previous = service['objectivesStore'].state();
-    let finish!: (value: string) => void;
-    spyOn(service['compression'], 'inflate').and.returnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    expect(await router.navigateByUrl('/aef/list?z=slow&v=12')).toBeTrue();
-    await flush();
-    expect(lifecycle.ready()).toBeFalse();
-    expect(await router.navigateByUrl('/editor/items?tab=one')).toBeTrue();
-    finish('v=12&o=A*9');
-    await flush();
-    TestBed.tick();
-    await flush();
-    expect(router.url).toEqual('/editor/items?tab=one');
-    expect(service.stored()).toEqual(saved);
-    expect(service['objectivesStore'].state()).toBe(previous);
-    expect(lifecycle.ready()).toBeFalse();
-    expect(navigate).not.toHaveBeenCalled();
-    expect(await router.navigateByUrl('/aef/list?v=12&o=wood*4')).toBeTrue();
-    await attachWorkspace();
-    expect(lifecycle.ready()).toBeTrue();
-    expect(service['objectivesStore'].state()['1'].value).toEqual(rational(4n));
-    await changeObjective(5n);
-    expect(service.stored()).toEqual(router.url);
+  it('accepts the published v10 Endfield hash slot', async () => {
+    const migration = observeMigration();
+    const query = 'z=eJwrMzRQSwpUK0jUMgUAEqUDBw__&v=10';
+    await RouterTestingHarness.create(`/list?${query}`);
+    await migration.complete;
+    expect(migration.spy.calls.mostRecent().returnValue.modId).toBe('aef');
+    expect(router.url).toBe(`/aef/list?${query}`);
   });
 });

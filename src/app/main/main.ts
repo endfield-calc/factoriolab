@@ -13,7 +13,6 @@ import { Release } from '~/data/release';
 import { EndfieldGuide } from '~/endfield/ui/guide';
 import { EndfieldResources } from '~/endfield/ui/resources';
 import { ObjectivesStore } from '~/state/objectives/objectives-store';
-import { WorkspaceLifecycle } from '~/state/workspace-lifecycle';
 import { TranslatePipe } from '~/translate/translate-pipe';
 
 import { Header } from './header/header';
@@ -41,7 +40,6 @@ import { Settings } from './settings/settings';
 export class Main {
   private readonly objectivesStore = inject(ObjectivesStore);
   protected readonly release = inject(Release);
-  protected readonly lifecycle = inject(WorkspaceLifecycle);
   protected readonly product = manifest;
 
   protected readonly result = this.objectivesStore.matrixResult;

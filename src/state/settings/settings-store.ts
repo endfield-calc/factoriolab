@@ -2,8 +2,8 @@ import { httpResource } from '@angular/common/http';
 import { computed, effect, inject, Service } from '@angular/core';
 import { faDatabase } from '@fortawesome/free-solid-svg-icons';
 
-import { DEFAULT_MOD, modOptions, modRecord } from '~/data/datasets';
-import { CUSTOM_MOD, Game } from '~/data/game';
+import { DEFAULT_MOD, modRecord } from '~/data/datasets';
+import { Game } from '~/data/game';
 import { gameInfo } from '~/data/game-info';
 import { IconType } from '~/data/icon-type';
 import { ModInfo } from '~/data/mod';
@@ -28,10 +28,17 @@ import { baseId, Quality, qualityId } from '~/data/schema/quality';
 import { parseRecipe, Recipe, recipeHasQuality } from '~/data/schema/recipe';
 import { Technology } from '~/data/schema/technology';
 import { Wagon } from '~/data/schema/wagon';
+import {
+  ActivityMode,
+  ActivityModes,
+  availableEndfieldData,
+  scheduledActivityStage,
+} from '~/endfield/domain/game-data';
+import { EndfieldTransferData } from '~/endfield/domain/transfer';
+import { EndfieldStore } from '~/endfield/state/endfield-store';
 import { LinkOption } from '~/option/link-option';
 import { getIdOptions, Option, OptionParams } from '~/option/option';
 import { Rational, rational } from '~/rational/rational';
-import { localForageResource } from '~/utils/local-forage-resource';
 import { log } from '~/utils/log';
 import { coalesce, fnPropsNotNullish } from '~/utils/nullish';
 import { spread } from '~/utils/object';
@@ -54,7 +61,7 @@ import { Dataset } from './dataset';
 import { Defaults } from './defaults';
 import { displayRateInfo } from './display-rate';
 import { Options } from './options';
-import { Preset, presetOptions } from './preset';
+import { presetOptions } from './preset';
 import { Settings } from './settings';
 import { initialSettingsState, SettingsState } from './settings-state';
 import { systemIconsRecord } from './system-icons';
@@ -63,23 +70,7 @@ import { systemIconsRecord } from './system-icons';
 export class SettingsStore extends Store<SettingsState> {
   private readonly hydration = inject(Hydration);
   private readonly preferencesStore = inject(PreferencesStore);
-  readonly customData = localForageResource<ModData>('data');
-  readonly customHash = localForageResource<ModHash>('hash');
-  readonly customIcons = localForageResource<File>('icons');
-
-  readonly customIconsUrl = computed(() => {
-    const file = this.customIcons.value();
-    if (file) {
-      try {
-        return URL.createObjectURL(file);
-      } catch {
-        return '';
-      }
-    }
-
-    return '';
-  });
-
+  private readonly endfieldStore = inject(EndfieldStore);
   readonly modId = this.select('modId');
   readonly maximizeType = this.select('maximizeType');
   readonly displayRate = this.select('displayRate');
@@ -89,20 +80,28 @@ export class SettingsStore extends Store<SettingsState> {
 
   private readonly modDataResource = httpResource<ModData>(() => {
     const modId = this.modId();
-    if (modId !== DEFAULT_MOD) return undefined;
+    if (modId == null) return undefined;
     return `data/${modId}/data.json`;
   });
 
+  private readonly transferResource = httpResource<EndfieldTransferData>(() =>
+    this.modId() === 'aef' ? 'data/aef/transfer.json' : undefined,
+  );
+  readonly transferData = computed(() =>
+    this.transferResource.error() ? undefined : this.transferResource.value(),
+  );
+  readonly transferError = computed(() => this.transferResource.error());
+
   private readonly modHashResource = httpResource<ModHash>(() => {
     const modId = this.modId();
-    if (modId !== DEFAULT_MOD) return undefined;
+    if (modId == null) return undefined;
     return `data/${modId}/hash.json`;
   });
 
   private readonly modI18nResource = httpResource<ModI18n>(() => {
     const modId = this.modId();
     const lang = this.preferencesStore.language();
-    if (modId !== DEFAULT_MOD || lang === 'en') return undefined;
+    if (modId == null || !['zh', 'ja', 'ru'].includes(lang)) return undefined;
     return `data/${modId}/i18n/${lang}.json`;
   });
 
@@ -113,32 +112,9 @@ export class SettingsStore extends Store<SettingsState> {
       this.modI18nResource.isLoading(),
   );
 
-  /** A resource may retain its preceding error while a fresh request is loading. */
-  readonly loadError = computed(
-    () =>
-      (this.modDataResource.isLoading()
-        ? undefined
-        : this.modDataResource.error()) ??
-      (this.modHashResource.isLoading()
-        ? undefined
-        : this.modHashResource.error()),
-  );
-
-  /** A navigation may retry the same dataset after an HTTP failure. */
-  retryFailedResources(): boolean {
-    let requested = false;
-    if (this.modDataResource.error() != null)
-      requested = this.modDataResource.reload() || requested;
-    if (this.modHashResource.error() != null)
-      requested = this.modHashResource.reload() || requested;
-    return requested;
-  }
-
   readonly modData = computed(() => {
     const modId = this.modId();
     if (modId == null) return undefined;
-
-    if (modId === CUSTOM_MOD) return this.customData.value() ?? undefined;
 
     if (this.modDataResource.error()) return undefined;
     return this.modDataResource.value();
@@ -148,17 +124,58 @@ export class SettingsStore extends Store<SettingsState> {
     const modId = this.modId();
     if (modId == null) return undefined;
 
-    if (modId === CUSTOM_MOD) return this.customHash.value() ?? undefined;
-
     if (this.modHashResource.error()) return undefined;
     return this.modHashResource.value();
   });
 
+  readonly endfieldData = computed(() => this.modData()?.endfield);
+  // Auto uses the server schedule when the catalog loads or is replaced.
+  readonly activitySchedule = computed(() => {
+    const now = Date.now();
+    return Object.fromEntries(
+      Object.entries(this.endfieldData()?.activities ?? {}).map(
+        ([id, event]) => [id, scheduledActivityStage(event, now)],
+      ),
+    );
+  });
+  readonly activityModes = computed<ActivityModes>(() => {
+    const saved = this.endfieldStore.activityModes();
+    return Object.fromEntries(
+      Object.entries(this.endfieldData()?.activities ?? {}).flatMap(
+        ([id, event]) => {
+          const mode = saved[id];
+          return mode === 'disabled' ||
+            (mode != null && event.stageStarts.includes(mode))
+            ? [[id, mode]]
+            : [];
+        },
+      ),
+    );
+  });
+  readonly activityTimes = computed(() => {
+    const modes = this.activityModes();
+    return Object.fromEntries(
+      Object.entries(this.activitySchedule()).map(([id, scheduled]) => {
+        const stage = modes[id] ?? scheduled;
+        return [id, typeof stage === 'number' ? stage : -Infinity];
+      }),
+    );
+  });
+
+  setActivityMode(id: string, mode: ActivityMode): void {
+    const modes = { ...this.endfieldStore.activityModes() };
+    if (mode === 'auto') delete modes[id];
+    else modes[id] = mode;
+    this.endfieldStore.apply({ activityModes: modes });
+  }
+  private readonly availableModData = computed(() => {
+    const data = this.modData();
+    return data?.endfield
+      ? availableEndfieldData(data, this.activityTimes())
+      : data;
+  });
+
   readonly modI18n = computed(() => {
-    const modId = this.modId();
-    const language = this.preferencesStore.language();
-    if (modId == null || language === 'en' || this.modI18nResource.isLoading())
-      return undefined;
     if (this.modI18nResource.error()) return undefined;
     return this.modI18nResource.value();
   });
@@ -171,7 +188,7 @@ export class SettingsStore extends Store<SettingsState> {
 
   readonly game = computed(() => {
     const mod = this.modInfo();
-    return coalesce<Game>(mod?.game, 'factorio');
+    return coalesce<Game>(mod?.game, 'endfield');
   });
 
   readonly modStates = computed(() => {
@@ -198,26 +215,20 @@ export class SettingsStore extends Store<SettingsState> {
     return displayRateInfo[displayRate];
   });
 
-  readonly modOptions = computed(() => {
-    const game = this.game();
-    return modOptions(game).filter((option) => option.value === DEFAULT_MOD);
-  });
-
   readonly defaults = computed(() =>
-    this.computeDefaults(this.modInfo(), this.modData(), this.preset()),
+    this.computeDefaults(this.modData(), this.preset()),
   );
 
   readonly iconPath = computed(() => {
     const info = this.modInfo();
     const modId = coalesce(info?.id, DEFAULT_MOD);
-    if (modId === CUSTOM_MOD) return this.customIconsUrl();
     return `data/${modId}/icons.webp`;
   });
 
   readonly dataset = computed(() =>
     this.computeDataset(
       this.modInfo(),
-      this.modData(),
+      this.availableModData(),
       this.modHash(),
       this.modI18n(),
       this.game(),
@@ -369,128 +380,61 @@ export class SettingsStore extends Store<SettingsState> {
   }
 
   private computeDefaults(
-    modInfo: ModInfo | undefined,
     modData: ModData | undefined,
     presetSetting: number,
   ): Defaults | undefined {
-    if (modInfo == null || modData?.defaults == null) return undefined;
+    if (modData?.defaults == null || !('presets' in modData.defaults))
+      return undefined;
 
     const m = modData.defaults;
-    if ('presets' in m) {
-      const p = coalesce(
-        m.presets.find((p) => p.id === presetSetting),
-        coalesce(m.presets[0], { id: 0, label: '' }),
-      );
-      let beacons: BeaconSettings[] = [];
-      const beaconId = coalesce(p.beacon, m.beacon);
-      if (beaconId) {
-        const beaconBaseId = baseId(beaconId);
-        const beacon = modData.items.find((i) => i.id === beaconBaseId)?.beacon;
-        if (beacon) {
-          const modules: ModuleSettings[] = [
-            {
-              count: rational(beacon.modules),
-              id: coalesce(coalesce(p.beaconModule, m.beaconModule), ''),
-            },
-          ];
-          beacons = [
-            {
-              count: rational(coalesce(p.beaconCount, 0)),
-              id: beaconId,
-              modules,
-            },
-          ];
-        }
-      }
-
-      return {
-        locations: coalesce(p.locations, m.locations),
-        beltRankIds: coalesce(p.beltRank, m.beltRank),
-        beltStack: rational(coalesce(p.beltStack, m.beltStack)),
-        fuelRankIds: coalesce(coalesce(p.fuelRank, m.fuelRank), []),
-        wagonRankIds: coalesce(p.wagonRank, m.wagonRank),
-        excludedRecipeIds: coalesce(
-          coalesce(p.excludedRecipes, m.excludedRecipes),
-          [],
-        ),
-        machineRankIds: coalesce(coalesce(p.machineRank, m.machineRank), []),
-        moduleRankIds: coalesce(coalesce(p.moduleRank, m.moduleRank), []),
-        beacons,
-        miningBonus: rational(coalesce(p.miningBonus, m.miningBonus)),
-        researchBonus: rational(coalesce(p.researchBonus, m.researchBonus)),
-        researchProductivity: rational(
-          coalesce(p.researchProductivity, m.researchProductivity),
-        ),
-        researchedTechnologyIds: p.researchedTechnologies
-          ? new Set(p.researchedTechnologies)
-          : undefined,
-        recipeProductivity: toRationalRecord(p.recipeProductivity),
-      };
-    }
-
-    const preset: Preset = presetSetting;
+    const p = coalesce(
+      m.presets.find((p) => p.id === presetSetting),
+      coalesce(m.presets[0], { id: 0, label: '' }),
+    );
     let beacons: BeaconSettings[] = [];
-    let moduleRank: string[] | undefined;
-    let overclock: Rational | undefined;
-    switch (modInfo.game) {
-      case 'factorio': {
-        moduleRank = preset === Preset.Minimum ? undefined : m.moduleRank;
-        if (m.beacon) {
-          const beacon = modData.items.find((i) => i.id === m.beacon)?.beacon;
-          if (beacon) {
-            const id = m.beacon;
-            const modules: ModuleSettings[] = [
-              {
-                count: rational(beacon.modules),
-                id: coalesce(m.beaconModule, ''),
-              },
-            ];
-
-            const count =
-              preset < Preset.Beacon8
-                ? rational.zero
-                : preset === Preset.Beacon8
-                  ? rational(8n)
-                  : rational(12n);
-            beacons = [{ count, id, modules }];
-          }
-        }
-        break;
-      }
-      case 'dyson-sphere-program': {
-        moduleRank = preset === Preset.Beacon8 ? m.moduleRank : undefined;
-        break;
-      }
-      case 'satisfactory': {
-        moduleRank = m.moduleRank;
-        overclock = rational(100n);
-        break;
-      }
-      case 'final-factory': {
-        moduleRank = m.moduleRank;
-        break;
+    const beaconId = coalesce(p.beacon, m.beacon);
+    if (beaconId) {
+      const beaconBaseId = baseId(beaconId);
+      const beacon = modData.items.find((i) => i.id === beaconBaseId)?.beacon;
+      if (beacon) {
+        const modules: ModuleSettings[] = [
+          {
+            count: rational(beacon.modules),
+            id: coalesce(coalesce(p.beaconModule, m.beaconModule), ''),
+          },
+        ];
+        beacons = [
+          {
+            count: rational(coalesce(p.beaconCount, 0)),
+            id: beaconId,
+            modules,
+          },
+        ];
       }
     }
 
     return {
-      beltRankIds: preset === Preset.Minimum ? m.minBeltRank : m.maxBeltRank,
-      wagonRankIds: m.wagonRank,
-      excludedRecipeIds: coalesce(m.excludedRecipes, []),
-      machineRankIds: coalesce(
-        preset === Preset.Minimum ? m.minMachineRank : m.maxMachineRank,
+      locations: coalesce(p.locations, m.locations),
+      beltRankIds: coalesce(p.beltRank, m.beltRank),
+      beltStack: rational(coalesce(p.beltStack, m.beltStack)),
+      fuelRankIds: coalesce(coalesce(p.fuelRank, m.fuelRank), []),
+      wagonRankIds: coalesce(p.wagonRank, m.wagonRank),
+      excludedRecipeIds: coalesce(
+        coalesce(p.excludedRecipes, m.excludedRecipes),
         [],
       ),
-      fuelRankIds: coalesce(m.fuelRank, []),
-      moduleRankIds: coalesce(moduleRank, []),
+      machineRankIds: coalesce(coalesce(p.machineRank, m.machineRank), []),
+      moduleRankIds: coalesce(coalesce(p.moduleRank, m.moduleRank), []),
       beacons,
-      overclock,
-      miningBonus: rational(m.miningBonus),
-      researchBonus: rational(m.researchBonus),
-      researchProductivity: rational(m.researchProductivity),
-      researchedTechnologyIds: m.researchedTechnologies
-        ? new Set(m.researchedTechnologies)
+      miningBonus: rational(coalesce(p.miningBonus, m.miningBonus)),
+      researchBonus: rational(coalesce(p.researchBonus, m.researchBonus)),
+      researchProductivity: rational(
+        coalesce(p.researchProductivity, m.researchProductivity),
+      ),
+      researchedTechnologyIds: p.researchedTechnologies
+        ? new Set(p.researchedTechnologies)
         : undefined,
-      recipeProductivity: toRationalRecord(m.recipeProductivity),
+      recipeProductivity: toRationalRecord(p.recipeProductivity),
     };
   }
 
@@ -819,8 +763,7 @@ export class SettingsStore extends Store<SettingsState> {
     );
 
     const modId = coalesce(info?.id, DEFAULT_MOD);
-    let file = `data/${modId}/icons.webp`;
-    if (modId === CUSTOM_MOD) file = this.customIconsUrl();
+    const file = `data/${modId}/icons.webp`;
 
     function toIconRecord(
       ids: string[],

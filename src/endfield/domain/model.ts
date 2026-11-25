@@ -1,5 +1,7 @@
 import { Rational, rational } from '~/rational/rational';
 
+import type { ActivityModes } from './game-data';
+
 /** Resource IDs are also the stable keys of supply settings and owners. */
 export const resourceRecipes = {
   originium_ore: 'originium_ore',
@@ -21,7 +23,7 @@ export interface SourceRecipeSettings {
 }
 
 export interface EndfieldState {
-  readonly version: 1;
+  readonly activityModes: ActivityModes;
   readonly resourceLimits: {
     readonly enabled: boolean;
     /** Physical output rates in items per second. */
@@ -32,19 +34,13 @@ export interface EndfieldState {
     /** Physical machine counts, not rates. */
     readonly limits: Readonly<Record<typeof ovenId, Rational>>;
   };
-  readonly transfer: {
-    readonly enabled: boolean;
-    readonly source: 'tundra';
-  };
+  readonly transferEnabled: boolean;
+  readonly transferSource: string;
   readonly electric: Rational;
   readonly resourceRecipeSettings: Readonly<
     Partial<Record<ResourceId, SourceRecipeSettings>>
   >;
-  readonly checkedDerived: ReadonlySet<string>;
-}
-
-export function resourceOwner(id: ResourceId): string {
-  return `resource:${id}`;
+  readonly checkedDerived: ReadonlySet<ResourceId>;
 }
 
 export function resourceObjectiveId(id: ResourceId): string {
@@ -62,7 +58,7 @@ export function resourceLimitId(id: ResourceId): string {
 
 export function createEndfieldState(): EndfieldState {
   return {
-    version: 1,
+    activityModes: {},
     resourceLimits: {
       enabled: false,
       rates: {
@@ -75,7 +71,8 @@ export function createEndfieldState(): EndfieldState {
       },
     },
     machineLimits: { enabled: false, limits: { [ovenId]: rational(12) } },
-    transfer: { enabled: false, source: 'tundra' },
+    transferEnabled: false,
+    transferSource: 'tundra',
     electric: rational.one,
     resourceRecipeSettings: {},
     checkedDerived: new Set(),

@@ -1,5 +1,7 @@
+import { isDevMode } from '@angular/core';
+
 import { Theme } from '~/state/preferences/theme';
-import { Language } from '~/translate/language';
+import { Language, languageOptions } from '~/translate/language';
 
 import { StepDetailSection } from '../objectives/step-detail-section';
 import { ColumnsState, initialColumnsState } from './columns-state';
@@ -29,7 +31,7 @@ export interface PreferencesState {
 export const initialPreferencesState: PreferencesState = {
   states: {},
   columns: initialColumnsState,
-  language: 'en',
+  language: initialLanguage(!isDevMode(), navigator.language),
   powerUnit: PowerUnit.kW,
   hue: 256,
   chroma: 100,
@@ -49,3 +51,20 @@ export const initialPreferencesState: PreferencesState = {
     outputs: true,
   },
 };
+
+export function initialLanguage(
+  production: boolean,
+  browserLanguage: string,
+): Language {
+  if (!production) return 'en';
+  const locale = browserLanguage.toLowerCase();
+  const primary = locale.split('-')[0];
+  return (
+    languageOptions.find(({ value }) => value.toLowerCase() === locale)
+      ?.value ??
+    languageOptions.find(
+      ({ value }) => value.toLowerCase().split('-')[0] === primary,
+    )?.value ??
+    'en'
+  );
+}

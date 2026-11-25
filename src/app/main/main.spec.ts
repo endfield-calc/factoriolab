@@ -21,10 +21,4 @@ describe('Main', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
-
-  it('renders both Endfield panels', () => {
-    const html = fixture.nativeElement as HTMLElement;
-    expect(html.querySelector('lab-endfield-resources')).not.toBeNull();
-    expect(html.querySelector('lab-endfield-guide')).not.toBeNull();
-  });
 });

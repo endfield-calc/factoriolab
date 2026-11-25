@@ -1,148 +1,274 @@
-import rawData from '/public/data/aef/data.json';
-import { ModData } from '~/data/schema/mod-data';
-import { createEndfieldState, resourceOwner } from '~/endfield/domain/model';
+import { emptyModData, ModData } from '~/data/schema/mod-data';
+import {
+  createEndfieldState,
+  EndfieldState,
+  resourceIds,
+  resourceRecipes,
+} from '~/endfield/domain/model';
 import { Rational, rational } from '~/rational/rational';
 
-import {
-  decodeEndfield,
-  encodeEndfield,
-  validateRecipeReferences,
-} from './codec';
+import { decodeEndfield, encodeEndfield } from './codec';
 
-const data = rawData as unknown as ModData;
-function payload(value: unknown): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(value));
-  return btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
-function expectRestoreError(action: () => unknown, context: string): void {
-  expect(action).withContext(context).toThrowError(Error);
-}
+const escapedMachine = 'drill_!*~&=/%+中文';
+const data: ModData = {
+  ...emptyModData(),
+  items: [
+    { id: escapedMachine, name: 'Drill', machine: {} },
+    { id: 'other-drill', name: 'Other drill', machine: {} },
+  ],
+  recipes: Object.values(resourceRecipes).map((id, index) => ({
+    id,
+    name: id,
+    time: 1,
+    in: {},
+    out: {},
+    producers: index === 0 ? [escapedMachine, 'other-drill'] : [escapedMachine],
+  })),
+};
 
 describe('Endfield ef codec', () => {
-  it('rejects machine overrides for producerless settlement recipes', () => {
-    for (const id of [
-      'tundra_coupon-glass_bottle',
-      'jinlong_coupon-copper_cmpt',
-    ]) {
-      const recipe = data.recipes.find((entry) => entry.id === id)!;
-      expect(recipe.producers).toBeUndefined();
-      for (const machineId of [
-        'settlement-tundra_coupon',
-        'settlement-jinlong_coupon',
-        'miner_2',
-      ])
-        expectRestoreError(() => {
-          validateRecipeReferences({ machineId }, data, 'recipe', id);
-        }, 'recipe.machineId');
+  it('round trips the transfer source and reads older enabled flags as Tundra', () => {
+    const state = {
+      ...createEndfieldState(),
+      transferEnabled: true,
+      transferSource: 'jinlong',
+    };
+    expect(decodeEndfield(encodeEndfield(state))).toEqual(state);
+    expect(decodeEndfield('4').transferEnabled).toBeTrue();
+    expect(decodeEndfield('4').transferSource).toBe('tundra');
+    expect(
+      decodeEndfield(encodeEndfield({ ...state, transferEnabled: false })),
+    ).toEqual({ ...state, transferEnabled: false });
+  });
+  it('round trips stage start times and disabled events independently of their display order', () => {
+    const state = {
+      ...createEndfieldState(),
+      activityModes: { second: 'disabled', '活动~1': 1_778_000_000_000 },
+    } as const;
+    const encoded = encodeEndfield(state);
+    expect(decodeEndfield(encoded)).toEqual(state);
+    expect(
+      encodeEndfield({
+        ...state,
+        activityModes: { '活动~1': 1_778_000_000_000, second: 'disabled' },
+      }),
+    ).toBe(encoded);
+    for (const invalid of [
+      '*****a~d~a~0',
+      '*****a',
+      '*****a~0.1',
+      '*****a~9007199254740992',
+    ])
+      expect(() => decodeEndfield(invalid)).toThrowError();
+  });
+  it('omits default state and retains each enabled and checked bit', () => {
+    const defaults = createEndfieldState();
+    expect(encodeEndfield(defaults)).toBeUndefined();
+    expect(decodeEndfield(undefined)).toEqual(defaults);
+    expect(decodeEndfield(null)).toEqual(defaults);
+    for (let flags = 0; flags < 8; flags++) {
+      const state: EndfieldState = {
+        ...defaults,
+        resourceLimits: { ...defaults.resourceLimits, enabled: !!(flags & 1) },
+        machineLimits: { ...defaults.machineLimits, enabled: !!(flags & 2) },
+        transferEnabled: !!(flags & 4),
+      };
+      expect(decodeEndfield(encodeEndfield(state))).toEqual(state);
     }
+    const checked: EndfieldState = {
+      ...defaults,
+      checkedDerived: new Set(['originium_ore', 'gas_inert']),
+    };
+    expect(decodeEndfield(encodeEndfield(checked))).toEqual(checked);
   });
-  it('allows the native empty module slot and rejects an unknown module on ordinary recipes', () => {
-    expect(() => {
-      validateRecipeReferences(
-        { modules: [{ id: '' }] },
-        data,
-        'ordinary',
-        'copper_ore',
-      );
-    }).not.toThrow();
-    expectRestoreError(() => {
-      validateRecipeReferences(
-        { modules: [{ id: 'missing-module' }] },
-        data,
-        'ordinary',
-        'copper_ore',
-      );
-    }, 'ordinary.modules.0.id');
-  });
-  it('rejects zero recipe speed before a resource workspace can be committed', () => {
-    expect(() =>
+
+  it('retains disabled inputs, independent sources, signed electricity and exact fractions', () => {
+    const defaults = createEndfieldState();
+    const state: EndfieldState = {
+      ...defaults,
+      resourceLimits: {
+        enabled: false,
+        rates: {
+          ...defaults.resourceLimits.rates,
+          originium_ore: new Rational(900719925474099312345n, 7n),
+          copper_ore: rational(17, 3),
+        },
+      },
+      machineLimits: {
+        enabled: false,
+        limits: { xiranite_oven_1: rational(5, 3) },
+      },
+      electric: rational(-7, 9),
+      resourceRecipeSettings: {
+        originium_ore: { machineId: 'other-drill', overclock: rational(125) },
+        copper_ore: { machineId: escapedMachine, overclock: rational(7, 3) },
+        gas_inert: { overclock: rational(3, 2) },
+      },
+      checkedDerived: new Set(['gas_inert', 'originium_ore']),
+    };
+    const encoded = encodeEndfield(state)!;
+    expect(encoded).not.toMatch(/[&=%+]/);
+    expect(decodeEndfield(encoded, data)).toEqual(state);
+    expect(encodeEndfield(decodeEndfield(encoded, data))).toBe(encoded);
+    const params = new URLSearchParams({ ef: encoded, v: '12' });
+    expect(decodeEndfield(params.get('ef'), data)).toEqual(state);
+    expect(
       decodeEndfield(
-        payload({
-          version: 1,
-          resourceLimits: { enabled: true, rates: { originium_ore: '1' } },
-          resourceRecipeSettings: { originium_ore: { overclock: '0' } },
-        }),
+        new URL(`https://example.test/?${params}`).searchParams.get('ef'),
         data,
       ),
-    ).toThrowError(Error, /overclock must be positive/);
+    ).toEqual(state);
+
+    const zero = { ...state, electric: rational.zero };
+    expect(decodeEndfield(encodeEndfield(zero), data)).toEqual(zero);
   });
-  it('distinguishes disabled from enabled zero, fills only omitted defaults', () => {
+
+  it('uses fixed resource positions independent of insertion order and omits empty settings', () => {
     const defaults = createEndfieldState();
-    expect(decodeEndfield(undefined, data)).toEqual(defaults);
-    expect(decodeEndfield(null, data)).toEqual(defaults);
-    const disabled = decodeEndfield(encodeEndfield(defaults), data);
-    const enabled = decodeEndfield(
-      payload({ version: 1, resourceLimits: { enabled: true } }),
-      data,
-    );
-    expect(disabled.resourceLimits.enabled).toBeFalse();
-    expect(enabled.resourceLimits.enabled).toBeTrue();
-    expect(enabled.resourceLimits.rates).toEqual(defaults.resourceLimits.rates);
-    expect(enabled.machineLimits).toEqual(defaults.machineLimits);
-    expect(enabled.electric).toEqual(rational.one);
-    expect(encodeEndfield(enabled)).not.toBe(encodeEndfield(disabled));
-  });
-
-  it('fills omitted enabled flags and retains independent source settings', () => {
-    const state = decodeEndfield(
-      payload({
-        version: 1,
-        resourceLimits: { rates: { iron_ore: '3' } },
-        machineLimits: { limits: { xiranite_oven_1: '2' } },
-        transfer: { source: 'tundra' },
-        resourceRecipeSettings: {
-          iron_ore: { overclock: '125' },
-          originium_ore: { machineId: 'miner_2' },
-        },
-      }),
-      data,
-    );
-    expect(state.resourceLimits.enabled).toBeFalse();
-    expect(state.machineLimits.enabled).toBeFalse();
-    expect(state.transfer.enabled).toBeFalse();
-    expect(state.resourceLimits.rates.iron_ore).toEqual(rational(3));
-    expect(state.machineLimits.limits.xiranite_oven_1).toEqual(rational(2));
-    expect(state.resourceRecipeSettings.iron_ore).toEqual({
-      overclock: rational(125),
-    });
-    expect(state.resourceRecipeSettings.originium_ore).toEqual({
-      machineId: 'miner_2',
-    });
-    expect(decodeEndfield(encodeEndfield(state), data)).toEqual(state);
-  });
-
-  it('canonicalizes empty source settings at the decoding boundary', () => {
-    const settings = {
-      originium_ore: { overclock: '125' },
-      copper_ore: { machineId: 'miner_4' },
+    const first: EndfieldState = {
+      ...defaults,
+      resourceRecipeSettings: {
+        originium_ore: { overclock: rational(125) },
+        copper_ore: { machineId: escapedMachine },
+        iron_ore: {},
+      },
+      checkedDerived: new Set(['gas_inert', 'originium_ore']),
     };
-    const state = decodeEndfield(
-      payload({
-        version: 1,
-        resourceRecipeSettings: { ...settings, iron_ore: {} },
-      }),
-      data,
-    );
-    const canonical = decodeEndfield(
-      payload({ version: 1, resourceRecipeSettings: settings }),
-      data,
-    );
-    expect(state.resourceRecipeSettings).toEqual({
-      originium_ore: { overclock: rational(125) },
-      copper_ore: { machineId: 'miner_4' },
-    });
-    expect(state).toEqual(canonical);
-    expect(encodeEndfield(state)).toBe(encodeEndfield(canonical));
+    const second: EndfieldState = {
+      ...defaults,
+      resourceRecipeSettings: {
+        copper_ore: { machineId: escapedMachine },
+        originium_ore: { overclock: rational(125) },
+      },
+      checkedDerived: new Set(['originium_ore', 'gas_inert']),
+    };
+    expect(encodeEndfield(first)).toBe(encodeEndfield(second));
+    expect(decodeEndfield(encodeEndfield(first), data)).toEqual(second);
+    expect(
+      encodeEndfield({ ...defaults, resourceRecipeSettings: { iron_ore: {} } }),
+    ).toBeUndefined();
+  });
+
+  it('round trips every resource position with distinct rates and source speeds', () => {
+    const defaults = createEndfieldState();
+    const rates = { ...defaults.resourceLimits.rates };
+    const resourceRecipeSettings: EndfieldState['resourceRecipeSettings'] =
+      Object.fromEntries(
+        resourceIds.map((id, index) => {
+          rates[id] = rational(index + 1, index + 2);
+          return [
+            id,
+            { machineId: escapedMachine, overclock: rational(index + 1, 2) },
+          ];
+        }),
+      );
+    const state: EndfieldState = {
+      ...defaults,
+      resourceLimits: { enabled: true, rates },
+      resourceRecipeSettings,
+      checkedDerived: new Set(resourceIds),
+    };
     expect(decodeEndfield(encodeEndfield(state), data)).toEqual(state);
   });
 
-  it('round trips exact rates, real settings and owners with stable encoding', () => {
+  it('preserves very small and large fractions without floating point conversion', () => {
     const defaults = createEndfieldState();
-    const state = {
+    const tiny = new Rational(1n, 10n ** 400n);
+    const state: EndfieldState = {
+      ...defaults,
+      resourceLimits: {
+        ...defaults.resourceLimits,
+        rates: {
+          ...defaults.resourceLimits.rates,
+          iron_ore: new Rational(900719925474099312345n, 7n),
+          gas_inert: tiny,
+        },
+      },
+      machineLimits: {
+        ...defaults.machineLimits,
+        limits: { xiranite_oven_1: rational.zero },
+      },
+      electric: tiny.inverse(),
+    };
+    const encoded = encodeEndfield(state)!;
+    expect(encoded).toContain(tiny.toFraction(false));
+    expect(decodeEndfield(encoded, data)).toEqual(state);
+  });
+
+  it('rejects malformed fields, invalid constraints and unvalidated machine references', () => {
+    expect(() =>
+      encodeEndfield({
+        ...createEndfieldState(),
+        resourceRecipeSettings: { originium_ore: { machineId: '' } },
+      }),
+    ).toThrowError(/Empty machine ID/);
+    for (const encoded of [
+      3,
+      '',
+      'bad',
+      '%!',
+      '1=2',
+      '***1+2',
+      '1*2*3*4*5*6',
+      '1*2*3*4*5*6*7',
+      '1*2*3*4*5*6*7*8',
+      '*',
+      'zz',
+      '*1~2~3~4~5~6~7',
+      '*-1',
+      '*1/0',
+      '*1e2',
+      '**-1',
+      '**1.5',
+      '***1/0',
+      '***-1e-8',
+      '****~0',
+      '****~-1',
+      '****~1.5',
+      '****!',
+      '****!FF',
+      '****!41',
+      '****~~~~~~~~~~~~~1',
+    ])
+      expect(() => decodeEndfield(encoded, data))
+        .withContext(String(encoded))
+        .toThrowError(Error);
+    const missing = encodeEndfield({
+      ...createEndfieldState(),
+      resourceRecipeSettings: { originium_ore: { machineId: 'missing' } },
+    });
+    expect(() => decodeEndfield(missing, data)).toThrowError(/Unknown machine/);
+    const wrongProducer = encodeEndfield({
+      ...createEndfieldState(),
+      resourceRecipeSettings: { copper_ore: { machineId: 'other-drill' } },
+    });
+    expect(() => decodeEndfield(wrongProducer, data)).toThrowError(
+      /not a producer/,
+    );
+    expect(() => decodeEndfield(wrongProducer)).toThrowError(
+      /Data is required/,
+    );
+  });
+
+  it('rejects source machines when the source has no producer', () => {
+    const producerless: ModData = {
+      ...data,
+      recipes: [
+        { id: 'originium_ore', name: 'Source', time: 1, in: {}, out: {} },
+      ],
+    };
+    const encoded = encodeEndfield({
+      ...createEndfieldState(),
+      resourceRecipeSettings: { originium_ore: { machineId: escapedMachine } },
+    });
+    expect(() => decodeEndfield(encoded, producerless)).toThrowError(
+      /not a producer/,
+    );
+  });
+
+  it('keeps a representative extension compact', () => {
+    const defaults = createEndfieldState();
+    const state: EndfieldState = {
       ...defaults,
       resourceLimits: {
         enabled: true,
@@ -152,232 +278,11 @@ describe('Endfield ef codec', () => {
         },
       },
       resourceRecipeSettings: {
-        copper_ore: {
-          machineId: 'miner_4',
-          overclock: rational(125),
-        },
+        copper_ore: { machineId: escapedMachine, overclock: rational(125) },
       },
-      checkedDerived: new Set([resourceOwner('copper_ore')]),
+      checkedDerived: new Set(['copper_ore']),
       electric: rational(7, 9),
     };
-    const encoded = encodeEndfield(state);
-    expect(encoded).toBe(
-      payload({
-        version: 1,
-        resourceLimits: {
-          enabled: true,
-          rates: {
-            originium_ore: '0',
-            quartz_sand: '0',
-            iron_ore: '0',
-            copper_ore: '17/3',
-            gas_xiranite: '0',
-            gas_inert: '0',
-          },
-        },
-        machineLimits: { enabled: false, limits: { xiranite_oven_1: '12' } },
-        transfer: { enabled: false, source: 'tundra' },
-        electric: '7/9',
-        resourceRecipeSettings: {
-          copper_ore: { machineId: 'miner_4', overclock: '125' },
-        },
-        checkedDerived: ['resource:copper_ore'],
-      }),
-    );
-    expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
-    expect(decodeEndfield(encoded, data)).toEqual(state);
-    expect(encodeEndfield(decodeEndfield(encoded, data))).toBe(encoded);
-  });
-
-  it('rejects invalid base64, UTF-8, JSON shapes and unexpected fields with a location', () => {
-    const invalidUtf8 = btoa(String.fromCharCode(0xc3, 0x28)).replace(
-      /=+$/,
-      '',
-    );
-    const invalidJson = btoa('{').replace(/=+$/, '');
-    for (const input of [
-      3,
-      '',
-      'a',
-      '%!',
-      'YQ==',
-      invalidUtf8,
-      invalidJson,
-      // The low padding bits differ from canonical eyJ2ZXJzaW9uIjoxfQ.
-      'eyJ2ZXJzaW9uIjoxfR',
-    ])
-      expectRestoreError(() => decodeEndfield(input, data), 'ef');
-    for (const value of [null, [], 3, 'value'])
-      expectRestoreError(() => decodeEndfield(payload(value), data), 'ef');
-    for (const [value, field] of [
-      [{ version: 1, unknown: 1 }, 'ef.unknown'],
-      [{ version: 1, resourceLimits: null }, 'ef.resourceLimits'],
-      [{ version: 1, machineLimits: [] }, 'ef.machineLimits'],
-      [{ version: 1, transfer: { enabled: 'true' } }, 'ef.transfer.enabled'],
-      [
-        { version: 1, resourceLimits: { enabled: 1 } },
-        'ef.resourceLimits.enabled',
-      ],
-      [
-        { version: 1, resourceLimits: { rates: { other: '1' } } },
-        'ef.resourceLimits.rates.other',
-      ],
-      [
-        { version: 1, resourceLimits: { rates: { copper_ore: '-1' } } },
-        'ef.resourceLimits.rates.copper_ore',
-      ],
-      [{ version: 1, transfer: { source: 'jinlong' } }, 'ef.transfer.source'],
-      [
-        { version: 1, checkedDerived: ['resource:unknown'] },
-        'ef.checkedDerived',
-      ],
-      [
-        { version: 1, resourceRecipeSettings: null },
-        'ef.resourceRecipeSettings',
-      ],
-      [{ version: 1, resourceRecipeSettings: [] }, 'ef.resourceRecipeSettings'],
-      [
-        { version: 1, resourceRecipeSettings: { unknown: {} } },
-        'ef.resourceRecipeSettings.unknown',
-      ],
-      [
-        { version: 1, resourceRecipeSettings: { copper_ore: null } },
-        'ef.resourceRecipeSettings.copper_ore',
-      ],
-      [
-        { version: 1, resourceRecipeSettings: { copper_ore: [] } },
-        'ef.resourceRecipeSettings.copper_ore',
-      ],
-      [
-        {
-          version: 1,
-          resourceRecipeSettings: { copper_ore: { overclock: null } },
-        },
-        'ef.resourceRecipeSettings.copper_ore.overclock',
-      ],
-      [
-        { version: 1, checkedDerived: 'resource:iron_ore' },
-        'ef.checkedDerived',
-      ],
-      [
-        {
-          version: 1,
-          checkedDerived: ['resource:iron_ore', 'resource:iron_ore'],
-        },
-        'ef.checkedDerived',
-      ],
-      [{ version: 1, checkedDerived: [false] }, 'ef.checkedDerived'],
-      [
-        {
-          version: 1,
-          machineLimits: { enabled: false, limits: { other: '1' } },
-        },
-        'ef.machineLimits.limits.other',
-      ],
-      [
-        { version: 1, resourceLimits: { rates: { iron_ore: 1 } } },
-        'ef.resourceLimits.rates.iron_ore',
-      ],
-      [
-        { version: 1, resourceRecipeSettings: { copper_ore: { unknown: 1 } } },
-        'ef.resourceRecipeSettings.copper_ore.unknown',
-      ],
-      [
-        { version: 1, resourceRecipeSettings: { copper_ore: { cost: '-1' } } },
-        'ef.resourceRecipeSettings.copper_ore.cost',
-      ],
-    ] as const)
-      expectRestoreError(() => decodeEndfield(payload(value), data), field);
-    for (const version of [undefined, null, 1.5])
-      expectRestoreError(
-        () => decodeEndfield(payload({ version }), data),
-        'ef.version',
-      );
-  });
-
-  it('keeps large fractions exact and rejects malformed or out-of-domain rates', () => {
-    const restored = decodeEndfield(
-      payload({
-        version: 1,
-        resourceLimits: {
-          enabled: true,
-          rates: {
-            iron_ore: '900719925474099312345/7',
-            copper_ore: '12.5e2',
-            gas_inert: '1e-8',
-          },
-        },
-        machineLimits: { enabled: true, limits: { xiranite_oven_1: '0' } },
-        transfer: { enabled: true, source: 'tundra' },
-        electric: '0',
-      }),
-      data,
-    );
-    expect(restored.resourceLimits.rates.iron_ore).toEqual(
-      new Rational(900719925474099312345n, 7n),
-    );
-    expect(restored.resourceLimits.rates.copper_ore).toEqual(rational(1250));
-    expect(restored.resourceLimits.rates.gas_inert).toEqual(
-      new Rational(1n, 100000000n),
-    );
-    expect(restored.machineLimits.limits.xiranite_oven_1).toEqual(
-      rational.zero,
-    );
-    expect(restored.transfer.enabled).toBeTrue();
-    expect(restored.electric).toEqual(rational.zero);
-    for (const value of ['', 'abc', '1/0', '-1'])
-      expectRestoreError(
-        () => decodeEndfield(payload({ version: 1, electric: value }), data),
-        'ef.electric',
-      );
-    for (const value of [
-      '1e10001',
-      '1e-10001',
-      '1e9007199254740992',
-      '1.0e-10000',
-    ])
-      expect(() =>
-        decodeEndfield(payload({ version: 1, electric: value }), data),
-      ).toThrowError(
-        Error,
-        'Decimal shift exceeds the supported range at ef.electric',
-      );
-    expectRestoreError(
-      () =>
-        decodeEndfield(
-          payload({
-            version: 1,
-            resourceRecipeSettings: { copper_ore: { overclock: '-1' } },
-          }),
-          data,
-        ),
-      'ef.resourceRecipeSettings.copper_ore.overclock',
-    );
-  });
-
-  it('diagnoses a non-producer or unknown machine reference', () => {
-    for (const machineId of ['miner_2', 'unknown', null, 0])
-      expectRestoreError(
-        () =>
-          decodeEndfield(
-            payload({
-              version: 1,
-              resourceRecipeSettings: { copper_ore: { machineId } },
-            }),
-            data,
-          ),
-        'ef.resourceRecipeSettings.copper_ore.machineId',
-      );
-  });
-
-  it('distinguishes an unknown version from malformed data', () => {
-    expect(() => decodeEndfield(payload({ version: 2 }), data)).toThrowError(
-      Error,
-      'Unsupported ef version: 2',
-    );
-    expect(() => decodeEndfield(payload({ version: '1' }), data)).toThrowError(
-      Error,
-      'Invalid ef version',
-    );
+    expect(encodeEndfield(state)!.length).toBeLessThan(100);
   });
 });

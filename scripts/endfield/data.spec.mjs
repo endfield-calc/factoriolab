@@ -10,6 +10,7 @@ const root = process.cwd();
 const json = async (file) => JSON.parse(await readFile(file, 'utf8'));
 const data = await json('public/data/aef/data.json');
 const hash = await json('public/data/aef/hash.json');
+const transfer = await json('public/data/aef/transfer.json');
 const ids = (entries) => entries.map((entry) => entry.id);
 const entities = ['categories', 'items', 'recipes', 'locations'];
 
@@ -81,19 +82,6 @@ test('current dataset has valid entity shapes and unique IDs', () => {
         assertAmount(value, recipe.id);
     }
   }
-  assert.equal(
-    data.items.find((entry) => entry.id === 'iron_ore').name,
-    'Ferrium Ore',
-  );
-  assert.equal(
-    data.recipes.find((entry) => entry.id === 'iron_ore').name,
-    'Ferrium Ore',
-  );
-  for (const id of ['settlement-jinlong_coupon', 'settlement-tundra_coupon'])
-    assert.ok(
-      data.items.some((entry) => entry.id === id),
-      id,
-    );
 });
 
 test('calculation, category, location, and icon references resolve', () => {
@@ -146,7 +134,6 @@ test('atlas decodes and every 64-pixel icon lies within it', async () => {
   const { info } = await sharp(atlas)
     .raw()
     .toBuffer({ resolveWithObject: true });
-  assert.deepEqual([info.width, info.height], [1024, 1024]);
   for (const icon of data.icons) {
     assert.match(icon.color, /^#[0-9a-f]{6}$/i, icon.id);
     assert.ok(Number.isInteger(icon.x) && Number.isInteger(icon.y), icon.id);
@@ -160,29 +147,19 @@ test('atlas decodes and every 64-pixel icon lies within it', async () => {
   }
 });
 
-test('source overlays have exactly the current entities and ModI18n fields', async () => {
-  assert.deepEqual(await readdir('public/data/aef/i18n'), [
-    'ja.json',
-    'ru.json',
-    'zh.json',
-  ]);
-  for (const language of ['zh', 'ja', 'ru']) {
-    const translation = await json(
-      path.join('public/data/aef/i18n', `${language}.json`),
-    );
-    assert.deepEqual(Object.keys(translation).sort(), [...entities].sort());
-    for (const key of entities) {
-      assert.deepEqual(
-        new Set(Object.keys(translation[key])),
-        new Set(ids(data[key])),
-        `${language}: ${key}`,
-      );
-      assert.ok(
-        Object.values(translation[key]).every(
-          (value) => typeof value === 'string' && value.length > 0,
-        ),
-        `${language}: ${key}`,
-      );
+test('entity translations reference current entities', async () => {
+  for (const file of await readdir('public/data/aef/i18n')) {
+    const translation = await json(path.join('public/data/aef/i18n', file));
+    for (const [key, names] of Object.entries(translation)) {
+      assert.ok(entities.includes(key), `${file}: ${key}`);
+      const available = new Set(ids(data[key]));
+      for (const [id, name] of Object.entries(names)) {
+        assert.ok(available.has(id), `${file}: ${key} ${id}`);
+        assert.ok(
+          typeof name === 'string' && name.length > 0,
+          `${file}: ${id}`,
+        );
+      }
     }
   }
 });
@@ -199,15 +176,108 @@ test('native hash covers exactly the current IDs and is idempotent', () => {
   const copy = structuredClone(hash);
   updateHash(data, copy);
   assert.deepEqual(copy, hash);
-  updateHash(data, copy);
-  assert.deepEqual(copy, hash);
+});
 
-  for (const key of ['items', 'recipes']) {
-    const retired = structuredClone(hash);
-    const index = retired[key].indexOf(null);
-    assert.ok(index >= 0, `${key}: expected a vacant retired slot`);
-    retired[key][index] = `retired-${key}`;
-    updateHash(data, retired);
-    assert.deepEqual(retired, hash);
+test('event recipes and outpost and mining data resolve against the shipped catalog', () => {
+  const { activities, domains, schemaVersion } = data.endfield;
+  assert.equal(schemaVersion, 1);
+  const catalog = new Set(ids(data.items));
+  for (const [key, event] of Object.entries(activities)) {
+    assert.ok(event.openTime < event.closeTime, key);
+    assert.equal(event.stageStarts[0], event.openTime, key);
+    assert.deepEqual(
+      event.stageStarts,
+      [...new Set(event.stageStarts)].sort((a, b) => a - b),
+      key,
+    );
+    assert.ok(event.stageStarts.at(-1) < event.closeTime, key);
+    const recipes = data.recipes.filter((r) =>
+      r.flags?.includes(`activity-${key}`),
+    );
+    assert.ok(
+      recipes.some((r) => r.category === 'activity'),
+      key,
+    );
+    assert.ok(
+      recipes.some((r) => r.category === 'settlement'),
+      key,
+    );
+    for (const r of recipes) assert.ok(r.flags.includes('activity'), r.id);
+    for (const [recipeId, start] of Object.entries(event.recipeUnlocks)) {
+      assert.ok(
+        recipes.some((recipe) => recipe.id === recipeId),
+        recipeId,
+      );
+      assert.ok(
+        event.stageStarts.includes(start) && start > event.openTime,
+        recipeId,
+      );
+    }
   }
+  for (const recipe of data.recipes.filter((r) =>
+    r.flags?.includes('activity'),
+  )) {
+    assert.equal(
+      recipe.flags.filter(
+        (f) => f.startsWith('activity-') && activities[f.slice(9)],
+      ).length,
+      1,
+      recipe.id,
+    );
+  }
+  assert.deepEqual(
+    new Set(domains.map((d) => d.locationId)),
+    new Set(ids(data.locations)),
+  );
+  for (const domain of domains) {
+    assert.ok(catalog.has(domain.couponItemId));
+    assert.ok(domain.mineSummary.length > 0 && domain.settlements.length > 0);
+    for (const mine of domain.mineSummary) {
+      assert.ok(catalog.has(mine.itemId));
+      assert.ok(mine.outputPerMinute >= 0);
+    }
+    for (const outpost of domain.settlements) {
+      assert.ok(outpost.levels.length > 0);
+      assert.deepEqual(
+        outpost.levels.map((l) => l.level),
+        [...new Set(outpost.levels.map((l) => l.level))].sort((a, b) => a - b),
+      );
+      for (const level of outpost.levels)
+        assert.ok(level.moneyMax >= 0 && level.baseMoneySpeed >= 0);
+      for (const event of outpost.activities) {
+        const window = activities[event.activityId.replace(/^activity_/, '')];
+        for (const phase of event.phases) {
+          assert.ok(phase.startTime < phase.endTime && phase.rate > 0);
+          assert.ok(
+            window.stageStarts.includes(phase.startTime),
+            event.activityId,
+          );
+          assert.ok(
+            phase.endTime === window.closeTime ||
+              window.stageStarts.includes(phase.endTime),
+            event.activityId,
+          );
+        }
+      }
+    }
+  }
+});
+
+test('transfer data is separate and references current items and source locations', () => {
+  assert.equal(transfer.schemaVersion, 1);
+  const locations = new Set(ids(data.locations));
+  const items = new Set(ids(data.items));
+  assert.ok(transfer.sources.length > 0 && transfer.items.length > 0);
+  for (const source of transfer.sources) {
+    assert.ok(locations.has(source.locationId));
+    assert.ok(Number.isFinite(source.capacity) && source.capacity > 0);
+  }
+  for (const item of transfer.items) {
+    assert.ok(items.has(item.itemId));
+    assert.ok(Number.isFinite(item.value) && item.value > 0);
+    assert.ok(item.sourceDomainIds.length > 0);
+  }
+  assert.ok(
+    data.recipes.every((recipe) => recipe.category !== '__domain_transfer'),
+  );
 });

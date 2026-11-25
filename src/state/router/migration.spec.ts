@@ -56,16 +56,37 @@ describe('Migration', () => {
       const { params } = service.migrate(undefined, originalParams);
       expect(params).toEqual({ o: [ItemId.Coal], v: routerSync['version'] });
     });
+
+    it('distinguishes removed v10 mod slots from absent and Endfield slots', () => {
+      expect(service.migrate('aef', { v: '10', z: 'z' }).modId).toBe('aef');
+      expect(service.migrate('aef', { v: '10', z: 'z', b: 'Q' }).modId).toBe(
+        'aef',
+      );
+      expect(service.migrate('aef', { v: '10', z: 'z', b: 'P' }).modId).toBe(
+        '',
+      );
+      expect(service.migrate('aef', { v: '10', z: 'z', b: 'aef' }).modId).toBe(
+        '',
+      );
+    });
+
+    it('retains explicit removed v0 mod IDs while allowing the old Endfield ID', () => {
+      expect(service.migrate('aef', { v: '0' }).modId).toBe('aef');
+      expect(service.migrate('aef', { v: '0', s: 'aef' }).modId).toBe('aef');
+      expect(
+        service.migrate('aef', { v: '0', s: 'space-exploration' }).modId,
+      ).toBe('space-exploration');
+    });
   });
 
   describe('migrateV0', () => {
-    it('should handle unrecognized/null baseid', () => {
+    it('should preserve an explicit unrecognized baseid', () => {
       const state = service['migrateV0']({
         params: { s: '---' },
         warnings: [],
         isBare: true,
       });
-      expect(state.modId).toBeUndefined();
+      expect(state.modId).toBe('---');
     });
 
     it('should handle preset without other settings', () => {

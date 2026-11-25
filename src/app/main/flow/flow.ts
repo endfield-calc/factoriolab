@@ -2,17 +2,16 @@ import { Dialog } from '@angular/cdk/dialog';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { faFileArrowDown, faGear } from '@fortawesome/free-solid-svg-icons';
 import { drag, select, Selection, zoom } from 'd3';
 import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs';
-import { combineLatest, debounceTime, filter, switchMap, tap } from 'rxjs';
+import { combineLatest, debounceTime, switchMap } from 'rxjs';
 
 import { Button } from '~/components/button/button';
 import { FlowSettingsDialog } from '~/components/flow-settings-dialog/flow-settings-dialog';
@@ -67,7 +66,7 @@ interface ElkGraph extends ElkNode {
   host: { class: 'flex flex-col gap-1 pb-3 sm:gap-2 lg:pb-6' },
 })
 export class Flow {
-  private readonly destroyRef = inject(DestroyRef);
+  // private readonly destroyRef = inject(DestroyRef);
   protected readonly dialog = inject(Dialog);
   protected readonly exporter = inject(Exporter);
   protected readonly flowBuilder = inject(FlowBuilder);
@@ -78,7 +77,6 @@ export class Flow {
   private readonly height = window.innerHeight * 0.75;
   /** Cached mainly for testing */
   private svg: Selection<SVGSVGElement, unknown, null, undefined> | undefined;
-  private renderGeneration = 0;
 
   protected readonly selectedId = signal<string | undefined>(undefined);
 
@@ -93,15 +91,8 @@ export class Flow {
       settings: toObservable(this.preferencesStore.flowSettings),
     })
       .pipe(
-        tap(() => this.renderGeneration++),
         debounceTime(200),
-        filter(
-          ({ data, settings }) =>
-            data === this.flowBuilder.flowData() &&
-            settings === this.preferencesStore.flowSettings(),
-        ),
         switchMap(({ data, settings }) => this.rebuildChart(data, settings)),
-        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
@@ -110,9 +101,7 @@ export class Flow {
     flowData: FlowData | null,
     flowSettings: FlowSettings,
   ): Promise<void> {
-    this.renderGeneration++;
-    if (this.destroyRef.destroyed) return;
-    select(this.svgElement().nativeElement).selectAll('*').remove();
+    select(`#${SVG_ID} > *`).remove();
 
     if (flowData == null) return;
 
@@ -122,8 +111,6 @@ export class Flow {
   }
 
   rebuildSankey(flowData: FlowData, flowSettings: FlowSettings): void {
-    this.renderGeneration++;
-    if (this.destroyRef.destroyed) return;
     let layout = this.getLayout(flowSettings.sankeyAlign, 1, 1);
     let skGraph = this.getGraph(layout, flowData);
     const columns = Math.max(...skGraph.nodes.map((d) => coalesce(d.depth, 0)));
@@ -308,9 +295,13 @@ export class Flow {
       .attr('href', 'icons/icons.webp')
       .attr('class', 'pointer-events-none');
 
-    // Add the display label for objective or extension-owned nodes.
+    // Add objective id
     node
-      .filter((d) => d.objectiveLabel != null)
+      .filter(
+        (d) =>
+          d.sourceLabel != null ||
+          (d.recipeIcon != null && d.recipeObjectiveId != null),
+      )
       .append('text')
       .attr(
         'class',
@@ -318,7 +309,7 @@ export class Flow {
       )
       .attr('x', 22)
       .attr('y', (d) => this.imageOffset(d) + 22)
-      .text((d) => coalesce(d.objectiveLabel, ''));
+      .text((d) => d.sourceLabel ?? '#' + coalesce(d.recipeObjectiveId, ''));
 
     // Node text
     node
@@ -339,8 +330,6 @@ export class Flow {
     flow: FlowData,
     flowSettings: FlowSettings,
   ): Promise<void> {
-    const generation = ++this.renderGeneration;
-    if (this.destroyRef.destroyed) return;
     const graph: ElkGraph = {
       id: 'root',
       layoutOptions: { 'elk.algorithm': flowSettings.elkAlgorithm },
@@ -357,10 +346,6 @@ export class Flow {
     const result = await this.elk.layout(graph);
 
     if (
-      this.destroyRef.destroyed ||
-      generation !== this.renderGeneration ||
-      flow !== this.flowBuilder.flowData() ||
-      flowSettings !== this.preferencesStore.flowSettings() ||
       result.children == null ||
       result.edges == null ||
       result.width == null ||
@@ -550,9 +535,13 @@ export class Flow {
       .attr('href', (d) => d.icon.file)
       .attr('class', 'pointer-events-none');
 
-    // Add the display label for objective or extension-owned nodes.
+    // Add objective id
     node
-      .filter((d) => d.objectiveLabel != null)
+      .filter(
+        (d) =>
+          d.sourceLabel != null ||
+          (d.recipeIcon != null && d.recipeObjectiveId != null),
+      )
       .append('text')
       .attr(
         'class',
@@ -560,7 +549,7 @@ export class Flow {
       )
       .attr('y', 26)
       .attr('x', 21)
-      .text((d) => coalesce(d.objectiveLabel, ''));
+      .text((d) => d.sourceLabel ?? '#' + coalesce(d.recipeObjectiveId, ''));
 
     // Node text
     node

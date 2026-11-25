@@ -1,4 +1,8 @@
 {
+  "name": "アークナイツ：エンドフィールド",
+  "version": {
+    "arknights-endfield": "v1.7.2"
+  },
   "categories": {
     "activity": "イベント",
     "material": "素材",

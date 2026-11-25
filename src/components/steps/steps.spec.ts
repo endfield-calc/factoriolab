@@ -33,6 +33,15 @@ describe('Steps', () => {
     expect(component).toBeTruthy();
   });
 
+  it('does not show an array note for an item-only step', () => {
+    spyOn(component['objectivesStore'], 'steps').and.returnValue([
+      { id: 'item' },
+    ]);
+    fixture.destroy();
+    component = TestBed.createComponent(Steps).componentInstance;
+    expect(component['hasFormationSteps']()).toBeFalse();
+  });
+
   it('links source rows to the resource panel and omits the fragment for ordinary rows', async () => {
     const steps = signal<Step[]>([
       { ...mocks.step1(), recipeObjectiveId: resourceObjectiveId('iron_ore') },

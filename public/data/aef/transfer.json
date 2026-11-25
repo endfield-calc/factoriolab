@@ -5,6 +5,11 @@
       "domainId": "domain_1",
       "locationId": "tundra",
       "capacity": 1500
+    },
+    {
+      "domainId": "domain_2",
+      "locationId": "jinlong",
+      "capacity": 1500
     }
   ],
   "items": [
@@ -124,6 +129,20 @@
       ]
     },
     {
+      "itemId": "copper_bright",
+      "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_bright_cmpt",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
       "itemId": "copper_cmpt",
       "value": 2,
       "sourceDomainIds": [
@@ -152,6 +171,13 @@
       ]
     },
     {
+      "itemId": "copper_enr_heng",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
       "itemId": "copper_enr2",
       "value": 20,
       "sourceDomainIds": [
@@ -166,8 +192,36 @@
       ]
     },
     {
+      "itemId": "copper_hui",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_hui_cmpt",
+      "value": 100,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
       "itemId": "copper_jar",
       "value": 5,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_ming",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "copper_ming_cmpt",
+      "value": 100,
       "sourceDomainIds": [
         "domain_2"
       ]
@@ -222,60 +276,28 @@
       "value": 1,
       "sourceDomainIds": [
         "domain_1",
-        "domain_2",
-        "domain_3"
+        "domain_2"
       ]
     },
     {
       "itemId": "equip_script_1",
       "value": 10,
       "sourceDomainIds": [
-        "domain_1",
-        "domain_2"
+        "domain_1"
       ]
     },
     {
       "itemId": "equip_script_2",
       "value": 20,
       "sourceDomainIds": [
-        "domain_1",
-        "domain_2"
+        "domain_1"
       ]
     },
     {
       "itemId": "equip_script_3",
       "value": 50,
       "sourceDomainIds": [
-        "domain_1",
-        "domain_2"
-      ]
-    },
-    {
-      "itemId": "equip_script_4",
-      "value": 50,
-      "sourceDomainIds": [
-        "domain_2"
-      ]
-    },
-    {
-      "itemId": "equip_script_4_1",
-      "value": 50,
-      "sourceDomainIds": [
-        "domain_2"
-      ]
-    },
-    {
-      "itemId": "equip_script_4_2",
-      "value": 500,
-      "sourceDomainIds": [
-        "domain_2"
-      ]
-    },
-    {
-      "itemId": "equip_script_4_3",
-      "value": 500,
-      "sourceDomainIds": [
-        "domain_2"
+        "domain_1"
       ]
     },
     {
@@ -402,8 +424,7 @@
       "value": 1,
       "sourceDomainIds": [
         "domain_1",
-        "domain_2",
-        "domain_3"
+        "domain_2"
       ]
     },
     {
@@ -613,6 +634,13 @@
       ]
     },
     {
+      "itemId": "proc_battery_6",
+      "value": 500,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
       "itemId": "proc_bomb_1",
       "value": 5,
       "sourceDomainIds": [
@@ -661,8 +689,29 @@
       ]
     },
     {
+      "itemId": "xiranite_enr_heng",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
       "itemId": "xiranite_enr_powder",
       "value": 50,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "xiranite_hui",
+      "value": 10,
+      "sourceDomainIds": [
+        "domain_2"
+      ]
+    },
+    {
+      "itemId": "xiranite_ming",
+      "value": 10,
       "sourceDomainIds": [
         "domain_2"
       ]

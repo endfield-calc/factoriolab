@@ -70,7 +70,7 @@ export function createEndfieldState(): EndfieldState {
         gas_inert: rational.zero,
       },
     },
-    machineLimits: { enabled: false, limits: { [ovenId]: rational(12) } },
+    machineLimits: { enabled: false, limits: { [ovenId]: rational(16) } },
     transferEnabled: false,
     transferSource: 'tundra',
     electric: rational.one,

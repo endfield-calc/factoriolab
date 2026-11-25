@@ -23,6 +23,10 @@
     }
   },
   "endfield": {
+    "formation": {
+      "position": "affected positions",
+      "note": "Array output is the expected result per affected position and cycle; unconverted items remain. Item input limits count all processed items, including returns. Coverage, generator count, and shared Xiragen consumption are not included."
+    },
     "activities": {
       "title": "Event recipes",
       "upcoming": "Upcoming",

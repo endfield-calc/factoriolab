@@ -161,7 +161,15 @@ export class EndfieldResources {
       electric: state.electric,
       activityModes: state.activityModes,
       resourceLimits: { enabled: true, rates },
-      machineLimits: { enabled: jinlong, limits: { [ovenId]: rational(12) } },
+      machineLimits: {
+        enabled: jinlong,
+        limits: {
+          [ovenId]:
+            region.machineLimits?.[ovenId] == null
+              ? defaults.machineLimits.limits[ovenId]
+              : rational(region.machineLimits[ovenId]),
+        },
+      },
       transferEnabled: jinlong,
     };
     const patch = {

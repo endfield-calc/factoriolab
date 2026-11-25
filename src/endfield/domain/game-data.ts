@@ -41,6 +41,8 @@ export interface EndfieldDomain {
   domainName: EndfieldName;
   couponItemId: string;
   maxLevel: number;
+  /** Maximum unlocked limits for machines in this region. */
+  machineLimits?: Record<string, number>;
   settlements: EndfieldSettlement[];
   mineSummary: { itemId: string; outputPerMinute: number }[];
 }

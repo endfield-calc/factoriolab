@@ -1,6 +1,6 @@
 {
   "version": {
-    "arknights-endfield": "v1.6.3"
+    "arknights-endfield": "v1.7.2"
   },
   "flags": [
     "consumptionAsDrain",
@@ -113,1466 +113,1682 @@
     },
     {
       "id": "activity_xiranite_enr_tool",
-      "x": 0,
-      "y": 64,
+      "x": 1088,
+      "y": 0,
       "color": "#6d755e"
     },
     {
       "id": "activity_xiranite_hulu",
-      "x": 64,
+      "x": 0,
       "y": 64,
       "color": "#2f6c2d"
     },
     {
       "id": "activity_xiranite_lung",
-      "x": 128,
+      "x": 64,
       "y": 64,
       "color": "#7ea98c"
     },
     {
       "id": "activity_xiranite_nugget",
-      "x": 192,
+      "x": 128,
       "y": 64,
       "color": "#3c9a33"
     },
     {
       "id": "activity",
-      "x": 256,
+      "x": 192,
       "y": 64,
       "color": "#c9cdc6"
     },
     {
       "id": "carbon_enr_powder",
-      "x": 320,
+      "x": 256,
       "y": 64,
       "color": "#484b49"
     },
     {
       "id": "carbon_enr",
-      "x": 384,
+      "x": 320,
       "y": 64,
       "color": "#4a4851"
     },
     {
       "id": "carbon_mtl",
-      "x": 448,
+      "x": 384,
       "y": 64,
       "color": "#3d424b"
     },
     {
       "id": "carbon_powder",
-      "x": 512,
+      "x": 448,
       "y": 64,
       "color": "#4c4d4e"
     },
     {
       "id": "copper_bottle",
-      "x": 576,
+      "x": 512,
       "y": 64,
       "color": "#6c4b48"
     },
     {
-      "id": "copper_cmpt",
+      "id": "copper_bright_cmpt",
+      "x": 576,
+      "y": 64,
+      "color": "#c69387"
+    },
+    {
+      "id": "copper_bright",
       "x": 640,
       "y": 64,
-      "color": "#7e534b"
+      "color": "#c98e8d"
+    },
+    {
+      "id": "copper_cmpt",
+      "x": 704,
+      "y": 64,
+      "color": "#7e514a"
     },
     {
       "id": "copper_enr_bottle",
-      "x": 704,
+      "x": 768,
       "y": 64,
-      "color": "#916a6d"
+      "color": "#90696d"
     },
     {
       "id": "copper_enr_cmpt",
-      "x": 768,
+      "x": 832,
       "y": 64,
-      "color": "#ba8172"
+      "color": "#ba8073"
+    },
+    {
+      "id": "copper_enr_heng",
+      "x": 896,
+      "y": 64,
+      "color": "#b1a781"
     },
     {
       "id": "copper_enr",
-      "x": 832,
+      "x": 960,
       "y": 64,
-      "color": "#d89185"
+      "color": "#d89186"
     },
     {
       "id": "copper_enr2_cmpt",
-      "x": 896,
+      "x": 1024,
       "y": 64,
-      "color": "#ae7063"
+      "color": "#af7361"
     },
     {
       "id": "copper_enr2",
-      "x": 960,
+      "x": 1088,
       "y": 64,
-      "color": "#e5a389"
+      "color": "#e7a08a"
+    },
+    {
+      "id": "copper_hui_cmpt",
+      "x": 0,
+      "y": 128,
+      "color": "#856e66"
+    },
+    {
+      "id": "copper_hui",
+      "x": 64,
+      "y": 128,
+      "color": "#755d5a"
     },
     {
       "id": "copper_jar",
-      "x": 1024,
-      "y": 64,
-      "color": "#806566"
+      "x": 128,
+      "y": 128,
+      "color": "#836765"
+    },
+    {
+      "id": "copper_ming_cmpt",
+      "x": 192,
+      "y": 128,
+      "color": "#aa9b90"
+    },
+    {
+      "id": "copper_ming",
+      "x": 256,
+      "y": 128,
+      "color": "#d9c2b8"
     },
     {
       "id": "copper_nugget",
-      "x": 0,
+      "x": 320,
       "y": 128,
-      "color": "#8b3b31"
+      "color": "#893932"
     },
     {
       "id": "copper_ore",
-      "x": 64,
+      "x": 384,
       "y": 128,
-      "color": "#ab6862"
+      "color": "#a86a60"
     },
     {
       "id": "copper_powder",
-      "x": 128,
+      "x": 448,
       "y": 128,
-      "color": "#a15e52"
+      "color": "#a25e51"
     },
     {
       "id": "crystal_enr_powder",
-      "x": 192,
+      "x": 512,
       "y": 128,
-      "color": "#9d653a"
+      "color": "#9c6438"
     },
     {
       "id": "crystal_enr",
-      "x": 256,
+      "x": 576,
       "y": 128,
-      "color": "#776b35"
+      "color": "#756934"
     },
     {
       "id": "crystal_powder",
-      "x": 320,
+      "x": 640,
       "y": 128,
-      "color": "#6e431c"
+      "color": "#6d431d"
     },
     {
       "id": "crystal_shell",
-      "x": 384,
+      "x": 704,
       "y": 128,
-      "color": "#957640"
+      "color": "#967641"
     },
     {
       "id": "filter_core",
-      "x": 448,
+      "x": 768,
       "y": 128,
-      "color": "#717172"
+      "color": "#717371"
     },
     {
       "id": "gas_acid",
-      "x": 512,
+      "x": 832,
       "y": 128,
-      "color": "#d8c698"
+      "color": "#d8c59a"
+    },
+    {
+      "id": "gas_copper_bright_clear",
+      "x": 896,
+      "y": 128,
+      "color": "#d6c4cd"
+    },
+    {
+      "id": "gas_copper_bright_turbid",
+      "x": 960,
+      "y": 128,
+      "color": "#c3a171"
+    },
+    {
+      "id": "gas_copper_enr_heng",
+      "x": 1024,
+      "y": 128,
+      "color": "#e5c6a8"
     },
     {
       "id": "gas_copper_enr",
-      "x": 576,
+      "x": 1088,
       "y": 128,
-      "color": "#dabeb9"
+      "color": "#dabcba"
     },
     {
       "id": "gas_copper_enr2",
-      "x": 640,
-      "y": 128,
-      "color": "#d4a48c"
+      "x": 0,
+      "y": 192,
+      "color": "#d6a48d"
     },
     {
       "id": "gas_copper",
-      "x": 704,
-      "y": 128,
-      "color": "#d99d94"
+      "x": 64,
+      "y": 192,
+      "color": "#da9d95"
     },
     {
       "id": "gas_inert",
-      "x": 768,
-      "y": 128,
-      "color": "#69a7b5"
+      "x": 128,
+      "y": 192,
+      "color": "#69a6b7"
     },
     {
       "id": "gas_water",
-      "x": 832,
-      "y": 128,
-      "color": "#b6bac1"
+      "x": 192,
+      "y": 192,
+      "color": "#b6b9c2"
+    },
+    {
+      "id": "gas_xiranite_enr_heng",
+      "x": 256,
+      "y": 192,
+      "color": "#8db8b5"
     },
     {
       "id": "gas_xiranite_enr",
-      "x": 896,
-      "y": 128,
-      "color": "#b9cb8d"
+      "x": 320,
+      "y": 192,
+      "color": "#bac98e"
     },
     {
       "id": "gas_xiranite",
-      "x": 960,
-      "y": 128,
-      "color": "#a8c1a2"
+      "x": 384,
+      "y": 192,
+      "color": "#a9c2a2"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_clear",
+      "x": 448,
+      "y": 192,
+      "color": "#956562"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_turbid",
+      "x": 512,
+      "y": 192,
+      "color": "#956561"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_enr_heng",
+      "x": 576,
+      "y": 192,
+      "color": "#966760"
+    },
+    {
+      "id": "gasjar_copper_gas_xiranite_enr_heng",
+      "x": 640,
+      "y": 192,
+      "color": "#956661"
     },
     {
       "id": "glass_bottle",
-      "x": 1024,
-      "y": 128,
-      "color": "#5e4c7d"
+      "x": 704,
+      "y": 192,
+      "color": "#5c4c7e"
     },
     {
       "id": "glass_cmpt",
-      "x": 0,
+      "x": 768,
       "y": 192,
       "color": "#9395a1"
     },
     {
       "id": "glass_enr_bottle",
-      "x": 64,
+      "x": 832,
       "y": 192,
-      "color": "#75768c"
+      "color": "#76748f"
     },
     {
       "id": "glass_enr_cmpt",
-      "x": 128,
+      "x": 896,
       "y": 192,
-      "color": "#96909a"
+      "color": "#959298"
+    },
+    {
+      "id": "iron_bottle-liquid_water",
+      "x": 960,
+      "y": 192,
+      "color": "#497d9e"
     },
     {
       "id": "iron_bottle",
-      "x": 192,
+      "x": 1024,
       "y": 192,
-      "color": "#3a5879"
+      "color": "#3b5879"
     },
     {
       "id": "iron_cmpt",
-      "x": 256,
+      "x": 1088,
       "y": 192,
-      "color": "#6e81a9"
+      "color": "#6e80ab"
     },
     {
       "id": "iron_enr_bottle",
-      "x": 320,
-      "y": 192,
-      "color": "#596e83"
+      "x": 0,
+      "y": 256,
+      "color": "#586e83"
     },
     {
       "id": "iron_enr_cmpt",
-      "x": 384,
-      "y": 192,
-      "color": "#5e758e"
+      "x": 64,
+      "y": 256,
+      "color": "#5f758e"
     },
     {
       "id": "iron_enr_powder",
-      "x": 448,
-      "y": 192,
-      "color": "#597c95"
+      "x": 128,
+      "y": 256,
+      "color": "#597e95"
     },
     {
       "id": "iron_enr",
-      "x": 512,
-      "y": 192,
-      "color": "#56819e"
+      "x": 192,
+      "y": 256,
+      "color": "#56809d"
     },
     {
       "id": "iron_nugget",
-      "x": 576,
-      "y": 192,
-      "color": "#618296"
+      "x": 256,
+      "y": 256,
+      "color": "#618294"
     },
     {
       "id": "iron_ore",
-      "x": 640,
-      "y": 192,
-      "color": "#59718e"
+      "x": 320,
+      "y": 256,
+      "color": "#5b718f"
     },
     {
       "id": "iron_powder",
-      "x": 704,
-      "y": 192,
-      "color": "#355169"
+      "x": 384,
+      "y": 256,
+      "color": "#355069"
     },
     {
       "id": "liquid_acid",
-      "x": 768,
-      "y": 192,
-      "color": "#ba9f64"
+      "x": 448,
+      "y": 256,
+      "color": "#ba9f67"
     },
     {
       "id": "liquid_copper_enr",
-      "x": 832,
-      "y": 192,
-      "color": "#e9aea1"
+      "x": 512,
+      "y": 256,
+      "color": "#e9afa0"
     },
     {
       "id": "liquid_copper",
-      "x": 896,
-      "y": 192,
-      "color": "#b84846"
+      "x": 576,
+      "y": 256,
+      "color": "#ba4946"
     },
     {
       "id": "liquid_plant_grass_1",
-      "x": 960,
-      "y": 192,
-      "color": "#e7f5e1"
+      "x": 640,
+      "y": 256,
+      "color": "#e6f5e1"
     },
     {
       "id": "liquid_plant_grass_2",
-      "x": 1024,
-      "y": 192,
-      "color": "#c2ec7f"
+      "x": 704,
+      "y": 256,
+      "color": "#c2ef7f"
     },
     {
       "id": "liquid_sewage",
-      "x": 0,
+      "x": 768,
       "y": 256,
-      "color": "#616260"
+      "color": "#616263"
     },
     {
       "id": "liquid_water",
-      "x": 64,
+      "x": 832,
       "y": 256,
-      "color": "#59e5fa"
+      "color": "#58e5fa"
     },
     {
       "id": "liquid_xiranite_enr",
-      "x": 128,
+      "x": 896,
       "y": 256,
-      "color": "#577851"
+      "color": "#547951"
     },
     {
       "id": "liquid_xiranite_lowpoly",
-      "x": 192,
+      "x": 960,
       "y": 256,
-      "color": "#265843"
+      "color": "#265842"
     },
     {
       "id": "liquid_xiranite_poly",
-      "x": 256,
+      "x": 1024,
       "y": 256,
-      "color": "#386643"
+      "color": "#386642"
     },
     {
       "id": "liquid_xiranite",
-      "x": 320,
+      "x": 1088,
       "y": 256,
-      "color": "#477966"
+      "color": "#457864"
     },
     {
       "id": "originium_enr_powder",
-      "x": 384,
-      "y": 256,
-      "color": "#75522d"
+      "x": 0,
+      "y": 320,
+      "color": "#74512d"
     },
     {
       "id": "originium_ore",
-      "x": 448,
-      "y": 256,
-      "color": "#825c3d"
+      "x": 64,
+      "y": 320,
+      "color": "#805d3f"
     },
     {
       "id": "originium_powder",
-      "x": 512,
-      "y": 256,
-      "color": "#4d3e28"
+      "x": 128,
+      "y": 320,
+      "color": "#4d3e2a"
     },
     {
       "id": "plant_bbflower_1",
-      "x": 576,
-      "y": 256,
-      "color": "#635d3f"
+      "x": 192,
+      "y": 320,
+      "color": "#615d3f"
     },
     {
       "id": "plant_bbflower_powder_1",
-      "x": 640,
-      "y": 256,
+      "x": 256,
+      "y": 320,
       "color": "#7d7435"
     },
     {
       "id": "plant_bbflower_seed_1",
-      "x": 704,
-      "y": 256,
-      "color": "#aea36b"
+      "x": 320,
+      "y": 320,
+      "color": "#aea268"
     },
     {
       "id": "plant_grass_1",
-      "x": 768,
-      "y": 256,
-      "color": "#798760"
+      "x": 384,
+      "y": 320,
+      "color": "#798761"
     },
     {
       "id": "plant_grass_2",
-      "x": 832,
-      "y": 256,
-      "color": "#5e5d4a"
+      "x": 448,
+      "y": 320,
+      "color": "#5d5d4a"
     },
     {
       "id": "plant_grass_powder_1",
-      "x": 896,
-      "y": 256,
-      "color": "#babda1"
+      "x": 512,
+      "y": 320,
+      "color": "#b8bea0"
     },
     {
       "id": "plant_grass_powder_2",
-      "x": 960,
-      "y": 256,
-      "color": "#b2937b"
+      "x": 576,
+      "y": 320,
+      "color": "#b29278"
     },
     {
       "id": "plant_grass_seed_1",
-      "x": 1024,
-      "y": 256,
-      "color": "#959e77"
+      "x": 640,
+      "y": 320,
+      "color": "#959e75"
     },
     {
       "id": "plant_grass_seed_2",
-      "x": 0,
+      "x": 704,
       "y": 320,
-      "color": "#9c7d6a"
+      "color": "#9d7d6a"
     },
     {
       "id": "plant_moss_1",
-      "x": 64,
+      "x": 768,
       "y": 320,
-      "color": "#605925"
+      "color": "#635a25"
     },
     {
       "id": "plant_moss_2",
-      "x": 128,
+      "x": 832,
       "y": 320,
-      "color": "#66681e"
+      "color": "#66691c"
     },
     {
       "id": "plant_moss_3",
-      "x": 192,
+      "x": 896,
       "y": 320,
-      "color": "#90762a"
+      "color": "#917629"
     },
     {
       "id": "plant_moss_enr_powder_1",
-      "x": 256,
+      "x": 960,
       "y": 320,
-      "color": "#896060"
+      "color": "#8a6162"
     },
     {
       "id": "plant_moss_enr_powder_2",
-      "x": 320,
+      "x": 1024,
       "y": 320,
-      "color": "#908559"
+      "color": "#928559"
     },
     {
       "id": "plant_moss_powder_1",
-      "x": 384,
+      "x": 1088,
       "y": 320,
-      "color": "#ac6d67"
+      "color": "#ae6d65"
     },
     {
       "id": "plant_moss_powder_2",
-      "x": 448,
-      "y": 320,
-      "color": "#d5c276"
+      "x": 0,
+      "y": 384,
+      "color": "#d5c277"
     },
     {
       "id": "plant_moss_powder_3",
-      "x": 512,
-      "y": 320,
-      "color": "#9d710b"
+      "x": 64,
+      "y": 384,
+      "color": "#9c710a"
     },
     {
       "id": "plant_moss_seed_1",
-      "x": 576,
-      "y": 320,
-      "color": "#9d6045"
+      "x": 128,
+      "y": 384,
+      "color": "#9d6044"
     },
     {
       "id": "plant_moss_seed_2",
-      "x": 640,
-      "y": 320,
-      "color": "#928228"
+      "x": 192,
+      "y": 384,
+      "color": "#928329"
     },
     {
       "id": "plant_moss_seed_3",
-      "x": 704,
-      "y": 320,
-      "color": "#856b11"
+      "x": 256,
+      "y": 384,
+      "color": "#856a10"
     },
     {
       "id": "quartz_enr_powder",
-      "x": 768,
-      "y": 320,
-      "color": "#b1adc2"
+      "x": 320,
+      "y": 384,
+      "color": "#b3adc2"
     },
     {
       "id": "quartz_enr",
-      "x": 832,
-      "y": 320,
-      "color": "#989aa4"
+      "x": 384,
+      "y": 384,
+      "color": "#9899a5"
     },
     {
       "id": "quartz_glass",
-      "x": 896,
-      "y": 320,
-      "color": "#725e90"
+      "x": 448,
+      "y": 384,
+      "color": "#725f90"
     },
     {
       "id": "quartz_powder",
-      "x": 960,
-      "y": 320,
-      "color": "#615279"
+      "x": 512,
+      "y": 384,
+      "color": "#615278"
     },
     {
       "id": "quartz_sand",
-      "x": 1024,
-      "y": 320,
-      "color": "#5d496e"
+      "x": 576,
+      "y": 384,
+      "color": "#5f486e"
+    },
+    {
+      "id": "xiranite_enr_heng",
+      "x": 640,
+      "y": 384,
+      "color": "#4f9375"
     },
     {
       "id": "xiranite_enr_powder",
-      "x": 0,
+      "x": 704,
       "y": 384,
-      "color": "#376239"
+      "color": "#36613a"
+    },
+    {
+      "id": "xiranite_hui",
+      "x": 768,
+      "y": 384,
+      "color": "#1d4228"
+    },
+    {
+      "id": "xiranite_ming",
+      "x": 832,
+      "y": 384,
+      "color": "#95a99a"
     },
     {
       "id": "xiranite_poly",
-      "x": 64,
+      "x": 896,
       "y": 384,
-      "color": "#3a413c"
+      "color": "#38433d"
     },
     {
       "id": "xiranite_powder",
-      "x": 128,
+      "x": 960,
       "y": 384,
-      "color": "#315245"
+      "color": "#335144"
     },
     {
       "id": "bottled_food_1",
-      "x": 192,
+      "x": 1024,
       "y": 384,
-      "color": "#7e857e"
+      "color": "#7d867f"
     },
     {
       "id": "bottled_food_2",
-      "x": 256,
+      "x": 1088,
       "y": 384,
-      "color": "#868d69"
+      "color": "#878d6b"
     },
     {
       "id": "bottled_food_3",
-      "x": 320,
-      "y": 384,
-      "color": "#828981"
+      "x": 0,
+      "y": 448,
+      "color": "#808a81"
     },
     {
       "id": "bottled_food_4",
-      "x": 384,
-      "y": 384,
-      "color": "#516e73"
+      "x": 64,
+      "y": 448,
+      "color": "#526e71"
     },
     {
       "id": "bottled_food_5",
-      "x": 448,
-      "y": 384,
-      "color": "#58856a"
+      "x": 128,
+      "y": 448,
+      "color": "#59866b"
     },
     {
       "id": "bottled_rec_hp_1",
-      "x": 512,
-      "y": 384,
-      "color": "#b19494"
+      "x": 192,
+      "y": 448,
+      "color": "#b39596"
     },
     {
       "id": "bottled_rec_hp_2",
-      "x": 576,
-      "y": 384,
-      "color": "#bea3a1"
+      "x": 256,
+      "y": 448,
+      "color": "#bfa0a1"
     },
     {
       "id": "bottled_rec_hp_3",
-      "x": 640,
-      "y": 384,
-      "color": "#b5969c"
+      "x": 320,
+      "y": 448,
+      "color": "#b6949d"
     },
     {
       "id": "bottled_rec_hp_4",
-      "x": 704,
-      "y": 384,
-      "color": "#a79592"
+      "x": 384,
+      "y": 448,
+      "color": "#a59690"
     },
     {
       "id": "bottled_rec_hp_5",
-      "x": 768,
-      "y": 384,
-      "color": "#9c8175"
+      "x": 448,
+      "y": 448,
+      "color": "#9e8076"
+    },
+    {
+      "id": "copper_bright_cube",
+      "x": 512,
+      "y": 448,
+      "color": "#e29980"
+    },
+    {
+      "id": "copper_xiranite_hui",
+      "x": 576,
+      "y": 448,
+      "color": "#745c61"
+    },
+    {
+      "id": "copper_xiranite_ming",
+      "x": 640,
+      "y": 448,
+      "color": "#898481"
     },
     {
       "id": "equip_script_1",
-      "x": 832,
-      "y": 384,
-      "color": "#a2a3b0"
+      "x": 704,
+      "y": 448,
+      "color": "#a3a1b2"
     },
     {
       "id": "equip_script_2",
-      "x": 896,
-      "y": 384,
-      "color": "#899abc"
+      "x": 768,
+      "y": 448,
+      "color": "#8a99bd"
     },
     {
       "id": "equip_script_3",
-      "x": 960,
-      "y": 384,
-      "color": "#a3a4b2"
+      "x": 832,
+      "y": 448,
+      "color": "#a3a5b0"
     },
     {
       "id": "equip_script_4_1",
-      "x": 1024,
-      "y": 384,
-      "color": "#73433d"
+      "x": 896,
+      "y": 448,
+      "color": "#71423e"
     },
     {
       "id": "equip_script_4_2",
-      "x": 0,
+      "x": 960,
       "y": 448,
-      "color": "#b2756e"
+      "color": "#b0756f"
     },
     {
       "id": "equip_script_4_3",
-      "x": 64,
+      "x": 1024,
       "y": 448,
-      "color": "#bd7e5c"
+      "color": "#bd7d5d"
     },
     {
       "id": "equip_script_4",
-      "x": 128,
+      "x": 1088,
       "y": 448,
-      "color": "#5d5546"
+      "color": "#5e5446"
     },
     {
       "id": "product",
-      "x": 192,
-      "y": 448,
-      "color": "#947f79"
+      "x": 0,
+      "y": 512,
+      "color": "#947e7a"
     },
     {
       "id": "proc_battery_1",
-      "x": 256,
-      "y": 448,
-      "color": "#9f9d98"
+      "x": 64,
+      "y": 512,
+      "color": "#9c9d9a"
     },
     {
       "id": "proc_battery_2",
-      "x": 320,
-      "y": 448,
-      "color": "#9d9a9f"
+      "x": 128,
+      "y": 512,
+      "color": "#9d999d"
     },
     {
       "id": "proc_battery_3",
-      "x": 384,
-      "y": 448,
-      "color": "#9f999f"
+      "x": 192,
+      "y": 512,
+      "color": "#9e9b9e"
     },
     {
       "id": "proc_battery_4",
-      "x": 448,
-      "y": 448,
-      "color": "#688a71"
+      "x": 256,
+      "y": 512,
+      "color": "#698a71"
     },
     {
       "id": "proc_battery_5",
-      "x": 512,
-      "y": 448,
-      "color": "#5e6a55"
+      "x": 320,
+      "y": 512,
+      "color": "#5c6956"
+    },
+    {
+      "id": "proc_battery_6",
+      "x": 384,
+      "y": 512,
+      "color": "#596a61"
     },
     {
       "id": "proc_bomb_1",
-      "x": 576,
-      "y": 448,
-      "color": "#8d7e7b"
+      "x": 448,
+      "y": 512,
+      "color": "#8e7e79"
     },
     {
       "id": "jinlong_coupon",
-      "x": 640,
-      "y": 448,
-      "color": "#8fa1a2"
+      "x": 512,
+      "y": 512,
+      "color": "#8da2a1"
     },
     {
       "id": "tundra_coupon",
-      "x": 704,
-      "y": 448,
-      "color": "#c7c8b5"
+      "x": 576,
+      "y": 512,
+      "color": "#c5c9b6"
     },
     {
       "id": "jinlong",
-      "x": 768,
-      "y": 448,
-      "color": "#7e9895"
+      "x": 640,
+      "y": 512,
+      "color": "#7f9895"
     },
     {
       "id": "tundra",
-      "x": 832,
-      "y": 448,
-      "color": "#9daa78"
+      "x": 704,
+      "y": 512,
+      "color": "#9ea978"
     },
     {
       "id": "cmpt_mc_1",
-      "x": 896,
-      "y": 448,
-      "color": "#868482"
+      "x": 768,
+      "y": 512,
+      "color": "#848683"
     },
     {
       "id": "filling_pd_mc_1",
-      "x": 960,
-      "y": 448,
-      "color": "#828180"
+      "x": 832,
+      "y": 512,
+      "color": "#818182"
     },
     {
       "id": "furnance_1",
-      "x": 1024,
-      "y": 448,
-      "color": "#a89c99"
+      "x": 896,
+      "y": 512,
+      "color": "#a89f99"
     },
     {
       "id": "gas_pump_1",
-      "x": 0,
+      "x": 960,
       "y": 512,
-      "color": "#a5a4a1"
+      "color": "#a6a4a1"
     },
     {
       "id": "gas_reactor_1",
-      "x": 64,
+      "x": 1024,
       "y": 512,
-      "color": "#93958a"
+      "color": "#91968b"
     },
     {
       "id": "grinder_1",
-      "x": 128,
+      "x": 1088,
       "y": 512,
-      "color": "#929599"
+      "color": "#90959a"
     },
     {
       "id": "liquid_clean_gate",
-      "x": 192,
-      "y": 512,
-      "color": "#9b9998"
+      "x": 0,
+      "y": 576,
+      "color": "#989b98"
     },
     {
       "id": "liquid_cleaner_1",
-      "x": 256,
-      "y": 512,
-      "color": "#797e7e"
+      "x": 64,
+      "y": 576,
+      "color": "#7a7f7f"
     },
     {
       "id": "liquid_purifier_1",
-      "x": 320,
-      "y": 512,
-      "color": "#8c9193"
+      "x": 128,
+      "y": 576,
+      "color": "#8d9291"
+    },
+    {
+      "id": "magic_balancer_1",
+      "x": 192,
+      "y": 576,
+      "color": "#9a999a"
     },
     {
       "id": "miner_2",
-      "x": 384,
-      "y": 512,
-      "color": "#858585"
+      "x": 256,
+      "y": 576,
+      "color": "#848585"
     },
     {
       "id": "miner_3",
-      "x": 448,
-      "y": 512,
-      "color": "#92888a"
+      "x": 320,
+      "y": 576,
+      "color": "#92888b"
     },
     {
       "id": "miner_4",
-      "x": 512,
-      "y": 512,
-      "color": "#8c8e8a"
+      "x": 384,
+      "y": 576,
+      "color": "#8d8f89"
     },
     {
       "id": "mix_pool_1",
-      "x": 576,
-      "y": 512,
+      "x": 448,
+      "y": 576,
       "color": "#88898e"
     },
     {
       "id": "mix_pool_2",
-      "x": 640,
-      "y": 512,
-      "color": "#858579"
+      "x": 512,
+      "y": 576,
+      "color": "#878779"
     },
     {
       "id": "phase_trans_1",
-      "x": 704,
-      "y": 512,
-      "color": "#929792"
+      "x": 576,
+      "y": 576,
+      "color": "#939492"
     },
     {
       "id": "phase_trans_2",
-      "x": 768,
-      "y": 512,
-      "color": "#7d7e7d"
+      "x": 640,
+      "y": 576,
+      "color": "#7d7e7e"
     },
     {
       "id": "planter_1",
-      "x": 832,
-      "y": 512,
-      "color": "#7c817e"
+      "x": 704,
+      "y": 576,
+      "color": "#7d817e"
     },
     {
       "id": "power_sta_1",
-      "x": 896,
-      "y": 512,
-      "color": "#919ea1"
+      "x": 768,
+      "y": 576,
+      "color": "#939fa1"
     },
     {
       "id": "pump_1",
-      "x": 960,
-      "y": 512,
-      "color": "#8e8e85"
+      "x": 832,
+      "y": 576,
+      "color": "#8e8f84"
     },
     {
       "id": "pump_2",
-      "x": 1024,
-      "y": 512,
-      "color": "#898279"
+      "x": 896,
+      "y": 576,
+      "color": "#898278"
     },
     {
       "id": "seedcol_1",
-      "x": 0,
+      "x": 960,
       "y": 576,
       "color": "#757d76"
     },
     {
       "id": "shaper_1",
-      "x": 64,
+      "x": 1024,
       "y": 576,
-      "color": "#939091"
+      "color": "#909290"
     },
     {
       "id": "thickener_1",
-      "x": 128,
+      "x": 1088,
       "y": 576,
-      "color": "#8a8988"
+      "color": "#8a8a89"
     },
     {
       "id": "tools_asm_mc_1",
-      "x": 192,
-      "y": 576,
-      "color": "#848a8b"
+      "x": 0,
+      "y": 640,
+      "color": "#848888"
     },
     {
       "id": "winder_1",
-      "x": 256,
-      "y": 576,
-      "color": "#959592"
+      "x": 64,
+      "y": 640,
+      "color": "#959590"
     },
     {
       "id": "xiranite_oven_1",
-      "x": 320,
-      "y": 576,
-      "color": "#a0a799"
+      "x": 128,
+      "y": 640,
+      "color": "#a1a799"
     },
     {
       "id": "InN_zV0Bo",
-      "x": 384,
-      "y": 576,
-      "color": "#a2a8a5"
+      "x": 192,
+      "y": 640,
+      "color": "#a2aaa5"
     },
     {
       "id": "mokYxBo_D",
-      "x": 448,
-      "y": 576,
-      "color": "#a99a73"
+      "x": 256,
+      "y": 640,
+      "color": "#a99b71"
     },
     {
       "id": "hOwR0Jem2",
-      "x": 512,
-      "y": 576,
+      "x": 320,
+      "y": 640,
       "color": "#8c957e"
     },
     {
       "id": "8qrUMcvDg",
-      "x": 576,
-      "y": 576,
-      "color": "#98bf68"
+      "x": 384,
+      "y": 640,
+      "color": "#9abc69"
     },
     {
       "id": "aNhoXNVVI",
-      "x": 640,
-      "y": 576,
-      "color": "#4a4b4b"
+      "x": 448,
+      "y": 640,
+      "color": "#4b4949"
     },
     {
       "id": "Z2IEDQBer",
-      "x": 704,
-      "y": 576,
-      "color": "#615251"
+      "x": 512,
+      "y": 640,
+      "color": "#615250"
     },
     {
       "id": "xFsOz8GXn",
-      "x": 768,
-      "y": 576,
-      "color": "#625d52"
+      "x": 576,
+      "y": 640,
+      "color": "#625c52"
     },
     {
       "id": "xFMoNt_0-",
-      "x": 832,
-      "y": 576,
-      "color": "#4c514d"
+      "x": 640,
+      "y": 640,
+      "color": "#4e504d"
     },
     {
       "id": "tF0KCVMNv",
-      "x": 896,
-      "y": 576,
-      "color": "#46444b"
+      "x": 704,
+      "y": 640,
+      "color": "#464549"
     },
     {
       "id": "lIwML7hJA",
-      "x": 960,
-      "y": 576,
-      "color": "#494741"
+      "x": 768,
+      "y": 640,
+      "color": "#494643"
     },
     {
       "id": "wSTIJRUt2",
-      "x": 1024,
-      "y": 576,
-      "color": "#484d42"
+      "x": 832,
+      "y": 640,
+      "color": "#4a4d42"
     },
     {
       "id": "8f-XntBAi",
-      "x": 0,
+      "x": 896,
       "y": 640,
-      "color": "#5b5345"
+      "color": "#595045"
     },
     {
       "id": "bfVwkel-1",
-      "x": 64,
+      "x": 960,
       "y": 640,
-      "color": "#4b4c4e"
+      "color": "#4a4d4e"
     },
     {
       "id": "UK3cw32jH",
-      "x": 128,
+      "x": 1024,
       "y": 640,
       "color": "#797a6e"
     },
     {
       "id": "EyVhscDqY",
-      "x": 192,
+      "x": 1088,
       "y": 640,
       "color": "#75655e"
     },
     {
       "id": "sJ497s081",
-      "x": 256,
-      "y": 640,
-      "color": "#735b55"
+      "x": 0,
+      "y": 704,
+      "color": "#715955"
     },
     {
       "id": "EkYDieNFa",
-      "x": 320,
-      "y": 640,
+      "x": 64,
+      "y": 704,
       "color": "#867f58"
     },
     {
       "id": "-5xQnlo_H",
-      "x": 384,
-      "y": 640,
-      "color": "#655644"
+      "x": 128,
+      "y": 704,
+      "color": "#655645"
     },
     {
       "id": "g6eZC2ckR",
-      "x": 448,
-      "y": 640,
-      "color": "#958982"
+      "x": 192,
+      "y": 704,
+      "color": "#948882"
     },
     {
       "id": "QU3-0LfcJ",
+      "x": 256,
+      "y": 704,
+      "color": "#8b8559"
+    },
+    {
+      "id": "JvK4hAcOl",
+      "x": 320,
+      "y": 704,
+      "color": "#b69093"
+    },
+    {
+      "id": "SKXdzSG5F",
+      "x": 384,
+      "y": 704,
+      "color": "#a98684"
+    },
+    {
+      "id": "BdMxTKvQP",
+      "x": 448,
+      "y": 704,
+      "color": "#a5957e"
+    },
+    {
+      "id": "7HEZZXQXi",
       "x": 512,
-      "y": 640,
-      "color": "#888658"
+      "y": 704,
+      "color": "#cb9891"
     },
     {
       "id": "1x5_iFxrl",
       "x": 576,
-      "y": 640,
-      "color": "#be9289"
+      "y": 704,
+      "color": "#be908b"
     },
     {
       "id": "grKjDDYLU",
       "x": 640,
-      "y": 640,
-      "color": "#c89884"
+      "y": 704,
+      "color": "#c89a87"
     },
     {
       "id": "TIRc8l-Ov",
       "x": 704,
-      "y": 640,
-      "color": "#8d6158"
+      "y": 704,
+      "color": "#8f615a"
     },
     {
       "id": "pSkp8UtzR",
       "x": 768,
-      "y": 640,
-      "color": "#a18381"
+      "y": 704,
+      "color": "#a18281"
     },
     {
       "id": "-PLwC7rav",
       "x": 832,
-      "y": 640,
-      "color": "#9a6235"
+      "y": 704,
+      "color": "#9a6035"
     },
     {
       "id": "-IDibphrv",
       "x": 896,
-      "y": 640,
-      "color": "#9d6739"
+      "y": 704,
+      "color": "#9d6638"
     },
     {
       "id": "b06HlUyW9",
       "x": 960,
-      "y": 640,
-      "color": "#78552e"
+      "y": 704,
+      "color": "#7b552f"
     },
     {
       "id": "j2R9Yyfk7",
       "x": 1024,
-      "y": 640,
-      "color": "#664021"
+      "y": 704,
+      "color": "#654021"
     },
     {
       "id": "tVuwQqAnt",
-      "x": 0,
+      "x": 1088,
       "y": 704,
-      "color": "#8f6d3d"
+      "color": "#8e6f3f"
     },
     {
       "id": "OIsG_0_gQ",
-      "x": 64,
-      "y": 704,
-      "color": "#8d6e40"
+      "x": 0,
+      "y": 768,
+      "color": "#8d6f40"
     },
     {
       "id": "BTDiP1-WN",
+      "x": 64,
+      "y": 768,
+      "color": "#c6b9a2"
+    },
+    {
+      "id": "--fy8JitE",
       "x": 128,
-      "y": 704,
-      "color": "#c6b8a2"
+      "y": 768,
+      "color": "#c2b5bd"
+    },
+    {
+      "id": "XvL38FqFc",
+      "x": 192,
+      "y": 768,
+      "color": "#bab3b7"
+    },
+    {
+      "id": "FVD_V1gkz",
+      "x": 256,
+      "y": 768,
+      "color": "#c1b29f"
     },
     {
       "id": "LESvbc0cp",
-      "x": 192,
-      "y": 704,
-      "color": "#babcc9"
+      "x": 320,
+      "y": 768,
+      "color": "#b8bdca"
     },
     {
       "id": "3nEkFN4v3",
-      "x": 256,
-      "y": 704,
-      "color": "#c2b5b1"
+      "x": 384,
+      "y": 768,
+      "color": "#c0b5b1"
     },
     {
       "id": "F26jLFsSM",
-      "x": 320,
-      "y": 704,
-      "color": "#bdaeab"
+      "x": 448,
+      "y": 768,
+      "color": "#beacaa"
     },
     {
       "id": "ynGeJZzIH",
-      "x": 384,
-      "y": 704,
-      "color": "#dea57a"
+      "x": 512,
+      "y": 768,
+      "color": "#dca67a"
     },
     {
       "id": "ugzGGeljq",
-      "x": 448,
-      "y": 704,
-      "color": "#bd9c8d"
+      "x": 576,
+      "y": 768,
+      "color": "#bd9c8c"
     },
     {
       "id": "6cFT0YI85",
-      "x": 512,
-      "y": 704,
-      "color": "#bea19a"
+      "x": 640,
+      "y": 768,
+      "color": "#bca199"
     },
     {
       "id": "MzFhhwu9q",
-      "x": 576,
-      "y": 704,
-      "color": "#b59a92"
+      "x": 704,
+      "y": 768,
+      "color": "#b49993"
     },
     {
       "id": "ngnifkfVC",
-      "x": 640,
-      "y": 704,
-      "color": "#adb1b2"
+      "x": 768,
+      "y": 768,
+      "color": "#adb2b2"
+    },
+    {
+      "id": "3yH_sUEon",
+      "x": 832,
+      "y": 768,
+      "color": "#8dada7"
     },
     {
       "id": "4N6PISlNQ",
-      "x": 704,
-      "y": 704,
-      "color": "#a1c5ad"
+      "x": 896,
+      "y": 768,
+      "color": "#a1c4ad"
     },
     {
       "id": "08QnmafUO",
-      "x": 768,
-      "y": 704,
-      "color": "#b2bb94"
+      "x": 960,
+      "y": 768,
+      "color": "#b2ba94"
     },
     {
       "id": "4uTTruYze",
-      "x": 832,
-      "y": 704,
-      "color": "#a9b68d"
+      "x": 1024,
+      "y": 768,
+      "color": "#a9b78d"
     },
     {
       "id": "VM4dhho2c",
-      "x": 896,
-      "y": 704,
-      "color": "#a4b4a2"
+      "x": 1088,
+      "y": 768,
+      "color": "#a5b5a2"
     },
     {
       "id": "eAPSNjYPO",
-      "x": 960,
-      "y": 704,
-      "color": "#9fad99"
+      "x": 0,
+      "y": 832,
+      "color": "#9cae98"
     },
     {
       "id": "7aWLncdum",
-      "x": 1024,
-      "y": 704,
-      "color": "#7a909b"
+      "x": 64,
+      "y": 832,
+      "color": "#7a9298"
     },
     {
       "id": "zSG48A1GN",
-      "x": 0,
-      "y": 768,
-      "color": "#6d8e78"
+      "x": 128,
+      "y": 832,
+      "color": "#6d8e79"
     },
     {
       "id": "YP_fqgPjK",
-      "x": 64,
-      "y": 768,
+      "x": 192,
+      "y": 832,
       "color": "#65819a"
     },
     {
       "id": "rCPd1tfS9",
-      "x": 128,
-      "y": 768,
-      "color": "#5f7c91"
+      "x": 256,
+      "y": 832,
+      "color": "#5f7e91"
     },
     {
       "id": "_8TyVapB6",
-      "x": 192,
-      "y": 768,
-      "color": "#8a9c9b"
+      "x": 320,
+      "y": 832,
+      "color": "#8a9d98"
     },
     {
       "id": "nvQgypPJO",
-      "x": 256,
-      "y": 768,
-      "color": "#90a69f"
+      "x": 384,
+      "y": 832,
+      "color": "#91a69d"
     },
     {
       "id": "9j2ca8fbD",
-      "x": 320,
-      "y": 768,
-      "color": "#879996"
+      "x": 448,
+      "y": 832,
+      "color": "#869996"
     },
     {
       "id": "DxQbkoaDm",
-      "x": 384,
-      "y": 768,
-      "color": "#91a6a1"
+      "x": 512,
+      "y": 832,
+      "color": "#92a5a1"
     },
     {
       "id": "TqWZWVpY3",
-      "x": 448,
-      "y": 768,
-      "color": "#8a9c9d"
+      "x": 576,
+      "y": 832,
+      "color": "#8a9d9d"
     },
     {
       "id": "qA-EMB1fs",
-      "x": 512,
-      "y": 768,
-      "color": "#899e98"
+      "x": 640,
+      "y": 832,
+      "color": "#899e9b"
     },
     {
       "id": "Sjdqh9m2X",
-      "x": 576,
-      "y": 768,
-      "color": "#97a19f"
+      "x": 704,
+      "y": 832,
+      "color": "#94a19e"
     },
     {
       "id": "VqJ8q3DQp",
-      "x": 640,
-      "y": 768,
-      "color": "#959c9d"
+      "x": 768,
+      "y": 832,
+      "color": "#959c9c"
     },
     {
       "id": "fftXa_L3O",
-      "x": 704,
-      "y": 768,
-      "color": "#929797"
+      "x": 832,
+      "y": 832,
+      "color": "#929795"
     },
     {
       "id": "nL57eW-eu",
-      "x": 768,
-      "y": 768,
-      "color": "#a19f98"
+      "x": 896,
+      "y": 832,
+      "color": "#a19e98"
     },
     {
       "id": "lpxYv1B-a",
-      "x": 832,
-      "y": 768,
-      "color": "#a29996"
+      "x": 960,
+      "y": 832,
+      "color": "#a39996"
     },
     {
       "id": "zbLLpntwq",
-      "x": 896,
-      "y": 768,
-      "color": "#8e9999"
+      "x": 1024,
+      "y": 832,
+      "color": "#8c9999"
     },
     {
       "id": "vI10u14eE",
-      "x": 960,
-      "y": 768,
-      "color": "#8e9f9f"
+      "x": 1088,
+      "y": 832,
+      "color": "#8e9f9c"
     },
     {
       "id": "e13iR_HPS",
-      "x": 1024,
-      "y": 768,
-      "color": "#899a9b"
+      "x": 0,
+      "y": 896,
+      "color": "#899a98"
     },
     {
       "id": "TQnSxeYps",
-      "x": 0,
-      "y": 832,
-      "color": "#849992"
+      "x": 64,
+      "y": 896,
+      "color": "#879892"
     },
     {
       "id": "MN3RgE0QK",
-      "x": 64,
-      "y": 832,
-      "color": "#849995"
+      "x": 128,
+      "y": 896,
+      "color": "#879b95"
     },
     {
       "id": "n1F3_H0xn",
-      "x": 128,
-      "y": 832,
-      "color": "#9e9082"
+      "x": 192,
+      "y": 896,
+      "color": "#9e9182"
+    },
+    {
+      "id": "3H826tx7z",
+      "x": 256,
+      "y": 896,
+      "color": "#958a7c"
     },
     {
       "id": "gMs3wV6Mc",
-      "x": 192,
-      "y": 832,
-      "color": "#787a7e"
+      "x": 320,
+      "y": 896,
+      "color": "#79797e"
     },
     {
       "id": "LIU8uRWtP",
-      "x": 256,
-      "y": 832,
-      "color": "#757878"
+      "x": 384,
+      "y": 896,
+      "color": "#747b79"
     },
     {
       "id": "MZA0Aj7xM",
-      "x": 320,
-      "y": 832,
-      "color": "#747d79"
+      "x": 448,
+      "y": 896,
+      "color": "#777d78"
     },
     {
       "id": "21JXqNHcO",
-      "x": 384,
-      "y": 832,
-      "color": "#b09d97"
+      "x": 512,
+      "y": 896,
+      "color": "#b19e97"
     },
     {
       "id": "eNbizvaDC",
-      "x": 448,
-      "y": 832,
-      "color": "#a17e7a"
+      "x": 576,
+      "y": 896,
+      "color": "#a37d7b"
     },
     {
       "id": "RSg0ZawgK",
-      "x": 512,
-      "y": 832,
-      "color": "#757577"
+      "x": 640,
+      "y": 896,
+      "color": "#747675"
     },
     {
       "id": "tnHAWZomJ",
-      "x": 576,
-      "y": 832,
-      "color": "#7db0b9"
+      "x": 704,
+      "y": 896,
+      "color": "#7eb2b9"
     },
     {
       "id": "eVII5GgNz",
-      "x": 640,
-      "y": 832,
-      "color": "#768674"
+      "x": 768,
+      "y": 896,
+      "color": "#758677"
     },
     {
       "id": "CZoh2vwOX",
-      "x": 704,
-      "y": 832,
-      "color": "#697b69"
+      "x": 832,
+      "y": 896,
+      "color": "#6b796a"
     },
     {
       "id": "qUq983O5F",
-      "x": 768,
-      "y": 832,
-      "color": "#717d76"
+      "x": 896,
+      "y": 896,
+      "color": "#737c75"
     },
     {
       "id": "KsAbKo-kL",
-      "x": 832,
-      "y": 832,
-      "color": "#788a80"
+      "x": 960,
+      "y": 896,
+      "color": "#7a8881"
     },
     {
       "id": "vzHASkcwW",
-      "x": 896,
-      "y": 832,
-      "color": "#929694"
+      "x": 1024,
+      "y": 896,
+      "color": "#919694"
     },
     {
       "id": "DCZK3_Hum",
-      "x": 960,
-      "y": 832,
-      "color": "#99a2a5"
+      "x": 1088,
+      "y": 896,
+      "color": "#9aa0a6"
     },
     {
       "id": "PZWgDQOzb",
-      "x": 1024,
-      "y": 832,
-      "color": "#99a1a6"
+      "x": 0,
+      "y": 960,
+      "color": "#9aa1a4"
     },
     {
       "id": "YvRkgjni9",
-      "x": 0,
-      "y": 896,
-      "color": "#9ba2a5"
+      "x": 64,
+      "y": 960,
+      "color": "#98a0a5"
     },
     {
       "id": "u_hgkzqGZ",
-      "x": 64,
-      "y": 896,
-      "color": "#929d9c"
+      "x": 128,
+      "y": 960,
+      "color": "#919c9d"
     },
     {
       "id": "uE4Xzd-Nt",
-      "x": 128,
-      "y": 896,
-      "color": "#8d9a99"
+      "x": 192,
+      "y": 960,
+      "color": "#8f999a"
+    },
+    {
+      "id": "4FB5yychN",
+      "x": 256,
+      "y": 960,
+      "color": "#8a9599"
     },
     {
       "id": "5ReMJ-axh",
-      "x": 192,
-      "y": 896,
-      "color": "#6e598a"
+      "x": 320,
+      "y": 960,
+      "color": "#6f5988"
     },
     {
       "id": "rNYknIToK",
-      "x": 256,
-      "y": 896,
-      "color": "#6a5585"
+      "x": 384,
+      "y": 960,
+      "color": "#695686"
     },
     {
       "id": "D87_y4QHp",
-      "x": 320,
-      "y": 896,
-      "color": "#bebdad"
+      "x": 448,
+      "y": 960,
+      "color": "#bcbdaf"
     },
     {
       "id": "LChCprdXR",
-      "x": 384,
-      "y": 896,
-      "color": "#bdbea7"
+      "x": 512,
+      "y": 960,
+      "color": "#bdbda5"
     },
     {
       "id": "lG5pYr6_F",
-      "x": 448,
-      "y": 896,
-      "color": "#b4b9aa"
+      "x": 576,
+      "y": 960,
+      "color": "#b6b8aa"
     },
     {
       "id": "NXpQnBpZJ",
-      "x": 512,
-      "y": 896,
-      "color": "#c5c0b0"
+      "x": 640,
+      "y": 960,
+      "color": "#c4c2b2"
     },
     {
       "id": "B33Y1xtAN",
-      "x": 576,
-      "y": 896,
-      "color": "#cac3b5"
+      "x": 704,
+      "y": 960,
+      "color": "#c8c1b6"
     },
     {
       "id": "Wy_OqDd79",
-      "x": 640,
-      "y": 896,
-      "color": "#c1baac"
+      "x": 768,
+      "y": 960,
+      "color": "#c1b9ad"
     },
     {
       "id": "FRZxbTuQP",
-      "x": 704,
-      "y": 896,
-      "color": "#bfb9a2"
+      "x": 832,
+      "y": 960,
+      "color": "#bebba2"
     },
     {
       "id": "fpxipfxQ_",
-      "x": 768,
-      "y": 896,
-      "color": "#b4b9a9"
+      "x": 896,
+      "y": 960,
+      "color": "#b5baa9"
     },
     {
       "id": "WqhucJQl5",
-      "x": 832,
-      "y": 896,
-      "color": "#bec3b4"
+      "x": 960,
+      "y": 960,
+      "color": "#bcc1b6"
     },
     {
       "id": "0pLWUXtXS",
-      "x": 896,
-      "y": 896,
-      "color": "#b9beb4"
+      "x": 1024,
+      "y": 960,
+      "color": "#b9beb5"
     },
     {
       "id": "PaI2yXcVi",
-      "x": 960,
-      "y": 896,
-      "color": "#b7b8b2"
+      "x": 1088,
+      "y": 960,
+      "color": "#b6bab1"
     },
     {
       "id": "be5cdHAfy",
-      "x": 1024,
-      "y": 896,
-      "color": "#bfc3ad"
+      "x": 0,
+      "y": 1024,
+      "color": "#bdc2ad"
     },
     {
       "id": "HsYpeEhwA",
-      "x": 0,
-      "y": 960,
-      "color": "#bec1b2"
+      "x": 64,
+      "y": 1024,
+      "color": "#bdc1b2"
     },
     {
       "id": "tcIJgshsc",
-      "x": 64,
-      "y": 960,
-      "color": "#bdc2ac"
+      "x": 128,
+      "y": 1024,
+      "color": "#bfc0ad"
+    },
+    {
+      "id": "3XnGkDb8n",
+      "x": 192,
+      "y": 1024,
+      "color": "#628574"
+    },
+    {
+      "id": "UhyW4h2jl",
+      "x": 256,
+      "y": 1024,
+      "color": "#607667"
     },
     {
       "id": "o7qlvjIpX",
-      "x": 128,
-      "y": 960,
+      "x": 320,
+      "y": 1024,
       "color": "#596d5a"
     },
     {
       "id": "5FnJGJYHD",
-      "x": 192,
-      "y": 960,
+      "x": 384,
+      "y": 1024,
       "color": "#385349"
     },
     {
       "id": "tk28kQJ4M",
-      "x": 256,
-      "y": 960,
-      "color": "#377990"
+      "x": 448,
+      "y": 1024,
+      "color": "#367891"
     },
     {
       "id": "D9uBSezBN",
-      "x": 320,
-      "y": 960,
+      "x": 512,
+      "y": 1024,
       "color": "#5d6a63"
     }
   ],
@@ -2164,6 +2380,17 @@
       "icon": "iron_enr_cmpt"
     },
     {
+      "id": "iron_bottle-liquid_water",
+      "name": "Ferrium Bottle(Clean Water)",
+      "category": "material",
+      "row": 4,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "iron_bottle-liquid_water"
+    },
+    {
       "id": "iron_bottle-liquid_plant_grass_1",
       "name": "Ferrium Bottle(Jincao Solution)",
       "category": "material",
@@ -2296,6 +2523,83 @@
       "icon": "copper_enr2_cmpt"
     },
     {
+      "id": "copper_ming",
+      "name": "L-Cuprium",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_ming"
+    },
+    {
+      "id": "copper_hui",
+      "name": "T-Cuprium",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_hui"
+    },
+    {
+      "id": "copper_enr_heng",
+      "name": "Equprium",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_enr_heng"
+    },
+    {
+      "id": "copper_bright",
+      "name": "Lucidolite",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_bright"
+    },
+    {
+      "id": "copper_ming_cmpt",
+      "name": "L-Cuprium Part",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_ming_cmpt"
+    },
+    {
+      "id": "copper_hui_cmpt",
+      "name": "T-Cuprium Part",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_hui_cmpt"
+    },
+    {
+      "id": "copper_bright_cmpt",
+      "name": "Lucidolite Part",
+      "category": "material",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_bright_cmpt"
+    },
+    {
       "id": "liquid_copper",
       "name": "Cuprium Solution",
       "category": "material",
@@ -2344,6 +2648,36 @@
         "fluid"
       ],
       "icon": "gas_copper_enr2"
+    },
+    {
+      "id": "gas_copper_enr_heng",
+      "name": "Equprium Gas",
+      "category": "material",
+      "row": 6,
+      "types": [
+        "fluid"
+      ],
+      "icon": "gas_copper_enr_heng"
+    },
+    {
+      "id": "gas_copper_bright_clear",
+      "name": "Clean Lucidolite Gas",
+      "category": "material",
+      "row": 6,
+      "types": [
+        "fluid"
+      ],
+      "icon": "gas_copper_bright_clear"
+    },
+    {
+      "id": "gas_copper_bright_turbid",
+      "name": "Turbid Lucidolite Gas",
+      "category": "material",
+      "row": 6,
+      "types": [
+        "fluid"
+      ],
+      "icon": "gas_copper_bright_turbid"
     },
     {
       "id": "copper_bottle",
@@ -2423,6 +2757,39 @@
       "icon": "xiranite_enr_powder"
     },
     {
+      "id": "xiranite_ming",
+      "name": "Luminarite",
+      "category": "material",
+      "row": 7,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "xiranite_ming"
+    },
+    {
+      "id": "xiranite_hui",
+      "name": "Turbidarite",
+      "category": "material",
+      "row": 7,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "xiranite_hui"
+    },
+    {
+      "id": "xiranite_enr_heng",
+      "name": "Equiranite",
+      "category": "material",
+      "row": 7,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "xiranite_enr_heng"
+    },
+    {
       "id": "liquid_xiranite_poly",
       "name": "Xircon Effluent",
       "category": "material",
@@ -2493,6 +2860,16 @@
       "icon": "gas_xiranite_enr"
     },
     {
+      "id": "gas_xiranite_enr_heng",
+      "name": "Equiragen",
+      "category": "material",
+      "row": 8,
+      "types": [
+        "fluid"
+      ],
+      "icon": "gas_xiranite_enr_heng"
+    },
+    {
       "id": "liquid_water",
       "name": "Clean Water",
       "category": "material",
@@ -2541,6 +2918,50 @@
         "fluid"
       ],
       "icon": "gas_inert"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_enr_heng",
+      "name": "Cuprium Canister(Equprium Gas)",
+      "category": "material",
+      "row": 9,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "gasjar_copper_gas_copper_enr_heng"
+    },
+    {
+      "id": "gasjar_copper_gas_xiranite_enr_heng",
+      "name": "Cuprium Canister(Equiragen)",
+      "category": "material",
+      "row": 9,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "gasjar_copper_gas_xiranite_enr_heng"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_clear",
+      "name": "Cuprium Canister(Clean Lucidolite Gas)",
+      "category": "material",
+      "row": 9,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "gasjar_copper_gas_copper_bright_clear"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_turbid",
+      "name": "Cuprium Canister(Turbid Lucidolite Gas)",
+      "category": "material",
+      "row": 9,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "gasjar_copper_gas_copper_bright_turbid"
     },
     {
       "id": "bottled_food_1",
@@ -2785,6 +3206,17 @@
       "icon": "proc_battery_5"
     },
     {
+      "id": "proc_battery_6",
+      "name": "HC Wuling Battery",
+      "category": "product",
+      "row": 3,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "proc_battery_6"
+    },
+    {
       "id": "proc_bomb_1",
       "name": "Industrial Explosive",
       "category": "product",
@@ -2794,6 +3226,39 @@
       ],
       "stack": 50,
       "icon": "proc_bomb_1"
+    },
+    {
+      "id": "copper_xiranite_ming",
+      "name": "CuPKG Luminarite Component",
+      "category": "product",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_xiranite_ming"
+    },
+    {
+      "id": "copper_xiranite_hui",
+      "name": "CuPKG Heavy IC",
+      "category": "product",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_xiranite_hui"
+    },
+    {
+      "id": "copper_bright_cube",
+      "name": "Lucidolite Energy Brick",
+      "category": "product",
+      "row": 5,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "icon": "copper_bright_cube"
     },
     {
       "id": "tundra_coupon",
@@ -3201,7 +3666,7 @@
     },
     {
       "id": "liquid_cleaner_1",
-      "name": "Water Treatment Unit",
+      "name": "Waste Treatment Unit",
       "category": "machine",
       "row": 999,
       "types": [
@@ -3263,6 +3728,29 @@
         ]
       },
       "icon": "liquid_clean_gate"
+    },
+    {
+      "id": "magic_balancer_1",
+      "name": "Forge of Equilibrium",
+      "category": "machine",
+      "row": 999,
+      "types": [
+        "item"
+      ],
+      "stack": 50,
+      "machine": {
+        "speed": 1,
+        "type": "electric",
+        "usage": 50,
+        "size": [
+          5,
+          5
+        ],
+        "locations": [
+          "jinlong"
+        ]
+      },
+      "icon": "magic_balancer_1"
     },
     {
       "id": "miner_2",
@@ -4854,6 +5342,27 @@
       "icon": "iron_enr_cmpt"
     },
     {
+      "id": "iron_bottle-liquid_water",
+      "name": "Ferrium Bottle(Clean Water)",
+      "category": "material",
+      "row": 4,
+      "time": 2,
+      "in": {
+        "iron_bottle": 1,
+        "liquid_water": 1
+      },
+      "out": {
+        "iron_bottle-liquid_water": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "iron_bottle-liquid_water"
+    },
+    {
       "id": "iron_bottle-liquid_plant_grass_1",
       "name": "Ferrium Bottle(Jincao Solution)",
       "category": "material",
@@ -5196,6 +5705,129 @@
       "icon": "filter_core"
     },
     {
+      "id": "magic_balancer_1-copper_enr",
+      "name": "Hetonite(Forge of Equilibrium)",
+      "category": "material",
+      "row": 5,
+      "time": 10,
+      "in": {
+        "copper_ming": 10,
+        "copper_hui": 10
+      },
+      "out": {
+        "copper_enr": 5
+      },
+      "producers": [
+        "magic_balancer_1"
+      ],
+      "icon": "7HEZZXQXi"
+    },
+    {
+      "id": "phase_trans_2-copper_enr_heng",
+      "name": "Equprium(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 5,
+      "time": 2,
+      "in": {
+        "gas_copper_enr_heng": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "copper_enr_heng": 2
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "BdMxTKvQP"
+    },
+    {
+      "id": "magic_balancer_1-copper_bright",
+      "name": "Lucidolite(Forge of Equilibrium)",
+      "category": "material",
+      "row": 5,
+      "time": 10,
+      "in": {
+        "xiranite_enr_heng": 10,
+        "copper_enr_heng": 10
+      },
+      "out": {
+        "copper_bright": 5
+      },
+      "producers": [
+        "magic_balancer_1"
+      ],
+      "icon": "JvK4hAcOl"
+    },
+    {
+      "id": "phase_trans_2-copper_bright",
+      "name": "Lucidolite(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 5,
+      "time": 2,
+      "in": {
+        "gas_copper_bright_clear": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "copper_bright": 2
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "SKXdzSG5F"
+    },
+    {
+      "id": "copper_ming_cmpt",
+      "name": "L-Cuprium Part",
+      "category": "material",
+      "row": 5,
+      "time": 2,
+      "in": {
+        "copper_ming": 1
+      },
+      "out": {
+        "copper_ming_cmpt": 1
+      },
+      "producers": [
+        "cmpt_mc_1"
+      ],
+      "icon": "copper_ming_cmpt"
+    },
+    {
+      "id": "copper_hui_cmpt",
+      "name": "T-Cuprium Part",
+      "category": "material",
+      "row": 5,
+      "time": 2,
+      "in": {
+        "copper_hui": 1
+      },
+      "out": {
+        "copper_hui_cmpt": 1
+      },
+      "producers": [
+        "cmpt_mc_1"
+      ],
+      "icon": "copper_hui_cmpt"
+    },
+    {
+      "id": "copper_bright_cmpt",
+      "name": "Lucidolite Part",
+      "category": "material",
+      "row": 5,
+      "time": 2,
+      "in": {
+        "copper_bright": 1
+      },
+      "out": {
+        "copper_bright_cmpt": 1
+      },
+      "producers": [
+        "cmpt_mc_1"
+      ],
+      "icon": "copper_bright_cmpt"
+    },
+    {
       "id": "liquid_copper",
       "name": "Cuprium Solution",
       "category": "material",
@@ -5413,6 +6045,114 @@
       "icon": "ugzGGeljq"
     },
     {
+      "id": "phase_trans_2-gas_copper_enr_heng",
+      "name": "Equprium Gas(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "copper_enr_heng": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_copper_enr_heng": 1
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "FVD_V1gkz"
+    },
+    {
+      "id": "phase_trans_2-gas_xiranite_enr_heng",
+      "name": "Equiragen(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "xiranite_enr_heng": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_xiranite_enr_heng": 1
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "3yH_sUEon"
+    },
+    {
+      "id": "gas_copper_bright_clear",
+      "name": "Clean Lucidolite Gas",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "gas_copper_enr_heng": 1,
+        "gas_xiranite_enr_heng": 1
+      },
+      "out": {
+        "gas_copper_bright_clear": 1,
+        "gas_copper_bright_turbid": 1
+      },
+      "producers": [
+        "gas_reactor_1"
+      ],
+      "icon": "gas_copper_bright_clear"
+    },
+    {
+      "id": "gas_copper_bright_clear-purifier",
+      "name": "Clean Lucidolite Gas(Purification Unit)",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "gas_copper_bright_turbid": 2,
+        "filter_core": 2
+      },
+      "out": {
+        "gas_copper_bright_clear": 2
+      },
+      "producers": [
+        "liquid_purifier_1"
+      ],
+      "icon": "--fy8JitE"
+    },
+    {
+      "id": "liquid_cleaner_1-gas_copper_bright_turbid",
+      "name": "Waste Treatment Unit(Turbid Lucidolite Gas)",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "gas_copper_bright_turbid": 1
+      },
+      "out": {},
+      "producers": [
+        "liquid_cleaner_1"
+      ],
+      "cost": 0,
+      "usage": 50,
+      "icon": "3H826tx7z"
+    },
+    {
+      "id": "phase_trans_2-gas_copper_bright_clear",
+      "name": "Clean Lucidolite Gas(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 6,
+      "time": 2,
+      "in": {
+        "copper_bright": 2,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "gas_copper_bright_clear": 2
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "XvL38FqFc"
+    },
+    {
       "id": "xiranite_powder-carbon_mtl",
       "name": "Xiranite(Carbon)",
       "category": "material",
@@ -5520,6 +6260,42 @@
         "phase_trans_2"
       ],
       "icon": "o7qlvjIpX"
+    },
+    {
+      "id": "magic_balancer_1-xiranite_enr_powder",
+      "name": "Heavy Xiranite(Forge of Equilibrium)",
+      "category": "material",
+      "row": 7,
+      "time": 10,
+      "in": {
+        "xiranite_ming": 5,
+        "xiranite_hui": 5
+      },
+      "out": {
+        "xiranite_enr_powder": 2
+      },
+      "producers": [
+        "magic_balancer_1"
+      ],
+      "icon": "UhyW4h2jl"
+    },
+    {
+      "id": "phase_trans_2-xiranite_enr_heng",
+      "name": "Equiranite(Solid-Gas Transmuting Unit)",
+      "category": "material",
+      "row": 7,
+      "time": 2,
+      "in": {
+        "gas_xiranite_enr_heng": 1,
+        "gas_xiranite": 0.2
+      },
+      "out": {
+        "xiranite_enr_heng": 2
+      },
+      "producers": [
+        "phase_trans_2"
+      ],
+      "icon": "3XnGkDb8n"
     },
     {
       "id": "liquid_xiranite",
@@ -5849,6 +6625,506 @@
       "icon": "BTDiP1-WN"
     },
     {
+      "id": "formation_magic_ming_item_copper_ming_1",
+      "name": "L-Cuprium (20%)",
+      "category": "material",
+      "row": 9,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_ming": 0.2,
+        "copper_nugget": 0.8
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_copper_ming_2",
+      "name": "L-Cuprium (40%)",
+      "category": "material",
+      "row": 9,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_ming": 0.4,
+        "copper_nugget": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_copper_ming_3",
+      "name": "L-Cuprium (60%)",
+      "category": "material",
+      "row": 9,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_ming": 0.6,
+        "copper_nugget": 0.4
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_copper_ming_4",
+      "name": "L-Cuprium (100%)",
+      "category": "material",
+      "row": 9,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_ming": 1
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_ming"
+    },
+    {
+      "id": "formation_magic_hui_item_copper_hui_1",
+      "name": "T-Cuprium (20%)",
+      "category": "material",
+      "row": 10,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_hui": 0.2,
+        "copper_nugget": 0.8
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_copper_hui_2",
+      "name": "T-Cuprium (40%)",
+      "category": "material",
+      "row": 10,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_hui": 0.4,
+        "copper_nugget": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_copper_hui_3",
+      "name": "T-Cuprium (60%)",
+      "category": "material",
+      "row": 10,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_hui": 0.6,
+        "copper_nugget": 0.4
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_copper_hui_4",
+      "name": "T-Cuprium (100%)",
+      "category": "material",
+      "row": 10,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_hui": 1
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_hui"
+    },
+    {
+      "id": "formation_magic_heng_item_copper_enr_heng_1",
+      "name": "Equprium (40%)",
+      "category": "material",
+      "row": 11,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_enr_heng": 0.4,
+        "copper_nugget": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_enr_heng"
+    },
+    {
+      "id": "formation_magic_heng_item_copper_enr_heng_2",
+      "name": "Equprium (80%)",
+      "category": "material",
+      "row": 11,
+      "time": 10,
+      "in": {
+        "copper_nugget": 1
+      },
+      "out": {
+        "copper_enr_heng": 0.8,
+        "copper_nugget": 0.2
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "copper_enr_heng"
+    },
+    {
+      "id": "formation_magic_ming_item_xiranite_ming_1",
+      "name": "Luminarite (20%)",
+      "category": "material",
+      "row": 12,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_ming": 0.2,
+        "xiranite_powder": 0.8
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_xiranite_ming_2",
+      "name": "Luminarite (40%)",
+      "category": "material",
+      "row": 12,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_ming": 0.4,
+        "xiranite_powder": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_xiranite_ming_3",
+      "name": "Luminarite (60%)",
+      "category": "material",
+      "row": 12,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_ming": 0.6,
+        "xiranite_powder": 0.4
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_ming"
+    },
+    {
+      "id": "formation_magic_ming_item_xiranite_ming_4",
+      "name": "Luminarite (100%)",
+      "category": "material",
+      "row": 12,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_ming": 1
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_ming"
+    },
+    {
+      "id": "formation_magic_hui_item_xiranite_hui_1",
+      "name": "Turbidarite (20%)",
+      "category": "material",
+      "row": 13,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_hui": 0.2,
+        "xiranite_powder": 0.8
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_xiranite_hui_2",
+      "name": "Turbidarite (40%)",
+      "category": "material",
+      "row": 13,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_hui": 0.4,
+        "xiranite_powder": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_xiranite_hui_3",
+      "name": "Turbidarite (60%)",
+      "category": "material",
+      "row": 13,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_hui": 0.6,
+        "xiranite_powder": 0.4
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_hui"
+    },
+    {
+      "id": "formation_magic_hui_item_xiranite_hui_4",
+      "name": "Turbidarite (100%)",
+      "category": "material",
+      "row": 13,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_hui": 1
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_hui"
+    },
+    {
+      "id": "formation_magic_heng_item_xiranite_enr_heng_1",
+      "name": "Equiranite (40%)",
+      "category": "material",
+      "row": 14,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_enr_heng": 0.4,
+        "xiranite_powder": 0.6
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_enr_heng"
+    },
+    {
+      "id": "formation_magic_heng_item_xiranite_enr_heng_2",
+      "name": "Equiranite (80%)",
+      "category": "material",
+      "row": 14,
+      "time": 10,
+      "in": {
+        "xiranite_powder": 1
+      },
+      "out": {
+        "xiranite_enr_heng": 0.8,
+        "xiranite_powder": 0.2
+      },
+      "flags": [
+        "showCount"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "xiranite_enr_heng"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_enr_heng",
+      "name": "Cuprium Canister(Equprium Gas)",
+      "category": "material",
+      "row": 15,
+      "time": 2,
+      "in": {
+        "copper_jar": 1,
+        "gas_copper_enr_heng": 1
+      },
+      "out": {
+        "gasjar_copper_gas_copper_enr_heng": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "gasjar_copper_gas_copper_enr_heng"
+    },
+    {
+      "id": "gasjar_copper_gas_xiranite_enr_heng",
+      "name": "Cuprium Canister(Equiragen)",
+      "category": "material",
+      "row": 15,
+      "time": 2,
+      "in": {
+        "copper_jar": 1,
+        "gas_xiranite_enr_heng": 1
+      },
+      "out": {
+        "gasjar_copper_gas_xiranite_enr_heng": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "gasjar_copper_gas_xiranite_enr_heng"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_clear",
+      "name": "Cuprium Canister(Clean Lucidolite Gas)",
+      "category": "material",
+      "row": 15,
+      "time": 2,
+      "in": {
+        "copper_jar": 1,
+        "gas_copper_bright_clear": 1
+      },
+      "out": {
+        "gasjar_copper_gas_copper_bright_clear": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "gasjar_copper_gas_copper_bright_clear"
+    },
+    {
+      "id": "gasjar_copper_gas_copper_bright_turbid",
+      "name": "Cuprium Canister(Turbid Lucidolite Gas)",
+      "category": "material",
+      "row": 15,
+      "time": 2,
+      "in": {
+        "copper_jar": 1,
+        "gas_copper_bright_turbid": 1
+      },
+      "out": {
+        "gasjar_copper_gas_copper_bright_turbid": 1
+      },
+      "producers": [
+        "filling_pd_mc_1"
+      ],
+      "locations": [
+        "jinlong"
+      ],
+      "icon": "gasjar_copper_gas_copper_bright_turbid"
+    },
+    {
       "id": "gas_inert",
       "name": "Inergen",
       "category": "material",
@@ -5886,7 +7162,7 @@
     },
     {
       "id": "liquid_cleaner_1-sewage",
-      "name": "Water Treatment Unit(Sewage)",
+      "name": "Waste Treatment Unit(Sewage)",
       "category": "material",
       "row": 999,
       "time": 2,
@@ -5903,7 +7179,7 @@
     },
     {
       "id": "liquid_cleaner_1-xiranite_lowpoly",
-      "name": "Water Treatment Unit(Inert Xircon Effluent)",
+      "name": "Waste Treatment Unit(Inert Xircon Effluent)",
       "category": "material",
       "row": 999,
       "time": 2,
@@ -5920,7 +7196,7 @@
     },
     {
       "id": "liquid_cleaner_1-xiranite_poly",
-      "name": "Water Treatment Unit(Xircon Effluent)",
+      "name": "Waste Treatment Unit(Xircon Effluent)",
       "category": "material",
       "row": 999,
       "time": 2,
@@ -6366,6 +7642,24 @@
       "icon": "proc_battery_5"
     },
     {
+      "id": "proc_battery_6",
+      "name": "HC Wuling Battery",
+      "category": "product",
+      "row": 3,
+      "time": 10,
+      "in": {
+        "xiranite_enr_heng": 5,
+        "originium_enr_powder": 20
+      },
+      "out": {
+        "proc_battery_6": 1
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "icon": "proc_battery_6"
+    },
+    {
       "id": "proc_bomb_1",
       "name": "Industrial Explosive",
       "category": "product",
@@ -6382,6 +7676,60 @@
         "tools_asm_mc_1"
       ],
       "icon": "proc_bomb_1"
+    },
+    {
+      "id": "copper_xiranite_ming",
+      "name": "CuPKG Luminarite Component",
+      "category": "product",
+      "row": 5,
+      "time": 10,
+      "in": {
+        "copper_ming_cmpt": 10,
+        "xiranite_ming": 5
+      },
+      "out": {
+        "copper_xiranite_ming": 5
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "icon": "copper_xiranite_ming"
+    },
+    {
+      "id": "copper_xiranite_hui",
+      "name": "CuPKG Heavy IC",
+      "category": "product",
+      "row": 5,
+      "time": 10,
+      "in": {
+        "copper_hui_cmpt": 15,
+        "xiranite_enr_powder": 2
+      },
+      "out": {
+        "copper_xiranite_hui": 5
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "icon": "copper_xiranite_hui"
+    },
+    {
+      "id": "copper_bright_cube",
+      "name": "Lucidolite Energy Brick",
+      "category": "product",
+      "row": 5,
+      "time": 10,
+      "in": {
+        "copper_bright_cmpt": 5,
+        "originium_enr_powder": 5
+      },
+      "out": {
+        "copper_bright_cube": 5
+      },
+      "producers": [
+        "tools_asm_mc_1"
+      ],
+      "icon": "copper_bright_cube"
     },
     {
       "id": "power_originium_ore",
@@ -6478,6 +7826,22 @@
       ],
       "usage": -3200,
       "icon": "uE4Xzd-Nt"
+    },
+    {
+      "id": "power_proc_battery_6",
+      "name": "Power(HC Wuling Battery)",
+      "category": "gen-power",
+      "row": 2,
+      "time": 40,
+      "in": {
+        "proc_battery_6": 1
+      },
+      "out": {},
+      "producers": [
+        "power_sta_1"
+      ],
+      "usage": -6400,
+      "icon": "4FB5yychN"
     },
     {
       "id": "tundra_coupon-crystal_shell",
@@ -7523,10 +8887,10 @@
   "endfield": {
     "schemaVersion": 1,
     "sources": {
-      "tableGameVersion": "v1.6.3",
+      "tableGameVersion": "v1.7.2",
       "mineIndex": {
-        "indexRevision": "2026-11-21T11:50:36.328764+00:00",
-        "manifestLatest": "1.6.4@11944529-13"
+        "indexRevision": "2026-11-24T23:58:13.647610+00:00",
+        "manifestLatest": "1.7.2@12026241-3"
       }
     },
     "activities": {
@@ -7545,10 +8909,10 @@
         ],
         "recipeUnlocks": {
           "activity_xiranite_enr_cmpt": 1777924800000,
-          "xiranite_enr_bottle-liquid_plant_grass_2": 1777924800000,
-          "activity_xiranite_enr_bottle": 1777924800000,
           "activity_xiranite_enr_tool": 1777924800000,
+          "xiranite_enr_bottle-liquid_plant_grass_2": 1777924800000,
           "activity_xiranite_enr_hulu": 1777924800000,
+          "activity_xiranite_enr_bottle": 1777924800000,
           "jinlong_coupon-activity_xiranite_enr_hulu": 1777924800000
         }
       },
@@ -7567,12 +8931,12 @@
         ],
         "recipeUnlocks": {
           "activity_copper_poly_cmpt": 1790107200000,
-          "activity_xiranite_enr_box": 1790107200000,
+          "activity_copper_poly_gas": 1790107200000,
           "activity_xiranite_enr_nugget": 1790107200000,
           "activity_copper_poly_tool": 1790107200000,
           "phase_trans_2-activity_copper_poly": 1790107200000,
-          "activity_copper_poly_gas": 1790107200000,
           "phase_trans_2-activity_copper_poly_gas": 1790107200000,
+          "activity_xiranite_enr_box": 1790107200000,
           "activity_xiranite_enr_lung": 1790107200000,
           "jinlong_coupon-activity_xiranite_enr_lung": 1790107200000
         }
@@ -7971,30 +9335,33 @@
           }
         ],
         "locationId": "jinlong",
-        "maxLevel": 27,
+        "machineLimits": {
+          "xiranite_oven_1": 16
+        },
+        "maxLevel": 33,
         "mineSummary": [
           {
             "itemId": "copper_ore",
-            "outputPerMinute": 510,
-            "mineCount": 28,
-            "highPurityMineCount": 23,
-            "lowPurityMineCount": 5,
+            "outputPerMinute": 600,
+            "mineCount": 32,
+            "highPurityMineCount": 28,
+            "lowPurityMineCount": 4,
             "inactiveMineCount": 0
           },
           {
             "itemId": "gas_inert",
-            "outputPerMinute": 460,
-            "mineCount": 23,
-            "highPurityMineCount": 23,
+            "outputPerMinute": 540,
+            "mineCount": 27,
+            "highPurityMineCount": 27,
             "lowPurityMineCount": 0,
             "inactiveMineCount": 0
           },
           {
             "itemId": "gas_xiranite",
-            "outputPerMinute": 150,
-            "mineCount": 8,
-            "highPurityMineCount": 7,
-            "lowPurityMineCount": 1,
+            "outputPerMinute": 340,
+            "mineCount": 20,
+            "highPurityMineCount": 14,
+            "lowPurityMineCount": 6,
             "inactiveMineCount": 0
           },
           {
@@ -8007,10 +9374,10 @@
           },
           {
             "itemId": "originium_ore",
-            "outputPerMinute": 540,
+            "outputPerMinute": 600,
             "mineCount": 32,
-            "highPurityMineCount": 22,
-            "lowPurityMineCount": 10,
+            "highPurityMineCount": 28,
+            "lowPurityMineCount": 4,
             "inactiveMineCount": 0
           }
         ]

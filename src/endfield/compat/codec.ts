@@ -88,7 +88,8 @@ function decodeId(value: string, field: string): string {
  * Fields: flags, resource rates, oven limit, electric cost, source settings, activity overrides, transfer source.
  * Flags hold the three enabled bits followed by one checked bit per resource.
  * Lists use fixed resource positions; source settings alternate machine/speed.
- * Empty and trailing fields take their defaults. Fractions are always exact.
+ * The omitted oven field in an existing payload means the original limit, 12.
+ * An absent payload uses current defaults. Fractions are always exact.
  */
 export function encodeEndfield(state: EndfieldState): string | undefined {
   const defaults = createEndfieldState();
@@ -112,33 +113,33 @@ export function encodeEndfield(state: EndfieldState): string | undefined {
       settings?.overclock?.toFraction(false) ?? '',
     ];
   });
-  const result = trimFields(
-    [
-      flags ? flags.toString(36) : '',
-      trimFields(rates, '~'),
-      state.machineLimits.limits[ovenId].eq(
-        defaults.machineLimits.limits[ovenId],
-      )
-        ? ''
-        : state.machineLimits.limits[ovenId].toFraction(false),
-      state.electric.eq(defaults.electric)
-        ? ''
-        : state.electric.toFraction(false),
-      trimFields(sourceSettings, '~'),
-      Object.entries(state.activityModes)
-        .sort(([a], [b]) => a.localeCompare(b, 'en'))
-        .flatMap(([id, mode]) => [
-          encodeId(id),
-          mode === 'disabled' ? 'd' : String(mode),
-        ])
-        .join('~'),
-      state.transferSource === defaults.transferSource
-        ? ''
-        : encodeId(state.transferSource),
-    ],
-    '*',
-  );
-  return result || undefined;
+  const fields = [
+    flags ? flags.toString(36) : '',
+    trimFields(rates, '~'),
+    '',
+    state.electric.eq(defaults.electric)
+      ? ''
+      : state.electric.toFraction(false),
+    trimFields(sourceSettings, '~'),
+    Object.entries(state.activityModes)
+      .sort(([a], [b]) => a.localeCompare(b, 'en'))
+      .flatMap(([id, mode]) => [
+        encodeId(id),
+        mode === 'disabled' ? 'd' : String(mode),
+      ])
+      .join('~'),
+    state.transferSource === defaults.transferSource
+      ? ''
+      : encodeId(state.transferSource),
+  ];
+  const hasOtherSettings = fields.some(Boolean);
+  const oven = state.machineLimits.limits[ovenId];
+  if (!hasOtherSettings && oven.eq(defaults.machineLimits.limits[ovenId]))
+    return undefined;
+  // Preserve the historical omitted value while emitting new defaults explicitly.
+  if (!hasOtherSettings || !oven.eq(rational(12)))
+    fields[2] = oven.toFraction(false);
+  return trimFields(fields, '*');
 }
 
 export function decodeEndfield(
@@ -247,7 +248,7 @@ export function decodeEndfield(
       limits: {
         [ovenId]: ovenField
           ? parseNonnegative(ovenField, `ef.machineLimits.limits.${ovenId}`)
-          : defaults.machineLimits.limits[ovenId],
+          : rational(12),
       },
     },
     transferEnabled: !!(flags & 4),

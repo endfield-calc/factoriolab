@@ -2,6 +2,7 @@ import { emptyModData, ModData } from '~/data/schema/mod-data';
 import {
   createEndfieldState,
   EndfieldState,
+  ovenId,
   resourceIds,
   resourceRecipes,
 } from '~/endfield/domain/model';
@@ -27,6 +28,35 @@ const data: ModData = {
 };
 
 describe('Endfield ef codec', () => {
+  it('retains legacy 12-oven payloads and writes the new 16-oven default when needed', () => {
+    const defaults = createEndfieldState();
+    expect(defaults.machineLimits.limits[ovenId]).toEqual(rational(16));
+    expect(decodeEndfield('2').machineLimits).toEqual({
+      enabled: true,
+      limits: { [ovenId]: rational(12) },
+    });
+    expect(decodeEndfield('2**12').machineLimits.limits[ovenId]).toEqual(
+      rational(12),
+    );
+    const enabled = {
+      ...defaults,
+      machineLimits: { ...defaults.machineLimits, enabled: true },
+    };
+    expect(encodeEndfield(enabled)).toBe('2**16');
+    expect(decodeEndfield(encodeEndfield(enabled))).toEqual(enabled);
+    const disabledLegacy = {
+      ...defaults,
+      machineLimits: { enabled: false, limits: { [ovenId]: rational(12) } },
+    };
+    expect(encodeEndfield(disabledLegacy)).toBe('**12');
+    expect(decodeEndfield(encodeEndfield(disabledLegacy))).toEqual(
+      disabledLegacy,
+    );
+    const otherSettings = { ...defaults, electric: rational(2) };
+    expect(decodeEndfield(encodeEndfield(otherSettings))).toEqual(
+      otherSettings,
+    );
+  });
   it('round trips the transfer source and reads older enabled flags as Tundra', () => {
     const state = {
       ...createEndfieldState(),

@@ -7,6 +7,7 @@ import rawTransfer from '/public/data/aef/transfer.json';
 import { ModData } from '~/data/schema/mod-data';
 import { AdjustedRecipe } from '~/data/schema/recipe';
 import { endfieldAdjustmentProvider } from '~/endfield/adapters/calculation-extension';
+import { decodeEndfield } from '~/endfield/compat/codec';
 import { Exporter } from '~/exporter/exporter';
 import { rational } from '~/rational/rational';
 import { SimplexResult } from '~/solver/simplex-result';
@@ -403,15 +404,11 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
     });
   }
 
-  it('filters by source, skips a self-transfer and permits each other target and multi-region', () => {
-    // Simulate a later release that unlocks a second source; item eligibility stays real.
-    settings['transferResource'].set({
-      ...(rawTransfer as EndfieldTransferData),
-      sources: [
-        ...rawTransfer.sources,
-        { domainId: 'domain_2', locationId: 'jinlong', capacity: 800 },
-      ],
-    });
+  it('filters both actual transfer sources, skips self-transfer and permits other selected regions', () => {
+    expect(rawTransfer.sources).toEqual([
+      { domainId: 'domain_1', locationId: 'tundra', capacity: 1500 },
+      { domainId: 'domain_2', locationId: 'jinlong', capacity: 1500 },
+    ]);
     const recipesStore = TestBed.inject(RecipesStore);
     const current = recipesStore.adjustedDataset;
     extension.set({ ...createEndfieldState(), transferEnabled: true });
@@ -421,26 +418,193 @@ describe('Remaining Endfield physical constraint acceptance with aef and GLPK', 
       );
     settings.apply({ locationIds: new Set(['jinlong']) });
     expect(generated().some((recipe) => recipe.out['carbon_enr'])).toBeTrue();
-    expect(
-      generated().some((recipe) => recipe.out['equip_script_4_2']),
-    ).toBeFalse();
+    expect(generated().some((recipe) => recipe.out['copper_ming'])).toBeFalse();
     settings.apply({ locationIds: new Set(['tundra']) });
     expect(generated()).toEqual([]);
     extension.apply({ transferSource: 'jinlong' });
-    expect(
-      generated().some((recipe) => recipe.out['equip_script_4_2']),
-    ).toBeTrue();
+    expect(generated().some((recipe) => recipe.out['copper_ming'])).toBeTrue();
     const transfer = generated().find((recipe) => recipe.out['carbon_enr'])!;
-    expect(transfer.out['carbon_enr']).toEqual(rational(800));
+    expect(transfer.out['carbon_enr']).toEqual(rational(1500));
     settings.apply({ locationIds: new Set(['tundra', 'jinlong']) });
-    expect(
-      generated().some((recipe) => recipe.out['equip_script_4_2']),
-    ).toBeTrue();
+    expect(generated().some((recipe) => recipe.out['copper_ming'])).toBeTrue();
     settings.apply({ locationIds: new Set() });
     expect(generated()).toEqual([]);
     extension.apply({ transferEnabled: false });
     expect(generated()).toEqual([]);
   });
+
+  for (const algorithm of ['simplex', 'exact'] as const) {
+    it(`enforces the 16-oven default and restored 12-oven limit with ${algorithm}`, () => {
+      preferences.apply({ glpkAlgorithm: algorithm });
+      const recipe = data.recipes.find((entry) =>
+        entry.producers?.includes(ovenId),
+      )!;
+      const defaults = createEndfieldState();
+      extension.set({
+        ...defaults,
+        machineLimits: { ...defaults.machineLimits, enabled: true },
+      });
+      objectives.set({ 1: objective('1', recipe.id, 16) });
+      expect(result().resultType).toBe('solved');
+      objectives.set({ 1: objective('1', recipe.id, 17) });
+      expect(result().resultType).toBe('failed');
+
+      extension.set(decodeEndfield('2'));
+      objectives.set({ 1: objective('1', recipe.id, 12) });
+      expect(result().resultType).toBe('solved');
+      objectives.set({ 1: objective('1', recipe.id, 13) });
+      expect(result().resultType).toBe('failed');
+    });
+
+    it(`uses actual formation probabilities and preserves the failed material with ${algorithm}`, () => {
+      preferences.apply({ glpkAlgorithm: algorithm });
+      const id = 'formation_magic_ming_item_copper_ming_1';
+      settings.apply({
+        locationIds: new Set(['jinlong']),
+        excludedRecipeIds: new Set(
+          data.recipes
+            .filter((recipe) => recipe.id !== id && recipe.out?.['copper_ming'])
+            .map((recipe) => recipe.id),
+        ),
+      });
+      objectives.set({
+        1: objective('1', 'copper_ming', 6, ObjectiveUnit.Items),
+      });
+      const solved = result();
+      expect(solved.resultType).toBe('solved');
+      const formation = solved.steps.find((step) => step.recipeId === id)!;
+      expect(formation).toBeDefined();
+      close(formation.machines!.toNumber(), 5);
+      expect(
+        formation.recipe!.output['copper_nugget'].eq(rational(-1, 50)),
+      ).toBeTrue();
+      expect(
+        formation.recipe!.output['copper_ming'].eq(rational(1, 50)),
+      ).toBeTrue();
+      const sourceRate = solved.steps.reduce((sum, step) => {
+        const rate = step.recipe?.output['copper_nugget'];
+        return rate?.gt(rational.zero) && step.machines
+          ? sum + rate.mul(step.machines).toNumber()
+          : sum;
+      }, 0);
+      close(sourceRate * 60, 6);
+      expect(formation.recipe!.producers).toBeUndefined();
+      expect(formation.recipe!.flags.has('showCount')).toBeTrue();
+
+      objectives.set({
+        1: objective('1', 'copper_ming', 6, ObjectiveUnit.Items),
+        2: {
+          ...objective('2', 'copper_nugget', 6, ObjectiveUnit.Items),
+          type: ObjectiveType.Limit,
+        },
+      });
+      // The native limit counts all 30 processed items, including 24 returns.
+      expect(result().resultType).toBe('failed');
+      objectives.set({
+        1: objective('1', 'copper_ming', 6, ObjectiveUnit.Items),
+        2: {
+          ...objective('2', 'copper_nugget', 30, ObjectiveUnit.Items),
+          type: ObjectiveType.Limit,
+        },
+      });
+      expect(result().resultType).toBe('solved');
+      close(count(result().steps, id), 5);
+
+      // An external supply needs only the six items actually converted.
+      settings.apply({
+        excludedRecipeIds: new Set(
+          data.recipes
+            .filter((recipe) => {
+              if (recipe.id === id) return false;
+              const output = Number(recipe.out?.['copper_nugget'] ?? 0);
+              const input = Number(recipe.in?.['copper_nugget'] ?? 0);
+              return !!recipe.out?.['copper_ming'] || output > input;
+            })
+            .map((recipe) => recipe.id),
+        ),
+      });
+      objectives.set({
+        1: objective('1', 'copper_ming', 6, ObjectiveUnit.Items),
+        2: {
+          ...objective('2', 'copper_nugget', 6, ObjectiveUnit.Items),
+          type: ObjectiveType.Input,
+        },
+      });
+      const external = result();
+      expect(external.resultType).toBe('solved');
+      close(count(external.steps, id), 5);
+      const copper = objectives
+        .steps()
+        .find((step) => step.itemId === 'copper_nugget')!;
+      close(copper.items!.toNumber(), 30);
+
+      settings.apply({ locationIds: new Set(['tundra']) });
+      expect(
+        TestBed.inject(RecipesStore).adjustedDataset().itemAvailableRecipeIds[
+          'copper_ming'
+        ],
+      ).not.toContain(id);
+    });
+
+    it(`uses the actual reactor outputs together with ${algorithm}`, () => {
+      preferences.apply({ glpkAlgorithm: algorithm });
+      const id = 'gas_copper_bright_clear';
+      settings.apply({
+        excludedRecipeIds: new Set(
+          data.recipes
+            .filter(
+              (recipe) =>
+                recipe.id !== id &&
+                (recipe.out?.['gas_copper_bright_clear'] ||
+                  recipe.out?.['gas_copper_bright_turbid']),
+            )
+            .map((recipe) => recipe.id),
+        ),
+      });
+      objectives.set({
+        1: objective('1', 'gas_copper_bright_clear', 30, ObjectiveUnit.Items),
+        2: objective('2', 'gas_copper_bright_turbid', 30, ObjectiveUnit.Items),
+      });
+      const solved = result();
+      expect(solved.resultType).toBe('solved');
+      close(count(solved.steps, id), 1);
+      const reactor = solved.steps.find((step) => step.recipeId === id)!;
+      expect(reactor.recipe!.out['gas_copper_bright_clear']).toEqual(
+        rational.one,
+      );
+      expect(reactor.recipe!.out['gas_copper_bright_turbid']).toEqual(
+        rational.one,
+      );
+    });
+
+    for (const [source, destination, item, fullRate] of [
+      ['tundra', 'jinlong', 'carbon_enr', 25],
+      ['jinlong', 'tundra', 'copper_ming', 2.5],
+    ] as const) {
+      it(`solves ${source} to ${destination} transfer using current data with ${algorithm}`, () => {
+        preferences.apply({ glpkAlgorithm: algorithm });
+        settings.apply({
+          locationIds: new Set([destination]),
+          excludedRecipeIds: new Set(
+            data.recipes
+              .filter((recipe) => recipe.out?.[item])
+              .map((recipe) => recipe.id),
+          ),
+        });
+        extension.apply({ transferEnabled: true, transferSource: source });
+        objectives.set({
+          1: objective('1', item, fullRate / 2, ObjectiveUnit.Items),
+        });
+        const solved = result();
+        expect(solved.resultType).toBe('solved');
+        const id = `__endfield_transfer_${source}_${item}`;
+        close(count(solved.steps, id), 1);
+        const step = objectives.steps().find((entry) => entry.itemId === item)!;
+        close(step.items!.toNumber(), fullRate);
+        close(step.surplus!.toNumber(), fullRate / 2);
+      });
+    }
+  }
 
   it('does not finalize an enabled transfer while its file is missing or failed', () => {
     const transferData = spyOn(settings, 'transferData').and.returnValue(

@@ -17,6 +17,12 @@
   }
 </div>
 
+@if (hasFormationSteps()) {
+  <p class="text-sm text-gray-300">
+    {{ 'endfield.formation.note' | translate }}
+  </p>
+}
+
 <table class="lab-table">
   <thead>
     <tr>
@@ -599,6 +605,11 @@
                     {{ step.machines | rate: cols().machines?.precision }}
                   }
                 </span>
+                @if (isFormationRecipe(recipe.id)) {
+                  <span class="text-sm flex justify-end">{{
+                    'endfield.formation.position' | translate
+                  }}</span>
+                }
               }
             }
           </td>

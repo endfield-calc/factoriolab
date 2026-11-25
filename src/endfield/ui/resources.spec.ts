@@ -120,6 +120,7 @@ const regionData: EndfieldData = {
       domainName: name('Wuling', '武陵'),
       couponItemId: 'jinlong_coupon',
       maxLevel: 4,
+      machineLimits: { [ovenId]: 16 },
       mineSummary: [
         { itemId: 'originium_ore', outputPerMinute: 550 },
         { itemId: 'copper_ore', outputPerMinute: 520 },
@@ -393,7 +394,7 @@ describe('EndfieldResources', () => {
     );
     expect(store.state().machineLimits).toEqual({
       enabled: false,
-      limits: { [ovenId]: rational(12) },
+      limits: { [ovenId]: rational(16) },
     });
     expect(store.state().transferEnabled).toBeFalse();
     expect(store.state().electric).toEqual(rational(2));
@@ -437,7 +438,7 @@ describe('EndfieldResources', () => {
     );
     expect(store.state().machineLimits).toEqual({
       enabled: true,
-      limits: { [ovenId]: rational(12) },
+      limits: { [ovenId]: rational(16) },
     });
     expect(store.state().transferEnabled).toBeTrue();
     expect(store.state().electric).toEqual(rational(3));
@@ -468,6 +469,19 @@ describe('EndfieldResources', () => {
       new Set(['unrelated']),
     );
     expect(settingsStore.settings().otherPreference).toBe('keep');
+  });
+
+  it('uses the machine limit from the selected region data', () => {
+    settingsStore.endfieldData.update((data) => ({
+      ...data!,
+      domains: data!.domains.map((domain) =>
+        domain.locationId === 'jinlong'
+          ? { ...domain, machineLimits: { [ovenId]: 9 } }
+          : domain,
+      ),
+    }));
+    button('endfield.resources.presetJinlong').click();
+    expect(store.state().machineLimits.limits[ovenId]).toEqual(rational(9));
   });
 
   it('changes only the two water exclusions', async () => {

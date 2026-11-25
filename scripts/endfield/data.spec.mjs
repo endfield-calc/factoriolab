@@ -232,6 +232,10 @@ test('event recipes and outpost and mining data resolve against the shipped cata
   for (const domain of domains) {
     assert.ok(catalog.has(domain.couponItemId));
     assert.ok(domain.mineSummary.length > 0 && domain.settlements.length > 0);
+    for (const [machine, limit] of Object.entries(domain.machineLimits ?? {})) {
+      assert.ok(catalog.has(machine));
+      assert.ok(Number.isInteger(limit) && limit >= 0);
+    }
     for (const mine of domain.mineSummary) {
       assert.ok(catalog.has(mine.itemId));
       assert.ok(mine.outputPerMinute >= 0);
@@ -260,6 +264,60 @@ test('event recipes and outpost and mining data resolve against the shipped cata
         }
       }
     }
+  }
+});
+
+test('current array and reactor data retain the actual expected production', async () => {
+  assert.equal(data.version['arknights-endfield'], 'v1.7.2');
+  assert.equal(
+    data.endfield.domains.find((domain) => domain.locationId === 'jinlong')
+      .machineLimits.xiranite_oven_1,
+    16,
+  );
+  const recipes = new Map(data.recipes.map((recipe) => [recipe.id, recipe]));
+  for (const [formation, output, input, chances] of [
+    ['ming', 'copper_ming', 'copper_nugget', [0.2, 0.4, 0.6, 1]],
+    ['ming', 'xiranite_ming', 'xiranite_powder', [0.2, 0.4, 0.6, 1]],
+    ['hui', 'copper_hui', 'copper_nugget', [0.2, 0.4, 0.6, 1]],
+    ['hui', 'xiranite_hui', 'xiranite_powder', [0.2, 0.4, 0.6, 1]],
+    ['heng', 'copper_enr_heng', 'copper_nugget', [0.4, 0.8]],
+    ['heng', 'xiranite_enr_heng', 'xiranite_powder', [0.4, 0.8]],
+  ]) {
+    chances.forEach((chance, index) => {
+      const id = `formation_magic_${formation}_item_${output}_${index + 1}`;
+      const recipe = recipes.get(id);
+      assert.ok(recipe, id);
+      assert.equal(recipe.time, 10);
+      assert.deepEqual(recipe.in, { [input]: 1 });
+      assert.equal(recipe.out[output], chance);
+      assert.equal(recipe.out[input] ?? 0, Number((1 - chance).toFixed(2)));
+      assert.equal(recipe.producers, undefined);
+      assert.deepEqual(recipe.flags, ['showCount']);
+      assert.deepEqual(recipe.locations, ['jinlong']);
+    });
+  }
+  const reactor = recipes.get('gas_copper_bright_clear');
+  assert.equal(reactor.time, 2);
+  assert.deepEqual(reactor.in, {
+    gas_copper_enr_heng: 1,
+    gas_xiranite_enr_heng: 1,
+  });
+  assert.deepEqual(reactor.out, {
+    gas_copper_bright_clear: 1,
+    gas_copper_bright_turbid: 1,
+  });
+  assert.deepEqual(reactor.producers, ['gas_reactor_1']);
+  const zh = await json('public/data/aef/i18n/zh.json');
+  for (const content of [
+    'copper_bright_clear',
+    'copper_bright_turbid',
+    'copper_enr_heng',
+    'xiranite_enr_heng',
+  ]) {
+    const id = `gasjar_copper_gas_${content}`;
+    assert.ok(recipes.has(id));
+    assert.equal(zh.items[id], zh.recipes[id]);
+    assert.match(zh.items[id], /^赤铜耐压罐\(.+\)$/);
   }
 });
 
